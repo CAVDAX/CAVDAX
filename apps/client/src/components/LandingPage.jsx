@@ -1096,7 +1096,7 @@ export default function LandingPage({
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
 
-                Active and superseded decisions share identical semantic vectors. Cosine distance cannot determine temporal succession, causing agents to retrieve obsolete architectural rules.
+                Active and deprecated decisions share near-identical embeddings, blinding agents to temporal succession.
 
               </p>
 
@@ -1168,7 +1168,7 @@ export default function LandingPage({
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
 
-                Git commits mutate repositories constantly, but vector indices remain static. Coding agents operate on silent, outdated cache without invalidation awareness.
+                Static embeddings drift out of sync as git commits mutate code.
 
               </p>
 
@@ -1226,7 +1226,7 @@ export default function LandingPage({
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-4">
 
-                Coding agents execute direct filesystem writes without checking if the justifying decision is still fresh, introducing unverified code into production.
+                Agents write directly to disk without verifying active architectural invariants.
 
               </p>
 
@@ -1284,7 +1284,7 @@ export default function LandingPage({
 
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed mb-6">
 
-                Contract changes cascade across services. Isolated vector search cannot compute multi-hop graph reachability or downstream dependency breakage.
+                Flat vector search cannot traverse multi-hop graph reachability or downstream breaks.
 
               </p>
 
