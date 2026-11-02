@@ -92,11 +92,11 @@ By coupling this causal knowledge graph with an **Enclosed Model Context Protoco
 - **FR-2.2 Real-Time Latency SLA**: Invalidation cascade across 10,000 nodes must complete in $< 5\text{ms}$ on commodity hardware.
 
 ### 3.3 Module 3: Enclosed Model Context Protocol (MCP) Execution Gate
-- **FR-3.1 Tool Interception**: Expose standardized MCP tools (`apply_code_change`, `verify_provenance`, `invalidate_stale_cache`).
+- **FR-3.1 Tool Interception**: Expose standardized MCP tools (`apply_code_change`, `check_intent_clearance`, `revalidate_decision`, `acquire_decision_lock`, `release_decision_lock`, `export_graph_image`).
 - **FR-3.2 Pre-Execution Provenance Verification**: Every tool invocation targeting file mutations must supply a `decision_id`.
 - **FR-3.3 Atomic Sandboxing**: If verification fails, abort write operation immediately; log diagnostic causal path; return structured failure payload to LLM context.
 
-### 3.4 Module 4: Real-Time Cybernetic Telemetry HUD
+### 3.4 Module 4: Real-Time Cybernetic Diagnostics HUD
 - **FR-4.1 Live Graph Visualization**: Force-directed interactive canvas rendering live nodes and edges with real-time status color coding (Cyan = Active, Amber = Stale/Superseded, Ruby = Invalidated, Emerald = Verified).
 - **FR-4.2 Real-Time Cognitive State HUD**: Render agent state (`IDLE`, `REASONING`, `EXECUTING`, `VERIFIED`, `REJECTED`) via `CavdaxAgentStateIndicator`.
 - **FR-4.3 Server-Sent Events (SSE)**: Stream graph mutations and gate verdicts over `/api/events` with zero polling lag.

@@ -66,7 +66,7 @@ graph TB
     end
 
     subgraph Production_Infra["5. Cloud Infrastructure & Mesh"]
-        Docker["Docker Compose Mesh (infra/docker-compose.yml)"]
+        Docker["Docker Compose Mesh (docker-compose.yml)"]
         Caddy["Caddy Reverse Proxy (Auto-TLS, RFC-7807 Error Envelope)"]
         StateStore[("Atomic System State (system_state.json)")]
         Docker --> Caddy
