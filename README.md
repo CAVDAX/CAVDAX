@@ -6,8 +6,20 @@
   </picture>
   <h1>CAVDAX: Contextual Action &amp; Verified Decision Autonomous eXecution</h1>
   <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
-  <p><em>Track 01: Agents That Act on Connected Data (Primary) &bull; Track 02: Knowledge Graphs &amp; Long-Term Memory (Eligible)</em><br />
-  Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong></p>
+  <p>
+    Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong><br />
+    <strong>🏆 Primary Track: Track 2 — Agent Memory and Coordination</strong><br />
+    <strong>⚡ Secondary Track: Track 1 — Agents That Act on Connected Data</strong>
+  </p>
+
+  <p>
+    <a href="https://youtu.be/Nhdd7spj1RA">
+      <img src="https://img.shields.io/badge/▶%20Watch%2010--Minute%20Deep--Dive%20Demo%20Video-YouTube%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch 10-Minute Deep-Dive Demo Video" />
+    </a>
+    <a href="https://cavdax.sahnirmaan.live/">
+      <img src="https://img.shields.io/badge/Live%20Production%20Demo-cavdax.sahnirmaan.live-10B981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
+    </a>
+  </p>
 </div>
 
 [![CI](https://github.com/suneetchugh-dev/CAVDAX/actions/workflows/ci.yml/badge.svg)](https://github.com/suneetchugh-dev/CAVDAX/actions)
