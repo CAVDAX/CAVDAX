@@ -19,35 +19,37 @@ export const TEAM_MEMBERS = [
     name: 'Suneet Chugh',
     role: 'Team Leader',
     title: 'Lead Architect & Systems Engineer',
-    domain: 'Distributed Systems, GraphBLAS & Agentic MCP',
-    bio: 'Pioneered the FalkorDB GraphBLAS causal invalidation loop, enclosed MCP execution gate architecture, Real-Time Metrics HUD, and production web deployment.',
+    domain: 'Distributed Systems, GraphBLAS & Enclosed Execution',
+    bio: 'Pioneered the FalkorDB GraphBLAS causal invalidation loop, enclosed MCP execution gate architecture, porcelain Web HUD console topology spanning 9 operational views, and Cloudflare edge deployment.',
     avatar: '/avatars/suneet.webp',
     fallbackAvatar: 'https://github.com/suneetchugh-dev.png',
     github: 'https://github.com/suneetchugh-dev',
     linkedin: 'https://www.linkedin.com/in/suneetchugh-dev/',
-    tags: ['FalkorDB', 'GraphBLAS', 'MCP Architecture', 'Cypher', 'DevOps & Docker'],
+    tags: ['FalkorDB GraphBLAS', 'Enclosed MCP Gate', 'Console Topology', 'D3 Physics Canvas', 'Cloudflare & Docker'],
     highlights: [
       'Engineered sub-2ms Query 2 GraphBLAS invalidation cascade in FalkorDB',
       'Designed enclosed MCP protocol proxy intercepting in-flight agent write tools',
-      'Built hardware-accelerated monochromatic HUD and responsive metrics'
+      'Architected visual console (9 views), 3D causal enclave hub, and D3 canvas',
+      'Authored 10-scenario benchmark evaluation suite and Docker Compose mesh'
     ]
   },
   {
     id: 'geetika',
     name: 'Geetika Chugh',
-    role: 'Developer',
-    title: 'Causal Graph & Cognitive Engine Developer',
-    domain: 'Knowledge Graphs, Agent Cognition & Causal Inference',
-    bio: 'Engineered the 4-tier causal DAG ontology, multi-hop provenance graph verification, and empirical benchmark evaluations demonstrating 100% elimination of silent cache rot.',
+    role: 'Co-Creator & Systems Engineer',
+    title: 'Lead MCP Engineer, Video Presenter & Backend Ingestion Architect',
+    domain: 'MCP Distribution, Repository Ingestion & Enterprise Resilience',
+    bio: 'Recorded the official 10-minute deep-dive video walkthrough, engineered and published the @cavdax/mcp-server npm package with Sigstore provenance, architected the multi-ecosystem repository ADR AST scanner, and implemented the Razorpay sponsor infrastructure.',
     avatar: '/avatars/geetika.png',
     fallbackAvatar: 'https://github.com/GeetikaChughIBM.png',
     github: 'https://github.com/GeetikaChughIBM',
     linkedin: 'https://www.linkedin.com/in/geetika-chugh-085251252/',
-    tags: ['Causal Graphs', 'DAG Ontologies', 'Empirical Benchmarks', 'Agent Cognition', 'Verification Logic'],
+    tags: ['Video Walkthrough', 'NPM Package Distribution', 'Repo AST Ingestion', 'Razorpay Checkout', 'CI/CD Service Mesh'],
     highlights: [
-      'Formalized Source -> Fact -> Decision causal ontology and lifecycle states',
-      'Authored 10-Scenario evaluation dataset proving Vector RAG failure modes',
-      'Led technical deep-dive documentation on silent cache rot elimination'
+      'Recorded and presented the official 10-minute deep-dive architecture demo video',
+      'Published and maintained @cavdax/mcp-server on npm with Sigstore provenance',
+      'Built automated GitHub repo AST scanner, multi-stack detector, and PR initializer',
+      'Built Razorpay sponsor checkout, webhook processing, and tier quota sync'
     ]
   }
 ];

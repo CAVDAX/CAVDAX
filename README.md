@@ -8,7 +8,8 @@
   <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
   <p>
     Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong><br />
-    <strong>Primary Track: Track 2 — Agent Memory and Coordination</strong> &bull; <strong>Secondary Track: Track 1 — Agents That Act on Connected Data</strong>
+    <span style="white-space: nowrap"><strong>Primary Track:</strong> Track 2 — Agent Memory and Coordination</span><br />
+    <span style="white-space: nowrap"><strong>Secondary Track:</strong> Track 1 — Agents That Act on Connected Data</span>
   </p>
 
   <p>
@@ -892,8 +893,8 @@ CAVDAX/
 
 Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**:
 
-* **Suneet Chugh** (`@suneetchugh-dev`) — Frontend Web HUD Architecture, DevOps & Docker Orchestration, Video Presentation.
-* **Geetika Chugh** — Domain Logic, 10-Scenario Evaluation Dataset, Documentation & Project Blog Author.
+* **Suneet Chugh** ([@suneetchugh-dev](https://github.com/suneetchugh-dev)) — Lead Architect & Systems Engineer: FalkorDB GraphBLAS Causal Core, Enclosed MCP Gate, Visual Operational Console (9 Views), Cloudflare Edge Mesh & Empirical Benchmarks.
+* **Geetika Chugh** ([@GeetikaChughIBM](https://github.com/GeetikaChughIBM)) — Co-Creator & Systems Engineer: Official 10-Minute Demo Video Walkthrough, `@cavdax/mcp-server` NPM Distribution (Sigstore Provenance), GitHub Repo AST Scanner & Ingestion Engine, and Razorpay Sponsor Architecture.
 
 ---
 *License: GNU GPL 3.0 &bull; Powered by FalkorDB GraphBLAS & Model Context Protocol (MCP)*
