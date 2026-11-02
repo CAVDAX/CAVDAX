@@ -22,13 +22,18 @@
   </p>
 </div>
 
-[![CI](https://github.com/suneetchugh-dev/CAVDAX/actions/workflows/ci.yml/badge.svg)](https://github.com/suneetchugh-dev/CAVDAX/actions)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-cavdax.sahnirmaan.live-10B981?style=for-the-badge&logo=vercel&logoColor=white)](https://cavdax.sahnirmaan.live/)
+<div align="center">
+
+[![CI](https://img.shields.io/github/actions/workflow/status/suneetchugh-dev/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/suneetchugh-dev/CAVDAX/actions)
+[![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
+[![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-GraphBLAS-FF2D55?style=for-the-badge&logo=redis&logoColor=white)](https://falkordb.com/)
 [![MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-06B6D4?style=for-the-badge)](https://modelcontextprotocol.io/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./docker-compose.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](./LICENSE)
 [![Latency](https://img.shields.io/badge/Gate%20Latency-%3C%202.5ms-8B5CF6?style=for-the-badge)](#empirical-benchmarks)
+
+</div>
 
 ---
 
@@ -77,24 +82,40 @@ When a superseding commit or ADR arrives:
 
 CAVDAX models engineering knowledge and agent actions using a formal 4-tier Causal Directed Acyclic Graph (DAG) optimized for sub-millisecond GraphBLAS traversal in FalkorDB:
 
-```
-(ADR-002:Source {status: 'ACTIVE'})
-       │
-[:EXTRACTED_FROM]
-       ▼
-(F-OAuth2-v2:Fact {claim: 'OAuth2 Enforced', is_stale: false})
-       ▲
-  [:DEPENDS_ON]
-       │
-(DEC-103:Decision {status: 'VALID'}) ──[:REPLACES]──> (DEC-102:Decision {status: 'INVALIDATED'})
-       ▲                                                           │
- [:GROUNDED_IN]                                              [:DEPENDS_ON]
-       │                                                           ▼
-(:AgentAction {tool: 'apply_code_change', verdict: 'APPROVED'})  (F-Auth-v1:Fact {is_stale: true})
-                                                                   │
-                                                            [:EXTRACTED_FROM]
-                                                                   ▼
-(ADR-002:Source) ───────────────[:SUPERSEDES]───────────────> (ADR-001:Source {status: 'SUPERSEDED'})
+```mermaid
+flowchart TD
+    subgraph ActivePath ["Active Invariant Path (Grounded)"]
+        direction TB
+        ADR002["Source: ADR-002<br/>status: ACTIVE"]
+        FOAuth["Fact: F-OAuth2-v2<br/>claim: 'OAuth2 Enforced'<br/>is_stale: false"]
+        DEC103["Decision: DEC-103<br/>status: VALID"]
+        Action["AgentAction: apply_code_change<br/>verdict: APPROVED"]
+
+        ADR002 -->|EXTRACTED_FROM| FOAuth
+        FOAuth -->|DEPENDS_ON| DEC103
+        DEC103 -->|GROUNDED_IN| Action
+    end
+
+    subgraph StalePath ["Superseded / Invalidated Path"]
+        direction TB
+        DEC102["Decision: DEC-102<br/>status: INVALIDATED"]
+        FAuth["Fact: F-Auth-v1<br/>claim: 'TokenAuth v1'<br/>is_stale: true"]
+        ADR001["Source: ADR-001<br/>status: SUPERSEDED"]
+
+        DEC102 -->|DEPENDS_ON| FAuth
+        FAuth -->|EXTRACTED_FROM| ADR001
+    end
+
+    ADR002 ==>|SUPERSEDES| ADR001
+    DEC103 ==>|REPLACES| DEC102
+
+    classDef active fill:#064e3b,stroke:#059669,stroke-width:2px,color:#ecfdf5;
+    classDef stale fill:#4c0519,stroke:#e11d48,stroke-width:2px,color:#ffe4e6;
+    classDef action fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
+
+    class ADR002,FOAuth,DEC103 active;
+    class ADR001,FAuth,DEC102 stale;
+    class Action action;
 ```
 
 ### 1. Node Schemas & Labels
@@ -716,34 +737,15 @@ CAVDAX implements the Anthropic Model Context Protocol (MCP) specification `2024
 
 ### Client Configuration Snippets
 
-#### 1. Cursor IDE (`.cursor/mcp.json`)
-```json
-{
-  "mcpServers": {
-    "cavdax": {
-      "url": "https://cavdax.sahnirmaan.live/api/mcp/sse"
-    }
-  }
-}
-```
+You can connect your coding agents via **Mode A: Local Stdio (Zero configuration, no API key required)** or **Mode B: Remote Cloud SSE (Centralized team graph & remote CI/CD)**.
 
-#### 2. Claude Desktop (`claude_desktop_config.json`)
-```json
-{
-  "mcpServers": {
-    "cavdax": {
-      "url": "https://cavdax.sahnirmaan.live/api/mcp/sse"
-    }
-  }
-}
-```
+> **API Key for Remote Cloud SSE**: If using Remote Cloud SSE, generate your API key in one click at [cavdax.sahnirmaan.live/mcp](https://cavdax.sahnirmaan.live/mcp).
 
-#### 3. Claude Code CLI
-```bash
-claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse
-```
+---
 
-#### 4. Windsurf / Roo Code (`mcp_config.json`)
+#### Mode A: Local Stdio (`npx -y @cavdax/mcp-server`) — Recommended
+
+##### 1. Cursor IDE (`.cursor/mcp.json`)
 ```json
 {
   "mcpServers": {
@@ -753,6 +755,77 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse
     }
   }
 }
+```
+
+##### 2. Claude Desktop (`claude_desktop_config.json`)
+```json
+{
+  "mcpServers": {
+    "cavdax": {
+      "command": "npx",
+      "args": ["-y", "@cavdax/mcp-server"]
+    }
+  }
+}
+```
+
+##### 3. Claude Code CLI
+```bash
+claude mcp add cavdax -- npx -y @cavdax/mcp-server
+```
+
+##### 4. Windsurf / Roo Code (`mcp_config.json`)
+```json
+{
+  "mcpServers": {
+    "cavdax": {
+      "command": "npx",
+      "args": ["-y", "@cavdax/mcp-server"]
+    }
+  }
+}
+```
+
+---
+
+#### Mode B: Remote Cloud SSE (`https://cavdax.sahnirmaan.live/api/mcp/sse`)
+
+##### 1. Cursor IDE (`.cursor/mcp.json`)
+```json
+{
+  "mcpServers": {
+    "cavdax": {
+      "url": "https://cavdax.sahnirmaan.live/api/mcp/sse",
+      "headers": {
+        "Authorization": "Bearer YOUR_CAVDAX_API_KEY"
+      }
+    }
+  }
+}
+```
+
+##### 2. Claude Desktop (via `mcp-proxy`)
+*Claude Desktop requires local stdio to bridge remote SSE streams:*
+```json
+{
+  "mcpServers": {
+    "cavdax": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-proxy",
+        "https://cavdax.sahnirmaan.live/api/mcp/sse",
+        "--headers",
+        "Authorization=Bearer YOUR_CAVDAX_API_KEY"
+      ]
+    }
+  }
+}
+```
+
+##### 3. Claude Code CLI
+```bash
+claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Authorization: Bearer YOUR_CAVDAX_API_KEY"
 ```
 
 ### Registered Model Context Protocol (MCP) Tools
