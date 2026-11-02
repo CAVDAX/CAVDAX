@@ -601,7 +601,7 @@ export default function CausalEnclaveHub() {
       // When approaching from Bento (top) or Causal Loop (bottom), entering the viewport center zone
       // cleanly docks and locks the section instead of jumping past.
       if (!isLockedRef.current) {
-        const inDockZone = rect.top <= viewportHeight * 0.35 && rect.bottom >= viewportHeight * 0.65;
+        const inDockZone = rect.top <= viewportHeight * 0.25 && rect.bottom >= viewportHeight * 0.75;
         if (!inDockZone) return; // Allow natural page scroll outside the dock zone
 
         if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey) || e.key === 'ArrowRight') {
@@ -729,7 +729,7 @@ export default function CausalEnclaveHub() {
       tabIndex={-1}
       role="region"
       aria-label="Causal Interception Enclave"
-      className="relative w-full min-h-[100dvh] py-8 sm:py-12 px-4 sm:px-8 flex flex-col items-center justify-between z-[60] border-none overflow-hidden outline-none focus:outline-none"
+      className="relative w-full h-[100dvh] max-h-[100dvh] py-3 sm:py-4 md:py-5 px-4 sm:px-8 flex flex-col items-center justify-between z-[60] border-none overflow-hidden outline-none focus:outline-none"
     >
       {/* ── Fixed Heavy Dimming & Blur Backdrop (Focusing Exclusively on Diagram) ── */}
       <motion.div 
@@ -743,10 +743,10 @@ export default function CausalEnclaveHub() {
       />
 
       {/* ── Fullscreen Open Theater Container ── */}
-      <div className="relative w-full min-h-[85vh] max-w-[1300px] 2xl:max-w-[1500px] flex flex-col justify-between items-center z-[80] my-auto">
+      <div className="relative w-full h-full max-w-[1300px] 2xl:max-w-[1500px] flex flex-col justify-between items-center z-[80] my-auto overflow-hidden">
         
         {/* ── Top HUD Navigation: Section Title & Step Jumper Pills ── */}
-        <div className="w-full flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-4">
+        <div className="w-full flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-2.5 sm:pb-3 shrink-0">
           <div className="flex items-center gap-3">
             <span className="font-mono text-xs sm:text-sm font-bold text-slate-950 dark:text-white tracking-widest uppercase">
               The Causal Interception Enclave
@@ -780,14 +780,14 @@ export default function CausalEnclaveHub() {
 
         {/* ── Center Stage: Massive Radar-Scale 3D Viewport with Top-to-Side Camera Rotation ── */}
         <div 
-          className="w-full flex-1 flex flex-col items-center justify-center my-2 sm:my-4 relative"
+          className="w-full flex-1 min-h-0 flex flex-col items-center justify-center my-1 sm:my-2 relative"
           style={{ perspective: '1400px', perspectiveOrigin: 'center center' }}
         >
           
           <div 
             onPointerEnter={() => { isHoveringCanvasRef.current = true; }}
             onPointerLeave={() => { isHoveringCanvasRef.current = false; }}
-            className="w-full max-w-[1040px] 2xl:max-w-[1180px] aspect-[16/11] max-h-[620px] sm:max-h-[700px] flex items-center justify-center relative select-none will-change-transform cursor-default"
+            className="w-full max-w-[1040px] 2xl:max-w-[1180px] aspect-[16/11] max-h-[min(50vh,520px)] 2xl:max-h-[640px] flex items-center justify-center relative select-none will-change-transform cursor-default"
             style={{
               transform: `rotateX(${baseCam.pitch}deg) rotateY(${baseCam.yaw}deg) rotateZ(${baseCam.roll}deg) translate3d(${baseCam.tx}px, ${baseCam.ty}px, ${baseCam.tz}px) scale(${baseCam.scale})`,
               transformStyle: 'preserve-3d',
@@ -1248,7 +1248,7 @@ export default function CausalEnclaveHub() {
         </div>
 
         {/* ── Bottom HUD Readout: Smooth Shimmering Typography (Zero Layout Shifts) ── */}
-        <div className="w-full pt-4 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+        <div className="w-full pt-2 sm:pt-3 border-t border-slate-200/80 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-4 text-center sm:text-left shrink-0 pb-1">
           
           <div className="flex-1 max-w-3xl min-h-[50px] flex flex-col justify-center">
             <AnimatePresence mode="wait">
