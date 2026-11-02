@@ -893,7 +893,7 @@ CAVDAX/
 
 Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**:
 
-* **Suneet Chugh** ([@suneetchugh-dev](https://github.com/suneetchugh-dev)) — Lead Architect & Systems Engineer: FalkorDB GraphBLAS Causal Core, Enclosed MCP Gate, Porcelain Web HUD (9 Views), Cloudflare Edge Mesh & Empirical Benchmarks.
+* **Suneet Chugh** ([@suneetchugh-dev](https://github.com/suneetchugh-dev)) — Lead Architect & Systems Engineer: FalkorDB GraphBLAS Causal Core, Enclosed MCP Gate, Visual Operational Console (9 Views), Cloudflare Edge Mesh & Empirical Benchmarks.
 * **Geetika Chugh** ([@GeetikaChughIBM](https://github.com/GeetikaChughIBM)) — Co-Creator & Systems Engineer: Official 10-Minute Demo Video Walkthrough, `@cavdax/mcp-server` NPM Distribution (Sigstore Provenance), GitHub Repo AST Scanner & Ingestion Engine, and Razorpay Sponsor Architecture.
 
 ---

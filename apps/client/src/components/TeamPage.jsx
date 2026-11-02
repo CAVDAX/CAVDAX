@@ -232,7 +232,7 @@ export default function TeamPage({ onLaunchConsole }) {
                   {member.highlights.map((h, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                       <span className="text-[#d9a353] dark:text-[#d9a353] font-mono mt-0.5">•</span>
-                      <span>{h}</span>
+                      <span className="text-balance [text-wrap:balance]">{h}</span>
                     </div>
                   ))}
                 </div>

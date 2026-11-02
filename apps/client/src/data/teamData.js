@@ -29,8 +29,8 @@ export const TEAM_MEMBERS = [
     highlights: [
       'Engineered sub-2ms Query 2 GraphBLAS invalidation cascade in FalkorDB',
       'Designed enclosed MCP protocol proxy intercepting in-flight agent write tools',
-      'Architected porcelain Web HUD, 3D causal enclave hub, and interactive console topology',
-      'Authored the 10-scenario benchmark evaluation suite and Docker Compose infrastructure'
+      'Architected visual console (9 views), 3D causal enclave hub, and D3 canvas',
+      'Authored 10-scenario benchmark evaluation suite and Docker Compose mesh'
     ]
   },
   {
@@ -47,9 +47,9 @@ export const TEAM_MEMBERS = [
     tags: ['Video Walkthrough', 'NPM Package Distribution', 'Repo AST Ingestion', 'Razorpay Checkout', 'CI/CD Service Mesh'],
     highlights: [
       'Recorded and presented the official 10-minute deep-dive architecture demo video',
-      'Published and maintained @cavdax/mcp-server (v1.1 - v1.2.2) on npm with Sigstore provenance',
+      'Published and maintained @cavdax/mcp-server on npm with Sigstore provenance',
       'Built automated GitHub repo AST scanner, multi-stack detector, and PR initializer',
-      'Built Razorpay sponsor payment checkout, webhook handling, and tier quota synchronization'
+      'Built Razorpay sponsor checkout, webhook processing, and tier quota sync'
     ]
   }
 ];
