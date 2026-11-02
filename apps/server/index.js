@@ -1317,7 +1317,7 @@ app.post('/api/mcp/call', requireAuth, async (req, res) => {
           // Approved — Security Confinement: verify file target resides within demo-repo sandbox
           const resolvedRepo = path.resolve(REPO_ROOT, 'demo-repo');
           const targetPath = path.resolve(resolvedRepo, args.file_path);
-          if (!targetPath.startsWith(resolvedRepo + path.sep) && targetPath !== resolvedRepo) {
+          if (!targetPath.startsWith(resolvedRepo + path.sep)) {
             return res.status(403).json({
               isError: true,
               gate_verdict: 'BLOCKED_PATH_TRAVERSAL',
@@ -2289,7 +2289,16 @@ app.get('/api/auth/github/callback', async (req, res) => {
     };
 
     // Set signed persistent cookie for instant re-hydration across server restarts
-    const signedAuth = signAuthToken(req.session.user);
+    // Strip sensitive OAuth access token from client cookie payload (OWASP A01/A02 Defense-in-depth)
+    const cookieUser = {
+      githubId:  userData.id,
+      login:     userData.login,
+      name:      userData.name || userData.login,
+      avatarUrl: userData.avatar_url,
+      email:     primaryEmail,
+      tier:      req.session?.tier || 'free'
+    };
+    const signedAuth = signAuthToken(cookieUser);
     if (signedAuth) {
       res.cookie('cavdax_auth', signedAuth, {
         httpOnly: true,
@@ -3304,9 +3313,12 @@ app.post('/api/billing/webhook', (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature     = req.headers['x-razorpay-signature'];
 
-  // Validate webhook signature if secret is configured
-  if (webhookSecret && signature) {
-    // req.rawBody preserved from express.json verify hook; fallback to string/buffer
+  // Validate webhook signature if secret is configured (OWASP A02/A07 Hardening)
+  if (webhookSecret) {
+    if (!signature) {
+      console.warn('[CAVDAX Razorpay Webhook] ⛔ Missing x-razorpay-signature header — request rejected.');
+      return res.status(401).json({ success: false, error: 'MISSING_WEBHOOK_SIGNATURE' });
+    }
     const rawPayload = req.rawBody || (typeof req.body === 'string' ? req.body : Buffer.isBuffer(req.body) ? req.body : JSON.stringify(req.body));
     const expected  = createHmac('sha256', webhookSecret)
       .update(rawPayload)
@@ -3316,8 +3328,12 @@ app.post('/api/billing/webhook', (req, res) => {
       console.warn('[CAVDAX Razorpay Webhook] Signature mismatch — ignoring.');
       return res.status(400).json({ success: false, error: 'WEBHOOK_SIGNATURE_MISMATCH' });
     }
-  } else if (!webhookSecret) {
-    console.warn('[CAVDAX Razorpay Webhook] RAZORPAY_WEBHOOK_SECRET not set — skipping signature validation.');
+  } else {
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[CAVDAX Razorpay Webhook] ⛔ RAZORPAY_WEBHOOK_SECRET is unconfigured in production environment.');
+      return res.status(503).json({ success: false, error: 'WEBHOOK_SECRET_UNCONFIGURED' });
+    }
+    console.warn('[CAVDAX Razorpay Webhook] ⚠️ RAZORPAY_WEBHOOK_SECRET not set in non-production — skipping signature validation.');
   }
 
   let event = req.body;

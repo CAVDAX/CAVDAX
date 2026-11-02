@@ -22,14 +22,18 @@ export function isValidPushEndpoint(endpoint) {
     if (parsed.protocol !== 'https:') return false;
 
     const hostname = parsed.hostname.toLowerCase();
-    // Block loopback, link-local, and cloud metadata
+    // Block loopback, link-local, and cloud metadata (IPv4 + IPv6 ULA/Link-Local)
     if (
       hostname === 'localhost' ||
       hostname === '127.0.0.1' ||
       hostname === '::1' ||
+      hostname === '[::1]' ||
       hostname === '169.254.169.254' ||
       hostname.endsWith('.internal') ||
-      hostname.endsWith('.local')
+      hostname.endsWith('.local') ||
+      hostname.startsWith('[fc') ||
+      hostname.startsWith('[fd') ||
+      hostname.startsWith('[fe80')
     ) {
       return false;
     }

@@ -177,9 +177,17 @@ export class CavdaxMcpServer {
       };
     }
     // Security Confinement: Prevent path traversal upfront (OWASP A01/A03 Hardening)
+    if (!file_path || typeof file_path !== 'string') {
+      return {
+        isError: true,
+        gate_verdict: 'BLOCKED_INVALID_PATH',
+        decision_id,
+        error: 'Access denied: Target file path must be a non-empty string.'
+      };
+    }
     const resolvedRepo = path.resolve(this.repoRoot);
     const resolvedPath = path.resolve(resolvedRepo, file_path);
-    if (!resolvedPath.startsWith(resolvedRepo + path.sep) && resolvedPath !== resolvedRepo) {
+    if (!resolvedPath.startsWith(resolvedRepo + path.sep)) {
       console.warn(`[MCP Gate] ⛔ PATH TRAVERSAL ATTEMPT BLOCKED: '${file_path}' attempts to escape sandbox root.`);
       return {
         isError: true,
