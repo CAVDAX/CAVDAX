@@ -230,6 +230,27 @@ Takes an exclusive, timed lease (`ttl_ms`) on a decision branch. Any concurrent 
 #### `release_decision_lock`
 Releases the held lease when an agent finishes its milestone or aborts its task.
 
+#### Active Lease Inspection Endpoint (`GET /api/mcp/locks`)
+Clients, supervisor agents, and monitoring dashboards can query active decision locks in real time:
+```http
+GET /api/mcp/locks
+```
+**Response Payload (`200 OK`):**
+```json
+{
+  "active_locks": [
+    {
+      "decision_id": "DEC-103",
+      "agent_id": "claude-code-worker-01",
+      "acquired_at": 1730534400000,
+      "expires_at": 1730534430000,
+      "ttl_ms": 30000,
+      "reason": "Refactoring payment gateway to Razorpay adapter"
+    }
+  ]
+}
+```
+
 ---
 
 ### 3.6 Tool 6: `export_graph_image` (Visual PR Artifact & Vision OCR Generator)
@@ -500,7 +521,7 @@ jobs:
 
 ---
 
-## 7. The 4 Competitive Moats: Elimination of Competitor Gaps
+## 10. The 4 Competitive Moats: Elimination of Competitor Gaps
 
 CAVDAX closes the four major structural vulnerabilities that traditional security and governance tools suffer from:
 

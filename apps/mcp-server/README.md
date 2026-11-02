@@ -80,6 +80,7 @@ npx cavdax doctor                   # Diagnose FalkorDB & MCP readiness
 | `acquire_decision_lock` | Leases an exclusive lock on a decision so two agents cannot change it at once. Takes `decision_id`, `agent_id`, optional `ttl_ms` and `reason`. |
 | `release_decision_lock` | Releases a lock held by the calling agent. |
 | `query_causal_graph` | Inspects the causal graph (optionally one `node_id`) to check node statuses and dependency paths. |
+| `export_graph_image` | Generates a standalone SVG or PNG vector snapshot of the active causal graph for PR artifacts and visual debugging. |
 
 > **About decision locks.** Locks are leased (5 seconds to 5 minutes) and held in the memory of one MCP server process. They stop two agents that share that server from changing the same decision at once. Each IDE or agent that starts its own `npx` stdio process gets its own lock table, so those processes do not see each other's locks. For multi-agent safety across separate clients, point them at one shared server, such as the hosted SSE endpoint.
 

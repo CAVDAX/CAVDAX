@@ -743,13 +743,14 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse
 }
 ```
 
-### Registered Model Context Protocol (MCP) Tools (6-Tool Enclosed Catalog)
+### Registered Model Context Protocol (MCP) Tools
 1. `check_intent_clearance`: **Proactive Architectural Pre-Flight Radar.** Allows AI coding agents (Claude Code, Devin, Cursor) to verify proposed actions against FalkorDB *prior to generating tokens or editing files*. Eliminates reactive token burn in < 2ms.
 2. `apply_code_change`: **Enclosed Execution Gate.** Intercepts in-flight file write actions and validates decision provenance against the causal graph. Hard-blocks execution if grounding facts are stale (`BLOCKED_SUPERSEDED_SOURCE`).
 3. `revalidate_decision`: **Dynamic Invalidation Recovery.** Synthesizes a new Decision replacing an invalidated or superseded one, automatically linking the new Decision to active Facts extracted from fresh ADRs.
 4. `acquire_decision_lock`: **Distributed Concurrency Lock.** Prevents race conditions during multi-agent workflows (e.g. concurrent Devin or Claude Code sessions) by leasing atomic locks on specific decision branches.
 5. `release_decision_lock`: **Lease Release.** Voluntarily releases leased locks upon completed task milestone execution.
-6. `query_causal_graph`: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
+6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
+7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
 ### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.0)
 ```bash

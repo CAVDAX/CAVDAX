@@ -166,17 +166,70 @@ CAVDAX implements the official Anthropic Model Context Protocol specification:
 }
 ```
 
-### 4.2 Tool: `verify_provenance`
+### 4.2 Tool: `check_intent_clearance`
 ```json
 {
-  "name": "verify_provenance",
-  "description": "Performs an asynchronous dry-run traversal on FalkorDB to audit whether a candidate Decision node is unblemished.",
+  "name": "check_intent_clearance",
+  "description": "Pre-flight validation check. Evaluates whether a target Decision node is causally grounded before generating tokens or code.",
   "parameters": {
     "type": "object",
     "properties": {
-      "decision_id": { "type": "string" }
+      "decision_id": { "type": "string", "description": "The decision identifier to verify (e.g. 'DEC-103')." },
+      "target_file": { "type": "string", "description": "Optional file path intended for mutation." },
+      "proposed_action": { "type": "string", "description": "Optional brief intent description." }
     },
     "required": ["decision_id"]
+  }
+}
+```
+
+### 4.3 Tool: `revalidate_decision`
+```json
+{
+  "name": "revalidate_decision",
+  "description": "Recovers from causal invalidation by synthesizing a new Decision linked to fresh active ADR Facts.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "old_decision_id": { "type": "string", "description": "The superseded/invalidated decision ID." },
+      "new_decision_id": { "type": "string", "description": "The new replacement decision ID (e.g. 'DEC-103')." },
+      "new_decision_title": { "type": "string", "description": "Architectural rationale title." },
+      "adr_file": { "type": "string", "description": "Source ADR Markdown file path." }
+    },
+    "required": ["old_decision_id", "new_decision_id", "new_decision_title"]
+  }
+}
+```
+
+### 4.4 Tools: `acquire_decision_lock` & `release_decision_lock`
+```json
+{
+  "name": "acquire_decision_lock",
+  "description": "Leases an exclusive temporal lock on a Decision node to prevent multi-agent collision.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "decision_id": { "type": "string" },
+      "agent_id": { "type": "string" },
+      "ttl_ms": { "type": "number", "description": "Lock lease duration in milliseconds (default: 30000ms)." },
+      "reason": { "type": "string" }
+    },
+    "required": ["decision_id", "agent_id"]
+  }
+}
+```
+
+### 4.5 Tool: `export_graph_image`
+```json
+{
+  "name": "export_graph_image",
+  "description": "Generates a standalone SVG or PNG vector snapshot of the active causal graph for PR artifacts and visual debugging.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "format": { "type": "string", "enum": ["svg", "png"] },
+      "theme": { "type": "string", "enum": ["dark", "light"] }
+    }
   }
 }
 ```
@@ -210,37 +263,70 @@ RETURN
 
 ## 6. Infrastructure, Containerization & Fail-Open Resilience
 
-### 6.1 Docker Compose Mesh (`infra/docker-compose.yml`)
-```yaml
-version: '3.8'
+### 6.1 Docker Compose Mesh (`docker-compose.yml`)
+CAVDAX orchestrates its graph database, backend gateway, and client Web HUD through the root `docker-compose.yml` stack:
 
+```yaml
 services:
+  # 1. FalkorDB Graph Engine (GraphBLAS Sparse Matrix Database)
   falkordb:
     image: falkordb/falkordb:latest
     container_name: cavdax-falkordb
     ports:
       - "6379:6379"
     volumes:
-      - falkordb_data:/data
+      - falkordb-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
-  cavdax-server:
+  # 2. CAVDAX Backend Gateway & Enclosed MCP Gate
+  server:
     build:
-      context: ..
+      context: .
       dockerfile: apps/server/Dockerfile
     container_name: cavdax-server
     environment:
       - PORT=3000
       - FALKORDB_HOST=falkordb
       - FALKORDB_PORT=6379
+      - NODE_ENV=development
+      - GITHUB_CALLBACK_URL=http://localhost:3001/api/auth/github/callback
+      - CLIENT_URL=http://localhost:5173
     ports:
-      - "3000:3000"
+      - "3001:3000"
+    volumes:
+      - server-sessions:/app/apps/server/data/sessions
     depends_on:
-      - falkordb
+      falkordb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # 3. CAVDAX Porcelain Dark Web HUD
+  client:
+    build:
+      context: .
+      dockerfile: apps/client/Dockerfile
+    container_name: cavdax-client
+    environment:
+      - VITE_API_URL=http://server:3000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - server
+    restart: unless-stopped
 
 volumes:
-  falkordb_data:
+  falkordb-data:
+    driver: local
+  server-sessions:
+    driver: local
 ```
+
+> **Container Lifecycle Hook Invariant**: To guarantee deterministic container compilation, `apps/client/Dockerfile` copies `apps/client/scripts/` prior to `RUN npm install`, ensuring custom postinstall patches (`node scripts/patch-hairline.js`) resolve without layer-caching misses.
 
 ### 6.2 Zero-Blocker Simulation Fallback
 If the FalkorDB Docker container is offline during a local developer evaluation or live demo:
@@ -310,7 +396,7 @@ The **Causal Interception Enclave** (`#enclave-hub-section`) is CAVDAX's core ar
 ┌────────────────────────────────────────────────────────────────────────┐
 │  CORE API GATEWAY (Node.js Express + MCP Protocol Engine)             │
 │  ┌──────────────────────────────┐  ┌────────────────────────────────┐  │
-│  │ Tool Gate: apply_code_change │  │ Tool Gate: check_intent_clear  │  │
+│  │ Tool Gate: apply_code_change │  │ Tool Gate: check_intent_clearance ││
 │  └──────────────┬───────────────┘  └────────────────┬───────────────┘  │
 │                 │                                   │                  │
 │                 ▼                                   ▼                  │
@@ -319,6 +405,7 @@ The **Causal Interception Enclave** (`#enclave-hub-section`) is CAVDAX's core ar
 │  │ - Adjacency Matrix: Extracted_From & Depends_On DAG               │  │
 │  │ - Causal Invalidation: Sparse Matrix Multiply BFS                │  │
 │  │ - Multi-Agent Leases: acquire_decision_lock Concurrency Engine   │  │
+│  │ - Lock Inspection Endpoint: GET /api/mcp/locks                  │  │
 │  └──────────────────────────────────────────────────────────────────┘  │
 └────────────────────────────────────────────────────────────────────────┘
 ```

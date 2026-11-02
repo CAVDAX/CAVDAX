@@ -2765,7 +2765,7 @@ The **Elevated Feature Callout Banner** achieves tangible depth and executive pr
 
 ---
 
-## 35. Settings Panel Ergonomics & Clean Copy Standard
+## 40. Settings Panel Ergonomics & Clean Copy Standard
 
 1. **Zero Raw Hex Code Leakage**:
    - Never display raw CSS hexadecimal color codes (e.g., `#060709`, `#F8FAFC`, `#0F172A`) in user-facing settings, descriptions, or subtext.
@@ -2781,11 +2781,11 @@ The **Elevated Feature Callout Banner** achieves tangible depth and executive pr
 
 ---
 
-## 36. Master Taxonomy of Historical UI/UX Flaws & Modern AI Design Anti-Patterns
+## 41. Master Taxonomy of Historical UI/UX Flaws & Modern AI Design Anti-Patterns
 
 This section codifies the definitive defense guide against recurring usability failures across internet history and the modern wave of generic "AI slop" interfaces. Every engineer and designer working in this codebase must reference these failure modes and enforce the professional antidotes.
 
-### 36.1 Classic UI/UX Anti-Patterns Across Web History
+### 41.1 Classic UI/UX Anti-Patterns Across Web History
 
 #### 1. Mystery Meat Navigation (MMN) & Hidden Critical Paths
 * **Historical Origin**: Coined in 1998 by Vincent Flanders (*Web Pages That Suck*), describing Flash sites that replaced text links with abstract, unlabeled icons or rolling shapes whose destination was invisible until hover or click.
@@ -2829,7 +2829,7 @@ This section codifies the definitive defense guide against recurring usability f
 
 ---
 
-### 36.2 Modern "AI Slop" Design Flaws & Algorithmic Anti-Patterns
+### 41.2 Modern "AI Slop" Design Flaws & Algorithmic Anti-Patterns
 
 When interfaces are generated without disciplined human art direction, LLMs and automated UI generators default to a predictable, fatigue-inducing set of stylistic clichés:
 
@@ -2863,7 +2863,7 @@ When interfaces are generated without disciplined human art direction, LLMs and 
 
 ---
 
-### 36.3 The Professional Antidote Checklist (Pre-Flight Review)
+### 41.3 The Professional Antidote Checklist (Pre-Flight Review)
 
 Before deploying or approving any component, verify against this 5-point audit:
 1. **Can a first-time user identify the primary action within 2 seconds without clicking?** If no, eliminate Mystery Meat Navigation.
@@ -2874,28 +2874,28 @@ Before deploying or approving any component, verify against this 5-point audit:
 
 ---
 
-## 37. Truth in Data, Graph Provenance & Anti-Fake Simulation Standard
+## 42. Truth in Data, Graph Provenance & Anti-Fake Simulation Standard
 
 To preserve institutional trust with software architects, enterprise compliance officers, and hackathon judges, CAVDAX strictly enforces absolute honesty between the underlying data layer and the visual UI surface:
 
-### 37.1 Ban on Fake Database Attribution
+### 42.1 Ban on Fake Database Attribution
 1. **Accurate Engine Labeling**:
    - Never label an in-memory AST parser, synthetic graph, or local JSON representation as `FalkorDB`, `Redis`, or `Neo4j`.
    - The title `FalkorDB Temporal Causal Graph` is reserved strictly for surfaces backed by a live FalkorDB GraphBLAS instance.
    - When visualizing repository ADRs parsed directly from GitHub Markdown trees, label the surface accurately: `Repository Decision Graph · <owner/repo>` with metadata indicating `Derived from <N> ADR files`.
 
-### 37.2 Interactive Action Integrity & Zero-Mock Rule
+### 42.2 Interactive Action Integrity & Zero-Mock Rule
 1. **Real State Mutation**:
    - Never implement test buttons (such as *"Valid decision"* or *"Stale decision"*) that merely append static, hardcoded text strings to a log.
    - Any test or simulation action must instantiate a structured `AgentAction` node with real timestamp, target file, and verdict (`APPROVED` vs `BLOCKED_SUPERSEDED_SOURCE`), appending it and its `GROUNDED_IN` causal edge dynamically onto the canvas.
    - The user must visually see the action node appear in the graph, verifying the causal firewall's behavior in real time.
 
-### 37.3 Resilient Upstream Cache Affordance
+### 42.3 Resilient Upstream Cache Affordance
 1. **Honest Propagation Feedback**:
    - Actions depending on third-party APIs (such as GitHub's Git Trees endpoint after a PR merge) must feature immediate loading spinners (`animate-spin`) and disabled button states during network flight.
    - When GitHub API edge caches lag behind (returning 0 files immediately after a merge), display an informative status note advising the developer of the 10-15s propagation window, rather than freezing the screen or presenting an error.
 
-### 37.4 Mandatory Flexbox Scroll & Lenis Containment
+### 42.4 Mandatory Flexbox Scroll & Lenis Containment
 1. **Three-Point Scroll Armor**:
    - Any scrollable activity log, terminal feed, or drawer encased in a flex container must strictly specify `min-h-0` on its `flex-1` parent to prevent unbounded flex expansion.
    - Every inner `overflow-y-auto` container must declare `data-lenis-prevent` to prevent global smooth-scrolling libraries from intercepting mouse wheel events.
@@ -2904,11 +2904,11 @@ To preserve institutional trust with software architects, enterprise compliance 
 
 ---
 
-## 38. Anti-"AI Slop" Visual Aesthetics, Responsive Micro-Copy & Multi-Format Charts
+## 43. Anti-"AI Slop" Visual Aesthetics, Responsive Micro-Copy & Multi-Format Charts
 
 To prevent CAVDAX from degrading into generic AI-generated template patterns, all UI components, pricing surfaces, and data visualizations must follow these institutional design standards:
 
-### 38.1 Ban on Generic "AI Slop" Gradients
+### 43.1 Ban on Generic "AI Slop" Gradients
 1. **The Iridescent SaaS Gradient Trap**:
    - Never use neon cyan-to-purple or iridescent rainbow gradients (`from-sky-500 via-indigo-500 to-purple-500`, `#38BDF8`, `#A855F7`) on premium, top-tier, or highlighted UI components.
    - Iridescent pastel gradients are subconsciously coded by developers and enterprise architects as low-effort AI template boilerplate (ChatGPT/Copilot defaults).
@@ -2919,7 +2919,7 @@ To prevent CAVDAX from degrading into generic AI-generated template patterns, al
      - Neutral glassmorphic surfaces: `bg-slate-50/60 dark:bg-white/[0.02]` with neutral specular drop shadows (`shadow-[0_8px_30px_rgba(0,0,0,0.04)]`).
      - Liquid wave fills: High-contrast **Obsidian Black / Pure Platinum White** (`bg-slate-950 dark:bg-white` with wave stroke `text-slate-950 dark:text-white`).
 
-### 38.2 Strict 1-Line Typography Budget for Responsive Grid Cards (Anti-Orphan Rule)
+### 43.2 Strict 1-Line Typography Budget for Responsive Grid Cards (Anti-Orphan Rule)
 1. **Never Expand Root Containers as a Formatting Band-Aid**:
    - Widening the container (`max-w-5xl` → `max-w-6xl` or `max-w-7xl`) to prevent a word from wrapping fails on 13" laptops (1280px), iPad split views, and mobile viewports where column width is fixed by screen geometry. It also creates sparse, hollow cards on widescreen monitors.
 2. **The 30-Character / 3–4 Word Budget**:
@@ -2930,22 +2930,22 @@ To prevent CAVDAX from degrading into generic AI-generated template patterns, al
      - *Bad*: `Highlighted Backers Wall plaque` ("plaque" wrapped alone + awkward physical metaphor)
      - *Good*: `Featured Backers Wall` (Exact 21-char pairing with Tier 1)
 
-### 38.3 Multi-Format Interactive Data Visualizations
+### 43.3 Multi-Format Interactive Data Visualizations
 1. **Container-Relative Sliding Pill Switcher**:
-   - When presenting capital allocation, budget breakdowns, or telemetry partitions, provide an interactive Framer Motion sliding pill bar (`[ Cards | Donut | Single Line ]`) using `usePillTracker` to prevent initial mount flying glitches.
+   - When presenting capital allocation, budget breakdowns, or metric partitions, provide an interactive Framer Motion sliding pill bar (`[ Cards | Donut | Single Line ]`) using `usePillTracker` to prevent initial mount flying glitches.
 2. **Zero-Dependency Native SVG Donut Math**:
    - Compute donut charts with native SVG geometry (`viewBox="0 0 200 200"`, radius $r=68$, circumference $C = 427.26$, `strokeDasharray`, `strokeDashoffset`, and `-rotate-90`).
-   - Feature dynamic central telemetry readouts (`100% ALLOCATED` by default, updating to slice details on hover) and bi-directional hover linkage between chart arcs and legend rows.
+   - Feature dynamic central diagnostics readouts (`100% ALLOCATED` by default, updating to slice details on hover) and bi-directional hover linkage between chart arcs and legend rows.
 3. **Continuous Proportional Segmented Line**:
    - Provide a compact single-line stacked strip (height 14px) with hairline segment dividers and micro-metric badges below for high-density dashboard layouts.
 
 ---
 
-## 39. The Causal Interception Enclave: 3D Isometric Theater, Solitary Elevation Math & Concentric Wavefront Propagation
+## 44. The Causal Interception Enclave: 3D Isometric Theater, Solitary Elevation Math & Concentric Wavefront Propagation
 
 The **Causal Interception Enclave** (`#enclave-hub-section`) is the centerpiece architectural theater of CAVDAX, bridging the upstream problem space and the downstream causal execution loop.
 
-### 39.1 Solitary Elevation Geometry & Isometric Coordinate Math
+### 44.1 Solitary Elevation Geometry & Isometric Coordinate Math
 1. **Single-Node Elevation Rule (Anti-Displacement Invariant)**:
    - When a node is hovered or activated, **strictly that solitary node elevates** along its 3D isometric vector axis.
    - All adjacent and neighboring slabs must remain at their ground-plane rest coordinates (`restCoord`), eliminating card displacement and distracting multi-tile lifting.
@@ -2956,7 +2956,7 @@ The **Causal Interception Enclave** (`#enclave-hub-section`) is the centerpiece 
    - Standard `@lucasmarkes/hairline` forces all nodes to elevate on canvas hover and drops all tiles on canvas leave (`leave: () => setActive(-1)`).
    - Our build pipeline patches the library via `scripts/patch-hairline.js` (bound pre-build via `"build": "node scripts/patch-hairline.js && vite build"`), exposing `setActiveTile(idx)` and decoupling pointer canvas departure from React active state.
 
-### 39.2 Dynamic 3D Spatial Camera Tracking
+### 44.2 Dynamic 3D Spatial Camera Tracking
 1. **Perspective Deck Parameters**:
    - Root theater container: `perspective: 1400px`, `transformStyle: preserve-3d`.
    - Camera transitions: `transition: transform 700ms cubic-bezier(0.16, 1, 0.3, 1)`.
@@ -2964,7 +2964,7 @@ The **Causal Interception Enclave** (`#enclave-hub-section`) is the centerpiece 
    - `Stage 0 (CORE)`: Architectural top perspective (`pitch: 30deg`, `ty: 22px`, `scale: 0.94`, `tx: 0px`).
    - `Stages 01..08`: Dynamic orbital tilts focusing and zooming into the active tile (`pitch: 24deg - 32deg`, `scale: 1.07 - 1.08`, `tx: -12px to +14px`).
 
-### 39.3 Concentric Squircle Wavefront Propagation
+### 44.3 Concentric Squircle Wavefront Propagation
 1. **Sequential 1-by-1 Wave Cycle ($4.2\text{s}$ Total)**:
    - Rather than flashing repetitively, wave pulses propagate outward sequentially from innermost to outermost:
      - $t = 0.0\text{s} - 0.95\text{s}$: Inner squircle (`SQUIRCLE_INNER`) scales to $1.42\times$ with specular stroke.
@@ -2972,17 +2972,50 @@ The **Causal Interception Enclave** (`#enclave-hub-section`) is the centerpiece 
      - $t = 1.85\text{s} - 3.45\text{s}$: Outermost squircle (`SQUIRCLE_OUTER`) launches an expansive Expanding WaveFront sweep across the deck to $1.68\times$ with specular echo trailing to $1.78\times$.
      - $t = 3.45\text{s} - 4.20\text{s}$: Rest and settling pause before next cycle.
 
-### 39.4 Precision Fullscreen (F11) Viewport Centering & Docking
+### 44.4 Precision Fullscreen (F11) Viewport Centering & Docking
 1. **Centering Mathematics Over Percentage Multis**:
    - For $100\text{dvh}$ sections, thresholding on viewport multiplier percentages (e.g. $42\%$) triggers premature docking when $450\text{px}$ of the previous section is still visible on 1080p monitors.
    - Centering is calculated strictly as absolute distance from viewport center:
      $$\text{diffCenter} = \left| \left( \text{rect.top} + \frac{\text{rect.height}}{2} \right) - \frac{\text{viewportHeight}}{2} \right| = |\text{rect.top}|$$
    - Docking catches strictly when $\text{diffCenter} < \min(80, \text{viewportHeight} \times 0.08)$ (filling $\ge 92\%$ of the screen).
 
-### 39.5 Unified Keyboard Navigation & Exit Handshakes
+### 44.5 Unified Keyboard Navigation & Exit Handshakes
 1. **Proactive Keyboard Docking**:
    - Entering the view zone ($35\% \le \text{viewport} \le 65\%$) via `ArrowDown`, `PageDown`, `Space`, or `ArrowRight` locks directly into Stage 0 (`CORE`); entering from below via `ArrowUp` or `PageUp` docks at Stage 08.
 2. **Boundary Protection (Double Impulse)**:
    - Pressing `ArrowDown` on Stage 08 or `ArrowUp` on Stage 00 requires a secondary key stroke within $650\text{ms}$ to unlock, preventing accidental scroll blow-through.
 3. **Lenis Global Handshake**:
    - All internal dockings specify `isInternalDock: true` and are exempted from global programmatic scroll interception flags in `App.jsx`, preventing rapid lock-unlock oscillations.
+
+---
+
+## 45. Sponsor Tier Polish, Floating Toast Conversion & De-emphasized Per-Tier Border Styling
+
+To maintain an uncompromised, professional engineering aesthetic on commercial and community sponsorship surfaces:
+
+### 45.1 Strict Ban on AI Tags, Suffixes & Machine Badges
+1. **Zero AI Evaluation Tags**:
+   - Never render artificial intelligence badges such as `VERIFIED SPONSOR • CORE SUPPORTER` or append evaluation suffixes like `(Eval Pass)` to tier cards, headers, or toast notifications.
+   - Sponsorship tiers must communicate human-centered, institutional backing: `Cookie Patron`, `2 Cups Sponsor`, `Core Supporter`.
+
+### 45.2 Floating Fading Bottom Toast Notifications
+1. **Elimination of Static Header Banners**:
+   - Persistent inline header badges (e.g. `Hackathon Window Active`) clutter the primary navigation hierarchy and trigger visual banner blindness.
+   - Transform stateful notifications into a self-dismissing, floating bottom toast notification (`fixed bottom-6 left-1/2 -translate-x-1/2 z-50`) with an automatic 6-second exit animation (`AnimatePresence`).
+
+### 45.3 Semantic Active Sponsor Tier Card Border Disambiguation
+1. **Disentangled Active Tier Glow**:
+   - Active sponsor cards must never copy or mimic the Popular card's golden amber halo (`border-amber-400/80 shadow-[0_0_24px_rgba(245,158,11,0.2)]`).
+   - Active states must reflect the intrinsic semantic identity of each individual tier:
+     - **Tier 1 (Cookie)**: Warm bronze hairline (`border-amber-700/60 shadow-[0_0_18px_rgba(180,83,9,0.18)]`).
+     - **Tier 2 (2 Cups - Popular)**: Vibrant golden amber double-bezel (`border-amber-400/80 shadow-[0_0_24px_rgba(245,158,11,0.25)]`).
+     - **Tier 3 (Core Supporter)**: High-contrast crisp slate-white executive halo (`border-white/80 shadow-[0_0_24px_rgba(255,255,255,0.15)]`).
+
+### 45.4 Seamless 1-Click Direct Tier Switching
+1. **Direct Mutability Contract**:
+   - Users and evaluators with an active tier must be able to switch to another tier directly in 1 click (`Switch to Core`, `Switch to 2 Cups`), without having to deactivate or reset their existing tier first.
+   - Backend evaluation handlers (`POST /api/billing/activate-evaluation-sponsor`) must scope user identity defensively, cleanly filtering out previous records to avoid `ReferenceError` crashes.
+
+### 45.5 Typographic Balance on Card Subtitles (Anti-Orphan Rule)
+1. **Zero Lonely Words**:
+   - In directory headers and card subtexts, use CSS `[text-wrap:balance]` alongside non-breaking spaces (`&nbsp;` / `\u00A0`) to guarantee that the final word (e.g. `MCP tools.`) never drops alone onto a dangling line.
