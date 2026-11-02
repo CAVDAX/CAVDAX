@@ -100,6 +100,8 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
   const [isGithubHovered, setIsGithubHovered] = useState(false);
 
   const [isTourOpen, setIsTourOpen] = useState(false);
+  const [userApiKey, setUserApiKey] = useState('');
+  const [isKeyLoading, setIsKeyLoading] = useState(false);
 
 
 
@@ -231,6 +233,32 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
 
 
+  useEffect(() => {
+    if (!githubUser || !githubUser.login) {
+      setUserApiKey('');
+      return;
+    }
+    let isMounted = true;
+    setIsKeyLoading(true);
+    fetch('/api/user/api-key', { credentials: 'include' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && data.success && data.apiKey) {
+          setUserApiKey(data.apiKey);
+        }
+      })
+      .catch((err) => {
+        console.warn('[CAVDAX] Could not fetch user API key for MCP setup:', err);
+      })
+      .finally(() => {
+        if (isMounted) setIsKeyLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [githubUser]);
+
   const handleGithubConnect = () => {
 
     window.location.href = '/api/auth/github';
@@ -283,51 +311,33 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
 
   // Matrix of configs: [transportMode][client]
+  const effectiveKey = userApiKey || 'YOUR_CAVDAX_API_KEY';
 
   const clientConfigs = {
-
     sse: {
-
       cursor: {
-
         name: 'Cursor IDE',
-
         desc: 'AI-first code editor connecting over remote HTTP Server-Sent Events',
-
         file: '.cursor/mcp.json',
-
         snippet: JSON.stringify({
-
           mcpServers: {
-
             cavdax: {
-
-              url: "https://cavdax.sahnirmaan.live/api/mcp/sse"
-
+              url: "https://cavdax.sahnirmaan.live/api/mcp/sse",
+              headers: {
+                Authorization: `Bearer ${effectiveKey}`
+              }
             }
-
           }
-
         }, null, 2),
-
-        notes: 'Save in project root under .cursor/mcp.json or in Cursor Settings > MCP. Zero local install required.'
-
+        notes: 'Save in project root under .cursor/mcp.json or in Cursor Settings > MCP. Tool execution requests are authenticated via your CAVDAX Bearer API key.'
       },
-
       claudecode: {
-
         name: 'Claude Code CLI',
-
         desc: 'Anthropic official agentic coding tool for terminal environments',
-
         file: 'Terminal Command',
-
-        snippet: 'claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse',
-
-        notes: 'Run directly inside your git repository root before launching claude.'
-
+        snippet: `claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Authorization: Bearer ${effectiveKey}"`,
+        notes: 'Run directly inside your git repository root before launching claude. Passes your Bearer API key via HTTP headers.'
       },
-
       claude: {
         name: 'Claude Desktop',
         desc: 'Official Anthropic Claude desktop client for macOS and Windows',
@@ -336,162 +346,95 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
           mcpServers: {
             cavdax: {
               command: "npx",
-              args: ["-y", "mcp-proxy", "https://cavdax.sahnirmaan.live/api/mcp/sse"]
+              args: [
+                "-y",
+                "mcp-proxy",
+                "https://cavdax.sahnirmaan.live/api/mcp/sse",
+                "--header",
+                `Authorization: Bearer ${effectiveKey}`
+              ]
             }
           }
         }, null, 2),
-        notes: 'Claude Desktop spawns stdio processes; mcp-proxy bridges to the live SSE stream. Or switch to the NPX (stdio) tab for local execution.'
+        notes: 'Claude Desktop spawns stdio processes; mcp-proxy bridges to the live SSE stream with your Bearer API key. Or switch to the Local NPX (stdio) tab for zero-key local execution.'
       },
-
       windsurf: {
-
         name: 'Windsurf IDE',
-
         desc: 'Codeium Windsurf AI IDE with native remote MCP SSE support',
-
         file: '~/.codeium/windsurf/mcp_config.json',
-
         snippet: JSON.stringify({
-
           mcpServers: {
-
             cavdax: {
-
-              serverUrl: "https://cavdax.sahnirmaan.live/api/mcp/sse"
-
+              serverUrl: "https://cavdax.sahnirmaan.live/api/mcp/sse",
+              headers: {
+                Authorization: `Bearer ${effectiveKey}`
+              }
             }
-
           }
-
         }, null, 2),
-
-        notes: 'Compatible with Windsurf Cascade agent using MCP protocol version 2024-11-05.'
-
+        notes: 'Compatible with Windsurf Cascade agent using MCP protocol version 2024-11-05. Authenticated via Bearer API key.'
       }
-
     },
-
     stdio: {
-
       cursor: {
-
         name: 'Cursor IDE',
-
         desc: 'Local stdio execution backed by published @cavdax/mcp-server package',
-
         file: '.cursor/mcp.json',
-
         snippet: JSON.stringify({
-
           mcpServers: {
-
             cavdax: {
-
               command: "npx",
-
               args: ["-y", "@cavdax/mcp-server"],
-
               env: {
-
                 FALKORDB_HOST: "localhost",
-
                 FALKORDB_PORT: "6379"
-
               }
-
             }
-
           }
-
         }, null, 2),
-
-        notes: 'Connects to your local FalkorDB container on port 6379 with sub-millisecond GraphBLAS traversal.'
-
+        notes: 'Connects to your local FalkorDB container on port 6379 with sub-millisecond GraphBLAS traversal. Zero API key required.'
       },
-
       claudecode: {
-
         name: 'Claude Code CLI',
-
         desc: 'Anthropic agentic CLI running local stdio MCP via NPX',
-
         file: 'Terminal Command',
-
         snippet: 'claude mcp add cavdax -- npx -y @cavdax/mcp-server',
-
-        notes: 'Executes the official published @cavdax/mcp-server binary via npx directly in your terminal.'
-
+        notes: 'Executes the official published @cavdax/mcp-server binary via npx directly in your terminal. Zero API key required.'
       },
-
       claude: {
-
         name: 'Claude Desktop',
-
         desc: 'Local stdio process spawned by Claude Desktop with FalkorDB environment',
-
         file: 'claude_desktop_config.json',
-
         snippet: JSON.stringify({
-
           mcpServers: {
-
             cavdax: {
-
               command: "npx",
-
               args: ["-y", "@cavdax/mcp-server"],
-
               env: {
-
                 FALKORDB_HOST: "localhost",
-
                 FALKORDB_PORT: "6379"
-
               }
-
             }
-
           }
-
         }, null, 2),
-
-        notes: 'Claude Desktop will spawn npx @cavdax/mcp-server as an isolated child process.'
-
+        notes: 'Launches local FalkorDB stdio driver. Zero API key required — execution runs directly on your local machine.'
       },
-
       windsurf: {
-
         name: 'Windsurf IDE',
-
         desc: 'Local stdio execution for Windsurf Cascade agent',
-
         file: '~/.codeium/windsurf/mcp_config.json',
-
         snippet: JSON.stringify({
-
           mcpServers: {
-
             cavdax: {
-
               command: "npx",
-
               args: ["-y", "@cavdax/mcp-server"]
-
             }
-
           }
-
         }, null, 2),
-
-        notes: 'Spawns local stdio proxy intercepting all Cascade filesystem modifications.'
-
+        notes: 'Spawns local stdio proxy intercepting all Cascade filesystem modifications. Zero API key required.'
       }
-
     }
-
   };
-
-
 
   const cliCommands = {
 
@@ -1320,11 +1263,21 @@ EXECUTION WORKFLOW:
 
                 </div>
 
+                <div className="flex items-center gap-3">
+                  {transportMode === 'sse' && (
+                    <a
+                      href={githubUser ? "/profile" : "/api/auth/github?returnTo=/connect-mcp"}
+                      className="flex items-center gap-1.5 text-xs font-mono font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      title={githubUser ? "View or copy your CAVDAX API Key in Profile" : "Connect GitHub to generate your CAVDAX API Key"}
+                    >
+                      <KeyRound className="w-3.5 h-3.5 text-slate-400" />
+                      <span>Get Your CAVDAX API Key</span>
+                    </a>
+                  )}
 
+                  <button
 
-                <button
-
-                  onClick={() => handleCopy(activeClient + transportMode, activeConfig.snippet)}
+                    onClick={() => handleCopy(activeClient + transportMode, activeConfig.snippet)}
 
                   className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300 hover:text-white cursor-pointer transition-colors"
 
@@ -1352,7 +1305,8 @@ EXECUTION WORKFLOW:
 
                   )}
 
-                </button>
+                  </button>
+                </div>
 
               </div>
 
