@@ -34,7 +34,11 @@ import {
 
   Package,
 
-  FileCheck2
+  FileCheck2,
+
+  Eye,
+
+  EyeOff
 
 } from 'lucide-react';
 
@@ -102,6 +106,7 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [userApiKey, setUserApiKey] = useState('');
   const [isKeyLoading, setIsKeyLoading] = useState(false);
+  const [isKeyRevealed, setIsKeyRevealed] = useState(false);
 
 
 
@@ -312,6 +317,8 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
   // Matrix of configs: [transportMode][client]
   const effectiveKey = userApiKey || 'YOUR_CAVDAX_API_KEY';
+  const maskedKey = userApiKey ? `${userApiKey.slice(0, 14)}••••••••••••••••${userApiKey.slice(-4)}` : 'YOUR_CAVDAX_API_KEY';
+  const displayKey = isKeyRevealed ? effectiveKey : maskedKey;
 
   const clientConfigs = {
     sse: {
@@ -329,6 +336,16 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
             }
           }
         }, null, 2),
+        displaySnippet: JSON.stringify({
+          mcpServers: {
+            cavdax: {
+              url: "https://cavdax.sahnirmaan.live/api/mcp/sse",
+              headers: {
+                Authorization: `Bearer ${displayKey}`
+              }
+            }
+          }
+        }, null, 2),
         notes: 'Save in project root under .cursor/mcp.json or in Cursor Settings > MCP. Tool execution requests are authenticated via your CAVDAX Bearer API key.'
       },
       claudecode: {
@@ -336,6 +353,7 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
         desc: 'Anthropic official agentic coding tool for terminal environments',
         file: 'Terminal Command',
         snippet: `claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Authorization: Bearer ${effectiveKey}"`,
+        displaySnippet: `claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Authorization: Bearer ${displayKey}"`,
         notes: 'Run directly inside your git repository root before launching claude. Passes your Bearer API key via HTTP headers.'
       },
       claude: {
@@ -356,6 +374,20 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
             }
           }
         }, null, 2),
+        displaySnippet: JSON.stringify({
+          mcpServers: {
+            cavdax: {
+              command: "npx",
+              args: [
+                "-y",
+                "mcp-proxy",
+                "https://cavdax.sahnirmaan.live/api/mcp/sse",
+                "--header",
+                `Authorization: Bearer ${displayKey}`
+              ]
+            }
+          }
+        }, null, 2),
         notes: 'Claude Desktop spawns stdio processes; mcp-proxy bridges to the live SSE stream with your Bearer API key. Or switch to the Local NPX (stdio) tab for zero-key local execution.'
       },
       windsurf: {
@@ -368,6 +400,16 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
               serverUrl: "https://cavdax.sahnirmaan.live/api/mcp/sse",
               headers: {
                 Authorization: `Bearer ${effectiveKey}`
+              }
+            }
+          }
+        }, null, 2),
+        displaySnippet: JSON.stringify({
+          mcpServers: {
+            cavdax: {
+              serverUrl: "https://cavdax.sahnirmaan.live/api/mcp/sse",
+              headers: {
+                Authorization: `Bearer ${displayKey}`
               }
             }
           }
@@ -1262,7 +1304,7 @@ EXECUTION WORKFLOW:
 
                 </div>
 
-                <div className="flex items-center gap-3.5 sm:gap-4">
+                <div className="flex items-center gap-3 sm:gap-3.5">
                   {transportMode === 'sse' && (
                     <a
                       href={githubUser ? "/profile" : "/api/auth/github?returnTo=/connect-mcp"}
@@ -1272,6 +1314,30 @@ EXECUTION WORKFLOW:
                       <KeyRound className="w-3.5 h-3.5 text-slate-400" />
                       <span>Get Your CAVDAX API Key</span>
                     </a>
+                  )}
+
+                  {transportMode === 'sse' && userApiKey && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsKeyRevealed(!isKeyRevealed);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 hover:text-white transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                      title={isKeyRevealed ? "Mask API key in snippet" : "Reveal API key in snippet"}
+                    >
+                      {isKeyRevealed ? (
+                        <>
+                          <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Hide</span>
+                        </>
+                      ) : (
+                        <>
+                          <Eye className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Reveal</span>
+                        </>
+                      )}
+                    </button>
                   )}
 
                   {transportMode === 'sse' && (
@@ -1305,7 +1371,7 @@ EXECUTION WORKFLOW:
 
               <pre className="p-4 text-xs font-mono overflow-x-auto leading-relaxed custom-scrollbar selection:bg-white/20">
 
-                <code>{renderSyntaxCode(activeConfig.snippet, activeClient)}</code>
+                <code>{renderSyntaxCode(activeConfig.displaySnippet || activeConfig.snippet, activeClient)}</code>
 
               </pre>
 
