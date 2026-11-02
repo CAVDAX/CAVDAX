@@ -8,13 +8,12 @@
   <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
   <p>
     Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong><br />
-    <strong>🏆 Primary Track: Track 2 — Agent Memory and Coordination</strong><br />
-    <strong>⚡ Secondary Track: Track 1 — Agents That Act on Connected Data</strong>
+    <strong>Primary Track: Track 2 — Agent Memory and Coordination</strong> &bull; <strong>Secondary Track: Track 1 — Agents That Act on Connected Data</strong>
   </p>
 
   <p>
     <a href="https://youtu.be/Nhdd7spj1RA">
-      <img src="https://img.shields.io/badge/▶%20Watch%2010--Minute%20Deep--Dive%20Demo%20Video-YouTube%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch 10-Minute Deep-Dive Demo Video" />
+      <img src="https://img.shields.io/badge/YouTube-10--Minute%20Demo%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Demo Walkthrough" />
     </a>
     <a href="https://cavdax.sahnirmaan.live/">
       <img src="https://img.shields.io/badge/Live%20Production%20Demo-cavdax.sahnirmaan.live-10B981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" />
@@ -37,7 +36,7 @@
 
 ---
 
-## ⚡ The Fundamental Flaw of Modern Coding Agents
+## The Fundamental Flaw of Modern Coding Agents
 
 Modern autonomous coding agents (Claude Code, Cursor Composer, Windsurf, GitHub Copilot) rely on **Vector RAG (retrieval-augmented generation)** or lexical search to fetch repository context before modifying code.
 
@@ -48,74 +47,48 @@ Modern autonomous coding agents (Claude Code, Cursor Composer, Windsurf, GitHub 
 
 ---
 
-## 🚀 5 Architectural Pillars: Beyond Vector RAG & Naive Linters
+## The CAVDAX Solution: Graph-Grounded Enclosed Execution
 
-CAVDAX provides production engineering organizations with an impenetrable moat against autonomous agent hallucinations:
-
-| # | Competitive Moat | Problem in Traditional Agent Stacks | CAVDAX GraphBLAS Solution |
-|---|---|---|---|
-| **1** | **Proactive Intent Clearance** | Agents burn hundreds of tokens writing obsolete code before discovering a policy violation. | Agents query `check_intent_clearance` in **< 2ms pre-flight**. FalkorDB validates intent before a single byte of code is generated. |
-| **2** | **Zero-Config Heuristic Parser** | Rigid tools fail unless engineering teams hand-craft strict YAML frontmatter on every document. | Intelligent regex heuristics extract titles, status, and supersessions from **plain unstructured Markdown, RFCs, and Notion exports**. |
-| **3** | **Distributed Decision Locks** | Multiple autonomous agents (e.g., dual Devin or Claude Code instances) edit conflicting decisions concurrently. | `DecisionLockManager` provides **leased concurrency locks** (`acquire_decision_lock`, `release_decision_lock`) to eliminate multi-agent race conditions. |
-| **4** | **Automated CI/CD PR Gate** | Manual CLI tools require local developer execution and are ignored during pull requests. | Automated **GitHub Action (`cavdax-gate.yml`)** scans changed files on PRs, blocks stale code, and outputs rich Markdown summaries to `$GITHUB_STEP_SUMMARY`. |
-| **5** | **Out-of-Band Divergence Radar** | Developers remain unaware when a teammate commits a breaking ADR until an agent fails in production. | **Instant Out-of-Band Alerts** dispatch via **Resend HTML email** and **Service Worker Web Push** bound to decision blast radius. |
-
----
-
-## 🛡️ The CAVDAX Solution: Graph-Grounded Enclosed Execution
-
-**CAVDAX** converts repository artifacts into an active, temporal causal Directed Acyclic Graph (DAG) stored inside **FalkorDB**:
-
-```
-[Source: ADR / Commit] ──(:EXTRACTED_FROM)──> [Fact: Verified Claim] ──(:DEPENDS_ON)──> [Decision] ──(:GROUNDED_IN)──> [AgentAction]
-```
+**CAVDAX** converts repository engineering artifacts into an active, temporal causal Directed Acyclic Graph (DAG) stored inside **FalkorDB**.
 
 When a superseding commit or ADR arrives:
-1. **Deterministic Ingestion:** Real YAML frontmatter (`supersedes: ADR-001`) is parsed instantly without probabilistic LLM hops.
-2. **Cascading Invalidation Wave:** FalkorDB establishes a `[:SUPERSEDES]` relationship and cascades status flags across the DAG in **< 4ms** via GraphBLAS sparse matrix operations.
-3. **Enclosed MCP Execution Gate:** The agent's file modification tool (`apply_code_change`) is enclosed inside an internal Cypher gate. If any ancestor source or fact has been superseded, the gate **hard-rejects** execution (`BLOCKED_SUPERSEDED_SOURCE`). Zero invalid bytes are written.
-4. **Act IV Revalidation Loop:** The agent is guided to create a fresh decision grounded in the active source, enabling safe, verified execution.
+1. **Deterministic Ingestion:** Frontmatter (`supersedes: ADR-001`) and commit messages are parsed deterministically without probabilistic LLM hops.
+2. **Cascading Invalidation Wave:** FalkorDB establishes a `[:SUPERSEDES]` relationship and cascades invalidation status flags across the DAG in **< 4ms** via GraphBLAS sparse matrix operations.
+3. **Enclosed MCP Execution Gate:** The agent's file modification tool (`apply_code_change`) is enclosed inside an internal parameterized Cypher gate. If any ancestor source or fact has been superseded, the gate **hard-blocks** execution (`BLOCKED_SUPERSEDED_SOURCE`). Zero invalid bytes are written to disk.
+4. **Dynamic Invalidation Recovery:** The agent is prompted to invoke `revalidate_decision` to ground actions in active sources, enabling safe, verified execution.
 
 ---
 
-## 🧬 Graph Data Model & Causal Ontology
+## Graph Data Model & Causal Ontology
 
 CAVDAX models engineering knowledge and agent actions using a formal 4-tier Causal Directed Acyclic Graph (DAG) optimized for sub-millisecond GraphBLAS traversal in FalkorDB:
 
 ```mermaid
-flowchart TD
-    subgraph ActivePath ["Active Invariant Path (Grounded)"]
+graph TD
+    subgraph Active_Path["Active Invariant Chain (Valid)"]
         direction TB
-        ADR002["Source: ADR-002<br/>status: ACTIVE"]
-        FOAuth["Fact: F-OAuth2-v2<br/>claim: 'OAuth2 Enforced'<br/>is_stale: false"]
-        DEC103["Decision: DEC-103<br/>status: VALID"]
-        Action["AgentAction: apply_code_change<br/>verdict: APPROVED"]
+        S2["(:Source {id: 'ADR-002', status: 'ACTIVE'})"]
+        F2["(:Fact {id: 'F-OAuth2-v2', is_stale: false})"]
+        D2["(:Decision {id: 'DEC-103', status: 'VALID'})"]
+        A1["(:AgentAction {verdict: 'APPROVED'})"]
 
-        ADR002 -->|EXTRACTED_FROM| FOAuth
-        FOAuth -->|DEPENDS_ON| DEC103
-        DEC103 -->|GROUNDED_IN| Action
+        S2 -- "[:EXTRACTED_FROM]" --> F2
+        F2 -- "[:DEPENDS_ON]" --> D2
+        D2 -- "[:GROUNDED_IN]" --> A1
     end
 
-    subgraph StalePath ["Superseded / Invalidated Path"]
+    subgraph Stale_Path["Superseded Chain (Invalidated)"]
         direction TB
-        DEC102["Decision: DEC-102<br/>status: INVALIDATED"]
-        FAuth["Fact: F-Auth-v1<br/>claim: 'TokenAuth v1'<br/>is_stale: true"]
-        ADR001["Source: ADR-001<br/>status: SUPERSEDED"]
+        S1["(:Source {id: 'ADR-001', status: 'SUPERSEDED'})"]
+        F1["(:Fact {id: 'F-Auth-v1', is_stale: true})"]
+        D1["(:Decision {id: 'DEC-102', status: 'INVALIDATED'})"]
 
-        DEC102 -->|DEPENDS_ON| FAuth
-        FAuth -->|EXTRACTED_FROM| ADR001
+        S1 -- "[:EXTRACTED_FROM]" --> F1
+        F1 -- "[:DEPENDS_ON]" --> D1
     end
 
-    ADR002 ==>|SUPERSEDES| ADR001
-    DEC103 ==>|REPLACES| DEC102
-
-    classDef active fill:#064e3b,stroke:#059669,stroke-width:2px,color:#ecfdf5;
-    classDef stale fill:#4c0519,stroke:#e11d48,stroke-width:2px,color:#ffe4e6;
-    classDef action fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#e0e7ff;
-
-    class ADR002,FOAuth,DEC103 active;
-    class ADR001,FAuth,DEC102 stale;
-    class Action action;
+    S2 -. "[:SUPERSEDES]" .-> S1
+    D2 -. "[:REPLACES]" .-> D1
 ```
 
 ### 1. Node Schemas & Labels
@@ -151,7 +124,21 @@ flowchart TD
 
 ---
 
-## 📐 System Architecture & Flowchart Diagrams
+## 5 Architectural Pillars: Beyond Vector RAG & Naive Linters
+
+CAVDAX provides production engineering organizations with an architectural defense against autonomous agent hallucinations:
+
+| # | Competitive Moat | Problem in Traditional Agent Stacks | CAVDAX GraphBLAS Solution |
+|---|---|---|---|
+| **1** | **Proactive Intent Clearance** | Agents burn hundreds of tokens writing obsolete code before discovering a policy violation. | Agents query `check_intent_clearance` in **< 2ms pre-flight**. FalkorDB validates intent before a single byte of code is generated. |
+| **2** | **Zero-Config Heuristic Parser** | Rigid tools fail unless engineering teams hand-craft strict YAML frontmatter on every document. | Intelligent regex heuristics extract titles, status, and supersessions from **plain unstructured Markdown, RFCs, and Notion exports**. |
+| **3** | **Distributed Decision Locks** | Multiple autonomous agents (e.g., dual Devin or Claude Code instances) edit conflicting decisions concurrently. | `DecisionLockManager` provides **leased concurrency locks** (`acquire_decision_lock`, `release_decision_lock`) to eliminate multi-agent race conditions. |
+| **4** | **Automated CI/CD PR Gate** | Manual CLI tools require local developer execution and are ignored during pull requests. | Automated **GitHub Action (`cavdax-gate.yml`)** scans changed files on PRs, blocks stale code, and outputs rich Markdown summaries to `$GITHUB_STEP_SUMMARY`. |
+| **5** | **Out-of-Band Divergence Radar** | Developers remain unaware when a teammate commits a breaking ADR until an agent fails in production. | **Instant Out-of-Band Alerts** dispatch via **Resend HTML email** and **Service Worker Web Push** bound to decision blast radius. |
+
+---
+
+## System Architecture & Execution Flow
 
 ### 1. End-to-End System Architecture Flowchart
 
@@ -426,7 +413,7 @@ sequenceDiagram
 
 ---
 
-## 📸 Production Interface Showcase
+## Production Interface Showcase
 
 Captured directly from our live production deployment at [https://cavdax.sahnirmaan.live/](https://cavdax.sahnirmaan.live/):
 
@@ -468,7 +455,7 @@ Captured directly from our live production deployment at [https://cavdax.sahnirm
 
 ---
 
-## 📡 Out-of-Band Divergence Radar & Real-Time Alerts
+## Out-of-Band Divergence Radar & Real-Time Alerts
 
 While CAVDAX's enclosed MCP gate (`apply_code_change`) prevents active coding agents from writing stale code in real-time, production engineering is fundamentally asynchronous. If a security lead or teammate merges `ADR-002` at 10:00 AM deprecating TokenAuth v1, an offline developer's planned implementation decision (`DEC-102`) is instantly superseded.
 
@@ -512,7 +499,7 @@ For live hackathon pitches and judging evaluations:
 
 ---
 
-## 🔬 Core Cypher Queries (FalkorDB GraphBLAS)
+## Core Cypher Queries (FalkorDB GraphBLAS)
 
 CAVDAX leverages FalkorDB's linear-algebraic matrix engine to run deep multi-hop traversals in sub-millisecond timeframes.
 
@@ -582,7 +569,7 @@ RETURN newDecision.id AS active_decision_id, oldDecision.id AS archived_decision
 
 ---
 
-## 📊 Empirical Benchmarks
+## Empirical Benchmarks
 
 ### 1. Vector RAG vs. CAVDAX (10 Engineering Scenarios)
 Evaluated via `node benchmark/evaluate.js`:
@@ -621,7 +608,7 @@ Evaluated via `node benchmark/scale_generator.js`:
 
 ---
 
-## 🎬 Live Demo: The 4-Act Storyline
+## Live Demo: The 4-Act Storyline
 
 The Web HUD features an interactive 4-Act stepper designed for video demonstration:
 
@@ -632,7 +619,7 @@ The Web HUD features an interactive 4-Act stepper designed for video demonstrati
 
 ---
 
-## 🌐 Live Production Deployment
+## Live Production Deployment
 
 CAVDAX is deployed and running live in production:
 👉 **[https://cavdax.sahnirmaan.live/](https://cavdax.sahnirmaan.live/)**
@@ -645,7 +632,7 @@ CAVDAX is deployed and running live in production:
 
 ---
 
-## 🖥️ Web HUD Multi-Route Topology (9 Operational Views)
+## Web HUD Multi-Route Topology (9 Operational Views)
 
 The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain operational interface spanning 9 specialized views:
 
@@ -661,7 +648,7 @@ The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain oper
 
 ---
 
-## 🔒 Enterprise Security Hardening & Cloudflare Zero-Trust Standard
+## Enterprise Security Hardening & Cloudflare Zero-Trust Standard
 
 CAVDAX enforces a mandatory **7-Phase Cloudflare Security & Pen-Test Audit Standard (Rule 25)** across all runtime, API, and MCP layers:
 
@@ -683,7 +670,7 @@ CAVDAX implements comprehensive defense-in-depth security across both API and ru
 
 ---
 
-## 🌐 Production SEO & Structured Metadata Suite
+## Production SEO & Structured Metadata Suite
 
 The client application includes an enterprise-grade SEO and search discovery infrastructure:
 
@@ -694,7 +681,7 @@ The client application includes an enterprise-grade SEO and search discovery inf
 
 ---
 
-## 🚀 Quickstart Guide
+## Quickstart Guide
 
 ### Option 1: Docker Compose (Recommended)
 Launch the entire mesh (FalkorDB + Server + Web HUD) with one command:
@@ -725,7 +712,7 @@ npm run client
 
 ---
 
-## 🔌 Model Context Protocol (MCP) Integration & Client Setup
+## Model Context Protocol (MCP) Integration & Client Setup
 
 CAVDAX implements the Anthropic Model Context Protocol (MCP) specification `2024-11-05` to enclose autonomous coding agents (Claude Code, Cursor IDE, Claude Desktop, Windsurf/Roo Code) behind a FalkorDB GraphBLAS causal barrier.
 
@@ -855,7 +842,7 @@ npx cavdax check --pr <number>
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 CAVDAX/
@@ -901,7 +888,7 @@ CAVDAX/
 
 ---
 
-## 👥 Team & Attribution
+## Team & Attribution
 
 Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**:
 
