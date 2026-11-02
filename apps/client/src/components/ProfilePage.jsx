@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Compass, User, Copy, Check, CheckCircle2, Lock, Terminal,
   SlidersHorizontal, Key, HardDrive, AlertTriangle, RefreshCw, Heart, ExternalLink, LogOut, Github, Eye, EyeOff,
-  ShieldCheck, Award, Gauge, KeyRound
+  ShieldCheck, Award, Gauge, KeyRound, Cable
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
@@ -1493,6 +1493,21 @@ export default function ProfilePage({
                       </>
                     )}
                   </button>
+                  {onOpenMcpPage && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        onOpenMcpPage();
+                      }}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer shrink-0"
+                      title="Open MCP Setup Guide"
+                      aria-label="Open MCP Setup Guide"
+                    >
+                      <Cable className="w-3 h-3 text-slate-400" />
+                      <span>SETUP</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -2404,6 +2419,21 @@ export default function ProfilePage({
                     </>
                   )}
                 </button>
+                {onOpenMcpPage && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      onOpenMcpPage();
+                    }}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white text-[10px] font-mono font-bold transition-all cursor-pointer shrink-0"
+                    title="Open MCP Setup Guide"
+                    aria-label="Open MCP Setup Guide"
+                  >
+                    <Cable className="w-3 h-3 text-slate-400" />
+                    <span>SETUP</span>
+                  </button>
+                )}
               </div>
             </div>
           )}
