@@ -150,6 +150,54 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
    - **API Liveness Verification**:
      - After any production update, verify that /api/* endpoints respond with standard application JSON/redirects and never proxy 502/503 bad gateway envelopes.
 
+0l. **Tier-1 Open-Source Documentation & README Engineering Standards**:
+   - **Zero Consumer Emojis in Section Headings**:
+     - Strictly ban consumer emojis (`## ⚡`, `## 🚀`, `## 🛡️`, `## 🧬`, `## 📸`, `## 📡`) in Markdown headings.
+     - Use clean, declarative typography (`## The Fundamental Flaw of Vector RAG`, `## System Architecture & Execution Flow`). Emojis break Table-of-Contents generators, look amateurish, and scream AI-generated boilerplate.
+   - **Hero Badge Harmony & Single-Phrase Shields.io Invariant**:
+     - Every badge in the hero array MUST share an identical height (exact 28px `style=for-the-badge`).
+     - Format Shields.io badges as `<service>-<action/version>-<color>` without duplicating phrases between label and message (e.g. `[ YouTube | 10-Minute Demo Walkthrough ]`, NOT `[ ▶ Watch 10-Minute Deep-Dive Demo Video | YouTube Walkthrough ]`).
+     - Immediately add official package version and Sigstore provenance badges upon npm publishing.
+     - Never repeat duplicate badges (e.g. double Live Demo links).
+   - **Hackathon Track Humility**:
+     - Never place `🏆` (trophy) next to submission track names before judging; trophy icons imply winning an award before evaluation. Use clean objective typographic metadata or pill badges.
+   - **Canonical Technical Narrative Progression**:
+     - Technical architecture READMEs must strictly follow the canonical industry narrative:
+       1. **The Problem** (The architectural failure mode / why status quo fails)
+       2. **The Solution** (The core paradigm shift / graph-grounded execution)
+       3. **Formal Causal / Mathematical Ontology** (Graph nodes, edges, invariants)
+       4. **Architectural Moats & Capabilities** (Competitive pillar matrix)
+       5. **Execution Architecture & Flowcharts** (Multi-plane diagrams)
+       6. **Empirical Benchmarks** (Reproducible measurements)
+       7. **Quickstart & Deployment** (Docker, local run)
+       8. **Protocol / Client Integration** (MCP configuration, API schemas)
+
+0m. **Monochromatic, Theme-Adaptive Mermaid Invariant**:
+   - **Ban on Saturated Color Fills (`classDef`)**:
+     - Never use hardcoded green (`#064e3b`), red (`#4c0519`), or indigo (`#1e1b4b`) block fills in documentation Mermaid flowcharts.
+     - Standardize strictly on GitHub-native monochromatic architecture styling: clean black/white/slate borders and fills that automatically inherit GitHub's native light and dark themes.
+   - **Standard Graph Semantic Notation**:
+     - Label nodes using clean graph schema notation: `(:Source {id: 'ADR-001', status: 'ACTIVE'})`.
+     - Represent semantic edges cleanly: `-- "[:EXTRACTED_FROM]" -->` and evolutionary/invalidation bridges with dashed lines: `-. "[:SUPERSEDES]" .->`.
+
+0n. **Documentation Screenshot Capture & Kinetic Roller Freeze Invariant**:
+   - **Zero Motion Blur / Kinetic Double-Exposure Invariant**:
+     - When taking portfolio or documentation screenshots of pages with rotating or kinetic text (e.g. `KineticRollingHeadline`), NEVER capture during in-flight CSS transitions or interval animations.
+     - Always freeze the text in the DOM to a single stationary state before taking the screenshot to eliminate overlapping, ghosted text.
+   - **2x Retina Resolution Standard**:
+     - Always capture documentation screenshots at 2x Retina resolution (`deviceScaleFactor: 2`, 2880×1800 for 1440×900) using native browser automation or Lanczos resampling so UI chrome, fonts, and borders remain crystal clear on high-DPI displays.
+
+0o. **Bento Grid Subtext Density (< 12 Words Rule)**:
+   - **Strict Ban on Multi-Sentence Paragraphs in Telemetry Bento Cards**:
+     - Bento cards containing interactive visual simulators, desync meters, direct-write alerts, or cascade loss widgets must NOT contain dense 20–30 word explanatory paragraphs.
+     - Enforce a strict single-line punchy subtext rule (< 12 words) that sets the context and allows the visual telemetry widget below it to deliver the technical punchline without visual clutter.
+
+0p. **Remote SSE vs SPA Fallback Routing Trap**:
+   - **Backend Route Integrity**:
+     - Remote SSE endpoints in client configurations and documentation must point strictly to the backend API route (e.g. `/api/mcp/sse`), NEVER a naked root path (e.g. `/sse`) that gets trapped by Caddy/Vite's single-page application fallback returning `index.html`.
+   - **Delineate Stdio vs Remote Cloud SSE**:
+     - Documentation must clearly separate **Mode A: Local Stdio (`npx -y @cavdax/mcp-server`)** (recommended, zero API key required) from **Mode B: Remote Cloud SSE** (with `Authorization: Bearer <API_KEY>` headers and direct links to the key generation console).
+
 
 
 
