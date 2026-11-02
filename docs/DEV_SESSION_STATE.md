@@ -9,6 +9,23 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.64 Latest Session Achievements (November 2, 2026 - MCP API Key UX Convergence & Monochromatic Profile Setup Action)
+
+- **Dynamic Bearer API Key Auto-Injection (apps/client/src/components/ConnectMcpPage.jsx)**:
+  - Wired live API key retrieval from /api/user/api-key into ConnectMcpPage, automatically interpolating the user's real cvdx_live_ Bearer key into remote Cloud SSE JSON snippets (Cursor, Windsurf, Claude Desktop mcp-proxy, Claude Code CLI).
+  - Unauthenticated sessions default gracefully to YOUR_CAVDAX_API_KEY with direct authentication guidance.
+- **Monochromatic Terminal Header Affordance (apps/client/src/components/ConnectMcpPage.jsx)**:
+  - Eliminated noisy, colored informational banners above the code window in favor of a sleek, monochromatic KeyRound 'Get Your CAVDAX API Key' link positioned cleanly in the obsidian window header alongside Copy Config.
+  - Reaffirmed that local stdio NPX execution (npx -y @cavdax/mcp-server) runs on local FalkorDB hardware with zero API key required.
+- **Inline Monochromatic Setup Action Button (apps/client/src/components/ProfilePage.jsx)**:
+  - Replaced bulky explanatory text with an inline, theme-matching Cable SETUP button nestled alongside COPY inside the API key container across both desktop and compact/laptop profile views.
+  - Direct single-click navigation from user credentials to the full MCP agent setup guide.
+- **Full Formal GitHub PR Governance & Main Integration**:
+  - Opened formal Pull Request #140 (fix(client): streamline MCP API key guidance with inline terminal action and profile setup button).
+  - Executed merge commit to main with co-authorship trailer (Co-authored-by: Suneet Chugh <valorise078gramming@gmail.com>).
+  - Verified 100% test pass rate (61 server tests, 2 MCP server tests, client production build).
+  - Synchronized and fast-forwarded backend, docs, and frontend feature branches to maintain absolute parity.
+
 ## 1.0.63 Latest Session Achievements (November 2, 2026 - Hackathon Header & Demo Video Alignment, Competitive Differentiation Report, Causal Enclave 3D Responsive Ergonomics & Branch Convergence)
 
 - **Official 10-Minute Video Badge & Hackathon Track Declarations (README.md)**:
