@@ -199,6 +199,23 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
      - Documentation must clearly separate **Mode A: Local Stdio (`npx -y @cavdax/mcp-server`)** (recommended, zero API key required) from **Mode B: Remote Cloud SSE** (with `Authorization: Bearer <API_KEY>` headers and direct links to the key generation console).
 
 
+0q. **Card Grid Cadence, Vertical Rhythm & Zero "Lonely Child" Invariant**:
+   - **The "Lonely Child" / Orphan Flaw**:
+     - In cards, lists, and multi-column grids, a trailing line containing a solitary word (e.g. `deployment.`, `provenance.`, `infrastructure.`) looks unpolished and signals careless typography.
+   - **Heading & Bullet Invariant**:
+     - For short lines, badges, and bullet points, combine balanced semantic word choice with native CSS `text-balance` (`[text-wrap:balance]`) so lines wrap into roughly equal halves rather than stranding an orphan.
+   - **Multi-Line Prose & Card Symmetry Rule**:
+     - Do NOT blindly apply `text-wrap: balance` to narrative prose paragraphs in side-by-side cards, as it artificially truncates earlier lines (making Line 1 look clipped).
+     - Instead, engineer the copy length and word cadence across sibling cards so:
+       1. Sibling cards share an **identical rendered line count** (e.g. exactly 3 lines each), ensuring horizontal dividers and downstream elements (`Key Contributions:`, tags, CTAs) align to the exact pixel.
+       2. The final line of prose terminates in a healthy, substantive clause (minimum 3 to 5 words).
+
+0r. **Authentic Contributor Attribution & Production Terminology Standard**:
+   - **Commit-Derived Attribution**:
+     - Derive team contributions directly from authentic git commit logs, verified artifacts (video walkthroughs, npm packages with Sigstore provenance, AST scanners, webhook integrations), and actual code commits rather than generic placeholder roles.
+   - **Professional Systems Terminology**:
+     - Ban gaming or aviation slang like "Web HUD" in enterprise developer platforms; use authoritative, industry-standard terms such as "Visual Operational Console" or "Interactive Telemetry Console".
+
 
 
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
