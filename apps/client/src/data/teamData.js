@@ -20,7 +20,7 @@ export const TEAM_MEMBERS = [
     role: 'Team Leader',
     title: 'Lead Architect & Systems Engineer',
     domain: 'Distributed Systems, GraphBLAS & Enclosed Execution',
-    bio: 'Pioneered the FalkorDB GraphBLAS causal invalidation loop, enclosed MCP execution gate architecture, porcelain Web HUD console topology spanning 9 operational views, and Cloudflare edge deployment.',
+    bio: 'Pioneered the FalkorDB GraphBLAS causal invalidation loop, enclosed MCP execution gate architecture, visual operational console spanning 9 views, and Cloudflare edge deployment.',
     avatar: '/avatars/suneet.webp',
     fallbackAvatar: 'https://github.com/suneetchugh-dev.png',
     github: 'https://github.com/suneetchugh-dev',
