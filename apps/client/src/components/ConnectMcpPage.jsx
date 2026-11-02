@@ -1058,8 +1058,7 @@ EXECUTION WORKFLOW:
 
 
             {/* Transport Toggle: Container-Relative Horizontal Slider Tracking (Anti-Flying Standard) */}
-
-            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 self-start lg:self-auto relative">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 relative self-start lg:self-auto">
 
               {transportPill.position.ready && (
 
@@ -1263,11 +1262,11 @@ EXECUTION WORKFLOW:
 
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3.5 sm:gap-4">
                   {transportMode === 'sse' && (
                     <a
                       href={githubUser ? "/profile" : "/api/auth/github?returnTo=/connect-mcp"}
-                      className="flex items-center gap-1.5 text-xs font-mono font-medium text-slate-400 hover:text-white transition-colors cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 hover:text-white transition-all cursor-pointer shadow-xs"
                       title={githubUser ? "View or copy your CAVDAX API Key in Profile" : "Connect GitHub to generate your CAVDAX API Key"}
                     >
                       <KeyRound className="w-3.5 h-3.5 text-slate-400" />
@@ -1275,36 +1274,26 @@ EXECUTION WORKFLOW:
                     </a>
                   )}
 
-                  <button
-
-                    onClick={() => handleCopy(activeClient + transportMode, activeConfig.snippet)}
-
-                  className="flex items-center gap-1.5 text-xs font-mono font-bold text-slate-300 hover:text-white cursor-pointer transition-colors"
-
-                >
-
-                  {copiedKey === activeClient + transportMode ? (
-
-                    <>
-
-                      <Check className="w-3.5 h-3.5 text-slate-200" />
-
-                      <span className="text-slate-200">Copied</span>
-
-                    </>
-
-                  ) : (
-
-                    <>
-
-                      <Copy className="w-3.5 h-3.5" />
-
-                      <span>Copy Config</span>
-
-                    </>
-
+                  {transportMode === 'sse' && (
+                    <div className="h-3.5 w-px bg-slate-400/40 dark:bg-white/20 shrink-0" aria-hidden="true" />
                   )}
 
+                  <button
+                    onClick={() => handleCopy(activeClient + transportMode, activeConfig.snippet)}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] font-mono text-slate-300 hover:text-white transition-all cursor-pointer shadow-xs active:scale-[0.98]"
+                    title="Copy configuration snippet to clipboard"
+                  >
+                    {copiedKey === activeClient + transportMode ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-slate-200" />
+                        <span className="text-slate-200 font-semibold">Copied</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Copy Config</span>
+                      </>
+                    )}
                   </button>
                 </div>
 
