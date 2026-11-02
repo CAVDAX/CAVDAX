@@ -121,31 +121,31 @@ const SQUIRCLE_OUTER = "M 7.69 16.00 L 7.09 16.30 L 6.86 16.39 L 6.12 16.64 L 5.
 // 3D Camera Angles: Cinematic dynamic tracking, orbit tilt, and zoom for each subsystem stage
 const STAGE_CAMERAS = [
   // 0: CORE (Architectural Overview - Front-Face Top Perspective)
-  { pitch: 30, yaw: 0, roll: 0, tx: 0, ty: 22, tz: -30, scale: 0.94 },
+  { pitch: 30, yaw: 0, roll: 0, tx: 0, ty: 22, tz: -30, scale: 1.15 },
   
   // 1: Claude Code MCP Gate (Top-Center: Camera pitches up, shifts down to center top node)
-  { pitch: 10, yaw: 0, roll: 0, tx: 0, ty: 38, tz: 40, scale: 1.08 },
+  { pitch: 10, yaw: 0, roll: 0, tx: 0, ty: 38, tz: 40, scale: 1.25 },
   
   // 2: Cursor IDE Transceiver (Top-Right: Camera pans left, yaws slightly toward right corner)
-  { pitch: 7, yaw: -6, roll: 0, tx: -34, ty: 22, tz: 35, scale: 1.07 },
+  { pitch: 7, yaw: -6, roll: 0, tx: -34, ty: 22, tz: 35, scale: 1.24 },
   
   // 3: Git AST Diff Extractor (East Flank: Camera pans left, yaws inward to frame right wing)
-  { pitch: 3, yaw: -8, roll: 0, tx: -55, ty: 0, tz: 45, scale: 1.08 },
+  { pitch: 3, yaw: -8, roll: 0, tx: -55, ty: 0, tz: 45, scale: 1.25 },
   
   // 4: ADR Invariant Store (Bottom-Right: Camera pans left-up, tilts downward)
-  { pitch: -6, yaw: -6, roll: 0, tx: -35, ty: -24, tz: 35, scale: 1.07 },
+  { pitch: -6, yaw: -6, roll: 0, tx: -35, ty: -24, tz: 35, scale: 1.24 },
   
   // 5: GraphBLAS Matrix Mesh (Bottom-Center: Camera pitches down, shifts up to center bottom node)
-  { pitch: -10, yaw: 0, roll: 0, tx: 0, ty: -42, tz: 40, scale: 1.08 },
+  { pitch: -10, yaw: 0, roll: 0, tx: 0, ty: -42, tz: 40, scale: 1.25 },
   
   // 6: CI/CD Gate Harness (Bottom-Left: Camera pans right-up, yaws inward)
-  { pitch: -6, yaw: 6, roll: 0, tx: 35, ty: -24, tz: 35, scale: 1.07 },
+  { pitch: -6, yaw: 6, roll: 0, tx: 35, ty: -24, tz: 35, scale: 1.24 },
   
   // 7: Cryptographic Audit Trail (West Flank: Camera pans right, yaws inward to frame left wing)
-  { pitch: 3, yaw: 8, roll: 0, tx: 55, ty: 0, tz: 45, scale: 1.08 },
+  { pitch: 3, yaw: 8, roll: 0, tx: 55, ty: 0, tz: 45, scale: 1.25 },
   
   // 8: Closed-Loop Auto-Repair (Top-Left: Camera pans right-down, yaws toward top-left corner)
-  { pitch: 7, yaw: 6, roll: 0, tx: 34, ty: 22, tz: 35, scale: 1.07 },
+  { pitch: 7, yaw: 6, roll: 0, tx: 34, ty: 22, tz: 35, scale: 1.24 },
 ];
 
 // Clean vector icons for each subsystem
@@ -743,7 +743,7 @@ export default function CausalEnclaveHub() {
       />
 
       {/* ── Fullscreen Open Theater Container ── */}
-      <div className="relative w-full h-full max-w-[1300px] 2xl:max-w-[1500px] flex flex-col justify-between items-center z-[80] my-auto overflow-hidden">
+      <div className="relative w-full h-full max-w-[1440px] 2xl:max-w-[1680px] flex flex-col justify-between items-center z-[80] my-auto overflow-hidden">
         
         {/* ── Top HUD Navigation: Section Title & Step Jumper Pills ── */}
         <div className="w-full flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 pb-2.5 sm:pb-3 shrink-0">
@@ -787,7 +787,7 @@ export default function CausalEnclaveHub() {
           <div 
             onPointerEnter={() => { isHoveringCanvasRef.current = true; }}
             onPointerLeave={() => { isHoveringCanvasRef.current = false; }}
-            className="w-full max-w-[1040px] 2xl:max-w-[1180px] aspect-[16/11] max-h-[min(50vh,520px)] 2xl:max-h-[640px] flex items-center justify-center relative select-none will-change-transform cursor-default"
+            className="w-full max-w-[1280px] 2xl:max-w-[1520px] aspect-[16/9.6] max-h-[min(73vh,730px)] 2xl:max-h-[860px] flex items-center justify-center relative select-none will-change-transform cursor-default"
             style={{
               transform: `rotateX(${baseCam.pitch}deg) rotateY(${baseCam.yaw}deg) rotateZ(${baseCam.roll}deg) translate3d(${baseCam.tx}px, ${baseCam.ty}px, ${baseCam.tz}px) scale(${baseCam.scale})`,
               transformStyle: 'preserve-3d',
