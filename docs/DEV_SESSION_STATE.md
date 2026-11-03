@@ -9,7 +9,32 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.76 Latest Session Achievements (November 3, 2026 - Switch Branch Panel Multi-Modal Scroll & Arrow Key Navigation)
+## 1.0.77 Latest Session Achievements (November 4, 2026 - Dynamic Full-Graph SVG Export, Native SSRF BlockList, Anti-TOCTOU Rebinding & Branch-Scoped Graph Isolation)
+
+- **Full-Graph Dynamic Vector SVG Export (`apps/client/src/components/GraphCanvas.jsx`, `core/graph/renderSvg.js`)**:
+  - Addressed user feedback where clicking the Download button in the FalkorDB Temporal Causal Graph only exported a clipped 960x500 box of the demo graph.
+  - Replaced the server-side export call with direct client-side vector serialization from live React canvas state (`nodes`, `edges`, `canvasHeight`, `simulatedBlastNode`, `repo`).
+  - Implemented dynamic bounding box calculation `viewBox="0 0 880 ${canvasHeight + 70}"`, capturing 100% of all nodes, column headers, blast annotations, and badges with zero vertical clipping or network roundtrips.
+  - Updated backend `core/graph/renderSvg.js` with `calculatedHeight = Math.max(height, 130 + maxInCol * 95 + 40)` so MCP server exports also adapt to arbitrary graph node heights.
+- **Tour Guide 2-Line Budget Enforced (`apps/client/src/components/TourGuide.jsx`)**:
+  - Tightened all 5 highlighted Tour Guide card descriptions (`console-ribbon`, `mcp-guardrails`, `audit-filter`, `audit-ledger`, `audit-metrics`) to strictly adhere to a 2-line maximum budget (~110 characters) across all viewport widths without truncation or vertical overflow.
+- **Node.js Native `BlockList` SSRF & DNS Rebinding Hardening (`apps/server/webhookDispatcher.js`)**:
+  - Fixed false-positive rejection of valid domain names (Problem 1): checked `isIP(clean) === 0` before evaluating IP subnets, ensuring domains like `fcm.googleapis.com`, `fdic.gov`, and `feast.example.com` pass safety checks.
+  - Eliminated TOCTOU DNS rebinding vulnerability (Problems 2 & 3): wired an `undici.Agent` with `connect.lookup` socket-time DNS verification and added `redirect: 'error'` to completely prevent 302/3xx SSRF redirects.
+  - Expanded CIDR protections (Problem 4) using native Node.js `net.BlockList` covering RFC 1918, CGNAT (`100.64.0.0/10` including Alibaba Cloud metadata `100.100.100.200`), `198.18.0.0/15`, `192.0.0.0/24`, Class E `240.0.0.0/4`, `0.0.0.0/8`, IPv6 ULA `fc00::/7`, link-local, and IPv4-mapped IPv6 in both decimal and hex forms (`::ffff:7f00:1`).
+- **Branch-Scoped Graph Action Isolation & Shared Sanitizer (`apps/server/index.js`)**:
+  - Resolved Problem 6: updated `GET /api/github/repos/:owner/:repo/adrs` so `persistedRepoActions` filters by both `repo` and active `branch`, stopping cross-branch graph node leakage.
+  - Scoped FalkorDB Cypher cleanup in `POST /verify-action` to `{repo: $repo, branch: $branch}` so verifying on branch B does not delete branch A's graph actions.
+  - Extracted shared `sanitizeBranchName(branch, fallback)` enforcing length (≤255), format, and control-character safety (Problem 8).
+- **Route Reordering & Dev Auth Credentials (`apps/server/index.js`, `apps/client/src/components/DevTeamPanel.jsx`)**:
+  - Relocated `POST /api/dev/log-event` before SPA wildcard routes (`app.get('*')`) adjacent to `/api/dev/tier-check` (Problem 7).
+  - Added `credentials: 'include'` on `fetch('/api/dev/log-event')` in `DevTeamPanel.jsx` so session cookies are forwarded.
+- **Deterministic Offline Test Suite (`apps/server/test/invalidationAlerts.test.mjs`)**:
+  - Replaced flaky live DNS `localtest.me` test with deterministic offline unit tests utilizing mock DNS resolvers (Problem 5).
+  - All 64 server tests pass in 637ms with 0 network dependencies.
+  - Production Vite client bundle builds cleanly in 15.28s with zero errors.
+
+## 1.0.76 Previous Session Achievements (November 3, 2026 - Switch Branch Panel Multi-Modal Scroll & Arrow Key Navigation)
 
 - **Switch Branch Panel Wheel, Trackpad & Arrow Navigation (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
   - Addressed user feedback regarding scroll freeze on the "Switch branch" dropdown: identified that global Lenis smooth-scrolling was intercepting mouse wheel and touchpad events because `data-lenis-prevent` was missing from the branch list container.
