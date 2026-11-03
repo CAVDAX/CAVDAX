@@ -37,7 +37,9 @@ import { CavdaxMcpServer } from '../../core/mcp/server.js';
 import { renderGraphToSvg, computeBlastRadius } from '../../core/graph/renderSvg.js';
 import { loadSystemState, saveSystemState } from './systemState.js';
 import { sendInvalidationEmail } from './email.js';
-import { getVapidPublicKey, savePushSubscription, broadcastWebPushAlert } from './webPush.js';
+import { getVapidPublicKey, savePushSubscription, broadcastWebPushAlert, isValidPushEndpoint } from './webPush.js';
+import { isAdrPath } from '../../core/ingestion/adrPaths.js';
+import { dispatchOutgoingWebhook } from './webhookDispatcher.js';
 import { cascadeInvalidation } from '../../core/graph/queries.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -3418,6 +3420,7 @@ app.get('/api/user/notification-preferences', (req, res) => {
     emailAlerts: true,
     browserAlerts: true,
     targetEmail: user?.email || '',
+    webhookUrl: '',
     watchedRepos: []
   };
 
@@ -3437,10 +3440,14 @@ app.get('/api/user/notification-preferences', (req, res) => {
 app.post('/api/user/notification-preferences', (req, res) => {
   const user = req.session?.user;
   const login = user?.login || 'default';
-  const { emailAlerts, browserAlerts, targetEmail, watchedRepos } = req.body || {};
+  const { emailAlerts, browserAlerts, targetEmail, webhookUrl, watchedRepos } = req.body || {};
 
   if (targetEmail && (typeof targetEmail !== 'string' || targetEmail.length > 254 || !targetEmail.includes('@'))) {
     return res.status(400).json({ success: false, error: 'INVALID_TARGET_EMAIL' });
+  }
+
+  if (webhookUrl && (typeof webhookUrl !== 'string' || !isValidPushEndpoint(webhookUrl))) {
+    return res.status(400).json({ success: false, error: 'INVALID_OR_RESTRICTED_WEBHOOK_URL' });
   }
 
   const savedState = loadSystemState();
@@ -3452,6 +3459,7 @@ app.post('/api/user/notification-preferences', (req, res) => {
     emailAlerts: typeof emailAlerts === 'boolean' ? emailAlerts : true,
     browserAlerts: typeof browserAlerts === 'boolean' ? browserAlerts : true,
     targetEmail: (targetEmail && typeof targetEmail === 'string') ? targetEmail.trim() : (user?.email || ''),
+    webhookUrl: (webhookUrl && typeof webhookUrl === 'string') ? webhookUrl.trim() : (savedState.notificationPreferences[login]?.webhookUrl || ''),
     watchedRepos: Array.isArray(watchedRepos) ? watchedRepos : (savedState.notificationPreferences[login]?.watchedRepos || [])
   };
 
@@ -3563,6 +3571,13 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
     url: hudUrl
   }).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
 
+  // Dispatch outgoing webhook if configured
+  if (userPrefs?.webhookUrl) {
+    dispatchOutgoingWebhook(userPrefs.webhookUrl, alertPayload).catch((err) =>
+      console.warn('[CAVDAX Webhook] Notice:', err.message)
+    );
+  }
+
   // Dispatch email with recipient cooldown recorded
   const emailResult = await sendInvalidationEmail({
     to: recipient,
@@ -3616,58 +3631,159 @@ app.post('/api/github/webhook', async (req, res) => {
     return res.json({ success: true, message: 'PONG' });
   }
 
-  if (event === 'push') {
-    const { repository, commits = [] } = req.body || {};
-    const repoFullName = repository?.full_name || 'unknown/repo';
-
-    const invalidatedDecisions = [];
-    for (const commit of commits) {
-      const msg = commit.message || '';
-      const breaksMatches = [...msg.matchAll(/breaks[:\s]+(DEC-\d+)/gi)];
-      for (const m of breaksMatches) {
-        invalidatedDecisions.push({
-          decisionId: m[1].toUpperCase(),
-          sourceSha: commit.id?.slice(0, 7) || 'HEAD',
-          author: commit.author?.name || 'teammate',
-          message: msg.split('\n')[0]
-        });
-      }
-    }
-
-    if (invalidatedDecisions.length > 0) {
-      const savedState = loadSystemState();
-      const allPrefs = savedState.notificationPreferences || {};
-      const recipients = new Set();
-      for (const [login, prefs] of Object.entries(allPrefs)) {
-        if (prefs.emailAlerts && prefs.targetEmail) {
-          recipients.add(prefs.targetEmail);
-        }
-      }
-
-      for (const inv of invalidatedDecisions) {
-        broadcastEvent('ARCHITECTURAL_DIVERGENCE_ALERT', {
-          repo: repoFullName,
-          decision_id: inv.decisionId,
-          breaking_commit: inv.sourceSha,
-          breaking_message: inv.message,
-          timestamp: Date.now()
-        });
-
-        for (const recipient of recipients) {
-          await sendInvalidationEmail({
-            to: recipient,
-            repo: repoFullName,
-            decisionId: inv.decisionId,
-            breakingSourceId: `commit-${inv.sourceSha}`,
-            breakingSourceTitle: inv.message,
-            hudUrl: `${CLIENT_URL || 'https://cavdax.sahnirmaan.live'}/console?highlight=${inv.decisionId}`
-          });
-        }
-      }
-    }
+  if (event !== 'push') {
+    return res.json({ success: true, message: `Ignored event: ${event}` });
   }
 
-  res.json({ success: true, processed: true });
+  // Immediately respond 202 Accepted to prevent GitHub's 10-second webhook timeout
+  res.status(202).json({ success: true, queued: true, event: 'push' });
+
+  // Process ingestion and alerts asynchronously in a non-blocking background queue
+  setImmediate(async () => {
+    try {
+      const { repository, commits = [] } = req.body || {};
+      const repoFullName = repository?.full_name || 'unknown/repo';
+
+      const invalidatedDecisions = [];
+
+      for (const commit of commits) {
+        const msg = commit.message || '';
+        const sha = commit.id?.slice(0, 7) || 'HEAD';
+        const author = commit.author?.name || 'teammate';
+
+        // Direct decision break signal: breaks: DEC-xxx
+        const breaksMatches = [...msg.matchAll(/breaks[:\s]+(DEC-\d+)/gi)];
+        for (const m of breaksMatches) {
+          invalidatedDecisions.push({
+            decisionId: m[1].toUpperCase(),
+            sourceSha: sha,
+            breakingSourceId: `commit-${sha}`,
+            breakingSourceTitle: msg.split('\n')[0],
+            author,
+            message: msg.split('\n')[0]
+          });
+        }
+
+        // ADR supersession signal: supersedes: ADR-xxx
+        const supersedesMatches = [...msg.matchAll(/supersedes[:\s]+(ADR-\d+)/gi)];
+        for (const m of supersedesMatches) {
+          const supersededAdr = m[1].toUpperCase();
+          invalidatedDecisions.push({
+            decisionId: `CASCADE-${supersededAdr}`,
+            sourceSha: sha,
+            breakingSourceId: `commit-${sha}`,
+            breakingSourceTitle: `Supersedes ${supersededAdr}: ${msg.split('\n')[0]}`,
+            author,
+            message: msg.split('\n')[0]
+          });
+        }
+
+        // ADR file changes detected via path inspection: commit.added + commit.modified
+        const touchedFiles = [...(commit.added || []), ...(commit.modified || [])];
+        for (const file of touchedFiles) {
+          if (isAdrPath(file)) {
+            const match = file.match(/(ADR-\d+)/i) || file.match(/\/(\d{3,4})[-_]/);
+            const adrId = match ? (match[1].toUpperCase().startsWith('ADR-') ? match[1].toUpperCase() : `ADR-${match[1]}`) : file;
+            const alreadyRegistered = invalidatedDecisions.some((d) => d.breakingSourceId === adrId || d.sourceSha === sha);
+            if (!alreadyRegistered) {
+              invalidatedDecisions.push({
+                decisionId: `ADR-MUTATION-${adrId}`,
+                sourceSha: sha,
+                breakingSourceId: adrId,
+                breakingSourceTitle: `ADR modified in ${file}`,
+                author,
+                message: `Architectural Decision Record ${adrId} updated via ${file}`
+              });
+            }
+          }
+        }
+      }
+
+      if (invalidatedDecisions.length === 0) {
+        return;
+      }
+
+      // Invalidate decision in FalkorDB if live graph is connected
+      if (isFalkorConnected && graph) {
+        for (const inv of invalidatedDecisions) {
+          if (inv.breakingSourceId && inv.decisionId.startsWith('CASCADE-')) {
+            const targetAdr = inv.decisionId.replace('CASCADE-', '');
+            await cascadeInvalidation(graph, inv.breakingSourceId, targetAdr).catch(() => {});
+          }
+        }
+      }
+
+      // Scoped Recipient Resolution: Filter by watchedRepos & repository ownership
+      const savedState = loadSystemState();
+      const allPrefs = savedState.notificationPreferences || {};
+      const targetRecipients = [];
+
+      for (const [login, prefs] of Object.entries(allPrefs)) {
+        const watched = Array.isArray(prefs.watchedRepos) ? prefs.watchedRepos : [];
+        const isWatching = watched.length === 0 ||
+          watched.includes(repoFullName) ||
+          repoFullName.toLowerCase().startsWith(`${login.toLowerCase()}/`);
+
+        if (isWatching) {
+          targetRecipients.push({ login, prefs });
+        }
+      }
+
+      const hudBase = CLIENT_URL || 'https://cavdax.sahnirmaan.live';
+
+      for (const inv of invalidatedDecisions) {
+        const hudUrl = `${hudBase}/console?highlight=${encodeURIComponent(inv.decisionId)}&blast=true`;
+        const alertPayload = {
+          type: 'ARCHITECTURAL_DIVERGENCE_ALERT',
+          repo: repoFullName,
+          decision_id: inv.decisionId,
+          breaking_source_id: inv.breakingSourceId,
+          breaking_source_title: inv.breakingSourceTitle,
+          breaking_commit: inv.sourceSha,
+          breaking_message: inv.message,
+          author: inv.author,
+          timestamp: Date.now()
+        };
+
+        // 1. Channel 1: SSE Broadcast to active consoles
+        broadcastEvent('ARCHITECTURAL_DIVERGENCE_ALERT', alertPayload);
+
+        // 2. Channel 2: RFC 8292 VAPID Web Push to background desktop/mobile service workers
+        broadcastWebPushAlert({
+          title: `CAVDAX: Divergence Alert (${repoFullName})`,
+          body: `${inv.decisionId} invalidated by ${inv.breakingSourceId}!`,
+          decision_id: inv.decisionId,
+          url: hudUrl
+        }).catch((err) => console.warn('[CAVDAX WebPush] Webhook alert notice:', err.message));
+
+        // 3. Channel 3: Resend Transactional Email
+        for (const target of targetRecipients) {
+          if (target.prefs.emailAlerts && target.prefs.targetEmail) {
+            sendInvalidationEmail({
+              to: target.prefs.targetEmail,
+              repo: repoFullName,
+              decisionId: inv.decisionId,
+              decisionTitle: inv.breakingSourceTitle,
+              breakingSourceId: inv.breakingSourceId,
+              breakingSourceTitle: inv.breakingSourceTitle,
+              hudUrl
+            }).catch((err) => console.warn('[CAVDAX Email] Webhook email notice:', err.message));
+          }
+        }
+
+        // 4. Channel 4: Generic Outgoing JSON Webhooks (Slack, Discord, custom API)
+        for (const target of targetRecipients) {
+          if (target.prefs.webhookUrl) {
+            dispatchOutgoingWebhook(target.prefs.webhookUrl, alertPayload).catch((err) =>
+              console.warn('[CAVDAX Webhook] Outgoing webhook notice:', err.message)
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[CAVDAX Webhook] Error during background alert dispatch:', err.message);
+    }
+  });
 });
 
 // eslint-disable-next-line no-unused-vars

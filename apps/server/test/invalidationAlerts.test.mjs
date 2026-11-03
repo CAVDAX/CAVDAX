@@ -1,3 +1,4 @@
+import { dispatchOutgoingWebhook } from '../webhookDispatcher.js';
 import { getVapidPublicKey, savePushSubscription, removePushSubscription } from '../webPush.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -126,4 +127,46 @@ test('Email Template & HTML Sanitization: buildEmailHtml escapes all user inputs
   // Assert malicious javascript: URL was rejected and defaulted to safe HTTPS origin
   assert.ok(!html.includes('href="javascript:alert(1)"'), 'javascript: URL scheme must be sanitized');
   assert.ok(html.includes('href="https://cavdax.sahnirmaan.live"'), 'Fallback safe URL must be present');
+});
+
+test('Outgoing Webhook: SSRF Protection rejects internal, loopback, private and cloud metadata endpoints', async () => {
+  const maliciousUrls = [
+    'http://169.254.169.254/latest/meta-data/',
+    'https://169.254.169.254/latest/meta-data/',
+    'http://localhost:8080/hook',
+    'https://127.0.0.1:3000/hook',
+    'http://10.0.0.5/slack',
+    'https://192.168.1.1/webhook',
+    'ftp://webhook.example.com',
+    'not-a-url'
+  ];
+
+  for (const url of maliciousUrls) {
+    const res = await dispatchOutgoingWebhook(url, { test: true });
+    assert.equal(res.success, false, `Webhook URL '${url}' should be rejected by SSRF guard`);
+    assert.equal(res.error, 'RESTRICTED_OR_INVALID_WEBHOOK_URL');
+  }
+
+  const emptyRes = await dispatchOutgoingWebhook('', { test: true });
+  assert.equal(emptyRes.success, false);
+  assert.equal(emptyRes.error, 'MISSING_WEBHOOK_URL');
+});
+
+test('Notification Preferences: Persists webhookUrl and scoped watchedRepos', () => {
+  const state = loadSystemState();
+  const testUser = `webhook-dev-${Date.now()}`;
+  state.notificationPreferences[testUser] = {
+    emailAlerts: true,
+    browserAlerts: true,
+    targetEmail: 'alerts@sahnirmaan.live',
+    webhookUrl: 'https://hooks.slack.com/services/T00/B00/X00',
+    watchedRepos: ['acme/inventory', 'cavdax/core']
+  };
+
+  const saved = saveSystemState(state);
+  assert.equal(saved, true);
+
+  const reloaded = loadSystemState();
+  assert.equal(reloaded.notificationPreferences[testUser].webhookUrl, 'https://hooks.slack.com/services/T00/B00/X00');
+  assert.deepEqual(reloaded.notificationPreferences[testUser].watchedRepos, ['acme/inventory', 'cavdax/core']);
 });
