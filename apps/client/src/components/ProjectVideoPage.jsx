@@ -46,7 +46,7 @@ const ACTS = [
     title: 'Live Interception & Repair',
     time: '3:15',
     seconds: 195,
-    desc: 'Stale Redis write blocked; autonomous self-correction to DynamoDB DAX.'
+    desc: 'Stale Redis write blocked; self-correction to DynamoDB DAX.'
   },
   {
     id: 4,
@@ -54,7 +54,7 @@ const ACTS = [
     title: 'Connected GitHub Graph Sync',
     time: '6:08',
     seconds: 368,
-    desc: 'Live repository scan, 1-click drifted ADR PR, and tamper-evident audit log.'
+    desc: 'Live repository scan, 1-click ADR PR, and verified audit log.'
   }
 ];
 
@@ -580,20 +580,20 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               <button
                 key={actItem.id}
                 onClick={() => seekToSeconds(actItem.seconds, idx)}
-                className={`p-4 rounded-xl text-left transition-all text-xs font-mono border cursor-pointer flex flex-col justify-between ${
+                className={`p-4 rounded-xl text-left transition-all text-xs border cursor-pointer flex flex-col justify-between ${
                   activeAct === idx
-                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-transparent shadow-md font-bold'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-transparent shadow-md'
                     : 'bg-slate-50 hover:bg-slate-100 dark:bg-white/[0.03] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-white/10'
                 }`}
               >
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">{actItem.act}</span>
+                    <span className="text-[10px] uppercase font-mono font-bold tracking-wider opacity-70">{actItem.act}</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono font-semibold">{actItem.time}</span>
                   </div>
-                  <div className="font-bold text-[13px] leading-snug mb-1.5 truncate" title={actItem.title}>{actItem.title}</div>
+                  <div className="font-sans font-bold text-[13px] tracking-tight leading-snug mb-1.5 whitespace-nowrap overflow-hidden text-ellipsis sm:whitespace-normal" title={actItem.title}>{actItem.title}</div>
                 </div>
-                <div className="text-[11px] opacity-75 font-sans leading-relaxed mt-1">{actItem.desc}</div>
+                <div className="text-[11px] font-sans font-normal opacity-75 leading-relaxed mt-1">{actItem.desc}</div>
               </button>
             ))}
           </div>
