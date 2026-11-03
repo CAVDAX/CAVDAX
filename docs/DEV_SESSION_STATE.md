@@ -9,7 +9,17 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.75 Latest Session Achievements (November 3, 2026 - Forensic actionBranch Resolution, Dev Event Route Hardening & Anti-SSRF Rebinding Verification)
+## 1.0.76 Latest Session Achievements (November 3, 2026 - Switch Branch Panel Multi-Modal Scroll & Arrow Key Navigation)
+
+- **Switch Branch Panel Wheel, Trackpad & Arrow Navigation (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Addressed user feedback regarding scroll freeze on the "Switch branch" dropdown: identified that global Lenis smooth-scrolling was intercepting mouse wheel and touchpad events because `data-lenis-prevent` was missing from the branch list container.
+  - Added `data-lenis-prevent`, `overscroll-contain`, and `tabIndex={0}` to the branch list container, restoring immediate mouse wheel and touchpad two-finger gesture scrolling without window hijacking.
+  - Implemented keyboard arrow navigation (<kbd>↑</kbd> and <kbd>↓</kbd>) with auto-scroll-into-view (`scrollIntoView({ block: 'nearest' })`), <kbd>Enter</kbd> to select the highlighted branch, and <kbd>Escape</kbd> to dismiss.
+  - Synchronized hover state with active keyboard index for visual feedback.
+- **Full Verification**:
+  - Production Vite client bundle built cleanly in 13.94s with zero errors.
+
+## 1.0.75 Previous Session Achievements (November 3, 2026 - Forensic actionBranch Resolution, Dev Event Route Hardening & Anti-SSRF Rebinding Verification)
 
 - **Verification Route Scope Fix & `actionBranch` Resolution (`apps/server/index.js`)**:
   - Fixed runtime `ReferenceError: actionBranch is not defined` thrown on clicking `Verify: DEC-001 (Valid)` on branch scopes (`cavdax/init-adr`).
