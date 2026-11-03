@@ -9,7 +9,24 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.77 Latest Session Achievements (November 4, 2026 - Dynamic Full-Graph SVG Export, Native SSRF BlockList, Anti-TOCTOU Rebinding & Branch-Scoped Graph Isolation)
+## 1.0.77 Latest Session Achievements (November 4, 2026 - Comprehensive Devil's Advocate Forensic Hardening: WebPush Session Order, Native BlockList Push SSRF, Tenant-Scoped Push Alerts, Branch-Aware Audit & Export)
+
+- **Push Subscription Session Order Resolution (`apps/server/index.js`)**:
+  - Uncovered architectural middleware order bug: `POST /api/push/subscribe` was registered before `app.use(session(...))` and session rehydration.
+  - Because Express executes middleware sequentially, `req.session` was unattached, forcing all subscriptions into `login = 'default'`.
+  - Relocated push routes to execute after session initialization so subscriptions accurately bind to authenticated user logins.
+- **Unified Native `BlockList` SSRF Protection for Web Push (`apps/server/webPush.js`, `apps/server/test/securityAuditRemediations.test.mjs`)**:
+  - Identified that `isValidPushEndpoint` relied on hand-rolled regex that missed CGNAT `100.64.0.0/10` (Alibaba metadata `100.100.100.200`), `198.18.0.0/15`, `192.0.0.0/24`, Class E `240.0.0.0/4`, `0.0.0.0/8`, hex IPv4-mapped IPv6, and `.localhost` subdomains.
+  - Imported and applied `isPrivateOrMetadataIp` from `webhookDispatcher.js`, bringing Web Push to identical high-assurance standards.
+- **Tenant-Scoped Web Push Divergence Alerts (`apps/server/index.js`)**:
+  - Fixed cross-tenant alert leakage: GitHub webhook divergence alerts were broadcasting push notifications globally with no `targetLogin`.
+  - Scoped Channel 2 Web Push alerts strictly to `targetRecipients` who have enabled `browserAlerts` and watch the affected repository.
+  - Scoped `/api/alerts/simulate-invalidation` push alerts strictly to the requesting user's session login.
+- **Branch-Scoped Audit & SVG Image Export (`apps/server/index.js`)**:
+  - Upgraded `GET /api/audit` to accept and filter by `req.query.branch` via `sanitizeBranchName`, providing full parity with the frontend branch filter.
+  - Upgraded `GET /api/graph/export-image` to accept `repo` and `branch` query parameters with tenant isolation and custom SVG titles.
+- **Full Verification**:
+  - All 64 backend tests pass with 0 failures in 826ms.
 
 - **Full-Graph Dynamic Vector SVG Export (`apps/client/src/components/GraphCanvas.jsx`, `core/graph/renderSvg.js`)**:
   - Addressed user feedback where clicking the Download button in the FalkorDB Temporal Causal Graph only exported a clipped 960x500 box of the demo graph.
