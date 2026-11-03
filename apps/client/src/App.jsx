@@ -30,6 +30,57 @@ const KeyboardShortcutsModal = React.lazy(() => import('./components/KeyboardSho
 const McpConnectModal = React.lazy(() => import('./components/McpConnectModal.jsx'));
 const ConnectRepoModal = React.lazy(() => import('./components/ConnectRepoModal.jsx'));
 const TourGuide = React.lazy(() => import('./components/TourGuide.jsx'));
+
+// Intelligent Route Prefetch Registry (Option 2: Intelligent Background Prefetching)
+const ROUTE_PREFETCH_LOADERS = {
+  project: () => import('./components/ProjectVideoPage.jsx'),
+  mcp: () => import('./components/ConnectMcpPage.jsx'),
+  team: () => import('./components/TeamPage.jsx'),
+  audit: () => import('./components/AuditPage.jsx'),
+  support: () => import('./components/SupportPage.jsx'),
+  profile: () => import('./components/ProfilePage.jsx'),
+  dev: () => import('./components/DevConsolePage.jsx'),
+  devteam: () => import('./components/DevTeamPanel.jsx'),
+  repo: () => import('./components/ConnectedRepoWorkspace.jsx'),
+  preferences: () => import('./components/PreferencesModal.jsx'),
+  shortcuts: () => import('./components/KeyboardShortcutsModal.jsx'),
+  mcpModal: () => import('./components/McpConnectModal.jsx'),
+  connectRepo: () => import('./components/ConnectRepoModal.jsx'),
+  tour: () => import('./components/TourGuide.jsx')
+};
+
+const prefetchedRoutes = new Set();
+
+function prefetchRoute(tabKey) {
+  if (!tabKey || prefetchedRoutes.has(tabKey)) return;
+  const loader = ROUTE_PREFETCH_LOADERS[tabKey];
+  if (loader) {
+    prefetchedRoutes.add(tabKey);
+    try {
+      loader();
+    } catch {}
+  }
+}
+
+function prefetchAllRoutes() {
+  const schedule = typeof window !== 'undefined' && 'requestIdleCallback' in window
+    ? (cb) => window.requestIdleCallback(cb, { timeout: 4000 })
+    : (cb) => setTimeout(cb, 600);
+
+  schedule(() => {
+    Object.entries(ROUTE_PREFETCH_LOADERS).forEach(([key, loader], idx) => {
+      setTimeout(() => {
+        if (!prefetchedRoutes.has(key)) {
+          prefetchedRoutes.add(key);
+          try {
+            loader();
+          } catch {}
+        }
+      }, idx * 75);
+    });
+  });
+}
+
 import SEOHead from './components/SEOHead.jsx';
 import PageAscentTransition from './components/PageAscentTransition.jsx';
 import { playClick, playRejectBuzz, playApprovalChime, initGlobalClickSound, playAlert } from './utils/soundFx.js';
@@ -125,6 +176,11 @@ export default function App() {
   const [selectedConnectedRepo, setSelectedConnectedRepo] = useState(null);
   const [divergenceAlert, setDivergenceAlert] = useState(null);
   const [isSimulatingAlertGlobal, setIsSimulatingAlertGlobal] = useState(false);
+
+  // Intelligent Background Prefetching: Download secondary route chunks during browser idle
+  useEffect(() => {
+    prefetchAllRoutes();
+  }, []);
 
   const handleTriggerSimulateAlert = async () => {
     playClick();
@@ -1253,6 +1309,7 @@ export default function App() {
         activeTab={activeTab}
         landingTarget={landingTarget}
         onSelectTab={handleSelectTab}
+        onPrefetchTab={prefetchRoute}
         onOpenPreferences={() => setIsPreferencesOpen(true)}
         isDarkTheme={isDarkTheme}
         onToggleTheme={() => setIsDarkTheme((d) => !d)}

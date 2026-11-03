@@ -46,6 +46,7 @@ export default function Header({
   onSelectTab,
   onOpenPreferences,
   onOpenTour,
+  onPrefetchTab,
   isDarkTheme = true,
   onToggleTheme,
   tier = 'free',
@@ -240,6 +241,8 @@ export default function Header({
                   ref={(el) => {
                     if (el) tabRefs.current[tab.id] = el;
                   }}
+                  onMouseEnter={() => onPrefetchTab && onPrefetchTab(tab.id)}
+                  onFocus={() => onPrefetchTab && onPrefetchTab(tab.id)}
                   onClick={() => {
                     playClick();
                     if (onSelectTab) onSelectTab(tab.id, { target: tab.id === "landing" ? "overview" : "top" });
@@ -415,6 +418,7 @@ export default function Header({
                   return (
                     <button
                       key={tab.id}
+                      onTouchStart={() => onPrefetchTab && onPrefetchTab(tab.id)}
                       onClick={() => {
                         playClick();
                         setIsMobileMenuOpen(false);
