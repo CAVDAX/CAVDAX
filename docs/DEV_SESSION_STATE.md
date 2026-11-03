@@ -9,6 +9,20 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.68 Latest Session Achievements (November 3, 2026 - Async DNS Pre-Flight Verification & Anti-DNS Rebinding Invariant)
+
+- **Async DNS Pre-Flight & Anti-DNS Rebinding Invariant (`apps/server/webhookDispatcher.js`)**:
+  - Closed the DNS rebinding and domain-fronted SSRF vulnerability in the outgoing webhook dispatcher: purely syntactic regex inspection of hostnames (`isValidPushEndpoint`) allowed attackers to bypass string-level IP filters by supplying custom domain names (e.g. `localtest.me` or attacker-controlled domains) resolving to loopback (`127.0.0.1`) or cloud instance metadata services (`169.254.169.254`).
+  - Implemented asynchronous DNS pre-flight verification via `isSafeWebhookUrl(url)` utilizing `node:dns/promises.lookup(hostname, { all: true })` to resolve all IPv4 (`A`) and IPv6 (`AAAA`) addresses before establishing outgoing connections.
+  - Hardened IP evaluation with `isPrivateOrMetadataIp(ip)`: verifies resolved addresses across all RFC 1918 private subnets (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`), IPv4 loopback (`127.0.0.0/8`), IPv4 link-local and cloud metadata (`169.254.0.0/16`), RFC 6598 carrier-grade NAT (`100.64.0.0/10`), documentation blocks, IPv6 loopback (`::1`, `::`), IPv6 Unique Local Addresses (`fc00::/7`), IPv6 link-local (`fe80::/10`), IPv6 documentation (`2001:db8::/32`), and IPv4-mapped IPv6 representations (`::ffff:x.x.x.x`).
+  - Enforced `isSafeWebhookUrl(url)` across both `dispatchOutgoingWebhook(url, payload)` and user configuration ingestion (`POST /api/user/notification-preferences` in `apps/server/index.js`), rejecting unsafe endpoints synchronously at ingestion time and asynchronously prior to socket dispatch.
+- **Vite & Rate Limiting Architectural Triage**:
+  - Devil's advocate evaluation of audit warnings rejected `npm audit fix --force` for Vite 8 / esbuild dev advisory (zero production risk, production assets served statically from `dist/`, avoids breaking ecosystem churn).
+  - Preserved in-memory rate limiting for standalone VM/Docker deployments to preserve zero-latency offline resilience and self-healing invariants without external Redis infrastructure dependencies.
+- **Full Unit Test Verification (64 Passing Tests)**:
+  - Added DNS pre-flight verification test cases to `apps/server/test/invalidationAlerts.test.mjs` confirming instantaneous rejection of `http://localtest.me/webhook` and invalid endpoints.
+  - Verified 100% test pass rate across the full backend suite: 64 unit tests passing in 460ms with zero regressions.
+
 ## 1.0.67 Latest Session Achievements (November 3, 2026 - Out-of-Band Divergence Radar Production Hardening & SSRF-Protected Webhooks)
 
 - **Hardened Production Webhook Pipeline (`apps/server/index.js`, `apps/server/webhookDispatcher.js`)**:
