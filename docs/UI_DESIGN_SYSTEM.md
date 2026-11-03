@@ -3019,3 +3019,62 @@ To maintain an uncompromised, professional engineering aesthetic on commercial a
 ### 45.5 Typographic Balance on Card Subtitles (Anti-Orphan Rule)
 1. **Zero Lonely Words**:
    - In directory headers and card subtexts, use CSS `[text-wrap:balance]` alongside non-breaking spaces (`&nbsp;` / `\u00A0`) to guarantee that the final word (e.g. `MCP tools.`) never drops alone onto a dangling line.
+
+
+---
+
+## 46. Cinema Video Player: Native Bottom-Right Fullscreen Placement & Container-Level HUD Escalation
+
+To deliver a cinematic, high-assurance video walkthrough experience that allows users to seamlessly navigate interactive video chapters during native fullscreen playback:
+
+### 46.1 The Cross-Origin Iframe Fullscreen Trap & Container Escalation
+1. **The Iframe Isolation Anti-Pattern**:
+   - Calling `requestFullscreen()` on a raw `<iframe>` element (e.g. YouTube or Vimeo) isolates the iframe within the browser's top-layer pseudo-stack, occluding all sibling DOM nodes. Custom UI controls, chapter drawers, and HUD overlays disappear entirely from view.
+2. **Container-Level Escalation Standard**:
+   - Suppress the embedded player's native fullscreen toggle by appending `&fs=0` to the embed URL (e.g. `https://www.youtube-nocookie.com/embed/{ID}?fs=0`).
+   - Transfer fullscreen authority to the outer cinema frame container (`#video-cinema-viewport`). Calling `videoContainerRef.current.requestFullscreen()` elevates the entire container—keeping both the video stream AND all React HUD overlays, floating badges, and slide-out drawers active on the screen.
+3. **Dedicated Fullscreen CSS Rules**:
+   - Apply specific CSS rules to ensure seamless viewport coverage without aspect-ratio clipping:
+   ```css
+   #video-cinema-viewport:fullscreen,
+   #video-cinema-viewport:-webkit-full-screen {
+     width: 100vw !important;
+     height: 100vh !important;
+     max-width: 100vw !important;
+     max-height: 100vh !important;
+     border-radius: 0px !important;
+     border: none !important;
+     background-color: #000000 !important;
+     aspect-ratio: auto !important;
+   }
+   ```
+
+### 46.2 Bottom-Right Muscle Memory Alignment
+1. **Industry-Standard Placement**:
+   - Never position the fullscreen toggle beside center-right chapter tabs or floating HUD bars where it clutters content.
+   - Anchor the fullscreen toggle strictly in the bottom-right corner (`absolute bottom-3 right-3 z-20`), aligning with YouTube, Vimeo, and native video player muscle memory.
+2. **Accessible Interaction Modes**:
+   - Support three seamless ways to toggle fullscreen:
+     - Direct click on the bottom-right button with dynamic `<Maximize />` / `<Minimize />` icons.
+     - Global `F` / `f` keyboard shortcut listener (disabled when focus is inside text inputs or textareas).
+     - Fullscreen toggle button located in the slide-out Chapters drawer header.
+
+---
+
+## 47. Intelligent Dual-Stage Route Prefetching & Zero-Interruption Brand Animation Fallbacks
+
+To resolve the tension between initial page-load performance and smooth SPA navigation without jarring loading interruptions:
+
+### 47.1 The Route-Level Code Splitting UX Dilemma
+1. **The Problem with Raw `React.lazy()`**:
+   - Code splitting reduces the initial critical bundle, but introduces network latency on subsequent tab switches. When a user clicks a new page, the browser must fetch a separate `.js` chunk, triggering `<React.Suspense>` and flashing a loading spinner mid-session.
+2. **The Problem with 100% Static Bundling**:
+   - Importing all pages statically bloats the initial bundle and slows down First Contentful Paint (FCP).
+
+### 47.2 The Dual-Stage Prefetching Architecture
+1. **Stage 1: Browser-Idle Background Prefetch**:
+   - After initial mount, utilize `requestIdleCallback` (with a fallback timeout) to sequentially fetch secondary route chunks with a 75ms non-blocking stagger. By the time the user explores beyond the landing page, secondary modules are already downloaded and cached in browser memory.
+2. **Stage 2: Cursor-Hover & Focus Intent Prefetch**:
+   - Attach `onMouseEnter` and `onFocus` handlers to navbar tab buttons. Because human motor latency between hovering and clicking is typically 150–300ms, hover prefetching downloads the chunk before the click event fires.
+3. **Aesthetic Brand Animation Fallback**:
+   - Never render a generic circular spinner in `<React.Suspense>`. Use the brand's canonical animated logo (`CavdaxBrandLoader`) with theme-adaptive stroke styling as a graceful safety net for extremely slow or throttled network connections.
