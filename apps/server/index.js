@@ -1909,6 +1909,27 @@ app.get('/api/dev/tier-check', (req, res) => {
 });
 
 /**
+ * POST /api/dev/log-event
+ * Broadcasts an authentic developer team event across all connected SSE clients.
+ * Protected by requireDevAuth (validates constant-time Bearer token, dev roster, or loopback socket).
+ */
+app.post('/api/dev/log-event', requireDevAuth, (req, res) => {
+  const { type, message, metadata } = req.body || {};
+  if (!type || !message) {
+    return res.status(400).json({ success: false, error: 'type and message required' });
+  }
+  const eventPayload = {
+    id: `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    type: String(type).toUpperCase().slice(0, 32),
+    message: String(message).slice(0, 256),
+    metadata: metadata || {},
+    timestamp: Date.now()
+  };
+  broadcastEvent('DEV_TEAM_EVENT', eventPayload);
+  return res.json({ success: true, event: eventPayload });
+});
+
+/**
  * GET /api/user/quota
  * Real plan tier limits, active graph node counts, and billing cycle calculations.
  */
@@ -2604,6 +2625,16 @@ app.get('/api/github/repos/:owner/:repo/branches', async (req, res) => {
   }
 });
 
+// Shared branch name sanitizer enforcing length, format, and control-character safety
+export function sanitizeBranchName(branch, fallback = 'main') {
+  if (typeof branch !== 'string') return fallback;
+  const trimmed = branch.trim();
+  if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
+    return trimmed;
+  }
+  return fallback;
+}
+
 app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const token = req.session?.user?.accessToken;
   if (!token) {
@@ -2632,17 +2663,17 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
     }
   }
 
-  let requestedBranch = undefined;
-  if (typeof req.query.branch === 'string') {
-    const trimmed = req.query.branch.trim();
-    if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
-      requestedBranch = trimmed;
-    }
-  }
+  const requestedBranch = sanitizeBranchName(req.query.branch, null);
   try {
-    const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch });
+    const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch || undefined });
     const repoFullName = `${owner}/${repo}`;
-    const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => e.repo?.toLowerCase() === repoFullName.toLowerCase());
+    const targetBranch = sanitizeBranchName(requestedBranch || 'main');
+    // Scope persisted actions to BOTH repository and active branch to prevent cross-branch leakage
+    const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => {
+      const matchRepo = e.repo?.toLowerCase() === repoFullName.toLowerCase();
+      const matchBranch = sanitizeBranchName(e.branch || 'main') === targetBranch;
+      return matchRepo && matchBranch;
+    });
     if (result?.graph && Array.isArray(result.graph.nodes) && Array.isArray(result.graph.edges)) {
       // Deduplicate actions by decision_id: display at most 1 active/latest action node per decision on the canvas
       const latestActionByDecision = new Map();
@@ -2661,7 +2692,8 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
           decision_id: a.decision_id,
           timestamp: a.executed_at,
           latency_ms: a.latency_ms,
-          repo: a.repo
+          repo: a.repo,
+          branch: a.branch || targetBranch
         });
         result.graph.edges.push({
           source: a.action_id,
@@ -2715,13 +2747,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
   const { decisionId, targetFile, branch } = req.body || {};
-  let actionBranch = 'main';
-  if (typeof branch === 'string') {
-    const trimmed = branch.trim();
-    if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
-      actionBranch = trimmed;
-    }
-  }
+  const actionBranch = sanitizeBranchName(branch, 'main');
 
   try {
     let currentGraph = null;
@@ -2771,11 +2797,11 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
     if (isFalkorConnected && graph) {
       try {
         const falkorGateStart = process.hrtime.bigint();
-        // Remove previous test probe actions grounded in this decision to prevent duplicate node accumulation
+        // Remove previous test probe actions grounded in this decision scoped strictly to this branch
         await graph.query(`
-          MATCH (prevAction:AgentAction {repo: $repo})-[:GROUNDED_IN]->(d:Decision {id: $decisionId})
+          MATCH (prevAction:AgentAction {repo: $repo, branch: $branch})-[:GROUNDED_IN]->(d:Decision {id: $decisionId})
           DETACH DELETE prevAction
-        `, { params: { repo: repoFullName, decisionId: decisionNode.id } }).catch(() => {});
+        `, { params: { repo: repoFullName, branch: actionBranch, decisionId: decisionNode.id } }).catch(() => {});
 
         await graph.query(`
           MERGE (d:Decision {id: $decisionId})
@@ -3875,28 +3901,7 @@ function _scheduleFalkorReconnect() {
 
 // Start listening
 initDb().finally(() => {
-  
-/**
- * POST /api/dev/log-event
- * Broadcasts an authentic developer team event across all connected SSE clients.
- */
-app.post('/api/dev/log-event', requireDevAuth, (req, res) => {
-  const { type, message, metadata } = req.body || {};
-  if (!type || !message) {
-    return res.status(400).json({ success: false, error: 'type and message required' });
-  }
-  const eventPayload = {
-    id: `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-    type: String(type).toUpperCase().slice(0, 32),
-    message: String(message).slice(0, 256),
-    metadata: metadata || {},
-    timestamp: Date.now()
-  };
-  broadcastEvent('DEV_TEAM_EVENT', eventPayload);
-  return res.json({ success: true, event: eventPayload });
-});
-
-app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`[CAVDAX Server] Running at http://localhost:${PORT}`);
     console.log(`[CAVDAX Server] Graph Engine: ${isFalkorConnected ? 'FalkorDB Live' : 'Simulation Fallback Ready'}`);
   });

@@ -99,6 +99,16 @@ export function renderGraphToSvg(graphData, options = {}) {
     return { ...n, x, y };
   });
 
+  const maxInCol = Math.max(
+    colCounters.Source,
+    colCounters.Fact,
+    colCounters.Decision,
+    colCounters.AgentAction,
+    colCounters.Other,
+    1
+  );
+  const calculatedHeight = Math.max(height, 130 + maxInCol * 95 + 40);
+
   const nodeMap = new Map(positionedNodes.map(n => [n.id, n]));
   const validEdges = rawEdges.map(e => ({
     ...e,
@@ -194,7 +204,7 @@ export function renderGraphToSvg(graphData, options = {}) {
   }).join('\n');
 
   return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${calculatedHeight}" width="${width}" height="${calculatedHeight}">
   <style>
     text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
@@ -208,7 +218,7 @@ export function renderGraphToSvg(graphData, options = {}) {
   </defs>
 
   <!-- Background -->
-  <rect width="${width}" height="${height}" fill="${bgFill}" />
+  <rect width="${width}" height="${calculatedHeight}" fill="${bgFill}" />
 
   <!-- Title Ribbon -->
   <text x="40" y="32" fill="${textMain}" font-size="14" font-weight="bold">${escapeXml(title)}</text>
