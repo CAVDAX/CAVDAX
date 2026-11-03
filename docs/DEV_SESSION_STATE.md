@@ -9,6 +9,19 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.66 Latest Session Achievements (November 3, 2026 - 3D Enclave Raycast Scroll-Immunity & Intentional Motion Guard)
+
+- **Eliminated 3D Raycasting vs. Scroll Lock Conflict (`apps/client/src/components/CausalEnclaveHub.jsx`)**:
+  - Solved the stationary cursor camera intersection trap: when scrolling through the 8 sectors of The Causal Interception Enclave, the 3D camera pans and zooms beneath the user's stationary mouse cursor, causing Hairline's internal raycaster to fire `onRead('tile X')` and trigger `setStep(X)`, resetting scroll progression and trapping the user in place.
+  - Implemented the tri-fold Scroll-Immunity Invariant:
+    1. **Scroll Quiescence Debounce (`isScrollingRef`)**: Bound window-level wheel and touch event listeners to immediately mark `isScrollingRef.current = true` with a 280ms quiescence debounce window, suppressing all raycast activations during scrolling.
+    2. **Camera Interpolation Guard (`isTransitioningRef`)**: Discarded all raycast mutations during camera transition windows (480ms step duration).
+    3. **Intentional Pointer Motion Guard (`hasIntentionalPointerMoveRef`)**: Added pointer displacement tracking requiring physical mouse motion $\Delta = \sqrt{dx^2 + dy^2} > 6\text{px}$ before raycast selection can mutate `activeStep`. Programmatic transitions, scrolls, and canvas leaves reset this flag to `false`.
+  - Verified with Chrome DevTools automated wheel scrolling: smoothly traversed stages `CORE` $\to$ `01` $\to$ `02` $\to$ `03` $\to$ `04` $\to$ `05` $\to$ `06` $\to$ `07` with zero raycast snags or cursor traps.
+- **Production Client Verification & Asset Parity**:
+  - Full client production build completed cleanly in 17.91s with zero errors.
+  - Preserved authentic pointillist vector wordmarks and all existing visual physics.
+
 ## 1.0.65 Latest Session Achievements (November 3, 2026 - Video Player Cinema Fullscreen Standards, Minimalist Pointillist Wordmark, Supply-Chain Hardening & Intelligent Route Prefetching)
 
 - **Native Bottom-Right Fullscreen Placement & Container Escalation (`apps/client/src/components/ProjectVideoPage.jsx`, `apps/client/src/index.css`)**:

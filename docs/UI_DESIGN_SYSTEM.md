@@ -3078,3 +3078,31 @@ To resolve the tension between initial page-load performance and smooth SPA navi
    - Attach `onMouseEnter` and `onFocus` handlers to navbar tab buttons. Because human motor latency between hovering and clicking is typically 150–300ms, hover prefetching downloads the chunk before the click event fires.
 3. **Aesthetic Brand Animation Fallback**:
    - Never render a generic circular spinner in `<React.Suspense>`. Use the brand's canonical animated logo (`CavdaxBrandLoader`) with theme-adaptive stroke styling as a graceful safety net for extremely slow or throttled network connections.
+
+---
+
+## 48. 3D Raycasting vs. Scroll Lock Ergonomics: The Stationary Cursor Collision Invariant
+
+When combining scroll-driven or scroll-jacked 3D camera transitions (e.g. Three.js / WebGL / Hairline viewports) with interactive hover-driven node activation:
+
+### 48.1 The Stationary Cursor Raycast Trap
+1. **The Root Cause**:
+   - In 3D interactive canvases with pointer raycasting, hovering over a node or tile activates that element (`onRead` / `onPointerMove`).
+   - When the user scrolls with the mouse wheel or touchpad, the camera animates, moves, and zooms through 3D space.
+   - If the user's cursor remains stationary on the screen while the 3D scene translates underneath it, the internal raycaster detects an intersection between the stationary mouse coordinates and whichever tile moves into that path.
+   - This fires an inadvertent hover activation (`setStep(idx)`), reversing or interrupting the user's scroll progression and locking them in place until they physically move their cursor out of the canvas.
+
+### 48.2 The Scroll-Immunity Invariant & Intentional Motion Guard
+1. **Scroll Quiescence Debounce (`isScrollingRef`)**:
+   - Track wheel and touch gestures on the window level.
+   - The moment any scroll gesture begins, immediately set `isScrollingRef.current = true` and debounce its reset with a 280ms quiescence timer.
+   - Any raycast hit emitted while `isScrollingRef.current` is true is strictly discarded.
+2. **Camera Transition Guard (`isTransitioningRef`)**:
+   - While the 3D camera is interpolating between sectors (e.g., during the 480ms stage transition window), all raycast hover mutations must be suppressed.
+3. **Intentional Pointer Motion Displacement Guard (`hasIntentionalPointerMoveRef`)**:
+   - Do not trust passive raycast intersection events unless the user has physically moved their mouse across the screen.
+   - Measure Euclidean displacement between consecutive pointer events:
+     $$\Delta = \sqrt{(x - x_{\text{last}})^2 + (y - y_{\text{last}})^2}$$
+   - Only when $\Delta > 6\text{px}$ is the pointer marked as intentionally moving (`hasIntentionalPointerMoveRef.current = true`).
+   - Every programmatic step change, scroll event, or canvas exit resets `hasIntentionalPointerMoveRef.current = false`.
+   - Result: Users can scroll through all stages smoothly and without friction, while intentional mouse exploration remains instantaneous, precise, and fluid.
