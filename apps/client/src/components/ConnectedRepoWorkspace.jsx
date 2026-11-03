@@ -62,7 +62,10 @@ export default function ConnectedRepoWorkspace({
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
   const [branchSearch, setBranchSearch] = useState('');
+  const [highlightedBranchIndex, setHighlightedBranchIndex] = useState(0);
   const branchDropdownRef = useRef(null);
+  const branchListRef = useRef(null);
+  const branchItemRefs = useRef([]);
   const [leftWidthPercent, setLeftWidthPercent] = useState(() => {
     try {
       const saved = localStorage.getItem('cavdax.repo.splitter.width');
@@ -400,6 +403,37 @@ export default function ConnectedRepoWorkspace({
     runScan(branchName);
   };
 
+  const handleBranchKeyDown = (e) => {
+    if (!isBranchDropdownOpen) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedBranchIndex(prev => Math.min(prev + 1, Math.max(0, filteredBranches.length - 1)));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedBranchIndex(prev => Math.max(prev - 1, 0));
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredBranches.length > 0 && filteredBranches[highlightedBranchIndex]) {
+        handleSelectBranch(filteredBranches[highlightedBranchIndex].name);
+      } else if (branchSearch.trim()) {
+        handleSelectBranch(branchSearch.trim());
+      }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsBranchDropdownOpen(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isBranchDropdownOpen && branchItemRefs.current[highlightedBranchIndex]) {
+      branchItemRefs.current[highlightedBranchIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }, [highlightedBranchIndex, isBranchDropdownOpen]);
+
+  useEffect(() => {
+    setHighlightedBranchIndex(0);
+  }, [branchSearch, isBranchDropdownOpen]);
+
   const allBranchesList = branches.length > 0
     ? branches
     : [{ name: selectedBranch, isDefault: true }];
@@ -443,6 +477,7 @@ export default function ConnectedRepoWorkspace({
                         type="text"
                         value={branchSearch}
                         onChange={(e) => setBranchSearch(e.target.value)}
+                        onKeyDown={handleBranchKeyDown}
                         placeholder="Filter branches..."
                         className="w-full pl-7 pr-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-white/30 font-mono"
                         autoFocus
@@ -450,16 +485,27 @@ export default function ConnectedRepoWorkspace({
                     </div>
                   </div>
 
-                  <div className="max-h-56 overflow-y-auto has-scrubbar divide-y divide-slate-100 dark:divide-white/5 py-1">
+                  <div 
+                    ref={branchListRef}
+                    data-lenis-prevent
+                    tabIndex={0}
+                    onKeyDown={handleBranchKeyDown}
+                    className="max-h-56 overflow-y-auto overscroll-contain has-scrubbar divide-y divide-slate-100 dark:divide-white/5 py-1 focus:outline-none"
+                  >
                     {filteredBranches.length > 0 ? (
-                      filteredBranches.map(b => {
+                      filteredBranches.map((b, idx) => {
                         const isCurrent = b.name === selectedBranch;
+                        const isHighlighted = idx === highlightedBranchIndex;
                         return (
                           <button
                             key={b.name}
+                            ref={el => { branchItemRefs.current[idx] = el; }}
                             type="button"
+                            onMouseEnter={() => setHighlightedBranchIndex(idx)}
                             onClick={() => handleSelectBranch(b.name)}
-                            className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between gap-2 hover:bg-slate-100/80 dark:hover:bg-white/[0.05] transition-colors cursor-pointer ${isCurrent ? 'bg-slate-100 dark:bg-white/10 font-bold' : ''}`}
+                            className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                              isHighlighted ? 'bg-slate-200/70 dark:bg-white/15' : 'hover:bg-slate-100/80 dark:hover:bg-white/[0.05]'
+                            } ${isCurrent ? 'font-bold text-slate-950 dark:text-white' : ''}`}
                           >
                             <span className="truncate font-mono text-[11px] text-slate-800 dark:text-slate-200">{b.name}</span>
                             <div className="flex items-center gap-1 shrink-0">
