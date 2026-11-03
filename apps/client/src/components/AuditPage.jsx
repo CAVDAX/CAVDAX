@@ -520,7 +520,7 @@ export default function AuditPage() {
 
       {/* ── Footer metrics ── */}
       {filteredEntries.length > 0 && (
-        <div className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/15">
+        <div data-tour="audit-metrics" className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/15">
           <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
             Showing {filteredEntries.length} of {entries.length} loaded ({total} total recorded)
           </span>

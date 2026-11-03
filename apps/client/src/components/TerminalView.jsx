@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu } from 'lucide-react';
 import CavdaxAgentStateIndicator from './CavdaxAgentStateIndicator';
 
@@ -6,8 +6,9 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
   const logContainerRef = useRef(null);
   const trackRef = useRef(null);
   const thumbRef = useRef(null);
-  const [scrollProgress, setScrollProgress] = React.useState(1);
-  const [isHolding, setIsHolding] = React.useState(false);
+  const [scrollProgress, setScrollProgress] = useState(1);
+  const [isHolding, setIsHolding] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const isHoldingRef = useRef(false);
   const rafIdRef = useRef(null);
 
@@ -38,6 +39,30 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (!logContainerRef.current) return;
+    const el = logContainerRef.current;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      el.scrollBy({ top: 44, behavior: 'smooth' });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -44, behavior: 'smooth' });
+    } else if (e.key === 'PageDown') {
+      e.preventDefault();
+      el.scrollBy({ top: 180, behavior: 'smooth' });
+    } else if (e.key === 'PageUp') {
+      e.preventDefault();
+      el.scrollBy({ top: -180, behavior: 'smooth' });
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      el.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
+  };
+
   const handlePointerDown = (e) => {
     if (e.button !== 0 && e.pointerType === 'mouse') return;
     if (!trackRef.current) return;
@@ -57,7 +82,6 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
       if (!isHoldingRef.current || !trackRef.current) return;
       moveEvent.preventDefault();
       
-      // Cancel pending animation frame to prevent jitter
       if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
 
       rafIdRef.current = requestAnimationFrame(() => {
@@ -87,6 +111,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
   useEffect(() => {
     if (logContainerRef.current) {
       logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+      updateScrollProgress();
     }
   }, [terminalLogs]);
 
@@ -245,7 +270,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
         </div>
       )}
 
-      {/* Terminal Log Console with Slim Theme-Matching Scrollbar & Mini-Scrubber Cue */}
+      {/* Terminal Log Console with Activated Architectural Scroll Cue */}
       <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
         <style>{`
           /* Pure Mini Scroll Cue Only: Browser scrollbars completely suppressed */
@@ -260,24 +285,29 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
           }
         `}</style>
 
-        {/* Universal Architectural Scroll Cue & Rail Scrubber (Landing Page Parity: Discrete Cue -> Rail on Hold) */}
+        {/* Universal Architectural Scroll Cue & Rail Scrubber (Active on Click, Wheel, Trackpad & Arrows) */}
         <div
           ref={trackRef}
           onPointerDown={handlePointerDown}
           className="absolute right-1.5 top-3 bottom-3 w-4 flex items-center justify-center cursor-pointer select-none z-20 group"
-          title="Hold to scrub terminal output"
+          title="Click or drag to scrub terminal output (Arrow keys enabled on click)"
           aria-label="Terminal scroll cue and rail scrubber"
         >
-          {/* Architectural Rail Line: Fades in exclusively on hold/press */}
+          {/* Architectural Rail Line: subtle glow on panel focus/hover, solid on drag */}
           <div
             className={`w-[2px] h-full rounded-full bg-slate-300 dark:bg-white/20 transition-all duration-200 pointer-events-none ${
-              isHolding ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-75'
+              isHolding
+                ? 'opacity-100 scale-y-100'
+                : isFocused
+                ? 'opacity-60 scale-y-100'
+                : 'opacity-0 group-hover:opacity-40 scale-y-75 group-hover:scale-y-100'
             }`}
           />
 
           {/* Thumb / Cue Indicator:
-              - In resting state: Discrete floating scroll cue pill (w-1.5 h-5 rounded-full bg-slate-400 dark:bg-white/40).
-              - In holding state: Morphs smoothly into the architectural luminous draggable scrubber thumb.
+              - Resting: Discrete floating scroll cue pill (w-1.5 h-5 bg-slate-400 dark:bg-white/40).
+              - Active on Focus: Luminous indicator (w-1.5 h-6 bg-slate-800 dark:bg-white/90).
+              - Holding / Scrubbing: Expanded luminous thumb (w-2.5 h-7).
           */}
           <div
             ref={thumbRef}
@@ -288,6 +318,8 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
             className={`absolute left-1/2 rounded-full pointer-events-none transition-all ${
               isHolding
                 ? 'w-2.5 h-7 bg-slate-950 dark:bg-white shadow-[0_0_12px_rgba(0,0,0,0.4)] dark:shadow-[0_0_12px_rgba(255,255,255,0.7)] duration-75'
+                : isFocused
+                ? 'w-1.5 h-6 bg-slate-800 dark:bg-white/90 shadow-[0_0_8px_rgba(0,0,0,0.25)] dark:shadow-[0_0_8px_rgba(255,255,255,0.5)] duration-150'
                 : 'w-1.5 h-5 bg-slate-400 dark:bg-white/40 group-hover:bg-slate-700 dark:group-hover:bg-white/80 group-hover:h-6 duration-200'
             }`}
           />
@@ -295,8 +327,13 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
 
         <div
           ref={logContainerRef}
+          tabIndex={0}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={handleKeyDown}
           onScroll={handleScroll}
-          className="flex-1 p-4 overflow-y-auto terminal-cue-only-scroll font-mono text-xs space-y-2 select-text"
+          data-lenis-prevent
+          className="flex-1 p-4 pr-5 overflow-y-auto overscroll-contain terminal-cue-only-scroll font-mono text-xs space-y-2 select-text outline-none focus-visible:ring-1 focus-visible:ring-slate-300 dark:focus-visible:ring-white/20 transition-all cursor-text"
         >
         {terminalLogs.map((log, index) => {
           let badgeColor = 'text-slate-800 dark:text-slate-300';

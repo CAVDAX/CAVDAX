@@ -1434,7 +1434,7 @@ export default function App() {
         /* Operational Causal Verification Console View — Strict Zero-Overflow F11 & Desktop Containment (§Rule 14) */
         <div className="flex-1 min-h-0 flex flex-col pt-20 sm:pt-22 px-3 sm:px-6 max-w-[1600px] mx-auto w-full pb-3 overflow-hidden">
           {/* Subheader Toolbar & Metrics */}
-          <div className="flex-shrink-0 mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-300 dark:border-white/10">
+          <div data-tour="console-ribbon" className="flex-shrink-0 mb-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-300 dark:border-white/10">
             <div>
               <div>
                 <h1 className="text-sm sm:text-base font-bold text-slate-950 dark:text-white font-mono">

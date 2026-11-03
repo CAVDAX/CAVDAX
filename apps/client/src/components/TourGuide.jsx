@@ -21,10 +21,21 @@ export const resetAllTours = () => {
 
 const CONSOLE_TOUR_STEPS = [
   {
+    id: 'console-ribbon',
+    target: '[data-tour="console-ribbon"]',
+    title: 'Command Ribbon & Live Benchmarks',
+    badge: 'STEP 1 OF 5',
+    description:
+      'Toggle between the 4-Act ADR Storyline and live GitHub repos, monitor the 1.84ms GraphBLAS traversal benchmark, and track agent cognitive states.',
+    tip: 'Sub-2ms evaluation is achieved via Sparse BLAS semirings.',
+    placement: 'bottom-center',
+    scrollBlock: 'start',
+  },
+  {
     id: 'story-stepper',
     target: '[data-tour="story-stepper"]',
     title: '4-Act Causal Invalidation Storyline',
-    badge: 'STEP 1 OF 4',
+    badge: 'STEP 2 OF 5',
     description:
       'Simulate live ADR ingestion, cascading graph invalidation, and autonomous agent self-correction.',
     tip: 'Click any act or press 1–4 to jump scenarios.',
@@ -35,7 +46,7 @@ const CONSOLE_TOUR_STEPS = [
     id: 'graph-canvas',
     target: '[data-tour="graph-canvas"]',
     title: 'FalkorDB Causal Dependency Graph',
-    badge: 'STEP 2 OF 4',
+    badge: 'STEP 3 OF 5',
     description:
       'Interactive GraphBLAS matrix mapping active ADRs and invalidated dependency cascades in real time.',
     tip: 'Click any node to inspect Cypher properties.',
@@ -46,7 +57,7 @@ const CONSOLE_TOUR_STEPS = [
     id: 'terminal-view',
     target: '[data-tour="terminal-view"]',
     title: 'Terminal Metrics & Cognitive Mitosis HUD',
-    badge: 'STEP 3 OF 4',
+    badge: 'STEP 4 OF 5',
     description:
       'Live diagnostics tracking Cypher queries, MCP tool calls, and agent cognitive states.',
     tip: 'Stale executions are intercepted before touching disk.',
@@ -57,7 +68,7 @@ const CONSOLE_TOUR_STEPS = [
     id: 'mcp-gate',
     target: '[data-tour="mcp-gate"]',
     title: 'Enclosed Model Context Protocol (MCP) Gate',
-    badge: 'STEP 4 OF 4',
+    badge: 'STEP 5 OF 5',
     description:
       'Enclosed MCP barrier hard-rejecting stale or revoked agent write intents in <15ms.',
     tip: 'Prevents silent cache rot typical of Vector RAG.',
@@ -119,7 +130,7 @@ const AUDIT_TOUR_STEPS = [
     id: 'audit-header',
     target: '[data-tour="audit-header"]',
     title: 'FalkorDB Audit & Verification Stream',
-    badge: 'STEP 1 OF 3',
+    badge: 'STEP 1 OF 4',
     description:
       'FalkorDB audit stream tracking verified agent actions and sub-15ms GraphBLAS latency.',
     tip: 'Sub-15ms evaluation powered by Sparse BLAS matrix multiplication.',
@@ -130,9 +141,9 @@ const AUDIT_TOUR_STEPS = [
     id: 'audit-filter',
     target: '[data-tour="audit-filter"]',
     title: 'Multi-Repo Scope & Forensic Verdict Filters',
-    badge: 'STEP 2 OF 3',
+    badge: 'STEP 2 OF 4',
     description:
-      'Filter verification audit logs across repositories, verdict states, and target files.',
+      'Filter verification audit logs across repositories, branch scopes (including PR branches), verdict states, and target files.',
     tip: 'Filter by BLOCKED to inspect intercepted architectural violations.',
     placement: 'bottom-center',
     scrollBlock: 'start',
@@ -141,10 +152,21 @@ const AUDIT_TOUR_STEPS = [
     id: 'audit-ledger',
     target: '[data-tour="audit-ledger"]',
     title: 'Tamper-Evident Action Audit Ledger',
-    badge: 'STEP 3 OF 3',
+    badge: 'STEP 3 OF 4',
     description:
       'Immutable ledger detailing action IDs, target files, decision verdicts, and execution timestamps.',
     tip: 'Blocked writes reveal architectural divergence before disk writes.',
+    placement: 'top-center',
+    scrollBlock: 'center',
+  },
+  {
+    id: 'audit-metrics',
+    target: '[data-tour="audit-metrics"]',
+    title: 'Live Architectural Interception Ratio',
+    badge: 'STEP 4 OF 4',
+    description:
+      'Real-time summary tracking total approved writes versus blocked divergence attempts, proving zero silent cache rot touches disk.',
+    tip: 'Blocked operations represent preserved architectural invariants.',
     placement: 'top-center',
     scrollBlock: 'center',
   },
@@ -193,7 +215,7 @@ const MCP_TOUR_STEPS = [
     id: 'mcp-overview',
     target: '[data-tour="mcp-overview"]',
     title: 'Model Context Protocol (MCP) Gateway',
-    badge: 'STEP 1 OF 3',
+    badge: 'STEP 1 OF 4',
     description:
       'Enclose autonomous coding agents to intercept filesystem writes before touching disk.',
     tip: 'Sub-15ms gate verification via GraphBLAS matrix operations.',
@@ -204,7 +226,7 @@ const MCP_TOUR_STEPS = [
     id: 'mcp-clients',
     target: '[data-tour="mcp-clients"]',
     title: 'Drop-In Client Configuration Guides',
-    badge: 'STEP 2 OF 3',
+    badge: 'STEP 2 OF 4',
     description:
       'Drop-in stdio proxy configurations for Claude Code, Cursor IDE, and Windsurf.',
     tip: 'Copy client configs to integrate within minutes.',
@@ -212,10 +234,21 @@ const MCP_TOUR_STEPS = [
     scrollBlock: 'start',
   },
   {
+    id: 'mcp-guardrails',
+    target: '[data-tour="mcp-guardrails"]',
+    title: 'Agent Guardrails (.cursorrules & CLAUDE.md)',
+    badge: 'STEP 3 OF 4',
+    description:
+      'Drop-in prompt directives instructing Cursor and Claude Code to verify all architecture decisions before modifying protected source files.',
+    tip: 'Enforces compliance at the model prompt layer before tools fire.',
+    placement: 'top-center',
+    scrollBlock: 'center',
+  },
+  {
     id: 'mcp-workflow',
     target: '[data-tour="mcp-workflow"]',
     title: '3-Step Enclosed Interception Loop',
-    badge: 'STEP 3 OF 3',
+    badge: 'STEP 4 OF 4',
     description:
       'In-flight tool capture, Cypher provenance traversal, and deterministic commit or rejection.',
     tip: 'Eliminates silent cache rot across autonomous workflows.',
