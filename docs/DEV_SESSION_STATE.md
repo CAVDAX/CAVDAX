@@ -9,6 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.67 Latest Session Achievements (November 3, 2026 - Out-of-Band Divergence Radar Production Hardening & SSRF-Protected Webhooks)
+
+- **Hardened Production Webhook Pipeline (`apps/server/index.js`, `apps/server/webhookDispatcher.js`)**:
+  - Solved the GitHub webhook timeout vulnerability: transitioned `POST /api/github/webhook` to an immediate `202 Accepted` non-blocking response with `setImmediate()` background dispatching, eliminating the risk of exceeding GitHub's strict 10-second delivery timeout during external Resend/Push network latencies.
+  - Wired RFC 8292 VAPID Web Push (`broadcastWebPushAlert`) directly into the production GitHub webhook handler, enabling background desktop and mobile service workers to receive instant out-of-band notifications on repository pushes.
+  - Implemented multi-signal ADR detection: parses commit directives (`breaks: DEC-xxx`, `supersedes: ADR-xxx`) AND actively inspects `commit.added` and `commit.modified` against `isAdrPath(file)` from `core/ingestion/adrPaths.js`, extracting ADR identifiers (`ADR-002`) and automatically triggering the FalkorDB causal cascade.
+- **Repository Scoping & Blast-Radius Isolation (`apps/server/index.js`)**:
+  - Replaced indiscriminate global email broadcasting with scoped recipient resolution: users are only notified if their `watchedRepos` includes the repository, if they leave `watchedRepos` empty (global watch), or if the repository belongs to their GitHub account login.
+- **Lightweight Generic Outgoing Webhook Dispatcher (`apps/server/webhookDispatcher.js`)**:
+  - Implemented `dispatchOutgoingWebhook(url, payload)` supporting Slack incoming webhooks, Discord, and custom developer endpoints.
+  - Enforced strict SSRF defense: rejects IPv4 private subnets (RFC 1918 10.x, 172.16-31.x, 192.168.x), loopback (`127.0.0.1`, `localhost`), IPv6 ULA/link-local (`[fc00::]`, `[fe80::]`), and cloud metadata endpoints (`169.254.169.254`).
+  - Added socket starvation defense with a strict 3500ms timeout via `AbortSignal.timeout(3500)`.
+- **Expanded Test Suite (63 Passing Tests)**:
+  - Added SSRF rejection test suite and notification preference persistence tests in `apps/server/test/invalidationAlerts.test.mjs` (63 passing unit tests across the entire server suite).
+
 ## 1.0.66 Latest Session Achievements (November 3, 2026 - 3D Enclave Raycast Scroll-Immunity & Intentional Motion Guard)
 
 - **Eliminated 3D Raycasting vs. Scroll Lock Conflict (`apps/client/src/components/CausalEnclaveHub.jsx`)**:
