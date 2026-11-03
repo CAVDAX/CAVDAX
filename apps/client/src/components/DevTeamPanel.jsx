@@ -319,6 +319,7 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
         fetch('/api/dev/log-event', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify({
             type: 'SECURITY',
             message: `Developer Master Passkey accepted for user @${result.session.user}. Enclave unlocked.`

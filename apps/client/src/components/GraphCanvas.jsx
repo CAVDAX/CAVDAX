@@ -418,30 +418,184 @@ export default function GraphCanvas({
     }
   }
 
-  const exportSvgUrl = `/api/graph/export-image?theme=${isDarkTheme ? 'dark' : 'light'}${simulatedBlastNode ? `&node_id=${simulatedBlastNode.id}&blast=1` : ''}`;
-
-  const handleDownloadGraph = async () => {
+  // Client-Side Standalone Vector SVG Serializer:
+  // Exports 100% of the live graph DAG with dynamic height bounding box,
+  // preventing small-window viewport clipping and preserving all connected repo nodes & blast annotations.
+  const handleDownloadGraph = () => {
     playClick();
     try {
-      const res = await fetch(exportSvgUrl);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
+      const exportWidth = 880;
+      const exportHeight = canvasHeight + 70;
+      const bgFill = isDarkTheme ? '#060709' : '#F8FAFC';
+      const textMain = isDarkTheme ? '#F8FAFC' : '#0F172A';
+      const textMuted = isDarkTheme ? '#94A3B8' : '#64748B';
+      const repoName = repo?.name || repo?.full_name || 'Demo Sandbox';
+
+      // 1. Vector Marker Defs
+      const defs = `
+        <defs>
+          <marker id="dl-arrow-default" viewBox="0 0 10 10" refX="38" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${isDarkTheme ? '#475569' : '#94A3B8'}" />
+          </marker>
+          <marker id="dl-arrow-supersedes" viewBox="0 0 10 10" refX="38" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#FB7185" />
+          </marker>
+          <marker id="dl-arrow-blast" viewBox="0 0 10 10" refX="38" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
+          </marker>
+        </defs>
+      `;
+
+      // 2. Vector Edges with Opaque Shield Badges
+      const edgesSvg = edges.map((edge) => {
+        const isSupersedes = edge.type === 'SUPERSEDES';
+        const isReplaces = edge.type === 'REPLACES';
+        const isBlast = blastNodeIds.has(edge.source) || blastNodeIds.has(edge.target) || edge.source === simulatedBlastNode?.id;
+
+        let strokeColor = isDarkTheme ? '#334155' : '#CBD5E1';
+        let marker = 'url(#dl-arrow-default)';
+        let dashAttr = '';
+
+        if (isBlast) {
+          strokeColor = '#F43F5E';
+          marker = 'url(#dl-arrow-blast)';
+          dashAttr = 'stroke-dasharray="5,3"';
+        } else if (isSupersedes) {
+          strokeColor = '#FB7185';
+          marker = 'url(#dl-arrow-supersedes)';
+          dashAttr = 'stroke-dasharray="4,3"';
+        } else if (isReplaces) {
+          strokeColor = isDarkTheme ? '#FFFFFF' : '#0F172A';
+          dashAttr = 'stroke-dasharray="5,3"';
+        }
+
+        const isIntraColumn = Math.abs(edge.sourceNode.x - edge.targetNode.x) < 30;
+        const badgeBg = isDarkTheme ? '#0B0D13' : '#FFFFFF';
+        const badgeBorder = isBlast ? '#F43F5E' : (isSupersedes ? '#FB7185' : (isDarkTheme ? '#334155' : '#CBD5E1'));
+        const labelColor = isBlast ? '#F43F5E' : (isSupersedes ? '#FB7185' : (isDarkTheme ? '#94A3B8' : '#475569'));
+        const badgeW = Math.max(edge.type.length * 5.4 + 12, 44);
+        const badgeH = 14;
+
+        const sy = edge.sourceNode.y + 45;
+        const ty = edge.targetNode.y + 45;
+
+        if (isIntraColumn) {
+          const arcOffset = 45;
+          const pathD = `M ${edge.sourceNode.x - 32} ${sy} C ${edge.sourceNode.x - arcOffset - 25} ${sy}, ${edge.targetNode.x - arcOffset - 25} ${ty}, ${edge.targetNode.x - 32} ${ty}`;
+          const midX = edge.sourceNode.x - arcOffset - 20;
+          const midY = (sy + ty) / 2;
+          return `
+            <g>
+              <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="${isBlast ? 2.4 : 1.8}" ${dashAttr} marker-end="${marker}" />
+              <rect x="${midX - badgeW / 2}" y="${midY - badgeH / 2}" width="${badgeW}" height="${badgeH}" rx="3.5" ry="3.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1" />
+              <text x="${midX}" y="${midY + 3.5}" text-anchor="middle" fill="${labelColor}" font-size="7" font-family="monospace" font-weight="bold">${edge.type}</text>
+            </g>
+          `;
+        }
+
+        const midX = (edge.sourceNode.x + edge.targetNode.x) / 2;
+        const midY = (sy + ty) / 2;
+        return `
+          <g>
+            <line x1="${edge.sourceNode.x}" y1="${sy}" x2="${edge.targetNode.x}" y2="${ty}" stroke="${strokeColor}" stroke-width="${isBlast ? 2.4 : (isSupersedes || isReplaces ? 1.8 : 1.2)}" ${dashAttr} marker-end="${marker}" />
+            <rect x="${midX - badgeW / 2}" y="${midY - badgeH / 2}" width="${badgeW}" height="${badgeH}" rx="3.5" ry="3.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1" />
+            <text x="${midX}" y="${midY + 3.5}" text-anchor="middle" fill="${labelColor}" font-size="7.5" font-family="monospace" font-weight="bold">${edge.type}</text>
+          </g>
+        `;
+      }).join('\n');
+
+      // 3. Vector Nodes with High-Contrast Bezel and Status Badges
+      const nodesSvg = nodes.map((node) => {
+        const colors = getNodeColors(node);
+        const inBlast = blastNodeIds.has(node.id);
+        const isSimRoot = simulatedBlastNode?.id === node.id;
+        const ny = node.y + 45;
+
+        let badgeBg = isDarkTheme ? '#1E293B' : '#E2E8F0';
+        let badgeFg = colors.text;
+        if (inBlast) {
+          badgeBg = '#E11D48';
+          badgeFg = '#FFFFFF';
+        } else if (node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale) {
+          badgeBg = isDarkTheme ? '#4C0519' : '#FFE4E6';
+          badgeFg = '#FB7185';
+        }
+
+        const badgeText = colors.badge || node.status || 'ACTIVE';
+        const displayLabel = node.label || (node.id?.startsWith('act-') ? 'AgentAction' : 'Node');
+        const shortId = node.id.length > 12 ? node.id.slice(0, 11) + '…' : node.id;
+
+        return `
+          <g transform="translate(${node.x}, ${ny})">
+            <!-- Outer Glow Halo -->
+            <rect x="-36" y="-26" width="72" height="52" rx="10" ry="10" fill="none" stroke="${colors.stroke}" stroke-width="${inBlast || isSimRoot ? 2.5 : 1.2}" opacity="${inBlast || isSimRoot ? 0.95 : 0.3}" />
+            <!-- Node Double-Bezel Body -->
+            <rect x="-32" y="-22" width="64" height="44" rx="8" ry="8" fill="${colors.fill}" stroke="${isSimRoot ? '#38BDF8' : colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" />
+            <!-- Core Node ID -->
+            <text x="0" y="-3" text-anchor="middle" fill="${colors.text}" font-size="9.5" font-family="monospace" font-weight="bold">${shortId}</text>
+            <!-- High-Contrast Status Badge -->
+            <rect x="-24" y="4" width="48" height="12" rx="3" ry="3" fill="${badgeBg}" />
+            <text x="0" y="13" text-anchor="middle" fill="${badgeFg}" font-size="6.5" font-family="monospace" font-weight="bold">${badgeText}</text>
+            <!-- Label Indicator -->
+            <text x="0" y="32" text-anchor="middle" fill="${textMuted}" font-size="8" font-family="monospace">:${displayLabel}</text>
+          </g>
+        `;
+      }).join('\n');
+
+      // 4. Optional Blast Radius Simulation Banner
+      let blastBanner = '';
+      if (simulatedBlastNode) {
+        blastBanner = `
+          <g transform="translate(40, 48)">
+            <rect width="800" height="26" rx="6" fill="#881337" stroke="#F43F5E" stroke-width="1.2" opacity="0.95" />
+            <text x="16" y="17" fill="#FFE4E6" font-family="monospace" font-size="10.5" font-weight="bold">
+              [WHAT-IF SIMULATION]: Invalidation of ${simulatedBlastNode.id} impacts ${blastSummary?.decisions || 0} Decisions, ${blastSummary?.facts || 0} Facts, ${blastSummary?.actions || 0} Actions
+            </text>
+          </g>
+        `;
+      }
+
+      // 5. Complete Standalone Vector SVG Document
+      const fullSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${exportWidth} ${exportHeight}" width="${exportWidth}" height="${exportHeight}">
+  <style>
+    text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+  ${defs}
+  <!-- Canvas Background -->
+  <rect width="${exportWidth}" height="${exportHeight}" fill="${bgFill}" />
+
+  <!-- Top Title Ribbon -->
+  <text x="32" y="28" fill="${textMain}" font-size="13" font-weight="bold">CAVDAX • ${title} [${repoName}]</text>
+  <text x="${exportWidth - 32}" y="28" text-anchor="end" fill="${textMuted}" font-size="10.5">Nodes: ${nodes.length} • Edges: ${edges.length} • FalkorDB GraphBLAS Provenance DAG</text>
+
+  <!-- Optional Blast Radius Banner -->
+  ${blastBanner}
+
+  <!-- Column Stage Headers -->
+  <text x="95" y="${simulatedBlastNode ? 88 : 50}" text-anchor="middle" fill="${textMuted}" font-size="9.5" font-weight="bold">[SOURCES]</text>
+  <text x="295" y="${simulatedBlastNode ? 88 : 50}" text-anchor="middle" fill="${textMuted}" font-size="9.5" font-weight="bold">[FACTS]</text>
+  <text x="495" y="${simulatedBlastNode ? 88 : 50}" text-anchor="middle" fill="${textMuted}" font-size="9.5" font-weight="bold">[DECISIONS]</text>
+  <text x="715" y="${simulatedBlastNode ? 88 : 50}" text-anchor="middle" fill="${textMuted}" font-size="9.5" font-weight="bold">[ACTIONS / WRITES]</text>
+
+  <!-- Vector Edges -->
+  ${edgesSvg}
+
+  <!-- Vector Nodes -->
+  ${nodesSvg}
+</svg>`;
+
+      const blob = new Blob([fullSvg], { type: 'image/svg+xml;charset=utf-8' });
       const blobUrl = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = `cavdax-causal-graph-${repo?.name || 'topology'}.svg`;
+      link.download = `cavdax-causal-graph-${(repo?.name || 'topology').toLowerCase()}.svg`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(blobUrl);
-    } catch {
-      // Fallback
-      const link = document.createElement('a');
-      link.href = exportSvgUrl;
-      link.download = `cavdax-causal-graph.svg`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Failed to export full vector SVG:', err);
     }
   };
 
