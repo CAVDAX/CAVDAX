@@ -66,7 +66,15 @@ export function initGlobalClickSound() {
   if (typeof window === 'undefined') return;
   if (document.documentElement.dataset.soundInit === '1') return;
   document.documentElement.dataset.soundInit = '1';
-  initAudioPool();
+
+  // Defer audio pool instantiation until the first user gesture
+  const unlockAudio = () => {
+    initAudioPool();
+    window.removeEventListener('pointerdown', unlockAudio, { capture: true });
+    window.removeEventListener('keydown', unlockAudio, { capture: true });
+  };
+  window.addEventListener('pointerdown', unlockAudio, { capture: true, once: true });
+  window.addEventListener('keydown', unlockAudio, { capture: true, once: true });
 }
 
 /**

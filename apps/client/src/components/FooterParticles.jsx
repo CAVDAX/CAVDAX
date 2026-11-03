@@ -165,6 +165,18 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               : Math.min(1.0, 0.84 + (alpha / 255) * 0.16);
             const lightColor = `rgba(${lr}, ${lg}, ${lb}, ${lightAlpha.toFixed(3)})`;
 
+            // Boundary Contour Detection:
+            // Check cardinal neighbors. If any neighbor is empty/transparent, this particle sits on the outer edge/contour!
+            const ix = Math.floor(x);
+            const iy = Math.floor(y);
+            const stepInt = Math.max(1, Math.round(step));
+            const leftAlpha = ix >= stepInt ? data[(iy * width + (ix - stepInt)) * 4 + 3] : 0;
+            const rightAlpha = ix + stepInt < width ? data[(iy * width + (ix + stepInt)) * 4 + 3] : 0;
+            const topAlpha = iy >= stepInt ? data[((iy - stepInt) * width + ix) * 4 + 3] : 0;
+            const bottomAlpha = iy + stepInt < height ? data[((iy + stepInt) * width + ix) * 4 + 3] : 0;
+
+            const isEdge = leftAlpha < 80 || rightAlpha < 80 || topAlpha < 80 || bottomAlpha < 80;
+
             newParticles.push({
               x: x,
               y: y,
@@ -175,9 +187,10 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               size,
               alpha: rawAlpha,
               originalAlpha: rawAlpha,
-              spring: 0.05 + Math.random() * 0.03,
-              friction: 0.84 + Math.random() * 0.04,
-              disperseForce: 1.4 + Math.random() * 0.8,
+              isEdge,
+              spring: isEdge ? (0.05 + Math.random() * 0.03) : (0.16 + Math.random() * 0.04), // Core has higher spring anchoring
+              friction: isEdge ? (0.84 + Math.random() * 0.04) : 0.88,
+              disperseForce: isEdge ? (1.5 + Math.random() * 0.8) : 0.25, // Core has minimal displacement to prevent puncturing
               isDissolving: false,
               ashVx: 0,
               ashVy: 0,
@@ -271,7 +284,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           p.y += p.ashVy;
           p.alpha *= 0.94;
         } else {
-          // Quadratic Repulsion Physics
+          // Boundary Wave & Core Preservation Physics (No brand puncturing/holes)
           const dx = mouse.x - p.x;
           const dy = mouse.y - p.y;
           const distSq = dx * dx + dy * dy;
@@ -279,9 +292,20 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           if (distSq < mouse.radius * mouse.radius && distSq > 0) {
             const dist = Math.sqrt(distSq);
             const normDist = dist / mouse.radius;
-            const force = Math.pow(1 - normDist, 2) * 8 * p.disperseForce;
-            p.vx -= (dx / dist) * force;
-            p.vy -= (dy / dist) * force;
+
+            if (p.isEdge) {
+              // Edge & border particles react with an undulating boundary ripple wave
+              const wave = Math.sin(normDist * Math.PI) * Math.pow(1 - normDist, 1.5);
+              const force = wave * 6.5 * p.disperseForce;
+              p.vx -= (dx / dist) * force;
+              p.vy -= (dy / dist) * force;
+            } else {
+              // Interior core particles remain anchored to maintain solid brand integrity (No puncturing/holes!)
+              // Subtle resonant micro-displacement without tearing or creating voids
+              const coreForce = Math.pow(1 - normDist, 3) * 0.45;
+              p.vx -= (dx / dist) * coreForce;
+              p.vy -= (dy / dist) * coreForce;
+            }
           }
 
           // Spring-Damping Return Physics
@@ -395,18 +419,18 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
   }, [text]);
 
   return (
-    <footer className="relative w-full bg-[var(--bg-main)] pt-8 pb-8 overflow-visible select-none transition-colors duration-200">
-      {/* Architectural Centered Button Wings (72vw with subtle gradient feathering into the void) */}
-      <div 
-        aria-hidden="true" 
+    <footer className="relative w-full border-t border-slate-200 dark:border-white/20 bg-[#f8fafc] dark:bg-[#07090b] text-slate-900 dark:text-white pt-10 sm:pt-14 pb-8 transition-colors select-none overflow-visible">
+      {/* Top Ambient Edge Highlight Line */}
+      <div
+        aria-hidden="true"
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[72vw] max-w-5xl h-px pointer-events-none z-10"
       >
-        <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-300 dark:via-white/35 to-transparent" />
+        <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-300 dark:via-white/50 to-transparent" />
       </div>
 
       {/* Scroll to Top Center Button (CAVDAX Signature Architectural Pattern) */}
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={() => {
           playClick();
           window.dispatchEvent(new CustomEvent('cavdax:dissolve-particles'));
@@ -417,249 +441,299 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }
           }, 320);
-        }} 
+        }}
         className="footer-scroll-top group"
         aria-label="Scroll to top"
         title="Scroll to top"
       >
-        {/* Iron Man Arc Reactor Triangle Core (Sleek, Small, Solid White Filled in Dark Mode - No TranslateY) */}
-        <svg 
-          viewBox="0 0 24 24" 
-          width="13" 
-          height="13" 
+        <svg
+          viewBox="0 0 24 24"
+          width="13"
+          height="13"
           className="arc-reactor-triangle pointer-events-none"
           aria-hidden="true"
         >
-          <path 
-            d="M 12 5.5 L 18.8 17.5 L 5.2 17.5 Z" 
+          <path
+            d="M 12 5.5 L 18.8 17.5 L 5.2 17.5 Z"
             fill="currentColor"
             stroke="currentColor"
             strokeWidth="1.2"
-            strokeLinejoin="round" 
-            strokeLinecap="round" 
+            strokeLinejoin="round"
+            strokeLinecap="round"
           />
         </svg>
       </button>
 
-      {/* Particle Canvas Container */}
-      <div ref={containerRef} className="relative w-full flex items-center justify-center cursor-crosshair">
-        <canvas ref={canvasRef} className="block" />
+      {/* TOP TIER: Architectural Header */}
+      <div className="max-w-7xl mx-auto px-6 mb-10 sm:mb-12">
+        <div className="flex flex-col pb-6 border-b border-slate-200 dark:border-white/20 gap-2">
+          <span className="font-mono font-black text-base sm:text-lg tracking-widest text-slate-950 dark:text-white">
+            CAVDAX
+          </span>
+          <div className="flex flex-col gap-1 text-xs text-slate-600 dark:text-slate-400 font-mono">
+            <p>Contextual Action &amp; Verified Decision Autonomous eXecution.</p>
+            <p>Deterministic causal graph invalidation powered by FalkorDB &amp; GraphBLAS.</p>
+          </div>
+        </div>
+
+        {/* MIDDLE TIER: Swiss Engineering Matrix (Bequant Style with Crisp Hairline Dividers) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-6 text-xs font-mono pt-6">
+          {/* Column 1: Core Architecture */}
+          <div className="pr-4">
+            <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
+              <span className="text-slate-400 dark:text-zinc-500">01</span>
+              Architecture
+            </h3>
+            <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
+              <li>
+                <a
+                  href="#hero-section"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    playClick();
+                    if (window.__lenis) window.__lenis.scrollTo('#hero-section', { offset: -60, duration: 1.2 });
+                    else document.getElementById('hero-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer block"
+                >
+                  Cache Rot Elimination
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#causal-loop-section"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    playClick();
+                    if (window.__lenis) window.__lenis.scrollTo('#causal-loop-section', { offset: -60, duration: 1.2 });
+                    else document.getElementById('causal-loop-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer block"
+                >
+                  4-Step Causal Loop
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#enclave-hub-section"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    playClick();
+                    if (window.__lenis) window.__lenis.scrollTo('#enclave-hub-section', { offset: -60, duration: 1.2 });
+                    else document.getElementById('enclave-hub-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer block"
+                >
+                  Interception Enclave
+                </a>
+              </li>
+              <li>
+                <a
+                  href="#faq-section"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    playClick();
+                    if (window.__lenis) window.__lenis.scrollTo('#faq-section', { offset: -60, duration: 1.2 });
+                    else document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer block"
+                >
+                  Technical Invariant FAQ
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 2: Protocol Gateways */}
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6 pr-4">
+            <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
+              <span className="text-slate-400 dark:text-zinc-500">02</span>
+              Gateways & Tools
+            </h3>
+            <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('console');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Live Mutation Radar
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('mcp');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Claude Code MCP Gate
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('mcp');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Cursor Stdio Transceiver
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('walkthrough');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  10m 22s Walkthrough
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Verification & Governance */}
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6 pr-4">
+            <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
+              <span className="text-slate-400 dark:text-zinc-500">03</span>
+              Verification
+            </h3>
+            <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('audit');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Cryptographic Audit Log
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('team');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Core System Architects
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('support');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Support Enclave
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onSelectTab) onSelectTab('profile');
+                  }}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
+                >
+                  Verification Tier Matrix
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4: Runtime Ecosystem */}
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6">
+            <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
+              <span className="text-slate-400 dark:text-zinc-500">04</span>
+              Ecosystem
+            </h3>
+            <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
+              <li>
+                <a
+                  href="https://github.com/suneetchugh-dev"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => playClick()}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors block"
+                >
+                  GitHub Repository
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://falkordb.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => playClick()}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors block"
+                >
+                  FalkorDB Graph Engine
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://graphblas.org"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => playClick()}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors block"
+                >
+                  GraphBLAS Sparse Semirings
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/suneetchugh-dev/CAVDAX/blob/main/LICENSE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => playClick()}
+                  className="hover:text-slate-950 dark:hover:text-white transition-colors block"
+                >
+                  GNU GPL-3.0 License
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
 
-      {/* Architectural Hairline Divider separating the grand Particle Typography from Footer Navigation */}
-      <div className="max-w-7xl mx-auto px-6 mt-16 sm:mt-20 mb-10">
-        <div className="w-full h-px bg-slate-300/80 dark:bg-white/20" />
-      </div>
-
-      {/* Structured Footer Navigation Grid */}
-      <div className="max-w-7xl mx-auto px-6 mb-12 grid grid-cols-2 sm:grid-cols-4 gap-8 text-xs font-mono">
-        <div>
-          <h4 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3">Architecture</h4>
-          <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
-            <li>
-              <a
-                href="#hero-section"
-                onClick={(e) => {
-                  e.preventDefault();
-                  playClick();
-                  if (window.__lenis) window.__lenis.scrollTo('#hero-section', { offset: -60, duration: 1.2 });
-                  else document.getElementById('hero-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                Cache Rot Elimination
-              </a>
-            </li>
-            <li>
-              <a
-                href="#causal-loop-section"
-                onClick={(e) => {
-                  e.preventDefault();
-                  playClick();
-                  if (window.__lenis) window.__lenis.scrollTo('#causal-loop-section', { offset: -60, duration: 1.2 });
-                  else document.getElementById('causal-loop-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                4-Step Causal Loop
-              </a>
-            </li>
-            <li>
-              <a
-                href="#radar-section"
-                onClick={(e) => {
-                  e.preventDefault();
-                  playClick();
-                  if (window.__lenis) window.__lenis.scrollTo('#radar-section', { offset: -60, duration: 1.2 });
-                  else document.getElementById('radar-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                Provenance Radar
-              </a>
-            </li>
-            <li>
-              <a
-                href="#faq-section"
-                onClick={(e) => {
-                  e.preventDefault();
-                  playClick();
-                  if (window.__lenis) window.__lenis.scrollTo('#faq-section', { offset: -60, duration: 1.2 });
-                  else document.getElementById('faq-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer"
-              >
-                Technical FAQ
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3">Developer Tools</h4>
-          <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('console');
-                  else if (onLaunchConsole) onLaunchConsole();
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Interactive Console
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('mcp');
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Connect MCP Agent
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('audit');
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Audit Log Stream
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('profile');
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Subscription Tiers
-              </button>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3">Enclave & Security</h4>
-          <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('team');
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Core Architects
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  if (onSelectTab) onSelectTab('support');
-                }}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
-              >
-                Support Enclave
-              </button>
-            </li>
-            <li>
-              <a
-                href="https://github.com/suneetchugh-dev/CAVDAX/blob/main/LICENSE"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playClick()}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors"
-              >
-                Security & License
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3">Ecosystem</h4>
-          <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
-            <li>
-              <a
-                href="https://github.com/suneetchugh-dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playClick()}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors"
-              >
-                GitHub Repository
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://falkordb.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playClick()}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors"
-              >
-                FalkorDB Graph Engine
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://graphblas.org"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playClick()}
-                className="hover:text-slate-950 dark:hover:text-white transition-colors"
-              >
-                GraphBLAS Semirings
-              </a>
-            </li>
-
-          </ul>
+      {/* GRAND BASEMENT SECTION: Monumental Stippled Pointillism Wordmark (Retool / Parallel Standard) */}
+      <div className="w-full relative border-t border-slate-200/80 dark:border-white/20 pt-4 sm:pt-6 pb-2 sm:pb-4 overflow-hidden">
+        <div ref={containerRef} className="relative w-full flex items-center justify-center cursor-crosshair">
+          <canvas ref={canvasRef} className="block" />
         </div>
       </div>
 
-      {/* Footer Meta & Copyright */}
-      <div className="max-w-7xl mx-auto px-6 pt-6 border-t border-slate-200 dark:border-white/10 flex flex-col md:flex-row items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-mono gap-3 text-center md:text-left">
+      {/* BOTTOM LEGAL BAR: Single-Line Monospace Metadata */}
+      <div className="max-w-7xl mx-auto px-6 pt-5 border-t border-slate-200/80 dark:border-white/20 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono gap-3 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
-          <span className="font-mono font-black text-sm sm:text-base tracking-wider text-slate-950 dark:text-white">CAVDAX</span>
-          <span>•</span>
-          <span>Contextual Action & Verified Decision Autonomous eXecution</span>
+          <span className="font-mono font-bold text-slate-950 dark:text-white tracking-wider">CAVDAX</span>
+          <span className="text-slate-400 dark:text-zinc-600">•</span>
+          <span>Contextual Action &amp; Verified Decision Autonomous eXecution</span>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
-          <span>FalkorDB Graph Hacks</span>
-          <span>•</span>
-          <span>GNU GPL 3.0</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <span>FalkorDB Graph Hacks 2026</span>
+          <span className="text-slate-400 dark:text-zinc-600">•</span>
+          <span>GNU General Public License v3.0</span>
         </div>
       </div>
     </footer>

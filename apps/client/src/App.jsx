@@ -4,29 +4,31 @@ import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, Sliders
 import Header from './components/Header.jsx';
 import SplashLoader from './components/SplashLoader.jsx';
 import LandingPage from './components/LandingPage.jsx';
-import ConnectMcpPage from './components/ConnectMcpPage.jsx';
-import ProjectVideoPage from './components/ProjectVideoPage.jsx';
-import TeamPage from './components/TeamPage.jsx';
-import PreferencesModal from './components/PreferencesModal.jsx';
-import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.jsx';
-import McpConnectModal from './components/McpConnectModal.jsx';
 import McpCableConnectionSvg from './components/McpCableConnectionSvg.jsx';
 import NotFoundPage from './components/NotFoundPage.jsx';
 import StoryStepper from './components/StoryStepper.jsx';
 import TerminalView from './components/TerminalView.jsx';
 import GraphCanvas from './components/GraphCanvas.jsx';
-import TourGuide from './components/TourGuide.jsx';
 import ArchitecturalRailScrubber from './components/ArchitecturalRailScrubber.jsx';
 import Tooltip from './components/Tooltip.jsx';
-import AuditPage from './components/AuditPage.jsx';
-import DevConsolePage from './components/DevConsolePage.jsx';
-import DevTeamPanel from './components/DevTeamPanel.jsx';
-import { fetchClientIp, isIpAuthorized, isUserAuthorized, fetchGlobalWhitelistedIps, fetchGlobalDevRoster, getActiveDevSession } from './services/devAuth.js';
-import ProfilePage from './components/ProfilePage.jsx';
-import SupportPage from './components/SupportPage.jsx';
 import SubsystemErrorBoundary from './components/SubsystemErrorBoundary.jsx';
-import ConnectRepoModal from './components/ConnectRepoModal.jsx';
-import ConnectedRepoWorkspace from './components/ConnectedRepoWorkspace.jsx';
+import { fetchClientIp, isIpAuthorized, isUserAuthorized, fetchGlobalWhitelistedIps, fetchGlobalDevRoster, getActiveDevSession } from './services/devAuth.js';
+
+// Route-level code splitting for secondary tabs & modals
+const ConnectMcpPage = React.lazy(() => import('./components/ConnectMcpPage.jsx'));
+const ProjectVideoPage = React.lazy(() => import('./components/ProjectVideoPage.jsx'));
+const TeamPage = React.lazy(() => import('./components/TeamPage.jsx'));
+const AuditPage = React.lazy(() => import('./components/AuditPage.jsx'));
+const DevConsolePage = React.lazy(() => import('./components/DevConsolePage.jsx'));
+const DevTeamPanel = React.lazy(() => import('./components/DevTeamPanel.jsx'));
+const ProfilePage = React.lazy(() => import('./components/ProfilePage.jsx'));
+const SupportPage = React.lazy(() => import('./components/SupportPage.jsx'));
+const ConnectedRepoWorkspace = React.lazy(() => import('./components/ConnectedRepoWorkspace.jsx'));
+const PreferencesModal = React.lazy(() => import('./components/PreferencesModal.jsx'));
+const KeyboardShortcutsModal = React.lazy(() => import('./components/KeyboardShortcutsModal.jsx'));
+const McpConnectModal = React.lazy(() => import('./components/McpConnectModal.jsx'));
+const ConnectRepoModal = React.lazy(() => import('./components/ConnectRepoModal.jsx'));
+const TourGuide = React.lazy(() => import('./components/TourGuide.jsx'));
 import SEOHead from './components/SEOHead.jsx';
 import PageAscentTransition from './components/PageAscentTransition.jsx';
 import { playClick, playRejectBuzz, playApprovalChime, initGlobalClickSound, playAlert } from './utils/soundFx.js';
@@ -714,6 +716,12 @@ export default function App() {
 
   // Evaluate dev access gate (/devteam) with Multi-Factor Pre-Challenge Cloaking
   useEffect(() => {
+    // Only query protected enclave access endpoints when navigating to the dev enclave route
+    if (activeTab !== 'devteam') {
+      setDevAuthEvaluating(false);
+      return;
+    }
+
     let isMounted = true;
     async function checkDevAccess() {
       setDevAuthEvaluating(true);
@@ -1258,6 +1266,11 @@ export default function App() {
         duration={550}
         className="flex-1 min-h-0 flex flex-col w-full"
       >
+      <React.Suspense fallback={
+        <div className="flex-1 min-h-[50vh] flex items-center justify-center">
+          <div className="w-5 h-5 border-2 border-slate-300 dark:border-white/20 border-t-[#d9a353] rounded-full animate-spin" />
+        </div>
+      }>
       {activeTab === 'landing' ? (
         /* Full Product Landing Page (footer particles live here, not in console §1.6) */
         <SubsystemErrorBoundary name="Landing Viewport">
@@ -1570,6 +1583,7 @@ export default function App() {
         </div>
       )}
 
+      </React.Suspense>
       </PageAscentTransition>
 
       {/* 3. System Preferences Modal (Ported from CAVDAX) */}

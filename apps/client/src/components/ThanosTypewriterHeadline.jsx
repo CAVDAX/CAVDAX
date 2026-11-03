@@ -87,7 +87,7 @@ export default function ThanosTypewriterHeadline({
               return (
                 <span
                   key={cIdx}
-                  className="inline-block will-change-transform text-[#d9a353]"
+                  className="inline-block will-change-transform text-[#b45309] dark:text-[#d9a353]"
                   style={{
                     animation: `thanosDustDissolve 0.68s cubic-bezier(0.25, 1, 0.5, 1) forwards`,
                     animationDelay: `${delay}s`,
@@ -105,12 +105,12 @@ export default function ThanosTypewriterHeadline({
         ) : (
           // Typewriter Mode: Display typed substring. Cursor only shows while actively typing — never after phrase completes.
           <span className="inline-flex items-baseline">
-            <span className="text-[#d9a353] font-black" style={{ textShadow: '0 0 10px rgba(217, 163, 83, 0.3)' }}>
+            <span className="text-[#b45309] dark:text-[#d9a353] font-black" style={{ textShadow: '0 0 10px rgba(217, 163, 83, 0.3)' }}>
               {displayedText}
             </span>
             {phase === 'typing' && (
               <span
-                className="inline-block w-[2px] sm:w-[3px] h-[0.85em] ml-1 bg-[#d9a353] shadow-[0_0_8px_rgba(217,163,83,0.7)] self-center opacity-100"
+                className="inline-block w-[2px] sm:w-[3px] h-[0.85em] ml-1 bg-[#b45309] dark:bg-[#d9a353] shadow-[0_0_8px_rgba(217,163,83,0.7)] self-center opacity-100"
               />
             )}
           </span>

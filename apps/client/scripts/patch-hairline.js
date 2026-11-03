@@ -85,6 +85,37 @@ if (fs.existsSync(targetFile)) {
     content = content.replace(targetLeave, replacementLeave);
   }
 
+  // 6. Sub-Pixel 3D Perspective & CTM Precision Projection (Resolves Diagonal Hitbox Drift on Nodes 3 & 7)
+  const targetPt = `  const pt = (e) => {
+    const r = stage.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 320];
+  };`;
+
+  const replacementPt = `  const pt = (e) => {
+    const svg = stage.querySelector?.('svg');
+    if (svg && svg.getScreenCTM) {
+      const ctm = svg.getScreenCTM();
+      if (ctm) {
+        const p = svg.createSVGPoint();
+        p.x = e.clientX;
+        p.y = e.clientY;
+        const local = p.matrixTransform(ctm.inverse());
+        return [local.x, local.y];
+      }
+    }
+    const r = stage.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width * 400, (e.clientY - r.top) / r.height * 320];
+  };`;
+
+  const normContent = content.replace(/\r?\n/g, '\n');
+  const normTargetPt = targetPt.replace(/\r?\n/g, '\n');
+  const normRepPt = replacementPt.replace(/\r?\n/g, '\n');
+  if (normContent.includes(normTargetPt)) {
+    content = normContent.replace(normTargetPt, normRepPt);
+  } else if (content.includes(targetPt)) {
+    content = content.replace(targetPt, replacementPt);
+  }
+
   fs.writeFileSync(targetFile, content, 'utf8');
   console.log('[postinstall] Successfully enforced solitary elevation & setActiveTile API on @lucasmarkes/hairline.');
 }

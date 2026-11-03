@@ -1,0 +1,33 @@
+{
+  "specVersion": "1.0",
+  "host": {
+    "displayName": "CAVDAX",
+    "identifier": "did:web:cavdax.sahnirmaan.live",
+    "documentationUrl": "https://cavdax.sahnirmaan.live/"
+  },
+  "entries": [
+    {
+      "identifier": "urn:air:cavdax.sahnirmaan.live:mcp:gate",
+      "displayName": "CAVDAX Enclosed MCP Gate",
+      "type": "application/mcp-server-card+json",
+      "url": "https://cavdax.sahnirmaan.live/api/mcp/sse",
+      "description": "Contextual Action & Verified Decision Autonomous eXecution. Preventing coding agents from acting on stale retrieved documents via FalkorDB causal DAGs and enclosed MCP gates.",
+      "tags": [
+        "mcp",
+        "falkordb",
+        "graphblas",
+        "adr-governance"
+      ],
+      "capabilities": [
+        "verify_decision",
+        "revalidate_decision",
+        "export_graph_image"
+      ],
+      "representativeQueries": [
+        "Verify architectural decision before modifying code",
+        "Check if an ADR has been superseded in FalkorDB causal DAG",
+        "Export causal invalidation blast radius diagram"
+      ]
+    }
+  ]
+}

@@ -1653,9 +1653,9 @@ EXECUTION WORKFLOW:
 
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans">
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans [text-wrap:balance]">
 
-            Standard agents operate unconstrained: they read vector embeddings and directly write code to disk. Under CAVDAX, the agent is configured to call tools through our enclosed stdio proxy or Cloud SSE gate.
+            Standard agents write unverified code directly to disk. CAVDAX routes all tool executions through an enclosed stdio proxy or Cloud SSE gate.
 
           </p>
 

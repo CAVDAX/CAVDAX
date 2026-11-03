@@ -58,10 +58,8 @@ export default function Header({
   const [themeRotation, setThemeRotation] = useState(0);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Track tab changes vs scroll morphing to eliminate slow pill-crawl
-  const prevTabRef = useRef(activeTab);
+  // Track scroll morphing state
   const prevScrolledRef = useRef(false);
-  const [animatingTab, setAnimatingTab] = useState(false);
 
   // Industry-Standard Container-Relative Horizontal Slider Tracking (Immune to scroll jumps & Y-flying)
   const tabRefs = useRef({});
@@ -88,15 +86,6 @@ export default function Header({
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', updatePill);
     };
-  }, [activeTab, isScrolled]);
-
-  useEffect(() => {
-    if (prevTabRef.current !== activeTab) {
-      prevTabRef.current = activeTab;
-      setAnimatingTab(true);
-      const timer = setTimeout(() => setAnimatingTab(false), 500);
-      return () => clearTimeout(timer);
-    }
   }, [activeTab, isScrolled]);
 
   useEffect(() => {
@@ -185,7 +174,7 @@ export default function Header({
     <>
       <motion.header
         layoutRoot
-        className={`portfolio-header ${activeTab === 'profile' ? 'profile-tab-header !border-b-transparent border-b-transparent' : ''} ${isScrolled ? 'scrolled' : ''} ${isHeaderHidden ? 'header-hidden' : ''} ${animatingTab ? 'no-morph' : ''}`}
+        className={`portfolio-header ${activeTab === 'profile' ? 'profile-tab-header !border-b-transparent border-b-transparent' : ''} ${isScrolled ? 'scrolled' : ''} ${isHeaderHidden ? 'header-hidden' : ''}`}
       >
         {/* 1. Left: Brand Logo (Unboxed, completely free, animate-on-hover only) */}
         <div
