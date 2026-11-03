@@ -264,6 +264,10 @@ export default function CausalEnclaveHub() {
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
   const isHoveringCanvasRef = useRef(false);
+  const isScrollingRef = useRef(false);
+  const scrollQuiescenceTimerRef = useRef(null);
+  const hasIntentionalPointerMoveRef = useRef(false);
+  const lastPointerPosRef = useRef({ x: 0, y: 0 });
 
   // Centralized Atomic State Setter (Synchronizes activeStep and activeStepRef synchronously)
   const setStep = useCallback((valOrFn) => {
@@ -272,6 +276,7 @@ export default function CausalEnclaveHub() {
       activeStepRef.current = next;
       return next;
     });
+    hasIntentionalPointerMoveRef.current = false;
   }, []);
 
   // Sync activeStepRef with state
@@ -473,6 +478,14 @@ export default function CausalEnclaveHub() {
   // 2. Guaranteed Step Lock-In & Natural Directional Exit (Wheel, Touchpad, Touch)
   useEffect(() => {
     const handleWheel = (e) => {
+      // Mark scrolling active with debounce to suppress stationary raycast snags
+      isScrollingRef.current = true;
+      hasIntentionalPointerMoveRef.current = false;
+      if (scrollQuiescenceTimerRef.current) clearTimeout(scrollQuiescenceTimerRef.current);
+      scrollQuiescenceTimerRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 280);
+
       if (isExitingRef.current) return;
 
       // CRITICAL FIX: Only hijack and prevent default when the section is ACTUALLY locked!
@@ -529,6 +542,13 @@ export default function CausalEnclaveHub() {
     };
 
     const handleTouchMove = (e) => {
+      isScrollingRef.current = true;
+      hasIntentionalPointerMoveRef.current = false;
+      if (scrollQuiescenceTimerRef.current) clearTimeout(scrollQuiescenceTimerRef.current);
+      scrollQuiescenceTimerRef.current = setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 280);
+
       if (isExitingRef.current || !isLockedRef.current || isTransitioningRef.current) return;
       const touchY = e.touches[0].clientY;
       const touchX = e.touches[0].clientX;
@@ -569,6 +589,7 @@ export default function CausalEnclaveHub() {
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
+      if (scrollQuiescenceTimerRef.current) clearTimeout(scrollQuiescenceTimerRef.current);
       window.removeEventListener('wheel', handleWheel);
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
@@ -785,8 +806,26 @@ export default function CausalEnclaveHub() {
         >
           
           <div 
-            onPointerEnter={() => { isHoveringCanvasRef.current = true; }}
-            onPointerLeave={() => { isHoveringCanvasRef.current = false; }}
+            onPointerEnter={(e) => {
+              isHoveringCanvasRef.current = true;
+              lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerLeave={() => {
+              isHoveringCanvasRef.current = false;
+              hasIntentionalPointerMoveRef.current = false;
+            }}
+            onPointerDown={(e) => {
+              hasIntentionalPointerMoveRef.current = true;
+              lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
+            }}
+            onPointerMove={(e) => {
+              const dx = e.clientX - lastPointerPosRef.current.x;
+              const dy = e.clientY - lastPointerPosRef.current.y;
+              if (dx * dx + dy * dy > 36) { // > 6px intentional pointer displacement
+                hasIntentionalPointerMoveRef.current = true;
+                lastPointerPosRef.current = { x: e.clientX, y: e.clientY };
+              }
+            }}
             className="w-full max-w-[1190px] 2xl:max-w-[1410px] aspect-[16/9.6] max-h-[min(66vh,660px)] 2xl:max-h-[770px] flex items-center justify-center relative select-none will-change-transform cursor-default"
             style={{
               transform: `rotateX(${baseCam.pitch}deg) rotateY(${baseCam.yaw}deg) rotateZ(${baseCam.roll}deg) translate3d(${baseCam.tx}px, ${baseCam.ty}px, ${baseCam.tz}px) scale(${baseCam.scale})`,
@@ -876,8 +915,10 @@ export default function CausalEnclaveHub() {
               activeTile={activeStep === 0 ? -1 : activeStep - 1}
               intensity={1}
               onRead={(text) => {
-                // If user physically moves pointer over tiles on 3D canvas
+                // Suppress raycast activations during scrolling, camera transitions, or if cursor is stationary
                 if (!isHoveringCanvasRef.current) return;
+                if (isScrollingRef.current || isTransitioningRef.current) return;
+                if (!hasIntentionalPointerMoveRef.current) return;
                 if (text && text.startsWith('tile ')) {
                   const idx = parseInt(text.replace('tile ', ''), 10);
                   if (idx >= 1 && idx <= 8 && idx !== activeStepRef.current) {
