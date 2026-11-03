@@ -151,11 +151,11 @@ const AUDIT_TOUR_STEPS = [
   {
     id: 'audit-ledger',
     target: '[data-tour="audit-ledger"]',
-    title: 'Tamper-Evident Action Audit Ledger',
+    title: 'Tamper-Evident Action Audit Ledger & Interception Proofs',
     badge: 'STEP 3 OF 4',
     description:
-      'Immutable ledger detailing action IDs, target files, decision verdicts, and execution timestamps.',
-    tip: 'Blocked writes reveal architectural divergence before disk writes.',
+      'Immutable ledger detailing action IDs, target files, and decision verdicts. Proves approved operations succeed while architectural divergence is blocked before disk touch.',
+    tip: 'Blocked writes reveal intercepted architectural violations.',
     placement: 'top-center',
     scrollBlock: 'center',
   },
