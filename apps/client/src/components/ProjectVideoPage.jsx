@@ -14,7 +14,9 @@ import {
   Youtube,
   ChevronDown,
   List,
-  X
+  X,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import McpCableConnectionSvg from './McpCableConnectionSvg';
 import { playClick } from '../utils/soundFx';
@@ -79,15 +81,58 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedCmd, setCopiedCmd] = useState(null);
   const [isChaptersOpen, setIsChaptersOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeMoment, setActiveMoment] = useState(KEY_MOMENTS[0]);
   const [hoveredMoment, setHoveredMoment] = useState(null);
   const [canScrollDown, setCanScrollDown] = useState(true);
   const [canScrollUp, setCanScrollUp] = useState(false);
   const playerRef = useRef(null);
   const iframeRef = useRef(null);
+  const videoContainerRef = useRef(null);
   const chaptersRef = useRef(null);
   const buttonRef = useRef(null);
   const chapterListRef = useRef(null);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!videoContainerRef.current) return;
+    if (!document.fullscreenElement) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen();
+      } else if (videoContainerRef.current.webkitRequestFullscreen) {
+        videoContainerRef.current.webkitRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleFullscreen]);
 
   const checkScrollCues = useCallback(() => {
     if (chapterListRef.current) {
@@ -308,7 +353,11 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
 
         {/* Cinema Video Frame */}
         <div id="project-video" className="w-full neo-glass-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl mb-8 overflow-hidden shadow-2xl">
-          <div className="relative aspect-video w-full rounded-xl sm:rounded-2xl bg-[#07090D] border border-slate-300 dark:border-white/10 overflow-hidden flex flex-col justify-between group shadow-inner">
+          <div 
+            ref={videoContainerRef}
+            id="video-cinema-viewport"
+            className="relative aspect-video w-full rounded-xl sm:rounded-2xl bg-[#07090D] border border-slate-300 dark:border-white/10 overflow-hidden flex flex-col justify-between group shadow-inner"
+          >
             {/* Ambient Video Glow */}
             <div 
               aria-hidden="true"
@@ -320,7 +369,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               ref={iframeRef}
               id="cavdax-yt-iframe"
               title="CAVDAX — Architecture Verification MCP For Autonomous AI Agents (FalkorDB GraphBLAS)"
-              src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&rel=0&modestbranding=1&iv_load_policy=3&color=white`}
+              src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&rel=0&modestbranding=1&iv_load_policy=3&color=white&fs=0`}
               className="w-full h-full border-0 absolute inset-0 z-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
@@ -352,6 +401,23 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                 </button>
               </div>
             )}
+
+            
+            {/* Bottom-Right Fullscreen Toggle: positioned exactly where YouTube keeps it */}
+            <button
+              type="button"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Exit Fullscreen (F)' : 'Full screen (F)'}
+              title={isFullscreen ? 'Exit full screen (f)' : 'Full screen (f)'}
+              className="absolute bottom-3 right-3 z-20 p-2 rounded-lg bg-black/70 hover:bg-black/95 text-white/80 hover:text-white backdrop-blur-md border border-white/15 transition-all duration-150 cursor-pointer shadow-lg hover:scale-105 active:scale-95 group"
+            >
+              {isFullscreen ? (
+                <Minimize size={18} className="transition-transform group-hover:scale-110" />
+              ) : (
+                <Maximize size={18} className="transition-transform group-hover:scale-110" />
+              )}
+              <span className="sr-only">{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+            </button>
 
             {/* In-Player Right Chapter Sidebar (YouTube-Style Drawer) */}
             <AnimatePresence>
@@ -595,36 +661,22 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                 100% free and open-source software under GPL-3.0. Complete freedom to audit, run, self-host, and inspect the codebase.
               </p>
 
-              {/* Architectural Freedom Guarantees (Clean Bench-Instrument Plates) */}
-              <div className="mt-2.5">
-                {/* Guarantee 1 */}
-                <div className="mb-2">
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                    Engine &amp; Graph Portability:
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
-                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug [text-wrap:balance]">
-                      Full Cypher graph transparency and zero vendor&nbsp;lock-in
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed [text-wrap:balance]">
-                      Deterministic FalkorDB GraphBLAS execution with auditable DAG traversal and offline schema&nbsp;portability.
-                    </div>
-                  </div>
+              {/* Key Guarantees (Simple point style matching Team Page Key Contributions) */}
+              <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-white/15 space-y-2">
+                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">
+                  Key Guarantees:
                 </div>
-
-                {/* Guarantee 2 */}
-                <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
-                    Commercial &amp; Deployment Freedom:
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
-                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug [text-wrap:balance]">
-                      Permission to modify, commercialize, and self-host&nbsp;offline
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed [text-wrap:balance]">
-                      Complete autonomy to adapt verification gates for enterprise repos, local CI/CD pipelines, and air-gapped agent&nbsp;swarms.
-                    </div>
-                  </div>
+                <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                  <span className="text-[#d9a353] dark:text-[#d9a353] font-mono mt-0.5">•</span>
+                  <span className="text-balance [text-wrap:balance]">
+                    <strong className="font-semibold text-slate-900 dark:text-white">Engine &amp; Graph Portability:</strong> Deterministic FalkorDB GraphBLAS execution with offline schema portability.
+                  </span>
+                </div>
+                <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
+                  <span className="text-[#d9a353] dark:text-[#d9a353] font-mono mt-0.5">•</span>
+                  <span className="text-balance [text-wrap:balance]">
+                    <strong className="font-semibold text-slate-900 dark:text-white">Commercial &amp; Deployment Freedom:</strong> Permission to inspect, modify, commercialize, and self-host offline.
+                  </span>
                 </div>
               </div>
             </div>

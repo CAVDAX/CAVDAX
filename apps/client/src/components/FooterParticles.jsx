@@ -42,10 +42,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
     let width = 0;
     let height = 0;
-    let fontSize = 0;
-    let centerY = 0;
-    let charBoundsArray = [];
-    const letterExcitation = new Float32Array(16);
 
     const wakeUp = () => {
       if (!animationFrameId && inViewport) {
@@ -82,7 +78,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       offscreen.height = height;
 
       // High-assurance Swiss Architectural Typography rasterization
-      fontSize = Math.max(46, Math.min(168, Math.floor(width * 0.19)));
+      const fontSize = Math.max(46, Math.min(168, Math.floor(width * 0.19)));
       offCtx.font = `800 ${fontSize}px "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       offCtx.textAlign = 'center';
       offCtx.textBaseline = 'middle';
@@ -92,7 +88,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
         offCtx.letterSpacing = '0.14em';
       }
 
-      centerY = height / 2 - 8;
+      const centerY = height / 2 - 8;
       offCtx.fillText(text, width / 2, centerY);
 
       // Architectural Directed Causal Underline Geometry (Single-Dotted Line Standard)
@@ -104,26 +100,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       const textHeight = Math.max(1, textBottom - textTop);
       const startX = width / 2 - textW * 0.48;
       const endX = width / 2 + textW * 0.48;
-
-      // Compute Individual Character Spans & Centroids for Glyph-Conformal Morph
-      const chars = text.split('');
-      charBoundsArray = [];
-      const textStartX = width / 2 - textW / 2;
-
-      for (let i = 0; i < chars.length; i++) {
-        const prevW = i === 0 ? 0 : offCtx.measureText(text.slice(0, i)).width;
-        const currW = offCtx.measureText(text.slice(0, i + 1)).width;
-        const left = textStartX + prevW;
-        const right = textStartX + currW;
-        charBoundsArray.push({
-          index: i,
-          char: chars[i],
-          left,
-          right,
-          center: (left + right) / 2,
-          width: Math.max(1, right - left)
-        });
-      }
 
       // Note: We DO NOT draw a thick continuous stroke here to prevent raster antialiasing
       // from generating a double-dotted sampling track. Instead, we generate a mathematical
@@ -201,33 +177,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
             const isEdge = leftAlpha < 80 || rightAlpha < 80 || topAlpha < 80 || bottomAlpha < 80;
 
-            // Glyph-Conformal Normal Vector: Outward from the letter's own center
-            let letterIndex = -1;
-            let glyphDirX = 0;
-            let glyphDirY = 0;
-
-            if (y <= underlineY - 6 && charBoundsArray.length > 0) {
-              let matched = charBoundsArray.find(cb => x >= cb.left - 2 && x <= cb.right + 2);
-              if (!matched) {
-                let bestDist = Infinity;
-                for (let b of charBoundsArray) {
-                  const d = Math.abs(x - b.center);
-                  if (d < bestDist) {
-                    bestDist = d;
-                    matched = b;
-                  }
-                }
-              }
-              if (matched) {
-                letterIndex = matched.index;
-                const gdx = (x - matched.center) / (matched.width * 0.5);
-                const gdy = (y - centerY) / (fontSize * 0.45);
-                const gdist = Math.hypot(gdx, gdy);
-                glyphDirX = gdist > 0.05 ? gdx / gdist : 0;
-                glyphDirY = gdist > 0.05 ? gdy / gdist : (y < centerY ? -1 : 1);
-              }
-            }
-
             newParticles.push({
               x: x,
               y: y,
@@ -239,9 +188,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               alpha: rawAlpha,
               originalAlpha: rawAlpha,
               isEdge,
-              letterIndex,
-              glyphDirX,
-              glyphDirY,
               spring: isEdge ? (0.05 + Math.random() * 0.03) : (0.16 + Math.random() * 0.04), // Core has higher spring anchoring
               friction: isEdge ? (0.84 + Math.random() * 0.04) : 0.88,
               disperseForce: isEdge ? (1.5 + Math.random() * 0.8) : 0.25, // Core has minimal displacement to prevent puncturing
@@ -275,10 +221,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           size: 1.4,
           alpha: 1,
           originalAlpha: 1,
-          isEdge: true,
-          letterIndex: -1,
-          glyphDirX: 0,
-          glyphDirY: 1,
           spring: 0.05 + Math.random() * 0.03,
           friction: 0.84 + Math.random() * 0.04,
           disperseForce: 1.4 + Math.random() * 0.8,
@@ -333,29 +275,6 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       let maxMotion = 0;
       let hasActiveDissolve = false;
 
-      // Pre-calculate Glyph-Conformal Hover Excitation per letter
-      letterExcitation.fill(0);
-      const charCount = charBoundsArray.length;
-      if (mouse.isOver && charCount > 0) {
-        for (let k = 0; k < charCount; k++) {
-          const cb = charBoundsArray[k];
-          const dx = Math.abs(mouse.x - cb.center);
-          const dy = Math.abs(mouse.y - centerY);
-          const halfW = cb.width * 0.65;
-          const halfH = fontSize * 0.65;
-
-          if (dx < halfW && dy < halfH) {
-            const normX = 1 - (dx / halfW);
-            const normY = 1 - (dy / halfH);
-            letterExcitation[k] = Math.pow(normX * normY, 0.65);
-          } else if (dx < halfW * 1.35 && dy < halfH * 1.25) {
-            const normX = 1 - (dx / (halfW * 1.35));
-            const normY = 1 - (dy / (halfH * 1.25));
-            letterExcitation[k] = Math.pow(normX * normY, 1.4) * 0.35;
-          }
-        }
-      }
-
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
@@ -365,39 +284,27 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           p.y += p.ashVy;
           p.alpha *= 0.94;
         } else {
-          // Glyph-Conformal Letter Physics: Spreads in the shape of the alphabet being hovered!
-          if (p.letterIndex >= 0) {
-            const excitation = letterExcitation[p.letterIndex];
-            if (excitation > 0.005) {
-              const distMouse = Math.hypot(mouse.x - p.x, mouse.y - p.y);
-              const mouseInfluence = Math.max(0, 1 - distMouse / (fontSize * 1.3));
-              const totalForce = excitation * 0.72 + mouseInfluence * 0.28;
+          // Boundary Wave & Core Preservation Physics (No brand puncturing/holes)
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const distSq = dx * dx + dy * dy;
 
-              if (p.isEdge) {
-                // Outer boundary / contour of this letter blooms outward in the exact geometry of the alphabet
-                const bloom = totalForce * 5.4 * p.disperseForce;
-                p.vx += p.glyphDirX * bloom;
-                p.vy += p.glyphDirY * bloom;
-              } else {
-                // Core particles maintain solid brand integrity with subtle proportional dilation
-                const coreBloom = totalForce * 1.1;
-                p.vx += p.glyphDirX * coreBloom;
-                p.vy += p.glyphDirY * coreBloom;
-              }
-            }
-          } else {
-            // Directed underline dots and causal nodes: boundary acoustic wave
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const distSq = dx * dx + dy * dy;
+          if (distSq < mouse.radius * mouse.radius && distSq > 0) {
+            const dist = Math.sqrt(distSq);
+            const normDist = dist / mouse.radius;
 
-            if (distSq < mouse.radius * mouse.radius && distSq > 0) {
-              const dist = Math.sqrt(distSq);
-              const normDist = dist / mouse.radius;
+            if (p.isEdge) {
+              // Edge & border particles react with an undulating boundary ripple wave
               const wave = Math.sin(normDist * Math.PI) * Math.pow(1 - normDist, 1.5);
-              const force = wave * 4.5 * p.disperseForce;
+              const force = wave * 6.5 * p.disperseForce;
               p.vx -= (dx / dist) * force;
               p.vy -= (dy / dist) * force;
+            } else {
+              // Interior core particles remain anchored to maintain solid brand integrity (No puncturing/holes!)
+              // Subtle resonant micro-displacement without tearing or creating voids
+              const coreForce = Math.pow(1 - normDist, 3) * 0.45;
+              p.vx -= (dx / dist) * coreForce;
+              p.vy -= (dy / dist) * coreForce;
             }
           }
 
