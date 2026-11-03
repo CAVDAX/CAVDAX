@@ -9,6 +9,22 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.73 Latest Session Achievements (November 3, 2026 - High-Impact Tour Coverage Expansion & Terminal Scroll Cue Activation)
+
+- **Tour Guide High-Impact Coverage Expansion (`apps/client/src/components/TourGuide.jsx`, `apps/client/src/App.jsx`, `apps/client/src/components/AuditPage.jsx`, `apps/client/src/components/ConnectMcpPage.jsx`)**:
+  - **Console Tour (Expanded 4 $\to$ 5 Steps)**: Added Step 1 `[data-tour="console-ribbon"]` spotlighting the top Command Ribbon, live 1.84ms GraphBLAS traversal benchmark, workspace switcher (Demo Sandbox vs. Real GitHub Repos), and live agent state indicator.
+  - **Audit Tour (Expanded 3 $\to$ 4 Steps)**: Added Step 4 `[data-tour="audit-metrics"]` spotlighting the live architectural interception ratio (Approved writes vs. Blocked divergence attempts), proving zero silent cache rot touches disk.
+  - **MCP Gateway Tour (Expanded 3 $\to$ 4 Steps)**: Added Step 3 `[data-tour="mcp-guardrails"]` spotlighting drop-in `.cursorrules` and `CLAUDE.md` prompt directives that enforce agent MCP compliance before tools execute.
+  - Updated step counter badges, sequential IDs, and placement coordinates across all modified tour registries.
+- **Active Terminal Scroll Cue & Multi-Modal Input Navigation (`apps/client/src/components/TerminalView.jsx`, `apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Preserved the clean, discrete floating architectural scroll cue pill while eliminating browser scrollbar clutter.
+  - Added `tabIndex={0}` and `isFocused` state to the terminal log container, enabling immediate keyboard arrow navigation (<kbd>↑</kbd>, <kbd>↓</kbd>, <kbd>PageUp</kbd>, <kbd>PageDown</kbd>, <kbd>Home</kbd>, <kbd>End</kbd>) upon clicking the panel.
+  - Added `data-lenis-prevent` and `overscroll-contain` to prevent window-level smooth scrolling from intercepting mouse wheel and touchpad two-finger gestures.
+  - Wired luminous cue activation on panel focus, giving immediate visual feedback when keyboard and wheel controls are engaged.
+- **Full Verification**:
+  - Production Vite client bundle built cleanly in 18.85s with zero warnings/errors.
+  - Verified via Chrome DevTools automation on `/console` that Step 1 of the Tour spotlights the Command Ribbon, and clicking into the Terminal log panel activates arrow navigation and scroll-cue position tracking.
+
 ## 1.0.72 Latest Session Achievements (November 3, 2026 - Root Cause Eradication of React Error #426 on Tour Guide & Modals)
 
 - **Root Cause Eradication of React Minified Error #426 (`apps/client/src/App.jsx`)**:
