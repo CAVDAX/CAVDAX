@@ -23,15 +23,21 @@ test("Security Remediation: CavdaxMcpServer rejects empty, null, or invalid file
   assert.equal(nullPath.gate_verdict, "BLOCKED_INVALID_PATH");
 });
 
-test("Security Remediation: isValidPushEndpoint rejects IPv6 loopback, ULA, and Link-Local endpoints", () => {
-  const ipv6Malicious = [
+test("Security Remediation: isValidPushEndpoint rejects IPv6 loopback, ULA, Link-Local, and Cloud Metadata", () => {
+  const maliciousEndpoints = [
     "https://[::1]/endpoint",
     "https://[fc00::1]/endpoint",
     "https://[fd12:3456:789a::1]/endpoint",
-    "https://[fe80::1]/endpoint"
+    "https://[fe80::1]/endpoint",
+    "https://100.100.100.200/endpoint", // Alibaba Cloud metadata
+    "https://100.64.0.1/endpoint",     // CGNAT
+    "https://198.18.0.1/endpoint",     // Benchmark
+    "https://[::ffff:7f00:1]/endpoint", // Hex IPv4-mapped loopback
+    "https://app.localhost/endpoint",   // Subdomain localhost
+    "https://service.internal/endpoint" // Internal TLD
   ];
 
-  for (const ep of ipv6Malicious) {
+  for (const ep of maliciousEndpoints) {
     assert.equal(isValidPushEndpoint(ep), false, `Expected ${ep} to be rejected`);
   }
 

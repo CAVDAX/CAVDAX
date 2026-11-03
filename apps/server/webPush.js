@@ -1,3 +1,4 @@
+import { isPrivateOrMetadataIp } from './webhookDispatcher.js';
 import { loadSystemState, saveSystemState } from './systemState.js';
 
 let webpush = null;
@@ -22,31 +23,20 @@ export function isValidPushEndpoint(endpoint) {
     if (parsed.protocol !== 'https:') return false;
 
     const hostname = parsed.hostname.toLowerCase();
-    // Block loopback, link-local, and cloud metadata (IPv4 + IPv6 ULA/Link-Local)
+    // Fast-fail string heuristics for internal domains
     if (
       hostname === 'localhost' ||
-      hostname === '127.0.0.1' ||
-      hostname === '::1' ||
-      hostname === '[::1]' ||
-      hostname === '169.254.169.254' ||
+      hostname.endsWith('.localhost') ||
       hostname.endsWith('.internal') ||
-      hostname.endsWith('.local') ||
-      hostname.startsWith('[fc') ||
-      hostname.startsWith('[fd') ||
-      hostname.startsWith('[fe80')
+      hostname.endsWith('.local')
     ) {
       return false;
     }
 
-    // Block IPv4 private ranges (10.x, 172.16-31.x, 192.168.x)
-    const ipMatch = hostname.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (ipMatch) {
-      const b0 = parseInt(ipMatch[1], 10);
-      const b1 = parseInt(ipMatch[2], 10);
-      if (b0 === 10) return false;
-      if (b0 === 172 && b1 >= 16 && b1 <= 31) return false;
-      if (b0 === 192 && b1 === 168) return false;
-      if (b0 === 0 || b0 === 127) return false;
+    // Comprehensive native BlockList check covering RFC 1918, CGNAT/Alibaba metadata,
+    // link-local, ULA, IPv4-mapped IPv6, and reserved ranges
+    if (isPrivateOrMetadataIp(hostname)) {
+      return false;
     }
 
     return true;

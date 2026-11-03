@@ -109,34 +109,7 @@ app.use(express.json({
 }));
 
 
-/**
- * GET /api/push/vapid-public-key
- * Returns the VAPID public key for browser PushManager subscription.
- */
-app.get('/api/push/vapid-public-key', (req, res) => {
-  const publicKey = getVapidPublicKey();
-  res.json({
-    success: Boolean(publicKey),
-    publicKey
-  });
-});
 
-/**
- * POST /api/push/subscribe
- * Registers client PushSubscription for offline background desktop alerts.
- */
-app.post('/api/push/subscribe', (req, res) => {
-  const user = req.session?.user;
-  const login = user?.login || 'default';
-  const { subscription } = req.body || {};
-
-  if (!subscription || !subscription.endpoint) {
-    return res.status(400).json({ success: false, error: 'MISSING_SUBSCRIPTION' });
-  }
-
-  const result = savePushSubscription(login, subscription);
-  res.json(result);
-});
 
 // ---------------------------------------------------------------------------
 // SESSION MIDDLEWARE & PERSISTENT SESSION RESILIENCE
@@ -302,6 +275,35 @@ app.use((req, res, next) => {
     rehydrateSessionFromCookie(req);
   }
   next();
+});
+
+/**
+ * GET /api/push/vapid-public-key
+ * Returns the VAPID public key for browser PushManager subscription.
+ */
+app.get('/api/push/vapid-public-key', (req, res) => {
+  const publicKey = getVapidPublicKey();
+  res.json({
+    success: Boolean(publicKey),
+    publicKey
+  });
+});
+
+/**
+ * POST /api/push/subscribe
+ * Registers client PushSubscription for offline background desktop alerts.
+ */
+app.post('/api/push/subscribe', (req, res) => {
+  const user = req.session?.user;
+  const login = user?.login || 'default';
+  const { subscription } = req.body || {};
+
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ success: false, error: 'MISSING_SUBSCRIPTION' });
+  }
+
+  const result = savePushSubscription(login, subscription);
+  res.json(result);
 });
 
 // ---------------------------------------------------------------------------
@@ -1016,7 +1018,29 @@ app.get('/api/graph', async (req, res) => {
 app.get('/api/graph/export-image', async (req, res) => {
   try {
     if (!isFalkorConnected) await initDb();
-    const graphState = graph ? await fetchGraphState(graph) : fallbackGraphState;
+
+    // Resolve repo and branch scopes with tenant isolation
+    const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+    const requestedBranch = sanitizeBranchName(req.query.branch, null);
+    const isSessionAuth = Boolean(req.session?.user || req.authUser);
+    const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
+
+    let graphState = fallbackGraphState;
+    if (graph) {
+      graphState = await fetchGraphState(graph, { repo: repoScope });
+    } else {
+      // In-memory fallback
+      const filteredNodes = fallbackGraphState.nodes.filter(n => {
+        if (!n.repo || n.repo === 'demo' || n.is_demo) return true;
+        const matchRepo = repoScope && n.repo === repoScope;
+        const matchBranch = !requestedBranch || !n.branch || sanitizeBranchName(n.branch) === requestedBranch;
+        return matchRepo && matchBranch;
+      });
+      const nodeIds = new Set(filteredNodes.map(n => n.id));
+      const filteredEdges = fallbackGraphState.edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+      graphState = { nodes: filteredNodes, edges: filteredEdges };
+    }
+
     const nodeId = req.query.node_id || req.query.nodeId || null;
     const highlightBlastRadius = req.query.blast === '1' || req.query.highlight_blast_radius === 'true';
     const isDarkTheme = req.query.theme !== 'light';
@@ -1024,7 +1048,8 @@ app.get('/api/graph/export-image', async (req, res) => {
     const svg = renderGraphToSvg(graphState, {
       nodeId,
       highlightBlastRadius,
-      isDarkTheme
+      isDarkTheme,
+      title: repoScope ? `CAVDAX: ${repoScope} (${requestedBranch || 'main'})` : undefined
     });
 
     if (req.query.format === 'json') {
@@ -1684,6 +1709,7 @@ app.get('/api/audit', async (req, res) => {
 
   // Tenant isolation: unauthenticated visitors strictly receive demo audit entries.
   const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+  const requestedBranch = sanitizeBranchName(req.query.branch, null);
   const isSessionAuth = Boolean(req.session?.user || req.authUser);
   const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
 
@@ -1732,7 +1758,8 @@ app.get('/api/audit', async (req, res) => {
     const seenActionIds = new Set(entries.map(e => e.action_id));
     for (const pa of persistedActions) {
       const matchRepo = repoScope ? (pa.repo === repoScope) : (!pa.repo || pa.repo === 'demo');
-      if (matchRepo && !seenActionIds.has(pa.action_id)) {
+      const matchBranch = !requestedBranch || sanitizeBranchName(pa.branch || 'main') === requestedBranch;
+      if (matchRepo && matchBranch && !seenActionIds.has(pa.action_id)) {
         entries.push(pa);
         seenActionIds.add(pa.action_id);
       }
@@ -3601,13 +3628,13 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
 
   // 3. Dispatch real Resend email alert
   const hudUrl = `${CLIENT_URL || 'https://cavdax.sahnirmaan.live'}/console?highlight=${encodeURIComponent(decisionId)}&blast=true`;
-  // Dispatch Web Push to registered desktop Service Workers
+  // Dispatch Web Push to registered desktop Service Workers strictly for the requesting user
   broadcastWebPushAlert({
     title: 'CAVDAX: Divergence Alert',
     body: `Decision ${decisionId} is invalidated by ${breakingSourceId}!`,
     decision_id: decisionId,
     url: hudUrl
-  }).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
+  }, login).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
 
   // Dispatch outgoing webhook if configured
   if (userPrefs?.webhookUrl) {
@@ -3786,13 +3813,17 @@ app.post('/api/github/webhook', async (req, res) => {
         // 1. Channel 1: SSE Broadcast to active consoles
         broadcastEvent('ARCHITECTURAL_DIVERGENCE_ALERT', alertPayload);
 
-        // 2. Channel 2: RFC 8292 VAPID Web Push to background desktop/mobile service workers
-        broadcastWebPushAlert({
-          title: `CAVDAX: Divergence Alert (${repoFullName})`,
-          body: `${inv.decisionId} invalidated by ${inv.breakingSourceId}!`,
-          decision_id: inv.decisionId,
-          url: hudUrl
-        }).catch((err) => console.warn('[CAVDAX WebPush] Webhook alert notice:', err.message));
+        // 2. Channel 2: RFC 8292 VAPID Web Push scoped strictly to targetRecipients who enabled browserAlerts
+        for (const target of targetRecipients) {
+          if (target.prefs.browserAlerts) {
+            broadcastWebPushAlert({
+              title: `CAVDAX: Divergence Alert (${repoFullName})`,
+              body: `${inv.decisionId} invalidated by ${inv.breakingSourceId}!`,
+              decision_id: inv.decisionId,
+              url: hudUrl
+            }, target.login).catch((err) => console.warn('[CAVDAX WebPush] Webhook alert notice:', err.message));
+          }
+        }
 
         // 3. Channel 3: Resend Transactional Email
         for (const target of targetRecipients) {
