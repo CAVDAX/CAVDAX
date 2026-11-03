@@ -16,6 +16,11 @@
   - Audited GitHub Actions workflow run `#41702912067` for deployment to production VM: discovered that Step 29 ("Run Quality Gate Tests") failed with `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'undici' imported from /home/runner/work/CAVDAX/CAVDAX/apps/server/webhookDispatcher.js`.
   - Discovered that while Node 24 on local Windows resolved `undici` from an ambient parent directory (`C:\Users\krish\node_modules\undici`), `undici` was completely omitted from `apps/server/package.json`. In Ubuntu CI runners and inside `node:20-alpine` Docker containers (`npm install --omit=dev`), `import { Agent } from 'undici'` crashed on startup, exiting the Node container and causing Caddy to return 502 Bad Gateway.
   - Furthermore, Devil's Advocate audit identified that the latest `undici` (v8.x) requires `node >= 22.19.0`, which would fail on `node:20-alpine` in Docker. Pinned `"undici": "^6.21.1"` (`node >= 18.17`), guaranteeing seamless execution across Node 18, 20, 22, and 24.
+- **Audit Page Live Branch Fetching & Identifier Normalization (`apps/client/src/components/AuditPage.jsx`, `apps/client/src/App.jsx`)**:
+  - Uncovered Devil's Advocate finding regarding empty branch dropdown on connected repositories: `AuditPage.jsx` previously derived branch options strictly by scraping past audit ledger entries (`entries.forEach(...)`). For connected repositories with zero recorded actions yet, the branch set was empty, rendering an unselectable single-option dropdown.
+  - Added live branch ingestion via `/api/github/repos/:owner/:repo/branches` with fallback to `matched.default_branch || 'main'`, merging live Git branches with historical audit branches.
+  - Fixed repository identifier mismatch: normalized filtering across `full_name` (e.g. 'suneetchugh-dev/CAVDAX') and short name ('CAVDAX') so records match regardless of ingestion provenance.
+  - Added reactive `cavdax:repos-updated` custom event synchronization across `App.jsx` and `AuditPage.jsx`, and enabled searchable branch combobox when branch count exceeds 4.
 - **Verification**:
   - Executed `node --test apps/server/test/*.mjs`: all 64 backend unit and integration tests passed with 0 failures in 729ms.
   - Executed `npm run build` on client: 2034 modules transformed, production bundle built cleanly in 33.84s.
