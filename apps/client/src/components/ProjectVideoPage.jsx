@@ -118,7 +118,49 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
       }
     };
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') setIsChaptersOpen(false);
+      if (e.key === 'Escape') {
+        setIsChaptersOpen(false);
+        return;
+      }
+
+      // Trap and route arrow/page scrolling exclusively into the chapters drawer
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollBy({ top: 48, behavior: 'smooth' });
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollBy({ top: -48, behavior: 'smooth' });
+        }
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollBy({ top: 180, behavior: 'smooth' });
+        }
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollBy({ top: -180, behavior: 'smooth' });
+        }
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        e.stopPropagation();
+        if (chapterListRef.current) {
+          chapterListRef.current.scrollTo({ top: chapterListRef.current.scrollHeight, behavior: 'smooth' });
+        }
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('keydown', handleKeyDown);
@@ -329,13 +371,15 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                   {/* Right-Hand Drawer */}
                   <motion.aside
                     ref={chaptersRef}
+                    data-lenis-prevent
+                    onWheel={(e) => e.stopPropagation()}
                     role="dialog"
                     aria-label="Video Chapters Drawer"
                     initial={{ x: '100%' }}
                     animate={{ x: 0 }}
                     exit={{ x: '100%' }}
                     transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                    className="absolute top-0 right-0 bottom-0 w-[290px] sm:w-[330px] md:w-[360px] max-w-[85%] z-40 bg-slate-950/95 border-l border-white/15 backdrop-blur-xl flex flex-col shadow-2xl text-white select-none pointer-events-auto"
+                    className="absolute top-0 right-0 bottom-0 w-[290px] sm:w-[330px] md:w-[360px] max-w-[85%] z-40 bg-slate-950/95 border-l border-white/15 backdrop-blur-xl flex flex-col shadow-2xl text-white select-none pointer-events-auto overscroll-contain"
                   >
                     {/* Header */}
                     <div className="px-4 py-3.5 border-b border-white/10 flex items-center justify-between shrink-0">
@@ -370,8 +414,11 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                     {/* Scrollable List */}
                     <div 
                       ref={chapterListRef}
+                      data-lenis-prevent
+                      onWheel={(e) => e.stopPropagation()}
                       onScroll={checkScrollCues}
-                      className="flex-1 overflow-y-auto divide-y divide-white/5 p-2 scrollbar-thin [scrollbar-color:rgba(255,255,255,0.2)_transparent]"
+                      tabIndex={0}
+                      className="flex-1 overflow-y-auto overscroll-contain divide-y divide-white/5 p-2 scrollbar-thin [scrollbar-color:rgba(255,255,255,0.2)_transparent] outline-none"
                     >
                       {KEY_MOMENTS.map((km, idx) => {
                         const isCurrent = activeMoment?.seconds === km.seconds;
