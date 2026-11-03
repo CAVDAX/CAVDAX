@@ -1,0 +1,17 @@
+# CAVDAX
+
+> Contextual Action & Verified Decision Autonomous eXecution: Graph-grounded decision execution for autonomous AI coding agents.
+
+## Platform Overview
+CAVDAX models software architecture as a temporal Directed Acyclic Graph (DAG) in FalkorDB using GraphBLAS matrix multiplication. It intercepts agent write tools via an enclosed Model Context Protocol (MCP) gate to prevent execution on stale, superseded decisions.
+
+## Documentation & Architecture
+- [System Architecture](https://cavdax.sahnirmaan.live/overview): Complete architectural breakdown and failure modes of Vector RAG.
+- [Visual Operational Console](https://cavdax.sahnirmaan.live/console): Real-time interactive telemetry cockpit and causal graph inspector.
+- [MCP Integration Guide](https://cavdax.sahnirmaan.live/mcp): Model Context Protocol configuration for Claude, Cursor, and custom agent runtimes.
+- [Architecture Decision Records](https://cavdax.sahnirmaan.live/audit): Causal audit ledger and decision provenance.
+- [GitHub Repository](https://github.com/suneetchugh-dev/CAVDAX): Source code and open-source contribution repository.
+
+## Optional & Additional Resources
+- [Architecture Decision Records](https://github.com/suneetchugh-dev/CAVDAX/tree/main/docs/adrs): Immutable decision records and causal DAG specifications.
+- [Universal MCP Package](https://www.npmjs.com/package/@cavdax/mcp-server): Production npm distribution with Sigstore provenance.

@@ -226,7 +226,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
       canvas.style.height = `${height}px`;
 
       initNodes();
-      updateObstacles();
+      requestAnimationFrame(updateObstacles);
       setTimeout(updateObstacles, 800);
       setTimeout(updateObstacles, 2200);
 
@@ -258,6 +258,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
 
     window.addEventListener('pointermove', handleMove, { passive: true });
     window.addEventListener('mousemove', handleMove, { passive: true });
+    window.addEventListener('scroll', updateObstacles, { passive: true });
 
     // ─── Theme Colors ────────────────────────────────────────────────────────
     const getColors = () => {
@@ -285,10 +286,6 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
     // ─── Graph Physics & Firefly Swarm Engine ────────────────────────────────
     const updateGraph = () => {
       frameCount++;
-      // Lightweight periodic rescan every 45 frames to guarantee real-time obstacle tracking without layout thrashing
-      if (frameCount % 45 === 0) {
-        updateObstacles();
-      }
 
       // ─── 1. Interval Swarm Focal Migration (Random Short & Long Intervals) ──
       const now = performance.now();
@@ -775,6 +772,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
       cancelAnimationFrame(rafId);
       window.removeEventListener('pointermove', handleMove);
       window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('scroll', updateObstacles);
       document.removeEventListener('visibilitychange', handleVisibility);
       ro.disconnect();
       io.disconnect();

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Play, 
   Pause, 
@@ -10,7 +11,10 @@ import {
   FileCode2,
   Terminal,
   Clock,
-  Youtube
+  Youtube,
+  ChevronDown,
+  List,
+  X
 } from 'lucide-react';
 import McpCableConnectionSvg from './McpCableConnectionSvg';
 import { playClick } from '../utils/soundFx';
@@ -21,10 +25,10 @@ const ACTS = [
   {
     id: 1,
     act: 'Act I',
-    title: 'Vector RAG Failure & Causal Conscience',
+    title: 'Vector RAG Failure & Drift',
     time: '0:00',
     seconds: 0,
-    desc: 'Why cosine similarity fails and how FalkorDB resolves temporal precedence.'
+    desc: 'Why cosine similarity fails and FalkorDB resolves precedence.'
   },
   {
     id: 2,
@@ -37,7 +41,7 @@ const ACTS = [
   {
     id: 3,
     act: 'Act III',
-    title: 'Live Interception & Self-Correction',
+    title: 'Live Interception & Repair',
     time: '3:15',
     seconds: 195,
     desc: 'Stale Redis write blocked; autonomous self-correction to DynamoDB DAX.'
@@ -45,12 +49,14 @@ const ACTS = [
   {
     id: 4,
     act: 'Act IV',
-    title: 'Connected GitHub Graph & PR Sync',
+    title: 'Connected GitHub Graph Sync',
     time: '6:08',
     seconds: 368,
     desc: 'Live repository scan, 1-click drifted ADR PR, and tamper-evident audit log.'
   }
 ];
+
+const TOTAL_DURATION_SECONDS = 621;
 
 const KEY_MOMENTS = [
   { label: 'Cosine Blindness', time: '0:33', seconds: 33 },
@@ -72,8 +78,55 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
   const [activeAct, setActiveAct] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [copiedCmd, setCopiedCmd] = useState(null);
+  const [isChaptersOpen, setIsChaptersOpen] = useState(false);
+  const [activeMoment, setActiveMoment] = useState(KEY_MOMENTS[0]);
+  const [hoveredMoment, setHoveredMoment] = useState(null);
+  const [canScrollDown, setCanScrollDown] = useState(true);
+  const [canScrollUp, setCanScrollUp] = useState(false);
   const playerRef = useRef(null);
   const iframeRef = useRef(null);
+  const chaptersRef = useRef(null);
+  const buttonRef = useRef(null);
+  const chapterListRef = useRef(null);
+
+  const checkScrollCues = useCallback(() => {
+    if (chapterListRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chapterListRef.current;
+      setCanScrollUp(scrollTop > 6);
+      setCanScrollDown(scrollTop + clientHeight < scrollHeight - 6);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isChaptersOpen) {
+      const t = setTimeout(checkScrollCues, 50);
+      return () => clearTimeout(t);
+    }
+  }, [isChaptersOpen, checkScrollCues]);
+
+  // Close chapters popover on outside click or Escape
+  useEffect(() => {
+    if (!isChaptersOpen) return;
+    const handleClickOutside = (e) => {
+      if (
+        chaptersRef.current && 
+        !chaptersRef.current.contains(e.target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target)
+      ) {
+        setIsChaptersOpen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setIsChaptersOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isChaptersOpen]);
 
   // Initialize YouTube IFrame API
   useEffect(() => {
@@ -149,6 +202,9 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
         }
       }
     }
+
+    const matchedMoment = KEY_MOMENTS.find(km => km.seconds === seconds);
+    if (matchedMoment) setActiveMoment(matchedMoment);
 
     const validSec = Math.max(0, Math.min(622, Number(seconds) || 0));
 
@@ -227,35 +283,146 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
-          </div>
 
-          {/* Sub-Header Video Metadata Bar */}
-          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/5 flex flex-wrap items-center justify-between gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
-            <div className="flex items-center gap-2.5">
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 font-bold text-slate-900 dark:text-slate-200">1080p 60FPS</span>
-              <span>10m 21s</span>
-              <span className="text-slate-300 dark:text-white/20">•</span>
-              <span className="text-slate-600 dark:text-slate-400">FalkorDB GraphBLAS Invalidation</span>
-            </div>
+            {/* In-Player Chapter Sidebar Trigger Tab (Center-Right Floating HUD) */}
+            {!isChaptersOpen && (
+              <div className="absolute top-1/2 -translate-y-1/2 right-0 z-20 pointer-events-auto">
+                <button
+                  ref={buttonRef}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playClick();
+                    setIsChaptersOpen(true);
+                  }}
+                  aria-expanded={isChaptersOpen}
+                  aria-label="Open Chapters Sidebar"
+                  className="group flex items-center gap-2 pl-3 pr-2.5 py-2.5 rounded-l-xl backdrop-blur-md bg-slate-950/80 hover:bg-slate-950 text-white border-y border-l border-white/20 hover:border-white/40 shadow-2xl transition-all duration-200 cursor-pointer"
+                  title="View Video Chapters"
+                >
+                  <List size={14} className="text-slate-300 group-hover:text-white transition-colors shrink-0" />
+                  <span className="font-mono text-xs font-semibold overflow-hidden max-w-0 group-hover:max-w-[85px] transition-all duration-300 ease-out whitespace-nowrap opacity-0 group-hover:opacity-100">
+                    Chapters
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/15 font-mono text-slate-300 font-bold shrink-0">
+                    {KEY_MOMENTS.length}
+                  </span>
+                </button>
+              </div>
+            )}
 
-            <div className="flex items-center gap-3">
-              <a
-                href={`https://youtu.be/${YOUTUBE_VIDEO_ID}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={playClick}
-                className="inline-flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white hover:underline transition-colors"
-                title="Watch directly on YouTube in high resolution"
-              >
-                <Youtube size={13} className="text-red-500" />
-                <span>Open on YouTube</span>
-                <ExternalLink size={10} />
-              </a>
-            </div>
+            {/* In-Player Right Chapter Sidebar (YouTube-Style Drawer) */}
+            <AnimatePresence>
+              {isChaptersOpen && (
+                <>
+                  {/* Scrim Backdrop */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setIsChaptersOpen(false)}
+                    className="absolute inset-0 bg-black/50 backdrop-blur-[2px] z-30 cursor-pointer pointer-events-auto"
+                    aria-hidden="true"
+                  />
+
+                  {/* Right-Hand Drawer */}
+                  <motion.aside
+                    ref={chaptersRef}
+                    role="dialog"
+                    aria-label="Video Chapters Drawer"
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
+                    transition={{ type: 'spring', damping: 28, stiffness: 300 }}
+                    className="absolute top-0 right-0 bottom-0 w-[290px] sm:w-[330px] md:w-[360px] max-w-[85%] z-40 bg-slate-950/95 border-l border-white/15 backdrop-blur-xl flex flex-col shadow-2xl text-white select-none pointer-events-auto"
+                  >
+                    {/* Header */}
+                    <div className="px-4 py-3.5 border-b border-white/10 flex items-center justify-between shrink-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-mono font-bold uppercase tracking-wider text-white">
+                          Chapters
+                        </span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 font-mono text-slate-300">
+                          {KEY_MOMENTS.length}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          playClick();
+                          setIsChaptersOpen(false);
+                        }}
+                        className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                        aria-label="Close Chapters Sidebar"
+                      >
+                        <X size={15} />
+                      </button>
+                    </div>
+
+                    {/* Top Scroll Shadow Cue (Visible when scrolled down) */}
+                    {canScrollUp && (
+                      <div 
+                        aria-hidden="true" 
+                        className="pointer-events-none absolute top-[49px] left-0 right-0 h-6 bg-gradient-to-b from-slate-950 via-slate-950/80 to-transparent z-10 transition-opacity duration-200"
+                      />
+                    )}
+
+                    {/* Scrollable List */}
+                    <div 
+                      ref={chapterListRef}
+                      onScroll={checkScrollCues}
+                      className="flex-1 overflow-y-auto divide-y divide-white/5 p-2 scrollbar-thin [scrollbar-color:rgba(255,255,255,0.2)_transparent]"
+                    >
+                      {KEY_MOMENTS.map((km, idx) => {
+                        const isCurrent = activeMoment?.seconds === km.seconds;
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              seekToSeconds(km.seconds);
+                              setActiveMoment(km);
+                            }}
+                            className={`w-full px-3 py-2.5 rounded-lg text-left text-xs font-mono transition-all flex items-center justify-between group cursor-pointer ${
+                              isCurrent
+                                ? 'bg-white/20 text-white font-bold shadow-inner'
+                                : 'hover:bg-white/5 text-slate-300 hover:text-white'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              <span className={`text-[10px] px-1.5 py-0.5 rounded font-mono font-bold shrink-0 ${
+                                isCurrent
+                                  ? 'bg-white text-slate-950'
+                                  : 'bg-white/10 text-slate-400 group-hover:text-white'
+                              }`}>
+                                {km.time}
+                              </span>
+                              <span className="truncate text-[12px]">{km.label}</span>
+                            </div>
+                            <Play size={11} className={`opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ${
+                              isCurrent ? 'opacity-100 text-amber-400' : 'text-slate-400'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bottom Scroll Cue (Visible when more chapters exist below) */}
+                    {canScrollDown && (
+                      <div 
+                        aria-hidden="true" 
+                        className="pointer-events-none absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-slate-950 via-slate-950/90 to-transparent z-10 flex items-end justify-center pb-1 transition-opacity duration-200"
+                      >
+                        <ChevronDown size={13} className="text-white/40" />
+                      </div>
+                    )}
+                  </motion.aside>
+                </>
+              )}
+            </AnimatePresence>
           </div>
 
           {/* 4 Primary Acts Selector Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-3 border-t border-slate-200 dark:border-white/5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-3.5 border-t border-slate-200 dark:border-white/5">
             {ACTS.map((actItem, idx) => (
               <button
                 key={actItem.id}
@@ -271,30 +438,97 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                     <span className="text-[10px] uppercase font-bold tracking-wider opacity-70">{actItem.act}</span>
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-black/10 dark:bg-white/10 font-mono font-semibold">{actItem.time}</span>
                   </div>
-                  <div className="font-bold text-[13px] leading-snug mb-1.5">{actItem.title}</div>
+                  <div className="font-bold text-[13px] leading-snug mb-1.5 truncate" title={actItem.title}>{actItem.title}</div>
                 </div>
                 <div className="text-[11px] opacity-75 font-sans leading-relaxed mt-1">{actItem.desc}</div>
               </button>
             ))}
           </div>
 
-          {/* Key Moments Quick-Jump Rail */}
-          <div className="mt-4 pt-3 border-t border-slate-200 dark:border-white/5">
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 uppercase tracking-wider mb-2">
-              <Clock size={11} />
-              <span>Key Moments Quick-Jump:</span>
+          {/* Dual-Mode Precision Hardware Scrubber Rail */}
+          <div className="mt-4 pt-3.5 border-t border-slate-200 dark:border-white/5 relative">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-2">
+              <div className="flex items-center gap-2 text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <Clock size={12} className="text-slate-700 dark:text-slate-300" />
+                <span className="font-semibold text-slate-900 dark:text-slate-200">Interactive Causal Timeline</span>
+              </div>
+
+              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                {hoveredMoment ? (
+                  <span className="text-slate-900 dark:text-slate-200 font-medium">
+                    {hoveredMoment.time} — {hoveredMoment.label}
+                  </span>
+                ) : (
+                  <span>{(activeMoment || KEY_MOMENTS[0]).time} — {(activeMoment || KEY_MOMENTS[0]).label}</span>
+                )}
+              </div>
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {KEY_MOMENTS.map((km, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => seekToSeconds(km.seconds)}
-                  className="px-2 py-1 rounded-md text-[11px] font-mono bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span className="text-slate-400 dark:text-slate-500 font-bold">{km.time}</span>
-                  <span>{km.label}</span>
-                </button>
-              ))}
+
+            {/* Precision Hardware Scrubber Rail */}
+            <div className="pt-2 pb-1 px-1">
+              <div 
+                className="relative w-full h-8 flex items-center"
+                onMouseLeave={() => setHoveredMoment(null)}
+              >
+                {/* Hairline Groove Track */}
+                <div className="w-full h-1.5 rounded-full bg-slate-200 dark:bg-white/10 relative overflow-hidden">
+                  <div className="absolute inset-y-0 left-0 bg-gradient-to-r from-slate-400/40 via-slate-500/50 to-slate-400/40 dark:from-white/20 dark:via-white/30 dark:to-white/20 w-full" />
+                </div>
+
+                {/* 13 Calibrated Pips along the timeline */}
+                {KEY_MOMENTS.map((km, idx) => {
+                  const percent = (km.seconds / TOTAL_DURATION_SECONDS) * 100;
+                  const isHovered = hoveredMoment?.seconds === km.seconds;
+                  const isActive = activeMoment?.seconds === km.seconds;
+
+                  return (
+                    <div
+                      key={idx}
+                      style={{ left: `${percent}%` }}
+                      className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 group"
+                    >
+                      {/* Hover Tooltip */}
+                      {isHovered && (
+                        <div className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-[10px] font-mono font-medium shadow-xl border border-white/15 whitespace-nowrap z-50 pointer-events-none flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-100">
+                          <span className="font-bold opacity-70">{km.time}</span>
+                          <span>•</span>
+                          <span>{km.label}</span>
+                          {/* Micro Caret */}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-950 dark:border-t-white" />
+                        </div>
+                      )}
+
+                      {/* Clickable Pip Button */}
+                      <button
+                        onClick={() => {
+                          seekToSeconds(km.seconds);
+                          setActiveMoment(km);
+                        }}
+                        onMouseEnter={() => setHoveredMoment(km)}
+                        onFocus={() => setHoveredMoment(km)}
+                        onBlur={() => setHoveredMoment(null)}
+                        aria-label={`Jump to ${km.time}: ${km.label}`}
+                        className={`w-3 h-3 rounded-full transition-all duration-150 flex items-center justify-center cursor-pointer ${
+                          isActive
+                            ? 'bg-slate-950 dark:bg-white ring-4 ring-slate-400/40 dark:ring-white/40 scale-125 z-20'
+                            : isHovered
+                            ? 'bg-slate-800 dark:bg-slate-200 ring-2 ring-slate-400/50 scale-125 z-10'
+                            : 'bg-slate-400 dark:bg-slate-600 hover:bg-slate-800 dark:hover:bg-white border border-white dark:border-slate-900'
+                        }`}
+                      >
+                        <span className="sr-only">{km.time} {km.label}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Rail Baseline Ticks Label */}
+              <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 dark:text-slate-400 px-0.5 mt-0.5">
+                <span>0:00 Ingestion</span>
+                <span className="hidden sm:inline text-slate-400 dark:text-slate-500">10m 22s Complete Walkthrough</span>
+                <span>10:22 Credits</span>
+              </div>
             </div>
           </div>
         </div>
@@ -310,21 +544,34 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                   GNU General Public License v3.0
                 </h3>
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans mb-4">
-                CAVDAX is 100% free and open-source software under the <strong>GNU GPL-3.0 License</strong>. Anyone has the complete freedom to run, study, inspect, audit, share, and improve the codebase.
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans mb-3">
+                100% free and open-source software under GPL-3.0. Complete freedom to audit, run, self-host, and inspect the codebase.
               </p>
-              <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400 font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 dark:text-slate-500 font-mono">•</span>
-                  <span>Full source code inspection and Cypher query transparency</span>
+
+              {/* Architectural Freedom Guarantees */}
+              <div className="space-y-2.5 mt-3">
+                <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-start gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug">
+                      Full Cypher graph transparency and zero vendor lock-in
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed">
+                      Deterministic FalkorDB GraphBLAS execution with auditable DAG traversal and offline schema portability.
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 dark:text-slate-500 font-mono">•</span>
-                  <span>Permission to commercialize, modify, and distribute derivative works</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-slate-400 dark:text-slate-500 font-mono">•</span>
-                  <span>Zero vendor lock-in; self-hostable with Docker Compose</span>
+
+                <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-start gap-2.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-sky-500 mt-1.5 shrink-0" />
+                  <div>
+                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug">
+                      Permission to modify, commercialize, and self-host offline
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed">
+                      Complete autonomy to adapt verification gates for enterprise repos, local CI/CD pipelines, and air-gapped agent swarms.
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

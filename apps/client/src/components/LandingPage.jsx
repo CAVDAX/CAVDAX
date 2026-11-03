@@ -1114,7 +1114,7 @@ export default function LandingPage({
 
                 </div>
 
-                <span className="text-slate-400 font-bold">≈ 0.89 Cosine Match ≈</span>
+                <span className="text-slate-600 dark:text-slate-400 font-bold">≈ 0.89 Cosine Match ≈</span>
 
                 <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
 
@@ -1176,11 +1176,11 @@ export default function LandingPage({
 
               <div className="p-3.5 rounded-xl bg-slate-100/80 dark:bg-black/40 border border-slate-200 dark:border-white/5 font-mono text-[11px] space-y-1.5 text-slate-700 dark:text-slate-300">
 
-                <div className="text-slate-500 dark:text-slate-400"># Git State vs Vector DB:</div>
+                <div className="text-slate-600 dark:text-slate-400 font-medium"># Git State vs Vector DB:</div>
 
                 <div className="text-rose-700 dark:text-rose-400 font-bold">DESYNC: 42 Commits Behind</div>
 
-                <div className="text-slate-500 text-[10px]">Stale Invariant Ingested</div>
+                <div className="text-slate-600 dark:text-slate-400 text-[10px]">Stale Invariant Ingested</div>
 
               </div>
 
@@ -1234,11 +1234,11 @@ export default function LandingPage({
 
               <div className="p-3.5 rounded-xl bg-slate-100/80 dark:bg-black/40 border border-slate-200 dark:border-white/5 font-mono text-[11px] space-y-1.5 text-slate-700 dark:text-slate-300">
 
-                <div className="text-slate-500 dark:text-slate-400"># Direct Execution Vulnerability:</div>
+                <div className="text-slate-600 dark:text-slate-400 font-medium"># Direct Execution Vulnerability:</div>
 
                 <div className="text-rose-700 dark:text-rose-400 font-bold">DIRECT DISK WRITE</div>
 
-                <div className="text-slate-500 text-[10px]">Bypasses Architecture Checks</div>
+                <div className="text-slate-600 dark:text-slate-400 text-[10px]">Bypasses Architecture Checks</div>
 
               </div>
 
@@ -1300,7 +1300,7 @@ export default function LandingPage({
 
                 </div>
 
-                <span className="text-slate-400 font-bold">-- 3 Hops Lost in RAG --</span>
+                <span className="text-slate-600 dark:text-slate-400 font-bold">-- 3 Hops Lost in RAG --</span>
 
                 <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold">
 

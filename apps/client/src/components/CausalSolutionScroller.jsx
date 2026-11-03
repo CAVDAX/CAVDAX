@@ -714,7 +714,7 @@ function WidescreenVisualRevalidation() {
           <circle r="45" className="fill-slate-50 dark:fill-[#18181b] stroke-slate-300 dark:stroke-zinc-600" strokeWidth="1.5"/>
           
           {/* Console Act 4 Revalidation Approved Indicator Proudly Enlarged inside core with optically centered tick */}
-          <foreignObject x="-41" y="-44" width="88" height="88" className="overflow-visible pointer-events-none">
+          <foreignObject x="-43" y="-43" width="86" height="86" className="overflow-visible pointer-events-none">
             <div className="w-full h-full flex items-center justify-center">
               <CavdaxAgentStateIndicator status="verified" loopVerified={true} size={86} strokeWidth={3.8} />
             </div>
@@ -1447,9 +1447,10 @@ export default function CausalSolutionScroller() {
                     zIndex,
                   }}
                   whileHover={{
-                    scale: isCenter ? 1.045 : 0.88,
-                    z: isCenter ? 35 : -80,
-                    transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+                    y: isCenter ? -6 : 0,
+                    scale: isCenter ? 1.0 : 0.86,
+                    z: isCenter ? 16 : -80,
+                    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
                   }}
                   onMouseEnter={() => {
                     if (idx === 0) {

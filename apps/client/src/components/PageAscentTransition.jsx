@@ -30,11 +30,12 @@ export default function PageAscentTransition({
     window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
 
   if (isReducedMotion || distance === 0) {
-    return <div className={`w-full ${className}`}>{children}</div>;
+    return <main id="main-content" className={`w-full ${className}`}>{children}</main>;
   }
 
   return (
-    <div
+    <main
+      id="main-content"
       key={routeKey}
       className={`page-ascent-wrapper w-full ${className}`}
       style={{
@@ -62,6 +63,6 @@ export default function PageAscentTransition({
         }
       `}</style>
       {children}
-    </div>
+    </main>
   );
 }

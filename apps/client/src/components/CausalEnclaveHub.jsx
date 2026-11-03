@@ -121,31 +121,31 @@ const SQUIRCLE_OUTER = "M 7.69 16.00 L 7.09 16.30 L 6.86 16.39 L 6.12 16.64 L 5.
 // 3D Camera Angles: Cinematic dynamic tracking, orbit tilt, and zoom for each subsystem stage
 const STAGE_CAMERAS = [
   // 0: CORE (Architectural Overview - Front-Face Top Perspective)
-  { pitch: 30, yaw: 0, roll: 0, tx: 0, ty: 22, tz: -30, scale: 1.15 },
+  { pitch: 30, yaw: 0, roll: 0, tx: 0, ty: 22, tz: -30, scale: 1.04 },
   
   // 1: Claude Code MCP Gate (Top-Center: Camera pitches up, shifts down to center top node)
-  { pitch: 10, yaw: 0, roll: 0, tx: 0, ty: 38, tz: 40, scale: 1.25 },
+  { pitch: 10, yaw: 0, roll: 0, tx: 0, ty: 38, tz: 40, scale: 1.15 },
   
   // 2: Cursor IDE Transceiver (Top-Right: Camera pans left, yaws slightly toward right corner)
-  { pitch: 7, yaw: -6, roll: 0, tx: -34, ty: 22, tz: 35, scale: 1.24 },
+  { pitch: 7, yaw: -6, roll: 0, tx: -34, ty: 22, tz: 35, scale: 1.14 },
   
   // 3: Git AST Diff Extractor (East Flank: Camera pans left, yaws inward to frame right wing)
-  { pitch: 3, yaw: -8, roll: 0, tx: -55, ty: 0, tz: 45, scale: 1.25 },
+  { pitch: 3, yaw: -8, roll: 0, tx: -55, ty: 0, tz: 45, scale: 1.15 },
   
   // 4: ADR Invariant Store (Bottom-Right: Camera pans left-up, tilts downward)
-  { pitch: -6, yaw: -6, roll: 0, tx: -35, ty: -24, tz: 35, scale: 1.24 },
+  { pitch: -6, yaw: -6, roll: 0, tx: -35, ty: -24, tz: 35, scale: 1.14 },
   
   // 5: GraphBLAS Matrix Mesh (Bottom-Center: Camera pitches down, shifts up to center bottom node)
-  { pitch: -10, yaw: 0, roll: 0, tx: 0, ty: -42, tz: 40, scale: 1.25 },
+  { pitch: -10, yaw: 0, roll: 0, tx: 0, ty: -42, tz: 40, scale: 1.15 },
   
   // 6: CI/CD Gate Harness (Bottom-Left: Camera pans right-up, yaws inward)
-  { pitch: -6, yaw: 6, roll: 0, tx: 35, ty: -24, tz: 35, scale: 1.24 },
+  { pitch: -6, yaw: 6, roll: 0, tx: 35, ty: -24, tz: 35, scale: 1.14 },
   
   // 7: Cryptographic Audit Trail (West Flank: Camera pans right, yaws inward to frame left wing)
-  { pitch: 3, yaw: 8, roll: 0, tx: 55, ty: 0, tz: 45, scale: 1.25 },
+  { pitch: 3, yaw: 8, roll: 0, tx: 55, ty: 0, tz: 45, scale: 1.15 },
   
   // 8: Closed-Loop Auto-Repair (Top-Left: Camera pans right-down, yaws toward top-left corner)
-  { pitch: 7, yaw: 6, roll: 0, tx: 34, ty: 22, tz: 35, scale: 1.24 },
+  { pitch: 7, yaw: 6, roll: 0, tx: 34, ty: 22, tz: 35, scale: 1.14 },
 ];
 
 // Clean vector icons for each subsystem
@@ -153,7 +153,7 @@ function SubsystemGlyphVector({ stepIndex }) {
   const gProps = {
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: "1.3",
+    strokeWidth: "0.95",
     strokeLinecap: "round",
     strokeLinejoin: "round",
     vectorEffect: "non-scaling-stroke"
@@ -169,7 +169,7 @@ function SubsystemGlyphVector({ stepIndex }) {
           {/* In-flight tool call interception beam with central trigger node */}
           <line x1="-5.5" y1="0" x2="-1.8" y2="0" />
           <line x1="1.8" y1="0" x2="5.5" y2="0" />
-          <circle cx="0" cy="0" r="1.3" fill="currentColor" />
+          <circle cx="0" cy="0" r="1.05" fill="currentColor" />
         </g>
       );
     case 2: // Cursor Stdio Transceiver: Stream prompt (Universal IDE standard)
@@ -182,9 +182,9 @@ function SubsystemGlyphVector({ stepIndex }) {
     case 3: // Git AST Diff Extractor: Canonical Git Branch & Syntax Delta
       return (
         <g {...gProps}>
-          <circle cx="-3" cy="-3.5" r="1.5" />
-          <circle cx="-3" cy="3.5" r="1.5" />
-          <circle cx="3.5" cy="0" r="1.5" />
+          <circle cx="-3" cy="-3.5" r="1.15" />
+          <circle cx="-3" cy="3.5" r="1.15" />
+          <circle cx="3.5" cy="0" r="1.15" />
           <path d="M -3 -2 V 2" />
           <path d="M -3 0 Q 0 0 2 0" />
         </g>
@@ -216,9 +216,9 @@ function SubsystemGlyphVector({ stepIndex }) {
     case 6: // CI/CD Gate Harness: PR Merge Verification Pipeline
       return (
         <g {...gProps}>
-          <circle cx="-3.5" cy="-3.5" r="1.5" />
-          <circle cx="-3.5" cy="3.5" r="1.5" />
-          <circle cx="3.5" cy="3.5" r="1.5" />
+          <circle cx="-3.5" cy="-3.5" r="1.15" />
+          <circle cx="-3.5" cy="3.5" r="1.15" />
+          <circle cx="3.5" cy="3.5" r="1.15" />
           <path d="M -3.5 -2 V 2" />
           <path d="M 3.5 2 V -0.5 Q 3.5 -3.5 0 -3.5" />
         </g>
@@ -228,7 +228,7 @@ function SubsystemGlyphVector({ stepIndex }) {
         <g {...gProps}>
           <rect x="-5.5" y="-3" width="5.5" height="6" rx="2" />
           <rect x="0" y="-3" width="5.5" height="6" rx="2" />
-          <line x1="-1" y1="0" x2="1" y2="0" strokeWidth="1.5" />
+          <line x1="-1" y1="0" x2="1" y2="0" strokeWidth="1.0" />
         </g>
       );
     case 8: // Closed-Loop Auto-Repair: Precision Dual-Arrow Self-Healing Cycle
@@ -787,7 +787,7 @@ export default function CausalEnclaveHub() {
           <div 
             onPointerEnter={() => { isHoveringCanvasRef.current = true; }}
             onPointerLeave={() => { isHoveringCanvasRef.current = false; }}
-            className="w-full max-w-[1280px] 2xl:max-w-[1520px] aspect-[16/9.6] max-h-[min(73vh,730px)] 2xl:max-h-[860px] flex items-center justify-center relative select-none will-change-transform cursor-default"
+            className="w-full max-w-[1190px] 2xl:max-w-[1410px] aspect-[16/9.6] max-h-[min(66vh,660px)] 2xl:max-h-[770px] flex items-center justify-center relative select-none will-change-transform cursor-default"
             style={{
               transform: `rotateX(${baseCam.pitch}deg) rotateY(${baseCam.yaw}deg) rotateZ(${baseCam.roll}deg) translate3d(${baseCam.tx}px, ${baseCam.ty}px, ${baseCam.tz}px) scale(${baseCam.scale})`,
               transformStyle: 'preserve-3d',
