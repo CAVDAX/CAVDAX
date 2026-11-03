@@ -242,6 +242,24 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
 
 
 
+
+0x. **Hermetic Dependency & Container Environment Guard (The Ambient Module & Node Engine Invariant)**:
+   - **The Ambient Module Trap (Phantom Local Resolution)**:
+     - On developer workstations, Node.js walks up parent directory trees (e.g. C:\\Users\\<user>\\node_modules) to resolve packages.
+     - An imported module (e.g. import { Agent } from 'undici') may resolve locally and pass tests on a local machine even when omitted from package.json.
+     - In clean CI runners (GitHub Actions) or production Docker containers (npm install --omit=dev), the package does not exist -> Node crashes on boot (ERR_MODULE_NOT_FOUND) -> Reverse proxy (Caddy/Nginx) fails to connect -> Cloudflare returns 502 Bad Gateway.
+   - **Mandatory Subproject Declaration**:
+     - Every package imported in application source code MUST be explicitly declared in that specific service's package.json (dependencies for runtime, devDependencies for test-only).
+     - Before committing, verify local subproject resolution using npm ls <package-name> inside the specific subproject directory. If it returns (empty), the dependency is ambient and must be added.
+   - **Runtime Engine Matrix & Node Compatibility (engines.node)**:
+     - Never blindly install the latest major version of a package without inspecting its engines.node specification (via npm show <pkg> engines).
+     - If the production Docker image or CI runner uses Node 20 (node:20-alpine, node-version: 20), installing a library that requires node >= 22.19.0 (such as undici@8.x) will trigger container build failures or runtime incompatibilities.
+     - Always pin package versions that support the repository's base container runtime (node >= 18 or node >= 20).
+   - **Pre-Merge Hermetic Quality Gate**:
+     - In CI pipelines, always test with clean installation conditions before executing SSH deployment or container restart steps. Missing dependencies must fail fast in CI before touching production.
+
+
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.
