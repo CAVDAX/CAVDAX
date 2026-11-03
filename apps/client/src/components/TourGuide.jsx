@@ -26,7 +26,7 @@ const CONSOLE_TOUR_STEPS = [
     title: 'Command Ribbon & Live Benchmarks',
     badge: 'STEP 1 OF 5',
     description:
-      'Toggle between the 4-Act ADR Storyline and live GitHub repos, monitor the 1.84ms GraphBLAS traversal benchmark, and track agent cognitive states.',
+      'Toggle between 4-Act ADR storylines and live GitHub repos while monitoring sub-2ms GraphBLAS traversals.',
     tip: 'Sub-2ms evaluation is achieved via Sparse BLAS semirings.',
     placement: 'bottom-center',
     scrollBlock: 'start',
@@ -143,7 +143,7 @@ const AUDIT_TOUR_STEPS = [
     title: 'Multi-Repo Scope & Forensic Verdict Filters',
     badge: 'STEP 2 OF 4',
     description:
-      'Filter verification audit logs across repositories, branch scopes (including PR branches), verdict states, and target files.',
+      'Filter verification audit logs across repositories, branch scopes, verdict states, and target files.',
     tip: 'Filter by BLOCKED to inspect intercepted architectural violations.',
     placement: 'bottom-center',
     scrollBlock: 'start',
@@ -154,7 +154,7 @@ const AUDIT_TOUR_STEPS = [
     title: 'Tamper-Evident Action Audit Ledger & Interception Proofs',
     badge: 'STEP 3 OF 4',
     description:
-      'Immutable ledger detailing action IDs, target files, and decision verdicts. Proves approved operations succeed while architectural divergence is blocked before disk touch.',
+      'Immutable ledger detailing action IDs and verdicts, ensuring approved operations succeed and divergence is blocked.',
     tip: 'Blocked writes reveal intercepted architectural violations.',
     placement: 'top-center',
     scrollBlock: 'center',
@@ -165,7 +165,7 @@ const AUDIT_TOUR_STEPS = [
     title: 'Live Architectural Interception Ratio',
     badge: 'STEP 4 OF 4',
     description:
-      'Real-time summary tracking total approved writes versus blocked divergence attempts, proving zero silent cache rot touches disk.',
+      'Real-time summary tracking approved writes versus blocked divergence attempts, ensuring zero silent cache rot.',
     tip: 'Blocked operations represent preserved architectural invariants.',
     placement: 'top-center',
     scrollBlock: 'center',
@@ -239,7 +239,7 @@ const MCP_TOUR_STEPS = [
     title: 'Agent Guardrails (.cursorrules & CLAUDE.md)',
     badge: 'STEP 3 OF 4',
     description:
-      'Drop-in prompt directives instructing Cursor and Claude Code to verify all architecture decisions before modifying protected source files.',
+      'Directives instructing Cursor and Claude Code to verify decisions before modifying protected source files.',
     tip: 'Enforces compliance at the model prompt layer before tools fire.',
     placement: 'top-center',
     scrollBlock: 'center',
