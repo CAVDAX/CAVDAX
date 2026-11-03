@@ -9,6 +9,24 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.70 Latest Session Achievements (November 3, 2026 - Branch-Aware Verification Gate, Audit Branch Combobox & Real-Time SSE Team Event Stream)
+
+- **Resolved `/verify-action` Branch Scoping Bug (`apps/client/src/components/ConnectedRepoWorkspace.jsx`, `apps/server/index.js`)**:
+  - Eliminated the branch-mismatch error where verifying decisions on non-default branches (e.g. `cavdax/init-adr`) failed with `404 No Architecture Decisions found in repository`: the frontend client queried ADRs with `?branch=...` to display the `Verify: DEC-001 (Valid)` button, but omitted `branch` from the `POST /verify-action` payload, causing the server to scan `main` and report zero decisions.
+  - Wired `branch: scan?.branch || selectedBranch || repo.default_branch || 'main'` in the client payload and updated `app.post('/api/github/repos/:owner/:repo/verify-action')` to scan the exact specified branch ref.
+- **Audit Branch Tag & Filter Combobox (`core/graph/queries.js`, `apps/server/index.js`, `apps/client/src/components/AuditPage.jsx`)**:
+  - Attached `branch: $branch` to `AgentAction` records in FalkorDB, fallback graph state, and persisted system state.
+  - Updated `fetchAuditLog` Cypher query in `core/graph/queries.js` to return `coalesce(a.branch, 'main') AS branch`.
+  - Added a responsive Branch Filter Combobox to `AuditPage.jsx` dynamically populated with all branch scopes present in the selected repository (`all`, `main`, `cavdax/init-adr`, etc.).
+  - Added visual monospace GitBranch icon badges to each audit action row alongside repository attribution.
+- **Real-Time Team Event Stream via SSE (`apps/client/src/components/DevTeamPanel.jsx`, `apps/server/index.js`)**:
+  - Replaced isolated local-only diagnostic scratchpad with a live SSE EventSource stream bound to `/api/events`.
+  - Added `POST /api/dev/log-event` endpoint on the server to broadcast developer panel security and operational actions across all connected client sockets via `DEV_TEAM_EVENT`.
+  - Wired live ingestion of `AGENT_ACTION_LOGGED`, `DEV_TEAM_EVENT`, and `DECISION_INVALIDATED` into `DevTeamPanel.jsx`, streaming verified agent writes and security events across all team members in real-time.
+- **Full Verification**:
+  - All 64 backend unit tests pass in 491ms.
+  - Production client bundle built cleanly in 25.71s with zero errors.
+
 ## 1.0.69 Latest Session Achievements (November 3, 2026 - 3D WebGL Plate & 2D SVG Icon Elevation Parity Invariant)
 
 - **Strict 3D Plate & 2D SVG Icon Elevation Parity Invariant (`apps/client/src/components/CausalEnclaveHub.jsx`, `apps/client/src/components/ui/hub.jsx`)**:
