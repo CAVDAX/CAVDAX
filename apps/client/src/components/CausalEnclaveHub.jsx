@@ -249,6 +249,8 @@ function SubsystemGlyphVector({ stepIndex }) {
 
 export default function CausalEnclaveHub() {
   const containerRef = useRef(null);
+  const hubRef = useRef(null);
+  const [isWheelScrolling, setIsWheelScrolling] = useState(false);
 
   const [activeStep, setActiveStep] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
@@ -480,10 +482,12 @@ export default function CausalEnclaveHub() {
     const handleWheel = (e) => {
       // Mark scrolling active with debounce to suppress stationary raycast snags
       isScrollingRef.current = true;
+      setIsWheelScrolling(true);
       hasIntentionalPointerMoveRef.current = false;
       if (scrollQuiescenceTimerRef.current) clearTimeout(scrollQuiescenceTimerRef.current);
       scrollQuiescenceTimerRef.current = setTimeout(() => {
         isScrollingRef.current = false;
+        setIsWheelScrolling(false);
       }, 280);
 
       if (isExitingRef.current) return;
@@ -543,10 +547,12 @@ export default function CausalEnclaveHub() {
 
     const handleTouchMove = (e) => {
       isScrollingRef.current = true;
+      setIsWheelScrolling(true);
       hasIntentionalPointerMoveRef.current = false;
       if (scrollQuiescenceTimerRef.current) clearTimeout(scrollQuiescenceTimerRef.current);
       scrollQuiescenceTimerRef.current = setTimeout(() => {
         isScrollingRef.current = false;
+        setIsWheelScrolling(false);
       }, 280);
 
       if (isExitingRef.current || !isLockedRef.current || isTransitioningRef.current) return;
@@ -912,24 +918,38 @@ export default function CausalEnclaveHub() {
             `}</style>
             
             <Hub
+              ref={hubRef}
               activeTile={activeStep === 0 ? -1 : activeStep - 1}
               intensity={1}
+              className={isWheelScrolling ? "pointer-events-none" : "pointer-events-auto"}
               onRead={(text) => {
-                // Suppress raycast activations during scrolling, camera transitions, or if cursor is stationary
-                if (!isHoveringCanvasRef.current) return;
-                if (isScrollingRef.current || isTransitioningRef.current) return;
-                if (!hasIntentionalPointerMoveRef.current) return;
                 if (text && text.startsWith('tile ')) {
                   const idx = parseInt(text.replace('tile ', ''), 10);
                   if (idx >= 1 && idx <= 8 && idx !== activeStepRef.current) {
-                    playClick();
-                    setStep(idx);
+                    const isApproved = isHoveringCanvasRef.current && 
+                                       !isScrollingRef.current && 
+                                       !isTransitioningRef.current && 
+                                       hasIntentionalPointerMoveRef.current;
+                    if (isApproved) {
+                      playClick();
+                      setStep(idx);
+                    } else {
+                      // Strict 3D/2D Parity Invariant: snap Hairline's 3D plate back to the active step!
+                      hubRef.current?.setActiveTile(activeStepRef.current === 0 ? -1 : activeStepRef.current - 1);
+                    }
                   }
                 } else if (text === 'rest') {
-                  // Pointer physically over the central Core hub
                   if (activeStepRef.current !== 0) {
-                    playClick();
-                    setStep(0);
+                    const isApproved = isHoveringCanvasRef.current && 
+                                       !isScrollingRef.current && 
+                                       !isTransitioningRef.current && 
+                                       hasIntentionalPointerMoveRef.current;
+                    if (isApproved) {
+                      playClick();
+                      setStep(0);
+                    } else {
+                      hubRef.current?.setActiveTile(activeStepRef.current === 0 ? -1 : activeStepRef.current - 1);
+                    }
                   }
                 }
               }}
