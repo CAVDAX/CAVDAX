@@ -419,13 +419,13 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
   }, [text]);
 
   return (
-    <footer className="relative w-full border-t border-slate-200 dark:border-white/10 bg-[#f8fafc] dark:bg-[#07090b] text-slate-900 dark:text-white pt-10 sm:pt-14 pb-8 transition-colors select-none overflow-visible">
+    <footer className="relative w-full border-t border-slate-200 dark:border-white/20 bg-[#f8fafc] dark:bg-[#07090b] text-slate-900 dark:text-white pt-10 sm:pt-14 pb-8 transition-colors select-none overflow-visible">
       {/* Top Ambient Edge Highlight Line */}
       <div
         aria-hidden="true"
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[72vw] max-w-5xl h-px pointer-events-none z-10"
       >
-        <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-300 dark:via-white/35 to-transparent" />
+        <div className="w-full h-full bg-gradient-to-r from-transparent via-slate-300 dark:via-white/50 to-transparent" />
       </div>
 
       {/* Scroll to Top Center Button (CAVDAX Signature Architectural Pattern) */}
@@ -466,7 +466,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
       {/* TOP TIER: Architectural Header */}
       <div className="max-w-7xl mx-auto px-6 mb-10 sm:mb-12">
-        <div className="flex flex-col pb-6 border-b border-slate-200 dark:border-white/10 gap-2">
+        <div className="flex flex-col pb-6 border-b border-slate-200 dark:border-white/20 gap-2">
           <span className="font-mono font-black text-base sm:text-lg tracking-widest text-slate-950 dark:text-white">
             CAVDAX
           </span>
@@ -545,7 +545,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           </div>
 
           {/* Column 2: Protocol Gateways */}
-          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-6 pr-4">
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6 pr-4">
             <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
               <span className="text-slate-400 dark:text-zinc-500">02</span>
               Gateways & Tools
@@ -603,7 +603,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           </div>
 
           {/* Column 3: Verification & Governance */}
-          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-6 pr-4">
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6 pr-4">
             <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
               <span className="text-slate-400 dark:text-zinc-500">03</span>
               Verification
@@ -661,7 +661,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           </div>
 
           {/* Column 4: Runtime Ecosystem */}
-          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/10 lg:pl-6">
+          <div className="lg:border-l lg:border-slate-200/80 lg:dark:border-white/20 lg:pl-6">
             <h3 className="font-bold uppercase tracking-wider text-slate-950 dark:text-white mb-3.5 flex items-center gap-2 text-[11px]">
               <span className="text-slate-400 dark:text-zinc-500">04</span>
               Ecosystem
@@ -717,14 +717,14 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       </div>
 
       {/* GRAND BASEMENT SECTION: Monumental Stippled Pointillism Wordmark (Retool / Parallel Standard) */}
-      <div className="w-full relative border-t border-slate-200/80 dark:border-white/10 pt-4 sm:pt-6 pb-2 sm:pb-4 overflow-hidden">
+      <div className="w-full relative border-t border-slate-200/80 dark:border-white/20 pt-4 sm:pt-6 pb-2 sm:pb-4 overflow-hidden">
         <div ref={containerRef} className="relative w-full flex items-center justify-center cursor-crosshair">
           <canvas ref={canvasRef} className="block" />
         </div>
       </div>
 
       {/* BOTTOM LEGAL BAR: Single-Line Monospace Metadata */}
-      <div className="max-w-7xl mx-auto px-6 pt-5 border-t border-slate-200/80 dark:border-white/10 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono gap-3 text-center md:text-left">
+      <div className="max-w-7xl mx-auto px-6 pt-5 border-t border-slate-200/80 dark:border-white/20 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono gap-3 text-center md:text-left">
         <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
           <span className="font-mono font-bold text-slate-950 dark:text-white tracking-wider">CAVDAX</span>
           <span className="text-slate-400 dark:text-zinc-600">•</span>
