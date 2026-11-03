@@ -9,7 +9,29 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.74 Latest Session Achievements (November 3, 2026 - Forensic Repo-Scoped Branch Filtering, Audit Tour Hardening & Latency Transparency)
+## 1.0.76 Latest Session Achievements (November 3, 2026 - Switch Branch Panel Multi-Modal Scroll & Arrow Key Navigation)
+
+- **Switch Branch Panel Wheel, Trackpad & Arrow Navigation (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Addressed user feedback regarding scroll freeze on the "Switch branch" dropdown: identified that global Lenis smooth-scrolling was intercepting mouse wheel and touchpad events because `data-lenis-prevent` was missing from the branch list container.
+  - Added `data-lenis-prevent`, `overscroll-contain`, and `tabIndex={0}` to the branch list container, restoring immediate mouse wheel and touchpad two-finger gesture scrolling without window hijacking.
+  - Implemented keyboard arrow navigation (<kbd>↑</kbd> and <kbd>↓</kbd>) with auto-scroll-into-view (`scrollIntoView({ block: 'nearest' })`), <kbd>Enter</kbd> to select the highlighted branch, and <kbd>Escape</kbd> to dismiss.
+  - Synchronized hover state with active keyboard index for visual feedback.
+- **Full Verification**:
+  - Production Vite client bundle built cleanly in 13.94s with zero errors.
+
+## 1.0.75 Previous Session Achievements (November 3, 2026 - Forensic actionBranch Resolution, Dev Event Route Hardening & Anti-SSRF Rebinding Verification)
+
+- **Verification Route Scope Fix & `actionBranch` Resolution (`apps/server/index.js`)**:
+  - Fixed runtime `ReferenceError: actionBranch is not defined` thrown on clicking `Verify: DEC-001 (Valid)` on branch scopes (`cavdax/init-adr`).
+  - Identified that `const actionBranch` was accidentally declared inside `/adrs` instead of `/verify-action`; relocated declaration to `/verify-action` route scope where `branch` is destructured from `req.body`.
+  - Added strict input validation and control-character sanitization (`/[\x00-\x1f\x7f]/`, 255-character cap) to prevent memory ballooning or log injection.
+- **Developer Event Route Hardening (OWASP A01 Access Control Enforcement) (`apps/server/index.js`)**:
+  - Enforced `requireDevAuth` on `POST /api/dev/log-event`, completely eliminating unauthenticated team event injection and SSE channel spoofing.
+- **Security & Adversarial Audit Verification (`apps/server/test/`)**:
+  - Executed automated security test suite covering path confinement, tenant data isolation, anti-DNS rebinding, SSRF webhook mitigation, and HTML template escaping.
+  - All 14 security tests passed with zero failures in 630ms.
+
+## 1.0.74 Previous Session Achievements (November 3, 2026 - Forensic Repo-Scoped Branch Filtering, Audit Tour Hardening & Latency Transparency)
 
 - **Repo-Scoped Branch Filtering & Forensic Filter Fix (`apps/client/src/components/AuditPage.jsx`)**:
   - Addressed Devil's Advocate architectural finding: Git branches are namespaced strictly to individual repositories. Cross-repo branch filtering across "All Repositories" was semantically invalid and produced polluted branch lists.
