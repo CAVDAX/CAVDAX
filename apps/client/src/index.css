@@ -757,7 +757,7 @@ html.dark .footer-scroll-top:hover,
 :root.dark .footer-scroll-top:hover {
   opacity: 1 !important;
   transform: translate(-50%, -50%) !important;
-  background: rgba(217, 163, 83, 0.22) !important;
+  background: #111418 !important;
   border-color: rgba(245, 158, 11, 0.95) !important;
   box-shadow: 0 0 16px rgba(245, 158, 11, 0.75), 
               0 0 32px rgba(217, 163, 83, 0.5), 
