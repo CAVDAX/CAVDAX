@@ -3,6 +3,7 @@ import Lenis from 'lenis';
 import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, SlidersHorizontal, Trash2, Zap, AlertTriangle, X } from 'lucide-react';
 import Header from './components/Header.jsx';
 import SplashLoader from './components/SplashLoader.jsx';
+import CavdaxBrandLoader from './components/CavdaxBrandLoader.jsx';
 import LandingPage from './components/LandingPage.jsx';
 import McpCableConnectionSvg from './components/McpCableConnectionSvg.jsx';
 import NotFoundPage from './components/NotFoundPage.jsx';
@@ -1267,8 +1268,16 @@ export default function App() {
         className="flex-1 min-h-0 flex flex-col w-full"
       >
       <React.Suspense fallback={
-        <div className="flex-1 min-h-[50vh] flex items-center justify-center">
-          <div className="w-5 h-5 border-2 border-slate-300 dark:border-white/20 border-t-[#d9a353] rounded-full animate-spin" />
+        <div className="flex-1 min-h-[60vh] flex flex-col items-center justify-center select-none">
+          <div className="relative h-24 w-24 sm:h-28 sm:w-28 flex items-center justify-center pointer-events-none">
+            <CavdaxBrandLoader
+              size={92}
+              strokeWidth={3.4}
+              hairlineWidth={1.1}
+              colorClassName={isDarkTheme ? "text-white" : "text-slate-950"}
+              animateOnHover={false}
+            />
+          </div>
         </div>
       }>
       {activeTab === 'landing' ? (
