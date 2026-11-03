@@ -25,11 +25,11 @@ const DevTeamPanel = React.lazy(() => import('./components/DevTeamPanel.jsx'));
 const ProfilePage = React.lazy(() => import('./components/ProfilePage.jsx'));
 const SupportPage = React.lazy(() => import('./components/SupportPage.jsx'));
 const ConnectedRepoWorkspace = React.lazy(() => import('./components/ConnectedRepoWorkspace.jsx'));
-const PreferencesModal = React.lazy(() => import('./components/PreferencesModal.jsx'));
-const KeyboardShortcutsModal = React.lazy(() => import('./components/KeyboardShortcutsModal.jsx'));
-const McpConnectModal = React.lazy(() => import('./components/McpConnectModal.jsx'));
-const ConnectRepoModal = React.lazy(() => import('./components/ConnectRepoModal.jsx'));
-const TourGuide = React.lazy(() => import('./components/TourGuide.jsx'));
+import PreferencesModal from './components/PreferencesModal.jsx';
+import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.jsx';
+import McpConnectModal from './components/McpConnectModal.jsx';
+import ConnectRepoModal from './components/ConnectRepoModal.jsx';
+import TourGuide from './components/TourGuide.jsx';
 
 // Intelligent Route Prefetch Registry (Option 2: Intelligent Background Prefetching)
 const ROUTE_PREFETCH_LOADERS = {
@@ -41,12 +41,7 @@ const ROUTE_PREFETCH_LOADERS = {
   profile: () => import('./components/ProfilePage.jsx'),
   dev: () => import('./components/DevConsolePage.jsx'),
   devteam: () => import('./components/DevTeamPanel.jsx'),
-  repo: () => import('./components/ConnectedRepoWorkspace.jsx'),
-  preferences: () => import('./components/PreferencesModal.jsx'),
-  shortcuts: () => import('./components/KeyboardShortcutsModal.jsx'),
-  mcpModal: () => import('./components/McpConnectModal.jsx'),
-  connectRepo: () => import('./components/ConnectRepoModal.jsx'),
-  tour: () => import('./components/TourGuide.jsx')
+  repo: () => import('./components/ConnectedRepoWorkspace.jsx')
 };
 
 const prefetchedRoutes = new Set();
