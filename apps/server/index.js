@@ -2642,7 +2642,6 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   try {
     const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch });
     const repoFullName = `${owner}/${repo}`;
-    const actionBranch = typeof branch === 'string' && branch.trim() ? branch.trim() : 'main';
     const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => e.repo?.toLowerCase() === repoFullName.toLowerCase());
     if (result?.graph && Array.isArray(result.graph.nodes) && Array.isArray(result.graph.edges)) {
       // Deduplicate actions by decision_id: display at most 1 active/latest action node per decision on the canvas
@@ -2716,6 +2715,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
   const { decisionId, targetFile, branch } = req.body || {};
+  const actionBranch = typeof branch === 'string' && branch.trim() ? branch.trim() : 'main';
 
   try {
     let currentGraph = null;
