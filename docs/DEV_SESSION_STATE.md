@@ -9,7 +9,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.73 Latest Session Achievements (November 3, 2026 - High-Impact Tour Coverage Expansion & Terminal Scroll Cue Activation)
+## 1.0.74 Latest Session Achievements (November 3, 2026 - Forensic Repo-Scoped Branch Filtering, Audit Tour Hardening & Latency Transparency)
+
+- **Repo-Scoped Branch Filtering & Forensic Filter Fix (`apps/client/src/components/AuditPage.jsx`)**:
+  - Addressed Devil's Advocate architectural finding: Git branches are namespaced strictly to individual repositories. Cross-repo branch filtering across "All Repositories" was semantically invalid and produced polluted branch lists.
+  - Implemented `availableBranchOptions` branch isolation: when `selectedRepo === 'all'`, the branch filter presents only `All Branches` and is set to `disabled={selectedRepo === 'all'}`.
+  - Added `handleRepoChange` handler that automatically resets `selectedBranch` to `'all'` when switching repositories, preventing impossible ghost branch queries.
+  - Fixed regression in `filteredEntries`: previously `selectedBranch` was included in the `useMemo` dependency array but completely omitted from the filter predicate; wired `if (selectedRepo !== 'all' && selectedBranch !== 'all') { if (itemBranch !== selectedBranch) return false; }` so selecting a branch accurately filters records.
+- **Permanent Audit Tour Metrics Target (`apps/client/src/components/AuditPage.jsx`, `apps/client/src/components/TourGuide.jsx`)**:
+  - Solved empty-state vs. populated-state tour target collision: previously, the footer metrics bar was conditionally unmounted when `filteredEntries.length === 0`.
+  - Permanently mounted `<div data-tour="audit-metrics">` in the DOM so it renders unconditionally (displaying `0 approved · 0 blocked` on empty states).
+  - Restored Step 4 `[data-tour="audit-metrics"]` ("Live Architectural Interception Ratio") to `AUDIT_TOUR_STEPS` in `TourGuide.jsx`, guaranteeing the 4-step tour runs seamlessly whether records are empty or populated.
+- **Latency Telemetry Transparency (`apps/client/src/components/AuditPage.jsx`)**:
+  - Investigated user inquiry regarding `0.00ms` latency: confirmed that `core/graph/queries.js` records real `process.hrtime.bigint()` socket time when connected to FalkorDB, while returning `0` in in-memory simulation mode (which formatted as `0.00ms`).
+  - Removed confusing technical abbreviations (such as MEM badges), keeping the clean numeric latency display intact while preserving real backend latency telemetry.
+- **Full Verification**:
+  - Production Vite client bundle built cleanly in 18.18s with zero warnings or errors.
+  - Verified via Chrome DevTools automation on `/audit` that all 4 tour targets (`audit-header`, `audit-filter`, `audit-ledger`, `audit-metrics`) are present, branch dropdown is disabled for "All Repositories", and clean latency displays accurately.
+
+## 1.0.73 Previous Session Achievements (November 3, 2026 - High-Impact Tour Coverage Expansion & Terminal Scroll Cue Activation)
 
 - **Tour Guide High-Impact Coverage Expansion (`apps/client/src/components/TourGuide.jsx`, `apps/client/src/App.jsx`, `apps/client/src/components/AuditPage.jsx`, `apps/client/src/components/ConnectMcpPage.jsx`)**:
   - **Console Tour (Expanded 4 $\to$ 5 Steps)**: Added Step 1 `[data-tour="console-ribbon"]` spotlighting the top Command Ribbon, live 1.84ms GraphBLAS traversal benchmark, workspace switcher (Demo Sandbox vs. Real GitHub Repos), and live agent state indicator.
