@@ -9,6 +9,15 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.69 Latest Session Achievements (November 3, 2026 - 3D WebGL Plate & 2D SVG Icon Elevation Parity Invariant)
+
+- **Strict 3D Plate & 2D SVG Icon Elevation Parity Invariant (`apps/client/src/components/CausalEnclaveHub.jsx`, `apps/client/src/components/ui/hub.jsx`)**:
+  - Eliminated the split-brain state divergence where Hairline's autonomous internal pointer raycaster elevated a 3D WebGL tile plate beneath a resting cursor while React's 2D floating SVG emblem remained grounded on the floor at $y = 0$, or left the scrolled node's SVG emblem floating in thin air without a 3D plate under it.
+  - Wrapped `Hub` with `forwardRef` and `useImperativeHandle`, exposing programmatic `setActiveTile(idx)` control to enforce master-slave authority.
+  - Bound dynamic scroll quiescence state (`isWheelScrolling`) to apply `pointer-events-none` directly to the `<Hub>` canvas container during wheel, touchpad, and touch scroll progression, preventing Hairline's internal `move` listener from executing raycast hits during scrolling.
+  - Hardened `onRead` with immediate two-way reversion: if a raycast hit is unapproved (stationary cursor or in-flight transition), `hubRef.current.setActiveTile(...)` is invoked synchronously to snap Hairline's 3D plate back to the true active step, guaranteeing the 3D physical plate and the 2D SVG floating card never elevate independently.
+  - Verified visual integrity and deterministic scroll navigation across all 8 sectors (`CORE` $\\to$ `01` $\\to$ `02` $\\to$ ... $\\to$ `08`) with 100% 3D/2D elevation synchrony and zero UI clutter.
+
 ## 1.0.68 Latest Session Achievements (November 3, 2026 - Async DNS Pre-Flight Verification & Anti-DNS Rebinding Invariant)
 
 - **Async DNS Pre-Flight & Anti-DNS Rebinding Invariant (`apps/server/webhookDispatcher.js`)**:
@@ -1503,7 +1512,7 @@
 
   - **Direction-Aware 10-Second Auto-Scroll & Inner Pill Countdown Fill Bar**:
 
-    - Directional cycling: cards automatically advance every 10.0 seconds along active heading ($01 	o 04$ downward, $04 	o 01$ upward).
+    - Directional cycling: cards automatically advance every 10.0 seconds along active heading ($01 \\to 04$ downward, $04 \\to 01$ upward).
 
     - Inner pill countdown fill: active HUD pill tag renders an inner `0%` to `100%` width fill layer (`bg-white/25` / `dark:bg-slate-950/25`) behind the `z-10` text, providing visual anticipation without clutter.
 
