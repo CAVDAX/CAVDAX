@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck } from 'lucide-react';
+import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck, GitBranch } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import Combobox from './Combobox';
 
@@ -201,6 +201,26 @@ export default function AuditPage() {
     fetchAudit();
   }, [fetchAudit]);
 
+  const availableBranchOptions = useMemo(() => {
+    const branchSet = new Set();
+    entries.forEach(e => {
+      if (selectedRepo !== 'all') {
+        const itemRepo = (e.repo || 'demo').toLowerCase();
+        if (itemRepo !== selectedRepo.toLowerCase()) return;
+      }
+      if (e.branch) branchSet.add(e.branch);
+    });
+    const list = Array.from(branchSet).sort();
+    return [
+      { value: 'all', label: 'All Branches', sublabel: 'View audit actions across all branches' },
+      ...list.map(b => ({
+        value: b,
+        label: b,
+        sublabel: `Filter actions on branch ${b}`
+      }))
+    ];
+  }, [entries, selectedRepo]);
+
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
       // 1. Repo scope filter
@@ -228,7 +248,7 @@ export default function AuditPage() {
       }
       return true;
     });
-  }, [entries, selectedRepo, verdictFilter, searchQuery]);
+  }, [entries, selectedRepo, selectedBranch, verdictFilter, searchQuery]);
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-3">
@@ -320,6 +340,17 @@ export default function AuditPage() {
                 }))
               ]}
               ariaLabel="Select repository scope"
+            />
+          </div>
+
+          {/* Branch Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">Branch:</span>
+            <Combobox
+              value={selectedBranch}
+              onChange={(val) => setSelectedBranch(val)}
+              options={availableBranchOptions}
+              ariaLabel="Select branch filter"
             />
           </div>
 
@@ -441,9 +472,17 @@ export default function AuditPage() {
                     <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 truncate" title={entry.action_id}>
                       {entry.action_id || '—'}
                     </span>
-                    <span className="text-[8px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                      {entry.repo && entry.repo !== 'demo' ? entry.repo : 'demo'}
-                    </span>
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <span className="text-[8px] font-mono text-slate-400 dark:text-slate-500 truncate">
+                        {entry.repo && entry.repo !== 'demo' ? entry.repo : 'demo'}
+                      </span>
+                      {entry.branch && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] font-mono px-1 py-0.2 rounded bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-400 truncate" title={`Branch: ${entry.branch}`}>
+                          <GitBranch className="w-2.5 h-2.5 shrink-0" />
+                          {entry.branch}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Target file */}

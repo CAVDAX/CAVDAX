@@ -242,6 +242,57 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
     fetchClientIp().then((ip) => {
       setClientIp(ip);
     });
+
+    let es = null;
+    try {
+      es = new EventSource('/api/events');
+      es.onmessage = (event) => {
+        try {
+          if (!event.data || event.data.trim() === ': ping') return;
+          const parsed = JSON.parse(event.data);
+          const nowTime = new Date().toLocaleTimeString();
+
+          if (parsed.type === 'DEV_TEAM_EVENT') {
+            const ev = parsed.data || {};
+            setInjectionLogs((prev) => [
+              {
+                id: ev.id || `log-${Date.now()}`,
+                timestamp: ev.timestamp ? new Date(ev.timestamp).toLocaleTimeString() : nowTime,
+                type: ev.type || 'TEAM',
+                message: ev.message,
+              },
+              ...prev,
+            ]);
+          } else if (parsed.type === 'AGENT_ACTION_LOGGED') {
+            const act = parsed.data || {};
+            setInjectionLogs((prev) => [
+              {
+                id: `act-${act.action_id || Date.now()}`,
+                timestamp: act.executed_at ? new Date(act.executed_at).toLocaleTimeString() : nowTime,
+                type: (act.status || '').startsWith('BLOCKED') ? 'BLOCKED' : 'VERIFIED',
+                message: `Agent Action [${act.action_id || 'act'}] ${act.status} on '${act.target_file || 'target'}' (${act.decision_id || 'unassigned'}) [Branch: ${act.branch || 'main'}]`,
+              },
+              ...prev,
+            ]);
+          } else if (parsed.type === 'DECISION_INVALIDATED') {
+            const inv = parsed.data || {};
+            setInjectionLogs((prev) => [
+              {
+                id: `inv-${Date.now()}`,
+                timestamp: nowTime,
+                type: 'INVALIDATION',
+                message: `Decision [${inv.decisionId || 'DEC'}] invalidated by superseding ADR push.`,
+              },
+              ...prev,
+            ]);
+          }
+        } catch {}
+      };
+    } catch {}
+
+    return () => {
+      if (es) es.close();
+    };
   }, []);
 
   const handleUnlock = async (e) => {
@@ -265,6 +316,14 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
           },
           ...prev,
         ]);
+        fetch('/api/dev/log-event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'SECURITY',
+            message: `Developer Master Passkey accepted for user @${result.session.user}. Enclave unlocked.`
+          })
+        }).catch(() => {});
       } else {
         playRejectBuzz();
         setAuthError(result.error || 'Authentication rejected');
@@ -548,7 +607,7 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
           { id: 'diagnostics', label: 'Agent Diagnostics', icon: Cpu },
           { id: 'tiers', label: 'Tier Testing', icon: Sliders },
           { id: 'security', label: 'Security & Roster', icon: Key, count: rosterList.length },
-          { id: 'audit', label: 'Event Stream', icon: Activity, count: injectionLogs.length },
+          { id: 'audit', label: 'Team Event Stream', icon: Activity, count: injectionLogs.length },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;

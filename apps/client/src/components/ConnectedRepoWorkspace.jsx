@@ -314,7 +314,8 @@ export default function ConnectedRepoWorkspace({
         credentials: 'include',
         body: JSON.stringify({
           decisionId: target.id,
-          targetFile
+          targetFile,
+          branch: scan?.branch || selectedBranch || repo.default_branch || 'main'
         })
       });
 
