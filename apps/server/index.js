@@ -109,34 +109,7 @@ app.use(express.json({
 }));
 
 
-/**
- * GET /api/push/vapid-public-key
- * Returns the VAPID public key for browser PushManager subscription.
- */
-app.get('/api/push/vapid-public-key', (req, res) => {
-  const publicKey = getVapidPublicKey();
-  res.json({
-    success: Boolean(publicKey),
-    publicKey
-  });
-});
 
-/**
- * POST /api/push/subscribe
- * Registers client PushSubscription for offline background desktop alerts.
- */
-app.post('/api/push/subscribe', (req, res) => {
-  const user = req.session?.user;
-  const login = user?.login || 'default';
-  const { subscription } = req.body || {};
-
-  if (!subscription || !subscription.endpoint) {
-    return res.status(400).json({ success: false, error: 'MISSING_SUBSCRIPTION' });
-  }
-
-  const result = savePushSubscription(login, subscription);
-  res.json(result);
-});
 
 // ---------------------------------------------------------------------------
 // SESSION MIDDLEWARE & PERSISTENT SESSION RESILIENCE
@@ -302,6 +275,35 @@ app.use((req, res, next) => {
     rehydrateSessionFromCookie(req);
   }
   next();
+});
+
+/**
+ * GET /api/push/vapid-public-key
+ * Returns the VAPID public key for browser PushManager subscription.
+ */
+app.get('/api/push/vapid-public-key', (req, res) => {
+  const publicKey = getVapidPublicKey();
+  res.json({
+    success: Boolean(publicKey),
+    publicKey
+  });
+});
+
+/**
+ * POST /api/push/subscribe
+ * Registers client PushSubscription for offline background desktop alerts.
+ */
+app.post('/api/push/subscribe', (req, res) => {
+  const user = req.session?.user;
+  const login = user?.login || 'default';
+  const { subscription } = req.body || {};
+
+  if (!subscription || !subscription.endpoint) {
+    return res.status(400).json({ success: false, error: 'MISSING_SUBSCRIPTION' });
+  }
+
+  const result = savePushSubscription(login, subscription);
+  res.json(result);
 });
 
 // ---------------------------------------------------------------------------
@@ -1016,7 +1018,29 @@ app.get('/api/graph', async (req, res) => {
 app.get('/api/graph/export-image', async (req, res) => {
   try {
     if (!isFalkorConnected) await initDb();
-    const graphState = graph ? await fetchGraphState(graph) : fallbackGraphState;
+
+    // Resolve repo and branch scopes with tenant isolation
+    const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+    const requestedBranch = sanitizeBranchName(req.query.branch, null);
+    const isSessionAuth = Boolean(req.session?.user || req.authUser);
+    const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
+
+    let graphState = fallbackGraphState;
+    if (graph) {
+      graphState = await fetchGraphState(graph, { repo: repoScope });
+    } else {
+      // In-memory fallback
+      const filteredNodes = fallbackGraphState.nodes.filter(n => {
+        if (!n.repo || n.repo === 'demo' || n.is_demo) return true;
+        const matchRepo = repoScope && n.repo === repoScope;
+        const matchBranch = !requestedBranch || !n.branch || sanitizeBranchName(n.branch) === requestedBranch;
+        return matchRepo && matchBranch;
+      });
+      const nodeIds = new Set(filteredNodes.map(n => n.id));
+      const filteredEdges = fallbackGraphState.edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+      graphState = { nodes: filteredNodes, edges: filteredEdges };
+    }
+
     const nodeId = req.query.node_id || req.query.nodeId || null;
     const highlightBlastRadius = req.query.blast === '1' || req.query.highlight_blast_radius === 'true';
     const isDarkTheme = req.query.theme !== 'light';
@@ -1024,7 +1048,8 @@ app.get('/api/graph/export-image', async (req, res) => {
     const svg = renderGraphToSvg(graphState, {
       nodeId,
       highlightBlastRadius,
-      isDarkTheme
+      isDarkTheme,
+      title: repoScope ? `CAVDAX: ${repoScope} (${requestedBranch || 'main'})` : undefined
     });
 
     if (req.query.format === 'json') {
@@ -1684,6 +1709,7 @@ app.get('/api/audit', async (req, res) => {
 
   // Tenant isolation: unauthenticated visitors strictly receive demo audit entries.
   const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+  const requestedBranch = sanitizeBranchName(req.query.branch, null);
   const isSessionAuth = Boolean(req.session?.user || req.authUser);
   const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
 
@@ -1732,7 +1758,8 @@ app.get('/api/audit', async (req, res) => {
     const seenActionIds = new Set(entries.map(e => e.action_id));
     for (const pa of persistedActions) {
       const matchRepo = repoScope ? (pa.repo === repoScope) : (!pa.repo || pa.repo === 'demo');
-      if (matchRepo && !seenActionIds.has(pa.action_id)) {
+      const matchBranch = !requestedBranch || sanitizeBranchName(pa.branch || 'main') === requestedBranch;
+      if (matchRepo && matchBranch && !seenActionIds.has(pa.action_id)) {
         entries.push(pa);
         seenActionIds.add(pa.action_id);
       }
@@ -1906,6 +1933,27 @@ app.get('/api/dev/tier-check', (req, res) => {
       auth_enabled: !!API_TOKEN
     }
   });
+});
+
+/**
+ * POST /api/dev/log-event
+ * Broadcasts an authentic developer team event across all connected SSE clients.
+ * Protected by requireDevAuth (validates constant-time Bearer token, dev roster, or loopback socket).
+ */
+app.post('/api/dev/log-event', requireDevAuth, (req, res) => {
+  const { type, message, metadata } = req.body || {};
+  if (!type || !message) {
+    return res.status(400).json({ success: false, error: 'type and message required' });
+  }
+  const eventPayload = {
+    id: `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    type: String(type).toUpperCase().slice(0, 32),
+    message: String(message).slice(0, 256),
+    metadata: metadata || {},
+    timestamp: Date.now()
+  };
+  broadcastEvent('DEV_TEAM_EVENT', eventPayload);
+  return res.json({ success: true, event: eventPayload });
 });
 
 /**
@@ -2604,6 +2652,16 @@ app.get('/api/github/repos/:owner/:repo/branches', async (req, res) => {
   }
 });
 
+// Shared branch name sanitizer enforcing length, format, and control-character safety
+export function sanitizeBranchName(branch, fallback = 'main') {
+  if (typeof branch !== 'string') return fallback;
+  const trimmed = branch.trim();
+  if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
+    return trimmed;
+  }
+  return fallback;
+}
+
 app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const token = req.session?.user?.accessToken;
   if (!token) {
@@ -2632,17 +2690,17 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
     }
   }
 
-  let requestedBranch = undefined;
-  if (typeof req.query.branch === 'string') {
-    const trimmed = req.query.branch.trim();
-    if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
-      requestedBranch = trimmed;
-    }
-  }
+  const requestedBranch = sanitizeBranchName(req.query.branch, null);
   try {
-    const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch });
+    const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch || undefined });
     const repoFullName = `${owner}/${repo}`;
-    const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => e.repo?.toLowerCase() === repoFullName.toLowerCase());
+    const targetBranch = sanitizeBranchName(requestedBranch || 'main');
+    // Scope persisted actions to BOTH repository and active branch to prevent cross-branch leakage
+    const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => {
+      const matchRepo = e.repo?.toLowerCase() === repoFullName.toLowerCase();
+      const matchBranch = sanitizeBranchName(e.branch || 'main') === targetBranch;
+      return matchRepo && matchBranch;
+    });
     if (result?.graph && Array.isArray(result.graph.nodes) && Array.isArray(result.graph.edges)) {
       // Deduplicate actions by decision_id: display at most 1 active/latest action node per decision on the canvas
       const latestActionByDecision = new Map();
@@ -2661,7 +2719,8 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
           decision_id: a.decision_id,
           timestamp: a.executed_at,
           latency_ms: a.latency_ms,
-          repo: a.repo
+          repo: a.repo,
+          branch: a.branch || targetBranch
         });
         result.graph.edges.push({
           source: a.action_id,
@@ -2715,13 +2774,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
   const { decisionId, targetFile, branch } = req.body || {};
-  let actionBranch = 'main';
-  if (typeof branch === 'string') {
-    const trimmed = branch.trim();
-    if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
-      actionBranch = trimmed;
-    }
-  }
+  const actionBranch = sanitizeBranchName(branch, 'main');
 
   try {
     let currentGraph = null;
@@ -2771,11 +2824,11 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
     if (isFalkorConnected && graph) {
       try {
         const falkorGateStart = process.hrtime.bigint();
-        // Remove previous test probe actions grounded in this decision to prevent duplicate node accumulation
+        // Remove previous test probe actions grounded in this decision scoped strictly to this branch
         await graph.query(`
-          MATCH (prevAction:AgentAction {repo: $repo})-[:GROUNDED_IN]->(d:Decision {id: $decisionId})
+          MATCH (prevAction:AgentAction {repo: $repo, branch: $branch})-[:GROUNDED_IN]->(d:Decision {id: $decisionId})
           DETACH DELETE prevAction
-        `, { params: { repo: repoFullName, decisionId: decisionNode.id } }).catch(() => {});
+        `, { params: { repo: repoFullName, branch: actionBranch, decisionId: decisionNode.id } }).catch(() => {});
 
         await graph.query(`
           MERGE (d:Decision {id: $decisionId})
@@ -3575,13 +3628,13 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
 
   // 3. Dispatch real Resend email alert
   const hudUrl = `${CLIENT_URL || 'https://cavdax.sahnirmaan.live'}/console?highlight=${encodeURIComponent(decisionId)}&blast=true`;
-  // Dispatch Web Push to registered desktop Service Workers
+  // Dispatch Web Push to registered desktop Service Workers strictly for the requesting user
   broadcastWebPushAlert({
     title: 'CAVDAX: Divergence Alert',
     body: `Decision ${decisionId} is invalidated by ${breakingSourceId}!`,
     decision_id: decisionId,
     url: hudUrl
-  }).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
+  }, login).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
 
   // Dispatch outgoing webhook if configured
   if (userPrefs?.webhookUrl) {
@@ -3760,13 +3813,17 @@ app.post('/api/github/webhook', async (req, res) => {
         // 1. Channel 1: SSE Broadcast to active consoles
         broadcastEvent('ARCHITECTURAL_DIVERGENCE_ALERT', alertPayload);
 
-        // 2. Channel 2: RFC 8292 VAPID Web Push to background desktop/mobile service workers
-        broadcastWebPushAlert({
-          title: `CAVDAX: Divergence Alert (${repoFullName})`,
-          body: `${inv.decisionId} invalidated by ${inv.breakingSourceId}!`,
-          decision_id: inv.decisionId,
-          url: hudUrl
-        }).catch((err) => console.warn('[CAVDAX WebPush] Webhook alert notice:', err.message));
+        // 2. Channel 2: RFC 8292 VAPID Web Push scoped strictly to targetRecipients who enabled browserAlerts
+        for (const target of targetRecipients) {
+          if (target.prefs.browserAlerts) {
+            broadcastWebPushAlert({
+              title: `CAVDAX: Divergence Alert (${repoFullName})`,
+              body: `${inv.decisionId} invalidated by ${inv.breakingSourceId}!`,
+              decision_id: inv.decisionId,
+              url: hudUrl
+            }, target.login).catch((err) => console.warn('[CAVDAX WebPush] Webhook alert notice:', err.message));
+          }
+        }
 
         // 3. Channel 3: Resend Transactional Email
         for (const target of targetRecipients) {
@@ -3875,28 +3932,7 @@ function _scheduleFalkorReconnect() {
 
 // Start listening
 initDb().finally(() => {
-  
-/**
- * POST /api/dev/log-event
- * Broadcasts an authentic developer team event across all connected SSE clients.
- */
-app.post('/api/dev/log-event', requireDevAuth, (req, res) => {
-  const { type, message, metadata } = req.body || {};
-  if (!type || !message) {
-    return res.status(400).json({ success: false, error: 'type and message required' });
-  }
-  const eventPayload = {
-    id: `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
-    type: String(type).toUpperCase().slice(0, 32),
-    message: String(message).slice(0, 256),
-    metadata: metadata || {},
-    timestamp: Date.now()
-  };
-  broadcastEvent('DEV_TEAM_EVENT', eventPayload);
-  return res.json({ success: true, event: eventPayload });
-});
-
-app.listen(PORT, () => {
+  app.listen(PORT, () => {
     console.log(`[CAVDAX Server] Running at http://localhost:${PORT}`);
     console.log(`[CAVDAX Server] Graph Engine: ${isFalkorConnected ? 'FalkorDB Live' : 'Simulation Fallback Ready'}`);
   });

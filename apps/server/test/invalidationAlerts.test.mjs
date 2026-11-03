@@ -171,23 +171,83 @@ test('Notification Preferences: Persists webhookUrl and scoped watchedRepos', ()
   assert.deepEqual(reloaded.notificationPreferences[testUser].watchedRepos, ['acme/inventory', 'cavdax/core']);
 });
 
-test('Outgoing Webhook: Anti-DNS Rebinding and Hostname Resolution rejects domains resolving to private/loopback IPs', async () => {
-  // localtest.me is a standard public wildcard domain that DNS-resolves to 127.0.0.1
-  const isLoopbackDomainSafe = await isSafeWebhookUrl('https://localtest.me/hook');
-  assert.equal(isLoopbackDomainSafe, false, 'Domain resolving to 127.0.0.1 must be rejected');
+test('Outgoing Webhook: Anti-DNS Rebinding and Hostname Resolution (deterministic offline unit tests)', async () => {
+  // 1. Hostnames must NOT be falsely identified as IP literals (Problem 1 fix)
+  assert.equal(isPrivateOrMetadataIp('fcm.googleapis.com'), false, 'fcm.googleapis.com must not be blocked as IPv6');
+  assert.equal(isPrivateOrMetadataIp('fdic.gov'), false, 'fdic.gov must not be blocked as IPv6');
+  assert.equal(isPrivateOrMetadataIp('feast.example.com'), false, 'feast.example.com must not be blocked as IPv6');
+  assert.equal(isPrivateOrMetadataIp('fead.example.com'), false, 'fead.example.com must not be blocked as IPv6');
 
-  // Unresolvable domain must fail safe
-  const isUnresolvableSafe = await isSafeWebhookUrl('https://this-domain-does-not-exist-cavdax-999.test/hook');
-  assert.equal(isUnresolvableSafe, false, 'Unresolvable domain must be rejected');
+  // 2. Legitimate public IPs return false
+  assert.equal(isPrivateOrMetadataIp('8.8.8.8'), false);
+  assert.equal(isPrivateOrMetadataIp('1.1.1.1'), false);
+  assert.equal(isPrivateOrMetadataIp('2607:f8b0:4005:805::200e'), false);
 
-  // Direct IP checks
-  assert.equal(isPrivateOrMetadataIp('169.254.169.254'), true);
+  // 3. Loopback & Private IPv4 return true
   assert.equal(isPrivateOrMetadataIp('127.0.0.1'), true);
+  assert.equal(isPrivateOrMetadataIp('127.0.5.10'), true);
   assert.equal(isPrivateOrMetadataIp('10.0.0.5'), true);
   assert.equal(isPrivateOrMetadataIp('172.16.50.1'), true);
   assert.equal(isPrivateOrMetadataIp('192.168.1.1'), true);
+  assert.equal(isPrivateOrMetadataIp('0.0.0.0'), true);
+
+  // 4. Cloud metadata IPs (AWS/Azure/GCP and Alibaba CGNAT) return true (Problem 4 fix)
+  assert.equal(isPrivateOrMetadataIp('169.254.169.254'), true, 'AWS/GCP/Azure metadata must be blocked');
+  assert.equal(isPrivateOrMetadataIp('100.100.100.200'), true, 'Alibaba Cloud metadata must be blocked');
+  assert.equal(isPrivateOrMetadataIp('100.64.0.1'), true, 'CGNAT range must be blocked');
+
+  // 5. Special reserved & benchmark CIDRs return true
+  assert.equal(isPrivateOrMetadataIp('198.18.0.1'), true, '198.18.0.0/15 must be blocked');
+  assert.equal(isPrivateOrMetadataIp('192.0.0.1'), true, '192.0.0.0/24 must be blocked');
+  assert.equal(isPrivateOrMetadataIp('240.0.0.1'), true, 'Class E reserved must be blocked');
+
+  // 6. IPv6 Loopback, Link-local, and ULA return true
   assert.equal(isPrivateOrMetadataIp('::1'), true);
-  assert.equal(isPrivateOrMetadataIp('fc00::1'), true);
   assert.equal(isPrivateOrMetadataIp('fe80::1'), true);
-  assert.equal(isPrivateOrMetadataIp('8.8.8.8'), false);
+  assert.equal(isPrivateOrMetadataIp('fc00::1'), true);
+  assert.equal(isPrivateOrMetadataIp('fd00::1'), true);
+  assert.equal(isPrivateOrMetadataIp('::'), true);
+
+  // 7. IPv4-mapped IPv6 (dotted and hex forms) return true
+  assert.equal(isPrivateOrMetadataIp('::ffff:127.0.0.1'), true);
+  assert.equal(isPrivateOrMetadataIp('::ffff:169.254.169.254'), true);
+  assert.equal(isPrivateOrMetadataIp('::ffff:7f00:1'), true, 'Hex IPv4-mapped IPv6 loopback must be blocked');
+
+  // 8. Deterministic offline DNS rebinding tests via mock resolvers (Problem 5 fix)
+  const mockLoopbackResolver = async () => [{ address: '127.0.0.1', family: 4 }];
+  const mockMetadataResolver = async () => [{ address: '169.254.169.254', family: 4 }];
+  const mockAlibabaResolver = async () => [{ address: '100.100.100.200', family: 4 }];
+  const mockPublicResolver = async () => [{ address: '142.250.190.46', family: 4 }];
+  const mockFailureResolver = async () => { throw new Error('ENOTFOUND'); };
+
+  assert.equal(
+    await isSafeWebhookUrl('https://evil-rebind.com/hook', { resolver: mockLoopbackResolver }),
+    false,
+    'Domain resolving to 127.0.0.1 must be rejected without network roundtrip'
+  );
+  assert.equal(
+    await isSafeWebhookUrl('https://evil-metadata.com/hook', { resolver: mockMetadataResolver }),
+    false,
+    'Domain resolving to 169.254.169.254 must be rejected'
+  );
+  assert.equal(
+    await isSafeWebhookUrl('https://evil-alibaba.com/hook', { resolver: mockAlibabaResolver }),
+    false,
+    'Domain resolving to 100.100.100.200 must be rejected'
+  );
+  assert.equal(
+    await isSafeWebhookUrl('https://fcm.googleapis.com/webhook', { resolver: mockPublicResolver }),
+    true,
+    'Legitimate public domain fcm.googleapis.com must pass safety verification'
+  );
+  assert.equal(
+    await isSafeWebhookUrl('https://non-existent-domain.test/hook', { resolver: mockFailureResolver }),
+    false,
+    'Unresolvable domain must fail-safe'
+  );
+
+  // 9. Protocol and suffix guards
+  assert.equal(await isSafeWebhookUrl('http://fcm.googleapis.com/webhook'), false, 'Non-HTTPS must be rejected');
+  assert.equal(await isSafeWebhookUrl('https://internal-service.local/hook'), false, '.local suffix must be rejected');
+  assert.equal(await isSafeWebhookUrl('https://k8s.internal/hook'), false, '.internal suffix must be rejected');
 });
