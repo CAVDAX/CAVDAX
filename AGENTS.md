@@ -216,6 +216,30 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
    - **Professional Systems Terminology**:
      - Ban gaming or aviation slang like "Web HUD" in enterprise developer platforms; use authoritative, industry-standard terms such as "Visual Operational Console" or "Interactive Telemetry Console".
 
+0s. **Native `net.BlockList` SSRF, Anti-TOCTOU Rebinding & Redirect Defense**:
+   - **The Hostname False Positive Trap**: Never use prefix string matching (e.g. `.startsWith('fc')` or `.startsWith('fd')`) on hostnames. Legitimate domains such as `fcm.googleapis.com`, `fdic.gov`, and `feast.example.com` will be falsely blocked. Always check `isIP(clean) === 0` upfront so hostnames are never evaluated against IP literal subnets.
+   - **Native Node.js CIDR BlockList**: Enforce Node's native C++ `net.BlockList` covering: `127.0.0.0/8`, `::1`, `169.254.0.0/16`, `fe80::/10`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, CGNAT `100.64.0.0/10` (which hosts Alibaba Cloud metadata `100.100.100.200`), `198.18.0.0/15`, `192.0.0.0/24`, Class E `240.0.0.0/4`, `0.0.0.0/8`, and hex IPv4-mapped IPv6 (`::ffff:7f00:1`).
+   - **Anti-TOCTOU Rebinding**: Pre-flight DNS lookups followed by a separate `fetch()` open a race window where an attacker returns a public IP during pre-flight, then rebinds DNS to internal metadata during socket connection. Eliminate this by validating the IP address at the exact moment of socket creation via an `undici.Agent({ connect: { lookup } })` dispatcher.
+   - **Zero-Redirect Webhook Policy**: Always pass `redirect: 'error'` to outgoing fetch calls. Allowing 3xx redirects enables public HTTPS endpoints to 302-redirect directly into internal cloud metadata services.
+
+0t. **Express Middleware Order & Session Attachment Invariant**:
+   - **Sequential Execution Trap**: Express processes middleware in the exact order declared. NEVER register routes that access `req.session` (e.g. `POST /api/push/subscribe`, `POST /api/user/preferences`) before `app.use(session(...))` or session rehydration middleware.
+   - **Shared 'Default' Collapse**: When routes are mounted above session middleware, `req.session` is `undefined`, silently collapsing all authenticated operations into a single shared `'default'` bucket and exposing cross-tenant data.
+
+0u. **Tenant-Scoped Multi-Channel Alert Isolation**:
+   - **Comprehensive Recipient Scoping**: When dispatching alerts across multiple channels (Web Push, Email, Outgoing Webhooks, SSE), every channel must enforce identical tenant-scoping invariants.
+   - **No Unscoped Push Broadcasts**: Calling `broadcastWebPushAlert()` without an explicit `targetLogin` broadcasts push alerts to every registered device in the database. When repo A diverges, users who only watch repo B must NEVER receive notifications for repo A.
+
+0v. **Multi-Modal Scroll Container Immunity (The Smooth Scroll Hijack Law)**:
+   - **The Lenis Scroll Freeze Trap**: In applications using global smooth scroll libraries (Lenis, Locomotive, ASScroll), nested scrollable containers (e.g. branch dropdowns, combobox lists, modal drawers) freeze under mouse wheel and trackpad two-finger gestures because the global scroll listener intercepts wheel events.
+   - **Mandatory Container Attributes**: Any nested scrollable container MUST specify `data-lenis-prevent`, `overscroll-contain`, and `tabIndex={0}` to isolate pointer gestures from the global viewport.
+   - **Keyboard Arrow Synchronization**: Pair scrollable dropdowns with keyboard navigation (<kbd>↑</kbd>/<kbd>↓</kbd>), auto-scroll into view (`scrollIntoView({ block: 'nearest' })`), <kbd>Enter</kbd> to select, and <kbd>Escape</kbd> to dismiss.
+
+0w. **Dynamic Full-Graph Vector SVG Export & Tour 2-Line Text Budget**:
+   - **Client-Side Vector WYSIWYG Export**: Never rely on static server-rendered SVG exports with fixed bounding boxes (e.g. 960×500) that clip large causal DAGs or lose active client-side repository/branch filters. Direct client-side serialization from live React state with dynamic bounding box (`viewBox="0 0 ${width} ${dynamicHeight}"`) guarantees 0ms offline generation, zero vertical clipping, and 100% fidelity.
+   - **Tour Guide 2-Line Maximum Budget**: Tour card descriptions must strictly obey a **2-line maximum budget** (~110 characters) across all viewport widths so the card height never balloons or causes layout collisions.
+   - **Permanent Tour DOM Targets**: Tour anchor targets must render unconditionally (even in empty states) so the onboarding engine never crashes or loses alignment when records are empty.
+
 
 
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
