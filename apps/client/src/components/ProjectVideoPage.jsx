@@ -14,7 +14,9 @@ import {
   Youtube,
   ChevronDown,
   List,
-  X
+  X,
+  Maximize,
+  Minimize
 } from 'lucide-react';
 import McpCableConnectionSvg from './McpCableConnectionSvg';
 import { playClick } from '../utils/soundFx';
@@ -83,11 +85,83 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
   const [hoveredMoment, setHoveredMoment] = useState(null);
   const [canScrollDown, setCanScrollDown] = useState(true);
   const [canScrollUp, setCanScrollUp] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const playerRef = useRef(null);
   const iframeRef = useRef(null);
+  const videoContainerRef = useRef(null);
   const chaptersRef = useRef(null);
   const buttonRef = useRef(null);
   const chapterListRef = useRef(null);
+
+  const toggleFullscreen = useCallback(() => {
+    playClick();
+    const container = videoContainerRef.current;
+    if (!container) return;
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+      const req = container.requestFullscreen || container.webkitRequestFullscreen || container.msRequestFullscreen;
+      if (req) {
+        req.call(container).catch(() => {});
+      }
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+      if (exit) {
+        exit.call(document).catch(() => {});
+      }
+    }
+  }, []);
+
+  // Listen to native and webkit fullscreen changes, keeping overlays active
+  useEffect(() => {
+    const handleFsChange = () => {
+      const isFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      setIsFullscreen(isFs);
+
+      // If iframe entered fullscreen directly, elevate to container so custom overlays remain accessible
+      if (
+        (document.fullscreenElement === iframeRef.current || document.webkitFullscreenElement === iframeRef.current) &&
+        videoContainerRef.current
+      ) {
+        const exitFn = document.exitFullscreen || document.webkitExitFullscreen;
+        if (exitFn) {
+          exitFn.call(document).then(() => {
+            const reqFn = videoContainerRef.current.requestFullscreen || videoContainerRef.current.webkitRequestFullscreen;
+            if (reqFn) reqFn.call(videoContainerRef.current).catch(() => {});
+          }).catch(() => {});
+        }
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFsChange);
+      document.removeEventListener('webkitfullscreenchange', handleFsChange);
+    };
+  }, []);
+
+  // Keyboard shortcut: F for fullscreen
+  useEffect(() => {
+    const handleGlobalKey = (e) => {
+      const tag = document.activeElement?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || document.activeElement?.isContentEditable) {
+        return;
+      }
+      if (e.key === 'f' || e.key === 'F') {
+        const videoEl = videoContainerRef.current;
+        if (videoEl) {
+          const rect = videoEl.getBoundingClientRect();
+          const inView = rect.top < window.innerHeight && rect.bottom > 0;
+          if (inView || document.fullscreenElement) {
+            e.preventDefault();
+            toggleFullscreen();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, [toggleFullscreen]);
 
   const checkScrollCues = useCallback(() => {
     if (chapterListRef.current) {
@@ -308,7 +382,11 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
 
         {/* Cinema Video Frame */}
         <div id="project-video" className="w-full neo-glass-card p-3 sm:p-5 rounded-2xl sm:rounded-3xl mb-8 overflow-hidden shadow-2xl">
-          <div className="relative aspect-video w-full rounded-xl sm:rounded-2xl bg-[#07090D] border border-slate-300 dark:border-white/10 overflow-hidden flex flex-col justify-between group shadow-inner">
+          <div 
+            ref={videoContainerRef}
+            id="video-cinema-viewport"
+            className="relative aspect-video w-full rounded-xl sm:rounded-2xl bg-[#07090D] border border-slate-300 dark:border-white/10 overflow-hidden flex flex-col justify-between group shadow-inner"
+          >
             {/* Ambient Video Glow */}
             <div 
               aria-hidden="true"
@@ -320,15 +398,16 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               ref={iframeRef}
               id="cavdax-yt-iframe"
               title="CAVDAX — Architecture Verification MCP For Autonomous AI Agents (FalkorDB GraphBLAS)"
-              src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&rel=0&modestbranding=1&iv_load_policy=3&color=white`}
+              src={`https://www.youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}?enablejsapi=1&origin=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin) : ''}&rel=0&modestbranding=1&iv_load_policy=3&color=white&fs=0`}
               className="w-full h-full border-0 absolute inset-0 z-0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
             />
 
-            {/* In-Player Chapter Sidebar Trigger Tab (Center-Right Floating HUD) */}
+            {/* In-Player Floating HUD: Chapters & Fullscreen (Center-Right Dock) */}
             {!isChaptersOpen && (
-              <div className="absolute top-1/2 -translate-y-1/2 right-0 z-20 pointer-events-auto">
+              <div className="absolute top-1/2 -translate-y-1/2 right-0 z-20 pointer-events-auto flex flex-col items-end gap-1.5">
+                {/* Chapters Trigger */}
                 <button
                   ref={buttonRef}
                   type="button"
@@ -348,6 +427,23 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                   </span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/15 font-mono text-slate-300 font-bold shrink-0">
                     {KEY_MOMENTS.length}
+                  </span>
+                </button>
+
+                {/* Fullscreen Toggle */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleFullscreen();
+                  }}
+                  aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                  className="group flex items-center gap-2 pl-3 pr-2.5 py-2 rounded-l-xl backdrop-blur-md bg-slate-950/80 hover:bg-slate-950 text-white border-y border-l border-white/20 hover:border-white/40 shadow-2xl transition-all duration-200 cursor-pointer text-slate-300 hover:text-white"
+                  title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                >
+                  {isFullscreen ? <Minimize size={14} className="shrink-0" /> : <Maximize size={14} className="shrink-0" />}
+                  <span className="font-mono text-xs font-semibold overflow-hidden max-w-0 group-hover:max-w-[85px] transition-all duration-300 ease-out whitespace-nowrap opacity-0 group-hover:opacity-100">
+                    {isFullscreen ? 'Exit' : 'Full'}
                   </span>
                 </button>
               </div>
@@ -391,16 +487,26 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                           {KEY_MOMENTS.length}
                         </span>
                       </div>
-                      <button
-                        onClick={() => {
-                          playClick();
-                          setIsChaptersOpen(false);
-                        }}
-                        className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                        aria-label="Close Chapters Sidebar"
-                      >
-                        <X size={15} />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={toggleFullscreen}
+                          className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                          title={isFullscreen ? 'Exit Fullscreen (F)' : 'Enter Fullscreen (F)'}
+                          aria-label="Toggle Fullscreen"
+                        >
+                          {isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}
+                        </button>
+                        <button
+                          onClick={() => {
+                            playClick();
+                            setIsChaptersOpen(false);
+                          }}
+                          className="p-1 rounded-md hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                          aria-label="Close Chapters Sidebar"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Top Scroll Shadow Cue (Visible when scrolled down) */}
