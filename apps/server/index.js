@@ -39,7 +39,7 @@ import { loadSystemState, saveSystemState } from './systemState.js';
 import { sendInvalidationEmail } from './email.js';
 import { getVapidPublicKey, savePushSubscription, broadcastWebPushAlert, isValidPushEndpoint } from './webPush.js';
 import { isAdrPath } from '../../core/ingestion/adrPaths.js';
-import { dispatchOutgoingWebhook } from './webhookDispatcher.js';
+import { dispatchOutgoingWebhook, isSafeWebhookUrl } from './webhookDispatcher.js';
 import { cascadeInvalidation } from '../../core/graph/queries.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -3437,7 +3437,7 @@ app.get('/api/user/notification-preferences', (req, res) => {
  * POST /api/user/notification-preferences
  * Updates notification preferences in persistent system state.
  */
-app.post('/api/user/notification-preferences', (req, res) => {
+app.post('/api/user/notification-preferences', async (req, res) => {
   const user = req.session?.user;
   const login = user?.login || 'default';
   const { emailAlerts, browserAlerts, targetEmail, webhookUrl, watchedRepos } = req.body || {};
@@ -3446,7 +3446,7 @@ app.post('/api/user/notification-preferences', (req, res) => {
     return res.status(400).json({ success: false, error: 'INVALID_TARGET_EMAIL' });
   }
 
-  if (webhookUrl && (typeof webhookUrl !== 'string' || !isValidPushEndpoint(webhookUrl))) {
+  if (webhookUrl && (typeof webhookUrl !== 'string' || !(await isSafeWebhookUrl(webhookUrl)))) {
     return res.status(400).json({ success: false, error: 'INVALID_OR_RESTRICTED_WEBHOOK_URL' });
   }
 

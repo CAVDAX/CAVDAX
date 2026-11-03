@@ -1,4 +1,4 @@
-import { dispatchOutgoingWebhook } from '../webhookDispatcher.js';
+import { dispatchOutgoingWebhook, isSafeWebhookUrl, isPrivateOrMetadataIp } from '../webhookDispatcher.js';
 import { getVapidPublicKey, savePushSubscription, removePushSubscription } from '../webPush.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -169,4 +169,25 @@ test('Notification Preferences: Persists webhookUrl and scoped watchedRepos', ()
   const reloaded = loadSystemState();
   assert.equal(reloaded.notificationPreferences[testUser].webhookUrl, 'https://hooks.slack.com/services/T00/B00/X00');
   assert.deepEqual(reloaded.notificationPreferences[testUser].watchedRepos, ['acme/inventory', 'cavdax/core']);
+});
+
+test('Outgoing Webhook: Anti-DNS Rebinding and Hostname Resolution rejects domains resolving to private/loopback IPs', async () => {
+  // localtest.me is a standard public wildcard domain that DNS-resolves to 127.0.0.1
+  const isLoopbackDomainSafe = await isSafeWebhookUrl('https://localtest.me/hook');
+  assert.equal(isLoopbackDomainSafe, false, 'Domain resolving to 127.0.0.1 must be rejected');
+
+  // Unresolvable domain must fail safe
+  const isUnresolvableSafe = await isSafeWebhookUrl('https://this-domain-does-not-exist-cavdax-999.test/hook');
+  assert.equal(isUnresolvableSafe, false, 'Unresolvable domain must be rejected');
+
+  // Direct IP checks
+  assert.equal(isPrivateOrMetadataIp('169.254.169.254'), true);
+  assert.equal(isPrivateOrMetadataIp('127.0.0.1'), true);
+  assert.equal(isPrivateOrMetadataIp('10.0.0.5'), true);
+  assert.equal(isPrivateOrMetadataIp('172.16.50.1'), true);
+  assert.equal(isPrivateOrMetadataIp('192.168.1.1'), true);
+  assert.equal(isPrivateOrMetadataIp('::1'), true);
+  assert.equal(isPrivateOrMetadataIp('fc00::1'), true);
+  assert.equal(isPrivateOrMetadataIp('fe80::1'), true);
+  assert.equal(isPrivateOrMetadataIp('8.8.8.8'), false);
 });
