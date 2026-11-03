@@ -595,28 +595,34 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                 100% free and open-source software under GPL-3.0. Complete freedom to audit, run, self-host, and inspect the codebase.
               </p>
 
-              {/* Architectural Freedom Guarantees */}
-              <div className="space-y-2.5 mt-3">
-                <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-start gap-2.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                  <div>
-                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug">
-                      Full Cypher graph transparency and zero vendor lock-in
+              {/* Architectural Freedom Guarantees (Clean Bench-Instrument Plates) */}
+              <div className="mt-2.5">
+                {/* Guarantee 1 */}
+                <div className="mb-2">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Engine &amp; Graph Portability:
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
+                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug [text-wrap:balance]">
+                      Full Cypher graph transparency and zero vendor&nbsp;lock-in
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed">
-                      Deterministic FalkorDB GraphBLAS execution with auditable DAG traversal and offline schema portability.
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed [text-wrap:balance]">
+                      Deterministic FalkorDB GraphBLAS execution with auditable DAG traversal and offline schema&nbsp;portability.
                     </div>
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 flex items-start gap-2.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-sky-500 mt-1.5 shrink-0" />
-                  <div>
-                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug">
-                      Permission to modify, commercialize, and self-host offline
+                {/* Guarantee 2 */}
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                    Commercial &amp; Deployment Freedom:
+                  </div>
+                  <div className="p-2.5 rounded-lg bg-slate-100/80 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10">
+                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-white leading-snug [text-wrap:balance]">
+                      Permission to modify, commercialize, and self-host&nbsp;offline
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed">
-                      Complete autonomy to adapt verification gates for enterprise repos, local CI/CD pipelines, and air-gapped agent swarms.
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 leading-relaxed [text-wrap:balance]">
+                      Complete autonomy to adapt verification gates for enterprise repos, local CI/CD pipelines, and air-gapped agent&nbsp;swarms.
                     </div>
                   </div>
                 </div>
