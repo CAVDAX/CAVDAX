@@ -314,7 +314,8 @@ export default function ConnectedRepoWorkspace({
         credentials: 'include',
         body: JSON.stringify({
           decisionId: target.id,
-          targetFile
+          targetFile,
+          branch: scan?.branch || selectedBranch || repo.default_branch || 'main'
         })
       });
 
@@ -775,7 +776,7 @@ export default function ConnectedRepoWorkspace({
               )}
             </div>
 
-            <div data-lenis-prevent className="flex-1 min-h-0 p-3 overflow-y-auto space-y-2 text-xs select-text bg-white dark:bg-[#09090b]">
+            <div data-lenis-prevent className="flex-1 min-h-0 p-3 overflow-y-auto has-scrubbar space-y-2 text-xs select-text bg-white dark:bg-[#09090b]">
               {logs.map((log, idx) => (
                 <div key={idx} className="flex items-start gap-2 leading-relaxed">
                   <span className="text-slate-400 dark:text-slate-500 text-[10px] shrink-0 mt-0.5 font-mono">{log.time}</span>

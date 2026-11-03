@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { hub } from '@lucasmarkes/hairline';
 
 /**
@@ -6,17 +6,17 @@ import { hub } from '@lucasmarkes/hairline';
  * 
  * Supports:
  * - `activeTile`: -1 for Core resting state, 0..7 for solitary elevated tile
- * - Direct programmatic control via hairline engine
+ * - Exposes `setActiveTile(idx)` via ref to enforce strict master-slave synchronization
  * - Theme-mapped vector tokens: `--hl-plate`, `--hl-hi`, `--hl-edge`, `--hl-lo`
  */
-export default function Hub({
+const Hub = forwardRef(function Hub({
   activeTile = -1,
   intensity = 1,
   onRead,
   className = '',
   style = {},
   ...props
-}) {
+}, ref) {
   const containerRef = useRef(null);
   const figureRef = useRef(null);
   const onReadRef = useRef(onRead);
@@ -24,6 +24,16 @@ export default function Hub({
   useEffect(() => {
     onReadRef.current = onRead;
   }, [onRead]);
+
+  useImperativeHandle(ref, () => ({
+    setActiveTile: (idx) => {
+      if (figureRef.current?.setActiveTile) {
+        figureRef.current.setActiveTile(idx);
+      }
+    },
+    figure: figureRef.current,
+    container: containerRef.current
+  }), []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -35,7 +45,8 @@ export default function Hub({
         onReadRef.current?.(text);
       }
     });
-    figureRef.current = fig; containerRef.current.__hairline = fig;
+    figureRef.current = fig;
+    containerRef.current.__hairline = fig;
 
     // Set initial active tile if specified
     if (activeTile !== undefined && fig.setActiveTile) {
@@ -66,4 +77,6 @@ export default function Hub({
       {...props}
     />
   );
-}
+});
+
+export default Hub;

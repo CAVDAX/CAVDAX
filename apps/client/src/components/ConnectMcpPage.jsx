@@ -1395,7 +1395,7 @@ EXECUTION WORKFLOW:
 
       {/* 4. Universal CLI Command Suite Bento with Container-Relative Slider Tracking */}
 
-      <section className="px-6 max-w-5xl mx-auto w-full mb-12">
+      <section data-tour="mcp-guardrails" className="px-6 max-w-5xl mx-auto w-full mb-12">
 
         <div className="neo-glass-card p-6 sm:p-8">
 

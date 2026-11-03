@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck } from 'lucide-react';
+import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck, GitBranch } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import Combobox from './Combobox';
 
@@ -159,6 +159,7 @@ export default function AuditPage() {
   const [limit, setLimit]           = useState(50);
   const [lastFetch, setLastFetch]   = useState(null);
   const [selectedRepo, setSelectedRepo] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState('all');
   const [verdictFilter, setVerdictFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [connectedRepos, setConnectedRepos] = useState(() => {
@@ -201,6 +202,39 @@ export default function AuditPage() {
     fetchAudit();
   }, [fetchAudit]);
 
+  // Reset branch selection whenever repository scope changes to prevent ghost branch queries
+  const handleRepoChange = (newRepo) => {
+    setSelectedRepo(newRepo);
+    setSelectedBranch('all');
+  };
+
+  const availableBranchOptions = useMemo(() => {
+    // When "All Repositories" is selected, cross-repo branch filtering is disabled.
+    // Git branches belong strictly to individual repositories.
+    if (selectedRepo === 'all') {
+      return [
+        { value: 'all', label: 'All Branches', sublabel: 'Select a specific repository to filter by branch' }
+      ];
+    }
+
+    const branchSet = new Set();
+    entries.forEach(e => {
+      const itemRepo = (e.repo || 'demo').toLowerCase();
+      if (itemRepo !== selectedRepo.toLowerCase()) return;
+      if (e.branch) branchSet.add(e.branch);
+    });
+
+    const list = Array.from(branchSet).sort();
+    return [
+      { value: 'all', label: 'All Branches', sublabel: `View all audit actions on ${selectedRepo}` },
+      ...list.map(b => ({
+        value: b,
+        label: b,
+        sublabel: `Filter actions on branch ${b}`
+      }))
+    ];
+  }, [entries, selectedRepo]);
+
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
       // 1. Repo scope filter
@@ -212,12 +246,19 @@ export default function AuditPage() {
           if (itemRepo !== selectedRepo.toLowerCase()) return false;
         }
       }
-      // 2. Verdict filter
+
+      // 2. Branch scope filter (strictly enforced when a specific repo & branch are chosen)
+      if (selectedRepo !== 'all' && selectedBranch !== 'all') {
+        const itemBranch = (e.branch || '').toLowerCase();
+        if (itemBranch !== selectedBranch.toLowerCase()) return false;
+      }
+
+      // 3. Verdict filter
       const s = (e.status || '').toUpperCase();
       if (verdictFilter === 'BLOCKED' && !s.startsWith('BLOCKED')) return false;
       if (verdictFilter === 'APPROVED' && s !== 'EXECUTED' && s !== 'APPROVED') return false;
 
-      // 3. Text search
+      // 4. Text search
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchFile = (e.target_file || '').toLowerCase().includes(q);
@@ -228,7 +269,7 @@ export default function AuditPage() {
       }
       return true;
     });
-  }, [entries, selectedRepo, verdictFilter, searchQuery]);
+  }, [entries, selectedRepo, selectedBranch, verdictFilter, searchQuery]);
 
   return (
     <div className="flex flex-col h-full min-h-0 gap-3">
@@ -308,7 +349,7 @@ export default function AuditPage() {
             <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">Repository:</span>
             <Combobox
               value={selectedRepo}
-              onChange={(val) => setSelectedRepo(val)}
+              onChange={(val) => handleRepoChange(val)}
               searchable={connectedRepos.length > 2}
               options={[
                 { value: 'all', label: 'All Repositories', sublabel: 'Full multi-repository audit trail' },
@@ -320,6 +361,18 @@ export default function AuditPage() {
                 }))
               ]}
               ariaLabel="Select repository scope"
+            />
+          </div>
+
+          {/* Branch Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase font-mono tracking-wider text-slate-500">Branch:</span>
+            <Combobox
+              value={selectedBranch}
+              onChange={(val) => setSelectedBranch(val)}
+              options={availableBranchOptions}
+              ariaLabel="Select branch filter"
+              disabled={selectedRepo === 'all'}
             />
           </div>
 
@@ -441,9 +494,17 @@ export default function AuditPage() {
                     <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 truncate" title={entry.action_id}>
                       {entry.action_id || '—'}
                     </span>
-                    <span className="text-[8px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                      {entry.repo && entry.repo !== 'demo' ? entry.repo : 'demo'}
-                    </span>
+                    <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                      <span className="text-[8px] font-mono text-slate-400 dark:text-slate-500 truncate">
+                        {entry.repo && entry.repo !== 'demo' ? entry.repo : 'demo'}
+                      </span>
+                      {entry.branch && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] font-mono px-1 py-0.2 rounded bg-slate-200/70 dark:bg-white/10 text-slate-600 dark:text-slate-400 truncate" title={`Branch: ${entry.branch}`}>
+                          <GitBranch className="w-2.5 h-2.5 shrink-0" />
+                          {entry.branch}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* Target file */}
@@ -478,24 +539,22 @@ export default function AuditPage() {
         )}
       </div>
 
-      {/* ── Footer metrics ── */}
-      {filteredEntries.length > 0 && (
-        <div className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/15">
-          <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
-            Showing {filteredEntries.length} of {entries.length} loaded ({total} total recorded)
+      {/* ── Footer metrics (Always mounted to guarantee immutable data-tour="audit-metrics" target) ── */}
+      <div data-tour="audit-metrics" className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/15">
+        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+          Showing {filteredEntries.length} of {entries.length} loaded ({total} total recorded)
+        </span>
+        <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+          <Activity className="w-3 h-3" />
+          <span className="text-emerald-600 dark:text-emerald-400">
+            {filteredEntries.filter(e => (e.status || '').toUpperCase() === 'EXECUTED' || (e.status || '').toUpperCase() === 'APPROVED').length} approved
           </span>
-          <div className="flex items-center gap-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400">
-            <Activity className="w-3 h-3" />
-            <span className="text-emerald-600 dark:text-emerald-400">
-              {filteredEntries.filter(e => (e.status || '').toUpperCase() === 'EXECUTED' || (e.status || '').toUpperCase() === 'APPROVED').length} approved
-            </span>
-            <span className="text-slate-400 dark:text-slate-600">·</span>
-            <span className="text-rose-600 dark:text-rose-400">
-              {filteredEntries.filter(e => (e.status || '').toUpperCase().startsWith('BLOCKED')).length} blocked
-            </span>
-          </div>
+          <span className="text-slate-400 dark:text-slate-600">·</span>
+          <span className="text-rose-600 dark:text-rose-400">
+            {filteredEntries.filter(e => (e.status || '').toUpperCase().startsWith('BLOCKED')).length} blocked
+          </span>
         </div>
-      )}
+      </div>
     </div>
   );
 }
