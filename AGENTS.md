@@ -540,6 +540,13 @@ Whenever your current task touches, modifies, refactors, creates, adds, or **REM
       3. Real public IP addresses, cloud VM IPs, or ISP subnet identifiers.
     - **Strict Gatekeeper Enforcement**: Any hit in tracked repository files is a critical security vulnerability and must be completely purged before staging and merging.
 
+28. **Graph-Grounded Security Hardening & Forensic Verification (`graphify` + `security-and-hardening` + `devils-advocate`)**:
+    - **Topological Invariant Enforcement**: Whenever `graphify-out/graph.json` exists in the repository, agents MUST use Graphify to mathematically verify code modifications rather than relying on heuristic string matching:
+      1. *Caller Regression Audits (Vector 1)*: Run `graphify path "<Caller>" "<ModifiedSymbol>"` or `graphify query` on modified exports to trace all transitive callers across services before claiming caller invariance.
+      2. *Taint & Sandbox Confinement (Vector 3 & STRIDE)*: Run `graphify path "<untrusted_input>" "<privileged_sink>"` to verify no unvalidated path connects external HTTP/MCP endpoints to arbitrary file I/O, process execution, or database mutations.
+      3. *God Node Defensive Hardening*: Use Graphify's degree centrality analysis to identify top hub modules (`systemState.js`, auth middleware, database clients) and ensure strict null guards, rate limiting, and defensive schemas are in place.
+      4. *Graph Synchronization Invariant*: After completing modifications, run `graphify update .` to keep the persistent knowledge graph in sync with the codebase AST.
+
 
 
 ---
