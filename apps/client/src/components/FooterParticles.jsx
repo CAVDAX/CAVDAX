@@ -55,7 +55,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       const rect = container.getBoundingClientRect();
 
       width = Math.floor(rect.width) || window.innerWidth;
-      height = Math.max(160, Math.min(280, Math.floor(width * 0.22)));
+      height = Math.max(170, Math.min(300, Math.floor(width * 0.23)));
 
       canvas.width = width * dpr;
       canvas.height = height * dpr;
@@ -64,7 +64,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       ctx.scale(dpr, dpr);
-      mouse.radius = Math.max(80, Math.min(150, width * 0.12));
+      mouse.radius = Math.max(44, Math.min(68, width * 0.052));
       generateParticles();
       wakeUp();
     };
@@ -78,14 +78,14 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       offscreen.height = height;
 
       // High-assurance Swiss Architectural Typography rasterization
-      const fontSize = Math.max(46, Math.min(168, Math.floor(width * 0.19)));
+      const fontSize = Math.max(50, Math.min(186, Math.floor(width * 0.21)));
       offCtx.font = `800 ${fontSize}px "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       offCtx.textAlign = 'center';
       offCtx.textBaseline = 'middle';
       offCtx.fillStyle = '#ffffff';
 
       if ('letterSpacing' in offCtx) {
-        offCtx.letterSpacing = '0.14em';
+        offCtx.letterSpacing = '0.24em';
       }
 
       const centerY = height / 2 - 8;
@@ -126,7 +126,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
       const imgData = offCtx.getImageData(0, 0, width, height);
       const data = imgData.data;
       // High-performance sampling step: step of 5 yields ~1,400 crisp pointillist particles
-      const step = width < 600 ? 5.5 : 5.0;
+      const step = width < 600 ? 4.0 : 3.4;
       const newParticles = [];
 
       for (let y = 0; y < height; y += step) {
@@ -136,7 +136,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
           if (alpha > 128) {
             const rawAlpha = (alpha / 255) * (0.4 + Math.random() * 0.5);
-            const size = Math.random() > 0.85 ? 2.2 : 1.4;
+            const size = Math.random() > 0.85 ? 1.9 : 1.25;
             const yRatio = height > 0 ? Math.max(0, Math.min(1, y / height)) : 0.5;
 
             // Pre-calculate color strings once to eliminate per-frame allocations
@@ -188,9 +188,9 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               alpha: rawAlpha,
               originalAlpha: rawAlpha,
               isEdge,
-              spring: isEdge ? (0.05 + Math.random() * 0.03) : (0.16 + Math.random() * 0.04), // Core has higher spring anchoring
-              friction: isEdge ? (0.84 + Math.random() * 0.04) : 0.88,
-              disperseForce: isEdge ? (1.5 + Math.random() * 0.8) : 0.25, // Core has minimal displacement to prevent puncturing
+              spring: isEdge ? (0.09 + Math.random() * 0.03) : (0.18 + Math.random() * 0.04), // Core has higher spring anchoring
+              friction: isEdge ? (0.80 + Math.random() * 0.04) : 0.86,
+              disperseForce: isEdge ? (1.0 + Math.random() * 0.4) : 0.2, // Core has minimal displacement to prevent puncturing
               isDissolving: false,
               ashVx: 0,
               ashVy: 0,
@@ -296,7 +296,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
             if (p.isEdge) {
               // Edge & border particles react with an undulating boundary ripple wave
               const wave = Math.sin(normDist * Math.PI) * Math.pow(1 - normDist, 1.5);
-              const force = wave * 6.5 * p.disperseForce;
+              const force = wave * 3.4 * p.disperseForce;
               p.vx -= (dx / dist) * force;
               p.vy -= (dy / dist) * force;
             } else {
@@ -596,7 +596,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
                   }}
                   className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
                 >
-                  10m 22s Walkthrough
+                  10-Minute System Walkthrough
                 </button>
               </li>
             </ul>
@@ -654,7 +654,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
                   }}
                   className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left block"
                 >
-                  Verification Tier Matrix
+                  All Subscription Tiers
                 </button>
               </li>
             </ul>
@@ -669,7 +669,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
             <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
               <li>
                 <a
-                  href="https://github.com/suneetchugh-dev"
+                  href="https://github.com/suneetchugh-dev/CAVDAX"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => playClick()}

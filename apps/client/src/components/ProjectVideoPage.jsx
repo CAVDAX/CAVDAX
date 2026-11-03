@@ -639,7 +639,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               {/* Rail Baseline Ticks Label */}
               <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 dark:text-slate-400 px-0.5 mt-0.5">
                 <span>0:00 Ingestion</span>
-                <span className="hidden sm:inline text-slate-400 dark:text-slate-500">10m 22s Complete Walkthrough</span>
+                <span className="hidden sm:inline text-slate-400 dark:text-slate-500">10-Minute System Walkthrough</span>
                 <span>10:22 Credits</span>
               </div>
             </div>

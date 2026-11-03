@@ -159,6 +159,7 @@ export default function AuditPage() {
   const [limit, setLimit]           = useState(50);
   const [lastFetch, setLastFetch]   = useState(null);
   const [selectedRepo, setSelectedRepo] = useState('all');
+  const [selectedBranch, setSelectedBranch] = useState('all');
   const [verdictFilter, setVerdictFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
   const [connectedRepos, setConnectedRepos] = useState(() => {
