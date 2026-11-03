@@ -1716,6 +1716,7 @@ app.get('/api/audit', async (req, res) => {
             target_file:     n.target_file || null,
             status:          n.status,
             repo:            n.repo || 'demo',
+            branch:          n.branch || 'main',
             executed_at:     n.timestamp || Date.now(),
             decision_id:     decisionId,
             decision_status: decisionNode ? decisionNode.status : null,
@@ -2641,6 +2642,7 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   try {
     const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch });
     const repoFullName = `${owner}/${repo}`;
+    const actionBranch = typeof branch === 'string' && branch.trim() ? branch.trim() : 'main';
     const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => e.repo?.toLowerCase() === repoFullName.toLowerCase());
     if (result?.graph && Array.isArray(result.graph.nodes) && Array.isArray(result.graph.edges)) {
       // Deduplicate actions by decision_id: display at most 1 active/latest action node per decision on the canvas
@@ -2713,13 +2715,13 @@ app.post('/api/github/repos/:owner/:repo/init-adr', async (req, res) => {
 app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req, res) => {
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
-  const { decisionId, targetFile } = req.body || {};
+  const { decisionId, targetFile, branch } = req.body || {};
 
   try {
     let currentGraph = null;
     if (token) {
       try {
-        const scanResult = await scanRepoAdrs({ token, owner, repo });
+        const scanResult = await scanRepoAdrs({ token, owner, repo, branch });
         currentGraph = scanResult?.graph;
       } catch (scanErr) {
         console.warn(`[CAVDAX verify-action] Live scan notice:`, scanErr.message);
@@ -2777,6 +2779,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
             target_file: $targetFile,
             status: $status,
             repo: $repo,
+            branch: $branch,
             timestamp: $now
           })
           CREATE (a)-[:GROUNDED_IN]->(d)
@@ -2789,6 +2792,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
             targetFile: resolvedTarget,
             status: verdict,
             repo: repoFullName,
+            branch: actionBranch,
             now
           }
         });
@@ -2805,6 +2809,7 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
       target_file: resolvedTarget,
       status: verdict,
       repo: repoFullName,
+      branch: actionBranch,
       decision_id: decisionNode.id,
       decision_status: decisionNode.status,
       decision_title: decisionNode.title || decisionNode.id,
@@ -2831,7 +2836,8 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
         decision_id: decisionNode.id,
         timestamp: now,
         latency_ms: latencyMs,
-        repo: repoFullName
+        repo: repoFullName,
+        branch: actionBranch
       },
       edge: {
         source: actionId,
@@ -3863,7 +3869,28 @@ function _scheduleFalkorReconnect() {
 
 // Start listening
 initDb().finally(() => {
-  app.listen(PORT, () => {
+  
+/**
+ * POST /api/dev/log-event
+ * Broadcasts an authentic developer team event across all connected SSE clients.
+ */
+app.post('/api/dev/log-event', (req, res) => {
+  const { type, message, metadata } = req.body || {};
+  if (!type || !message) {
+    return res.status(400).json({ success: false, error: 'type and message required' });
+  }
+  const eventPayload = {
+    id: `dev-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+    type: String(type).toUpperCase().slice(0, 32),
+    message: String(message).slice(0, 256),
+    metadata: metadata || {},
+    timestamp: Date.now()
+  };
+  broadcastEvent('DEV_TEAM_EVENT', eventPayload);
+  return res.json({ success: true, event: eventPayload });
+});
+
+app.listen(PORT, () => {
     console.log(`[CAVDAX Server] Running at http://localhost:${PORT}`);
     console.log(`[CAVDAX Server] Graph Engine: ${isFalkorConnected ? 'FalkorDB Live' : 'Simulation Fallback Ready'}`);
   });
