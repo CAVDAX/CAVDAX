@@ -2715,7 +2715,13 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
   const { decisionId, targetFile, branch } = req.body || {};
-  const actionBranch = typeof branch === 'string' && branch.trim() ? branch.trim() : 'main';
+  let actionBranch = 'main';
+  if (typeof branch === 'string') {
+    const trimmed = branch.trim();
+    if (trimmed.length > 0 && trimmed.length <= 255 && !/[\x00-\x1f\x7f]/.test(trimmed)) {
+      actionBranch = trimmed;
+    }
+  }
 
   try {
     let currentGraph = null;
@@ -3874,7 +3880,7 @@ initDb().finally(() => {
  * POST /api/dev/log-event
  * Broadcasts an authentic developer team event across all connected SSE clients.
  */
-app.post('/api/dev/log-event', (req, res) => {
+app.post('/api/dev/log-event', requireDevAuth, (req, res) => {
   const { type, message, metadata } = req.body || {};
   if (!type || !message) {
     return res.status(400).json({ success: false, error: 'type and message required' });
