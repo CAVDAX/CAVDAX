@@ -9,7 +9,9 @@ import { isAdrPath } from '../../../core/ingestion/adrPaths.js';
 import { parseFrontmatter } from '../../../core/ingestion/parser.js';
 import {
   scanRepoAdrs, createAdrPullRequest, syncSupersededAdrPullRequest, detectUnsyncedSupersessions, applySupersededStatusToAdr, buildGraphFromAdrs, buildStarterAdr, detectStack, selectStackFiles, assertRepoName, NEW_ADR_PATH,
-  listRepoBranches
+  listRepoBranches,
+  proposeAdrPullRequest,
+  createCiGatePullRequest
 } from '../githubAdr.js';
 
 const json = (body, status = 200) => ({ ok: status < 400, status, json: async () => body, text: async () => JSON.stringify(body) });
@@ -464,4 +466,144 @@ test('scanRepoAdrs supports targeting a specific branch ref', async () => {
   assert.equal(res.branch, 'feat/branch-1');
   const treeCall = calls.find(c => c.method === 'GET' && c.path.includes('/git/trees/feat/branch-1'));
   assert.ok(treeCall, 'Should fetch tree for requested branch');
+});
+
+test('proposeAdrPullRequest opens a pull request with sequential ADR number', async () => {
+  const { fetchImpl, calls } = fakeGithub({
+    files: {
+      'docs/adrs/ADR-001.md': ADR1,
+      'docs/adrs/ADR-002.md': ADR2
+    }
+  });
+
+  const res = await proposeAdrPullRequest({
+    token: 'test-token',
+    owner: 'o',
+    repo: 'r',
+    title: 'Migrate Session Store to Redis',
+    context: 'Memory store does not persist across container reboots.',
+    decision: 'Use Redis for session persistence.',
+    consequences: 'Requires REDIS_URL in environment.',
+    supersedes: 'ADR-001',
+    fetchImpl
+  });
+
+  assert.equal(res.adrId, 'ADR-003');
+  assert.equal(res.number, 7);
+  assert.ok(res.branch.startsWith('cavdax/propose-adr-003'));
+  assert.equal(res.path, 'docs/adrs/ADR-003-migrate-session-store-to-redis.md');
+
+  // Verify file PUT payload
+  const putCall = calls.find(c => c.method === 'PUT' && c.path.includes('docs/adrs/ADR-003'));
+  assert.ok(putCall, 'Should put content for ADR-003');
+  const decodedContent = Buffer.from(putCall.body.content, 'base64').toString('utf-8');
+  assert.ok(decodedContent.includes('id: ADR-003'));
+  assert.ok(decodedContent.includes('supersedes: ADR-001'));
+  assert.ok(decodedContent.includes('Migrate Session Store to Redis'));
+
+  // Verify PR POST payload
+  const prCall = calls.find(c => c.method === 'POST' && c.path === '/repos/o/r/pulls');
+  assert.ok(prCall, 'Should create GitHub PR');
+  assert.ok(prCall.body.title.includes('Propose ADR-003'));
+});
+
+test('proposeAdrPullRequest validates required title and decision fields', async () => {
+  const { fetchImpl } = fakeGithub();
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: '', decision: 'd', fetchImpl }),
+    (e) => e.code === 'INVALID_TITLE' && e.status === 400
+  );
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'Valid ADR Title', decision: '', fetchImpl }),
+    (e) => e.code === 'INVALID_DECISION' && e.status === 400
+  );
+});
+
+test('createCiGatePullRequest opens PR adding .github/workflows/cavdax-gate.yml', async () => {
+  const { fetchImpl, calls } = fakeGithub({
+    files: { 'docs/adrs/ADR-001.md': ADR1 }
+  });
+
+  const res = await createCiGatePullRequest({
+    token: 'test-token',
+    owner: 'o',
+    repo: 'r',
+    fetchImpl
+  });
+
+  assert.equal(res.number, 7);
+  assert.ok(res.branch.startsWith('cavdax/ci-architecture-gate'));
+  assert.equal(res.path, '.github/workflows/cavdax-gate.yml');
+
+  const putCall = calls.find(c => c.method === 'PUT' && c.path.includes('.github/workflows/cavdax-gate.yml'));
+  assert.ok(putCall, 'Should commit cavdax-gate.yml');
+  const decoded = Buffer.from(putCall.body.content, 'base64').toString('utf-8');
+  assert.ok(decoded.includes('@cavdax/mcp-server@latest gate'));
+});
+
+test('proposeAdrPullRequest security: rejects CRLF injection, oversized inputs, and invalid supersedes', async () => {
+  const { fetchImpl } = fakeGithub({
+    files: { 'docs/adrs/ADR-001.md': ADR1 }
+  });
+
+  // Rejects CRLF in title
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'ADR Title\nstatus: ACCEPTED', decision: 'Valid decision', fetchImpl }),
+    (e) => e.code === 'INVALID_TITLE' && e.status === 400
+  );
+
+  // Rejects title exceeding 200 chars
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'A'.repeat(201), decision: 'Valid decision', fetchImpl }),
+    (e) => e.code === 'INVALID_TITLE' && e.status === 400
+  );
+
+  // Rejects title shorter than 3 chars
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'ab', decision: 'Valid decision', fetchImpl }),
+    (e) => e.code === 'INVALID_TITLE' && e.status === 400
+  );
+
+  // Rejects decision exceeding 20,000 chars
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'Valid Title', decision: 'x'.repeat(20001), fetchImpl }),
+    (e) => e.code === 'INVALID_DECISION' && e.status === 400
+  );
+
+  // Rejects malicious or CRLF supersedes string
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'Valid Title', decision: 'Valid decision', supersedes: 'ADR-001\nstatus: ACCEPTED', fetchImpl }),
+    (e) => e.code === 'INVALID_SUPERSEDES' && e.status === 400
+  );
+
+  // Rejects supersedes with path traversal
+  await assert.rejects(
+    () => proposeAdrPullRequest({ token: 't', owner: 'o', repo: 'r', title: 'Valid Title', decision: 'Valid decision', supersedes: '../../etc/passwd', fetchImpl }),
+    (e) => e.code === 'INVALID_SUPERSEDES' && e.status === 400
+  );
+});
+
+test('createCiGatePullRequest security: idempotent reuse and workflow collision refusal', async () => {
+  // Idempotency: Reuses existing open PR
+  const { fetchImpl: reuseFetch } = fakeGithub({
+    files: { 'docs/adrs/ADR-001.md': ADR1 },
+    openPulls: [{ number: 42, html_url: 'https://github.com/o/r/pull/42', head: { ref: 'cavdax/ci-architecture-gate' } }]
+  });
+
+  const reused = await createCiGatePullRequest({ token: 't', owner: 'o', repo: 'r', fetchImpl: reuseFetch });
+  assert.equal(reused.number, 42);
+  assert.equal(reused.reused, true);
+
+  // Refusal: Fails if .github/workflows/cavdax-gate.yml already exists
+  const { fetchImpl: conflictFetch } = fakeGithub({
+    files: {
+      'docs/adrs/ADR-001.md': ADR1,
+      '.github/workflows/cavdax-gate.yml': 'name: Existing Gate'
+    }
+  });
+
+  await assert.rejects(
+    () => createCiGatePullRequest({ token: 't', owner: 'o', repo: 'r', fetchImpl: conflictFetch }),
+    (e) => e.code === 'WORKFLOW_ALREADY_EXISTS' && e.status === 409
+  );
 });

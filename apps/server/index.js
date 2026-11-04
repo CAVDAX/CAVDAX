@@ -32,7 +32,7 @@ import {
   fetchAuditLog
 } from '../../core/graph/queries.js';
 import { ingestAdrFile } from '../../core/ingestion/parser.js';
-import { scanRepoAdrs, createAdrPullRequest, syncSupersededAdrPullRequest, listRepoBranches, GithubAdrError } from './githubAdr.js';
+import { scanRepoAdrs, createAdrPullRequest, syncSupersededAdrPullRequest, listRepoBranches, GithubAdrError , proposeAdrPullRequest, createCiGatePullRequest} from './githubAdr.js';
 import { CavdaxMcpServer } from '../../core/mcp/server.js';
 import { renderGraphToSvg, computeBlastRadius } from '../../core/graph/renderSvg.js';
 import { loadSystemState, saveSystemState } from './systemState.js';
@@ -118,10 +118,32 @@ app.use(express.json({
 // Layer 1: File-backed persistent session store (survives process/container restarts)
 // Layer 2: Tamper-proof HMAC-SHA256 signed HTTP-only auth cookie (cavdax_auth)
 
-const SESSION_SECRET = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
-if (!process.env.SESSION_SECRET) {
-  console.warn('[Security Notice] SESSION_SECRET is unset. Using high-entropy ephemeral cryptographic secret for session signing.');
+function getOrCreateSessionSecret() {
+  if (process.env.SESSION_SECRET && process.env.SESSION_SECRET.trim().length > 0) {
+    return process.env.SESSION_SECRET.trim();
+  }
+  const keyFile = path.resolve(__dirname, 'data/.session_key');
+  try {
+    if (fs.existsSync(keyFile)) {
+      const savedKey = fs.readFileSync(keyFile, 'utf8').trim();
+      if (savedKey.length >= 32) {
+        return savedKey;
+      }
+    }
+    const newKey = randomBytes(32).toString('hex');
+    const dataDir = path.resolve(__dirname, 'data');
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    fs.writeFileSync(keyFile, newKey, { mode: 0o600 });
+    console.log('[CAVDAX Auth] Generated and persisted session secret to data/.session_key');
+    return newKey;
+  } catch (err) {
+    console.warn('[CAVDAX Auth] Failed to persist session key, using ephemeral secret:', err.message);
+    return randomBytes(32).toString('hex');
+  }
 }
+const SESSION_SECRET = getOrCreateSessionSecret();
 const SESSIONS_DIR = path.resolve(__dirname, 'data/sessions');
 
 class PersistentFileStore extends session.Store {
@@ -489,6 +511,20 @@ const mcpLimiter = rateLimit({
 app.use('/api/', apiLimiter);          // applies to all /api/* routes
 app.use('/api/mcp/', mcpLimiter);      // tighter limit on MCP routes (overrides above)
 
+// Rate limiter for external GitHub PR & ADR mutation operations to protect secondary API limits
+const githubActionLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: (req) => (globalHackathonMode ? 120 : 30),
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => {
+    const clientIp = extractClientIp(req).toLowerCase();
+    if (globalWhitelistedIps.includes(clientIp)) return true;
+    return false;
+  },
+  message: { success: false, code: 'RATE_LIMIT_EXCEEDED', error: 'Too many GitHub operations requested. Please wait before retrying.' }
+});
+
 // ---------------------------------------------------------------------------
 // AUTH MIDDLEWARE & CRYPTOGRAPHIC USER KEY REGISTRY
 // ---------------------------------------------------------------------------
@@ -619,12 +655,28 @@ function sanitizeBroadcastPayload(eventType, payload) {
   return payload;
 }
 
-function broadcastEvent(eventType, rawPayload) {
+function broadcastEvent(eventType, rawPayload, options = {}) {
   const payload = sanitizeBroadcastPayload(eventType, rawPayload);
   const data = JSON.stringify({ type: eventType, data: payload, timestamp: Date.now() });
+  const targetRepo = options.repo || rawPayload?.repo || rawPayload?.action?.repo || null;
+
   for (const client of sseClients) {
     try {
-      client.write(`event: ${eventType}\ndata: ${data}\n\n`);
+      // Cross-Tenant Isolation: if event is scoped to a specific non-demo repository
+      if (targetRepo && targetRepo !== 'demo') {
+        const userLogin = (client.user?.login || client.session?.user?.login || '').toLowerCase();
+        const isAdmin = userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin);
+        const connected = Array.isArray(client.session?.connectedRepos) ? client.session.connectedRepos : [];
+        const isConnected = connected.some(r => r.toLowerCase() === targetRepo.toLowerCase());
+        const [owner] = targetRepo.split('/');
+        const isOwner = Boolean(owner && userLogin && owner.toLowerCase() === userLogin);
+
+        // If client is neither repo owner, connected tenant, nor admin, do not leak event
+        if (!isAdmin && !isConnected && !isOwner) {
+          continue;
+        }
+      }
+      client.res.write(`event: ${eventType}\ndata: ${data}\n\n`);
     } catch {
       sseClients.delete(client);
     }
@@ -939,13 +991,40 @@ app.get('/api/health', (req, res) => {
 
 // 2. Real-time Server-Sent Events (SSE)
 app.get('/api/events', (req, res) => {
+  const clientIp = extractClientIp(req);
+
+  // OWASP A04: DoS & Socket Exhaustion Protection on persistent SSE streams
+  let ipConnections = 0;
+  for (const client of sseClients) {
+    if (client.ip === clientIp) ipConnections++;
+  }
+  if (ipConnections >= 10) {
+    return res.status(429).json({
+      error: 'TOO_MANY_STREAMS',
+      message: 'Maximum concurrent SSE event streams (10) exceeded for this IP address.'
+    });
+  }
+  if (sseClients.size >= 500) {
+    return res.status(503).json({
+      error: 'STREAM_CAPACITY_REACHED',
+      message: 'Server event streaming capacity reached. Please reconnect later.'
+    });
+  }
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
 
-  sseClients.add(res);
+  const clientRecord = {
+    res,
+    session: req.session,
+    user: req.session?.user || null,
+    ip: extractClientIp(req)
+  };
+
+  sseClients.add(clientRecord);
   res.write(`data: ${JSON.stringify({ type: 'CONNECTED', message: 'CAVDAX SSE Stream Live' })}\n\n`);
 
   // 15s keepalive heartbeat ping to prevent Cloudflare HTTP/3 (QUIC) idle stream termination
@@ -959,7 +1038,7 @@ app.get('/api/events', (req, res) => {
 
   req.on('close', () => {
     clearInterval(heartbeat);
-    sseClients.delete(res);
+    sseClients.delete(clientRecord);
   });
 });
 
@@ -984,6 +1063,59 @@ app.post('/api/seed', requireAuth, async (req, res) => {
   }
 });
 
+
+/**
+ * Verifies whether the calling user or session has authorized access to requestedRepo.
+ * Used to eliminate Insecure Direct Object Reference (IDOR) on audit and graph routes.
+ */
+export async function verifyUserRepoAccess(req, requestedRepo) {
+  if (!requestedRepo || requestedRepo === 'demo') return true;
+  const isSessionAuth = Boolean(req.session?.user || req.authUser);
+  if (!isSessionAuth) return false;
+
+  const userLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
+  if (userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin)) {
+    return true;
+  }
+
+  const connected = Array.isArray(req.session?.connectedRepos) ? req.session.connectedRepos : [];
+  if (connected.some(r => r.toLowerCase() === requestedRepo.toLowerCase())) {
+    return true;
+  }
+
+  const [owner] = requestedRepo.split('/');
+  if (owner && userLogin && owner.toLowerCase() === userLogin) {
+    return true;
+  }
+
+  const token = req.session?.user?.accessToken;
+  if (token) {
+    if (!Array.isArray(req.session.authorizedReposCache)) {
+      req.session.authorizedReposCache = [];
+    }
+    if (req.session.authorizedReposCache.includes(requestedRepo.toLowerCase())) {
+      return true;
+    }
+    try {
+      const ghRes = await fetch(`https://api.github.com/repos/${requestedRepo}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'CAVDAX-App'
+        }
+      });
+      if (ghRes.ok) {
+        req.session.authorizedReposCache.push(requestedRepo.toLowerCase());
+        return true;
+      }
+    } catch {
+      // Network or GitHub API error - fallback to false
+    }
+  }
+
+  return false;
+}
+
 // 4. Fetch Live Graph State for Visualizer Canvas
 app.get('/api/graph', async (req, res) => {
   try {
@@ -992,6 +1124,17 @@ app.get('/api/graph', async (req, res) => {
     // Tenant isolation: allow authenticated users to view their connected repo graph;
     // Unauthenticated public visitors strictly receive canonical demo graph state.
     const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+    if (requestedRepo && requestedRepo !== 'demo') {
+      const hasAccess = await verifyUserRepoAccess(req, requestedRepo);
+      if (!hasAccess) {
+        return res.status(403).json({
+          nodes: [],
+          edges: [],
+          error: 'FORBIDDEN',
+          message: 'You do not have access to view graph state for this repository.'
+        });
+      }
+    }
     const isSessionAuth = Boolean(req.session?.user || req.authUser);
     const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
 
@@ -1021,6 +1164,16 @@ app.get('/api/graph/export-image', async (req, res) => {
 
     // Resolve repo and branch scopes with tenant isolation
     const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+    if (requestedRepo && requestedRepo !== 'demo') {
+      const hasAccess = await verifyUserRepoAccess(req, requestedRepo);
+      if (!hasAccess) {
+        return res.status(403).json({
+          success: false,
+          error: 'FORBIDDEN',
+          message: 'You do not have access to export the graph for this repository.'
+        });
+      }
+    }
     const requestedBranch = sanitizeBranchName(req.query.branch, null);
     const isSessionAuth = Boolean(req.session?.user || req.authUser);
     const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
@@ -1709,6 +1862,17 @@ app.get('/api/audit', async (req, res) => {
 
   // Tenant isolation: unauthenticated visitors strictly receive demo audit entries.
   const requestedRepo = req.query.repo ? String(req.query.repo).trim() : null;
+  if (requestedRepo && requestedRepo !== 'demo') {
+    const hasAccess = await verifyUserRepoAccess(req, requestedRepo);
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        entries: [],
+        error: 'FORBIDDEN',
+        message: 'You do not have access to audit records for this repository.'
+      });
+    }
+  }
   const requestedBranch = sanitizeBranchName(req.query.branch, null);
   const isSessionAuth = Boolean(req.session?.user || req.authUser);
   const repoScope = (isSessionAuth && requestedRepo) ? requestedRepo : null;
@@ -2743,12 +2907,81 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
  * POST /api/github/repos/:owner/:repo/init-adr
  * Opens a starter ADR pull request on branch cavdax/init-adr based on detected stack.
  */
-app.post('/api/github/repos/:owner/:repo/init-adr', async (req, res) => {
+/**
+ * POST /api/github/repos/:owner/:repo/propose-adr
+ * Opens a pull request proposing a new Architecture Decision Record on GitHub.
+ */
+app.post('/api/github/repos/:owner/:repo/propose-adr', githubActionLimiter, async (req, res) => {
   const token = req.session?.user?.accessToken;
   if (!token) {
     return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
   }
   const { owner, repo } = req.params;
+  const repoFullName = `${owner}/${repo}`;
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  if (!hasAccess) {
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to propose ADRs for this repository.' });
+  }
+  const { title, context, decision, consequences, supersedes } = req.body || {};
+  try {
+    const pr = await proposeAdrPullRequest({
+      token,
+      owner,
+      repo,
+      title,
+      context,
+      decision,
+      consequences,
+      supersedes
+    });
+    return res.json({ success: true, pr });
+  } catch (err) {
+    if (err instanceof GithubAdrError) {
+      return res.status(err.status).json({ success: false, code: err.code, error: err.message });
+    }
+    console.error('[CAVDAX proposeAdrPullRequest]', err);
+    return res.status(500).json({ success: false, code: 'GITHUB_ERROR', error: 'Failed to propose ADR pull request on GitHub.' });
+  }
+});
+
+/**
+ * POST /api/github/repos/:owner/:repo/ci-gate-pr
+ * Opens a pull request that adds .github/workflows/cavdax-gate.yml.
+ */
+app.post('/api/github/repos/:owner/:repo/ci-gate-pr', githubActionLimiter, async (req, res) => {
+  const token = req.session?.user?.accessToken;
+  if (!token) {
+    return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
+  }
+  const { owner, repo } = req.params;
+  const repoFullName = `${owner}/${repo}`;
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  if (!hasAccess) {
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to install CI workflows on this repository.' });
+  }
+  try {
+    const pr = await createCiGatePullRequest({ token, owner, repo });
+    return res.json({ success: true, pr });
+  } catch (err) {
+    if (err instanceof GithubAdrError) {
+      return res.status(err.status).json({ success: false, code: err.code, error: err.message });
+    }
+    console.error('[CAVDAX createCiGatePullRequest]', err);
+    return res.status(500).json({ success: false, code: 'GITHUB_ERROR', error: 'Failed to create CI gate pull request on GitHub.' });
+  }
+});
+
+app.post('/api/github/repos/:owner/:repo/init-adr', githubActionLimiter, async (req, res) => {
+  const token = req.session?.user?.accessToken;
+  if (!token) {
+    return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
+  }
+  const { owner, repo } = req.params;
+  const repoFullName = `${owner}/${repo}`;
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  if (!hasAccess) {
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to initialize ADRs on this repository.' });
+  }
   try {
     const pullRequest = await createAdrPullRequest({ token, owner, repo });
     res.json({ success: true, pullRequest });
@@ -2882,7 +3115,16 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
     savedSystemState.auditEntries.unshift(actionRecord);
     syncSystemStateToDisk();
 
-    broadcastEvent('AGENT_ACTION_LOGGED', actionRecord);
+    broadcastEvent('AGENT_ACTION_LOGGED', actionRecord, { repo: repoFullName });
+    broadcastEvent('MCP_TOOL_INTERCEPTED', {
+      toolName: 'apply_code_change',
+      decisionId: decisionNode.id,
+      targetFile: resolvedTarget,
+      verdict: isApproved ? 'APPROVED' : 'BLOCKED',
+      latencyMs,
+      repo: repoFullName,
+      timestamp: now
+    }, { repo: repoFullName });
 
     return res.json({
       success: true,
@@ -2915,12 +3157,17 @@ app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req
   }
 });
 
-app.post('/api/github/repos/:owner/:repo/sync-adr-status', async (req, res) => {
+app.post('/api/github/repos/:owner/:repo/sync-adr-status', githubActionLimiter, async (req, res) => {
   const token = req.session?.user?.accessToken;
   if (!token) {
     return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
   }
   const { owner, repo } = req.params;
+  const repoFullName = `${owner}/${repo}`;
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  if (!hasAccess) {
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to synchronize ADR status on this repository.' });
+  }
   const { targetId, supersedingId } = req.body || {};
   try {
     const pullRequest = await syncSupersededAdrPullRequest({ token, owner, repo, targetId, supersedingId });
@@ -3678,6 +3925,11 @@ app.post('/api/github/webhook', async (req, res) => {
   const event = req.headers['x-github-event'];
   const signature = req.headers['x-hub-signature-256'];
   const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
+
+  if (process.env.NODE_ENV === 'production' && !webhookSecret) {
+    console.error('[CAVDAX Webhook] Rejected webhook in production: GITHUB_WEBHOOK_SECRET is not configured.');
+    return res.status(500).json({ success: false, error: 'WEBHOOK_SECRET_NOT_CONFIGURED' });
+  }
 
   if (webhookSecret) {
     if (!signature) {
