@@ -507,6 +507,38 @@ test('proposeAdrPullRequest opens a pull request with sequential ADR number', as
   assert.ok(prCall.body.title.includes('Propose ADR-003'));
 });
 
+test('proposeAdrPullRequest avoids numbering collisions with in-flight open PR proposals', async () => {
+  const { fetchImpl, calls } = fakeGithub({
+    files: {
+      'docs/adrs/ADR-001.md': ADR1,
+      'docs/adrs/ADR-002.md': ADR2
+    },
+    openPulls: [
+      {
+        number: 10,
+        title: 'Propose ADR-003: In-flight proposal from agent A',
+        head: { ref: 'cavdax/propose-adr-003-agent-a' }
+      }
+    ]
+  });
+
+  const res = await proposeAdrPullRequest({
+    token: 'test-token',
+    owner: 'o',
+    repo: 'r',
+    title: 'Adopt Kafka for Event Streaming',
+    context: 'Need pub-sub broker.',
+    decision: 'Use Apache Kafka.',
+    consequences: 'Zookeeper/KRaft operational overhead.',
+    fetchImpl
+  });
+
+  // Should skip ADR-003 because of the open PR and allocate ADR-004
+  assert.equal(res.adrId, 'ADR-004');
+  assert.ok(res.branch.startsWith('cavdax/propose-adr-004'));
+  assert.equal(res.path, 'docs/adrs/ADR-004-adopt-kafka-for-event-streaming.md');
+});
+
 test('proposeAdrPullRequest validates required title and decision fields', async () => {
   const { fetchImpl } = fakeGithub();
   await assert.rejects(
