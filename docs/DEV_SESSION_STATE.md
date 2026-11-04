@@ -9,7 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.78 Latest Session Achievements (November 4, 2026 - Production 502 Bad Gateway Triage & Missing Undici Dependency Resolution)
+## 1.0.79 Latest Session Achievements (November 4, 2026 - Connected Workspace Branch Persistence & Multi-Tab Remount State Guard)
+
+- **Connected Repository Active Branch State Persistence (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Addressed Devil's Advocate finding where selecting a non-default branch (e.g. `cavdax/init-adr`) was discarded when switching across navigation tabs (Console -> Audit/Walkthrough -> Console), unexpectedly resetting the workspace back to `main`.
+  - Identified that `ConnectedRepoWorkspace` unmounts upon leaving the Console tab, wiping component state. The initial state and scan effect previously hardcoded fallback to `repo.default_branch || 'main'`, disregarding user branch selections.
+  - Implemented dual-layer persistence:
+    1. Synchronized selected branch into `localStorage.setItem('cavdax.selected_branch.<full_name>', branchName)` namespaced per repository.
+    2. Propagated `selected_branch` via `onUpdateRepo({ ...repo, selected_branch: branchName })` to keep parent `connectedRepos` and `selectedConnectedRepo` in exact parity.
+  - Guarded component mount and scan lifecycle: initial state lazy initializer and initial scan effect now check `localStorage` and `repo.selected_branch` before falling back to `repo.default_branch`.
+  - Memoized `allBranchesList` to guarantee the active branch is always present in the dropdown options even if remote branch API caches take time to hydrate.
+- **Verification**:
+  - Production Vite client bundle built cleanly in 25.97s with zero errors.
+  - All 64 backend tests pass with 0 failures in 1140ms.
+
+## 1.0.78 Previous Session Achievements (November 4, 2026 - Production 502 Bad Gateway Triage & Missing Undici Dependency Resolution)
 
 - **Production 502 Bad Gateway Forensic Root Cause Resolution (`apps/server/package.json`, `apps/server/webhookDispatcher.js`)**:
   - Investigated user incident where clicking "Connect GitHub" (`/api/auth/github`) on production (`cavdax.sahnirmaan.live`) returned a Cloudflare `502 Bad Gateway` (Ray ID: `a54df2516d559ba3`).
