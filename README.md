@@ -825,7 +825,7 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Autho
 6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
 7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
-### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.0)
+### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.3)
 ```bash
 # Start local Model Context Protocol stdio daemon
 npx -y @cavdax/mcp-server
@@ -839,6 +839,9 @@ npx cavdax ingest --repo .
 # Validate staged files or PR diffs against active architecture decisions
 npx cavdax check --staged
 npx cavdax check --pr <number>
+
+# CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions)
+npx cavdax gate --repo <owner/repo> --sha $GITHUB_SHA
 ```
 
 ---

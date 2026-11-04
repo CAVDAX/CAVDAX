@@ -158,3 +158,48 @@ console.log('Logged in user:', await userBadge.evaluate(el => el.textContent));
 
 - `.puppeteer-profile/`, `.puppeteer-edge-profile/`, and `.puppeteer-user-data/` are listed in [`.gitignore`](../.gitignore).
 - Personal session tokens, cookies, and local database caches are **never staged or committed to Git**.
+
+
+---
+
+## 8. Strict Visual Verification & Anti-False-Positive Protocol
+
+To eliminate false-confidence screenshots (such as capturing an untargeted hero/wordmark container or a blocking splash overlay), all automation scripts MUST adhere to four mandatory rules:
+
+### Rule 1: Direct Clean Path Routing
+Never rely on unverified sequential clicks from root (`/`) across long landing page animations. Directly open the target route:
+```javascript
+// GOOD: Direct path resolution
+await openApp('http://localhost:5173/console');
+// AVOID: Landing at '/' and hoping a click cascades down the page
+```
+
+### Rule 2: Explicit SplashLoader Bypass
+The application includes a `SplashLoader` on cold initial visits. Any visual test must pre-set `sessionStorage` before navigating so that the overlay never traps pointer clicks:
+```javascript
+await page.evaluate(() => {
+  sessionStorage.setItem('cavdax_splash_shown', 'true');
+});
+```
+
+### Rule 3: Zero Permissive / Optional Clicks (Fail-Fast Assertions)
+Never write silent no-ops like `if (btn) btn.click()`. If an element is expected, assert its existence and throw a fatal error immediately if missing:
+```javascript
+const el = await page.$(selector);
+if (!el) {
+  throw new Error(`[FATAL ASSERTION ERROR]: Target element "${selector}" was not found!`);
+}
+await el.click();
+```
+
+### Rule 4: Target Presence & Visibility Gate Before Screenshots
+Before capturing any artifact screenshot, verify that the modal or component header is actively rendered in the DOM:
+```javascript
+await page.waitForFunction(() => {
+  const h3 = Array.from(document.querySelectorAll('h3')).find(e => e.textContent.includes('Target Modal Title'));
+  return !!h3;
+}, { timeout: 5000 });
+
+// Only capture after assertion passes
+await page.screenshot({ path: destinationPath });
+```

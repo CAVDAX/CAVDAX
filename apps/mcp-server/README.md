@@ -65,6 +65,7 @@ npx cavdax ingest --repo .          # Ingest ADRs from current repo into FalkorD
 npx cavdax check --staged           # Validate staged files (git pre-commit hook)
 npx cavdax check --staged --strict  # ...and fail if FalkorDB is unreachable (CI)
 npx cavdax check --pr 42            # Validate PR #42 changed files (CI)
+npx cavdax gate --repo org/repo     # Verify PR commit against architectural invariants in CI/CD
 npx cavdax doctor                   # Diagnose FalkorDB & MCP readiness
 ```
 

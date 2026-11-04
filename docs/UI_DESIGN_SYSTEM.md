@@ -3106,3 +3106,208 @@ When combining scroll-driven or scroll-jacked 3D camera transitions (e.g. Three.
    - Only when $\Delta > 6\text{px}$ is the pointer marked as intentionally moving (`hasIntentionalPointerMoveRef.current = true`).
    - Every programmatic step change, scroll event, or canvas exit resets `hasIntentionalPointerMoveRef.current = false`.
    - Result: Users can scroll through all stages smoothly and without friction, while intentional mouse exploration remains instantaneous, precise, and fluid.
+
+
+---
+
+## 49. Decoupled Code Viewport & Isolated Command Header Standard
+
+To eliminate visual text occlusion and guarantee uncompromised ergonomic readability across all code snippet and terminal blocks:
+
+### 49.1 The Floating Copy Button Collision Anti-Pattern
+1. **The Defect**:
+   - Nesting an absolutely positioned Copy button inside a scrollable `<pre>` or code container (`absolute top-2.5 right-2.5`) is a severe usability defect.
+   - For single-line CLI commands (`claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ...`), the text flows directly underneath the semi-transparent Copy pill, occluding critical parameters, repository names, and flags.
+   - When the user scrolls horizontally, the text drags directly behind the button, creating visual clutter and preventing clean text selection.
+
+### 49.2 The 2-Tier Decoupled Container Architecture
+1. **Tier 1: Dedicated Header Bar (`px-3 py-1.5 bg-slate-900 border-b border-white/10`)**:
+   - **Left**: Format indicator badge (`JSON Config`, `Terminal Command`, `YAML Workflow`) paired with a live status pip (`w-2 h-2 rounded-full bg-emerald-400`).
+   - **Right**: Isolated interactive Copy button (`flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-mono rounded bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer`).
+2. **Tier 2: Standalone Focusable Viewport (`<pre tabIndex={0}>`)**:
+   - Placed strictly underneath the header bar with zero floating overlays.
+   - Attributes: `overflow-x-auto select-all text-[11px] font-mono text-emerald-400 dark:text-emerald-400 bg-black/90 p-3`.
+   - `tabIndex={0}` allows keyboard and mousewheel navigation without stealing focus from the parent modal.
+
+```jsx
+{/* Dedicated Header Bar */}
+<div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-white/10">
+  <div className="flex items-center gap-2">
+    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+      {tab === 'cursor' ? 'JSON Config' : 'Terminal Command'}
+    </span>
+  </div>
+  <button
+    onClick={handleCopy}
+    className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-mono rounded bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
+  >
+    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    <span>{copied ? 'Copied' : 'Copy'}</span>
+  </button>
+</div>
+
+{/* Isolated Code Viewport */}
+<pre
+  tabIndex={0}
+  className="p-3 bg-black/90 text-[11px] font-mono text-emerald-400 overflow-x-auto select-all focus:outline-none focus:ring-1 focus:ring-white/20"
+>
+  <code>{codeSnippet}</code>
+</pre>
+```
+
+---
+
+## 50. Container-Relative Slider Motion vs. LayoutId Projection Flight
+
+When designing animated pill indicators, sliding tabs, or segmented controls inside modals, popovers, or floating drawers:
+
+### 50.1 The Framer Motion `layoutId` Cross-Screen Flight Trap
+1. **The Defect**:
+   - Using Framer Motion `<motion.div layoutId="active-pill" />` across modal tabs can trigger severe visual glitches if another element on the page (e.g. the top navigation bar or an unmounted drawer) shares or previously registered the same or colliding layout context.
+   - When the modal mounts or switches tabs, Framer Motion's projection engine attempts to interpolate between absolute viewport coordinates, causing the pill to fly diagonally across the entire screen from the top navbar into the modal.
+
+### 50.2 The Container-Relative `usePillTracker` Solution
+1. **Geometric Containment**:
+   - Constrain sliding motion strictly to the relative bounding coordinates of the parent container using a lightweight layout hook (`usePillTracker`).
+   - Measure `offsetLeft`, `offsetTop`, `offsetWidth`, and `offsetHeight` of the active button ref directly within the container.
+2. **Implementation Blueprint**:
+
+```jsx
+function usePillTracker(activeKey) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    let rafId;
+    const update = () => {
+      const el = refs.current[activeKey];
+      if (el) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        setPosition((prev) => {
+          if (
+            prev.ready &&
+            prev.x === x &&
+            prev.y === y &&
+            prev.width === width &&
+            prev.height === height
+          ) {
+            return prev;
+          }
+          return { x, y, width, height, ready: true };
+        });
+      }
+    };
+
+    update();
+    rafId = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', update);
+    };
+  }, [activeKey]);
+
+  return { refs, position };
+}
+```
+
+3. **Motion Pill Rendering**:
+```jsx
+<div className="relative flex items-center p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+  {pill.position.ready && (
+    <motion.div
+      className="absolute top-1 bottom-1 rounded-lg bg-slate-900 dark:bg-white shadow-xs"
+      initial={false}
+      animate={{
+        x: pill.position.x,
+        width: pill.position.width,
+        height: pill.position.height,
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+    />
+  )}
+  {tabs.map((tab) => (
+    <button
+      key={tab.id}
+      ref={(el) => (pill.refs.current[tab.id] = el)}
+      onClick={() => setActiveTab(tab.id)}
+      className="relative z-10 px-3 py-1.5 text-xs font-mono font-medium"
+    >
+      {tab.label}
+    </button>
+  ))}
+</div>
+```
+
+### 50.3 The Locked Y-Bounds Rule for Sliding Pillbars (Eliminating Downward Drift)
+1. **The Downward Shift Defect**:
+   - When placing an absolutely positioned pill (`<motion.div className="absolute ...">`) inside a flexbox container with `align-items: center` (e.g. `relative flex items-center p-1 rounded-xl`), omitting `top-0 left-0` causes modern browsers (Chromium, WebKit, Gecko) to calculate the initial static layout position based on flex cross-axis alignment.
+   - When Framer Motion applies `transform: translateY(offsetTop)`, the transform is added *on top of* the flex static offset, shifting the pill downward (top margin appears ~8px while bottom margin touches or bleeds past the track).
+2. **The Invariable Architecture**:
+   - **For 1-Row Segmented Controls**:
+     - Hard-lock vertical bounds using CSS matching parent padding: `className="absolute top-1 bottom-1 left-0 rounded-lg pointer-events-none ..."`.
+     - Animate **ONLY** `x` and `width`:
+       ```jsx
+       animate={{
+         x: pill.position.x,
+         width: pill.position.width,
+       }}
+       ```
+     - Never animate `y` or `height` for single-row segmented controls. This guarantees 100% vertical centering ($5\text{px}$ top, $5\text{px}$ bottom) with zero subpixel rounding drift across all platforms.
+   - **For Multi-Row Wrapped Grids**:
+     - When tabs wrap across rows (e.g. `grid grid-cols-2 sm:grid-cols-4`), ALWAYS specify `className="absolute top-0 left-0 ..."`.
+     - Overriding static placement to `(0, 0)` ensures `transform: translate(x, y)` accurately maps to `offsetLeft` and `offsetTop` without compound offset doubling.
+
+### 50.4 Modal Hoisting via React Portal (createPortal) & The CSS Stacking Context Trap
+1. **The Root Cause of Un-dimmed Navbars**:
+   - According to CSS Transforms Module Level 1 (§6.1), any element with a non-none `transform`, `perspective`, `filter`, or `will-change: transform` creates a **new containing block and local stacking context** for all descendants, including `position: fixed`.
+   - When a modal overlay (`fixed inset-0 z-[100]`) is declared inside a nested component wrapped in a page transition (e.g. `<PageAscentTransition>` using `transform: translateY(...)`), the modal is trapped inside that component's stacking context.
+   - Any root-level element outside this container (such as a sticky or fixed `<header className="fixed top-0 z-50">`) paints **in front of** the modal backdrop. The navbar remains completely bright and un-dimmed while the modal is active.
+2. **The Invariable Architecture (createPortal)**:
+   - NEVER leave full-screen overlays or modals inside nested DOM subtrees.
+   - ALWAYS hoist modals to `document.body` using React's `createPortal`:
+     ```jsx
+     import { createPortal } from 'react-dom';
+
+     {isOpen && typeof document !== 'undefined' && createPortal(
+       <div
+         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+         data-lenis-prevent
+         className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+       >
+         <div data-lenis-prevent className="max-w-3xl w-full ...">
+           {/* Modal Body */}
+         </div>
+       </div>,
+       document.body
+     )}
+     ```
+   - Guard with `typeof document !== 'undefined'` for isomorphic / SSR safety.
+   - This ensures the modal's `z-[100]` operates on the document root stacking context, uniformly dimming the entire viewport including navigation bars, sidebars, and floating action buttons.
+
+### 50.5 Zero-Jerk Viewport Standardization & Smooth-Scroll Isolation
+1. **Zero-Jerk Viewport Standardization**:
+   - In tabbed modal interfaces containing code blocks, shell commands, or configuration files (e.g. Cursor JSON vs Claude command vs Cline YAML), tab contents vary dramatically in line count (1 line to 25+ lines).
+   - Unconstrained dynamic heights cause violent vertical layout jumps (e.g. 236px sudden collapse), disorienting users.
+   - **Rule**: Standardize code display viewports to a fixed container height (e.g. `h-60` / 240px) across all tabs with `overflow-x-auto overflow-y-auto font-mono`.
+   - Provide informative registered-tool comments or schemas for shorter tabs so all tabs feel balanced, professional, and visually harmonious.
+2. **Smooth-Scroll Isolation (Lenis Interop)**:
+   - When global smooth-scroll engines (such as Lenis) hijack window scroll events, mouse scroll-wheel events over modal viewports and code blocks can be swallowed or blocked.
+   - **Rule**:
+     1. Mark modal backdrop overlays, modal cards, and scrollable pre/code containers with `data-lenis-prevent`.
+     2. Bind modal mount/unmount lifecycles to stop and restart the global scroll engine:
+        ```javascript
+        useEffect(() => {
+          if (isOpen) {
+            window.__lenis?.stop();
+            return () => window.__lenis?.start();
+          }
+        }, [isOpen]);
+        ```
+     3. Ensure backdrop dismissal checks `e.target === e.currentTarget` so internal clicks do not accidentally dismiss the modal.
+
