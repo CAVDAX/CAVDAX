@@ -44,6 +44,7 @@ import {
 
 
 import { playClick } from '../utils/soundFx';
+import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
 
 
@@ -107,6 +108,22 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
   const [userApiKey, setUserApiKey] = useState('');
   const [isKeyLoading, setIsKeyLoading] = useState(false);
   const [isKeyRevealed, setIsKeyRevealed] = useState(false);
+  const [mcpVersion, setMcpVersion] = useState(MCP_SERVER_DEFAULT_VERSION);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('https://registry.npmjs.org/@cavdax/mcp-server/latest')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (isMounted && data?.version) {
+          setMcpVersion(data.version);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
 
 
@@ -1003,7 +1020,7 @@ EXECUTION WORKFLOW:
 
                 <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
 
-                  v1.2.0
+                  v{mcpVersion}
 
                 </span>
 
