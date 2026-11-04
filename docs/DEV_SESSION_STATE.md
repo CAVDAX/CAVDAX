@@ -9,13 +9,32 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.78 Latest Session Achievements (November 4, 2026 - Production 502 Bad Gateway Triage & Missing Undici Dependency Resolution)
+## 1.0.79 Latest Session Achievements (November 4, 2026 - Connected Workspace Branch Persistence & Multi-Tab Remount State Guard)
+
+- **Connected Repository Active Branch State Persistence (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Addressed Devil's Advocate finding where selecting a non-default branch (e.g. `cavdax/init-adr`) was discarded when switching across navigation tabs (Console -> Audit/Walkthrough -> Console), unexpectedly resetting the workspace back to `main`.
+  - Identified that `ConnectedRepoWorkspace` unmounts upon leaving the Console tab, wiping component state. The initial state and scan effect previously hardcoded fallback to `repo.default_branch || 'main'`, disregarding user branch selections.
+  - Implemented dual-layer persistence:
+    1. Synchronized selected branch into `localStorage.setItem('cavdax.selected_branch.<full_name>', branchName)` namespaced per repository.
+    2. Propagated `selected_branch` via `onUpdateRepo({ ...repo, selected_branch: branchName })` to keep parent `connectedRepos` and `selectedConnectedRepo` in exact parity.
+  - Guarded component mount and scan lifecycle: initial state lazy initializer and initial scan effect now check `localStorage` and `repo.selected_branch` before falling back to `repo.default_branch`.
+  - Memoized `allBranchesList` to guarantee the active branch is always present in the dropdown options even if remote branch API caches take time to hydrate.
+- **Verification**:
+  - Production Vite client bundle built cleanly in 25.97s with zero errors.
+  - All 64 backend tests pass with 0 failures in 1140ms.
+
+## 1.0.78 Previous Session Achievements (November 4, 2026 - Production 502 Bad Gateway Triage & Missing Undici Dependency Resolution)
 
 - **Production 502 Bad Gateway Forensic Root Cause Resolution (`apps/server/package.json`, `apps/server/webhookDispatcher.js`)**:
   - Investigated user incident where clicking "Connect GitHub" (`/api/auth/github`) on production (`cavdax.sahnirmaan.live`) returned a Cloudflare `502 Bad Gateway` (Ray ID: `a54df2516d559ba3`).
   - Audited GitHub Actions workflow run `#41702912067` for deployment to production VM: discovered that Step 29 ("Run Quality Gate Tests") failed with `Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'undici' imported from /home/runner/work/CAVDAX/CAVDAX/apps/server/webhookDispatcher.js`.
   - Discovered that while Node 24 on local Windows resolved `undici` from an ambient parent directory (`C:\Users\krish\node_modules\undici`), `undici` was completely omitted from `apps/server/package.json`. In Ubuntu CI runners and inside `node:20-alpine` Docker containers (`npm install --omit=dev`), `import { Agent } from 'undici'` crashed on startup, exiting the Node container and causing Caddy to return 502 Bad Gateway.
   - Furthermore, Devil's Advocate audit identified that the latest `undici` (v8.x) requires `node >= 22.19.0`, which would fail on `node:20-alpine` in Docker. Pinned `"undici": "^6.21.1"` (`node >= 18.17`), guaranteeing seamless execution across Node 18, 20, 22, and 24.
+- **Audit Page Live Branch Fetching & Identifier Normalization (`apps/client/src/components/AuditPage.jsx`, `apps/client/src/App.jsx`)**:
+  - Uncovered Devil's Advocate finding regarding empty branch dropdown on connected repositories: `AuditPage.jsx` previously derived branch options strictly by scraping past audit ledger entries (`entries.forEach(...)`). For connected repositories with zero recorded actions yet, the branch set was empty, rendering an unselectable single-option dropdown.
+  - Added live branch ingestion via `/api/github/repos/:owner/:repo/branches` with fallback to `matched.default_branch || 'main'`, merging live Git branches with historical audit branches.
+  - Fixed repository identifier mismatch: normalized filtering across `full_name` (e.g. 'suneetchugh-dev/CAVDAX') and short name ('CAVDAX') so records match regardless of ingestion provenance.
+  - Added reactive `cavdax:repos-updated` custom event synchronization across `App.jsx` and `AuditPage.jsx`, and enabled searchable branch combobox when branch count exceeds 4.
 - **Verification**:
   - Executed `node --test apps/server/test/*.mjs`: all 64 backend unit and integration tests passed with 0 failures in 729ms.
   - Executed `npm run build` on client: 2034 modules transformed, production bundle built cleanly in 33.84s.
