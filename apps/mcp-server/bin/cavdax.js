@@ -6,6 +6,7 @@
  *   npx cavdax mcp         -> Launches stdio MCP server for Cursor / Claude
  *   npx cavdax ingest      -> Ingests local ADRs and git history into FalkorDB
  *   npx cavdax check       -> Validates staged files against causal graph
+ *   npx cavdax gate        -> Enforces PR / commit architectural invariants in CI
  *   npx cavdax doctor      -> Runs connectivity and health checks
  */
 
@@ -14,6 +15,7 @@ import { createRequire } from 'module';
 import { startStdioServer } from '../src/stdioServer.js';
 import { runIngest } from '../src/ingestCommand.js';
 import { runCheck } from '../src/checkCommand.js';
+import { runGate } from '../src/gateCommand.js';
 import { runDoctor } from '../src/doctorCommand.js';
 
 const program = new Command();
@@ -58,6 +60,18 @@ program
   .option('--strict', 'Fail (exit 1) when FalkorDB is unreachable instead of skipping the check')
   .action(async (options) => {
     const success = await runCheck(options);
+    process.exit(success ? 0 : 1);
+  });
+
+program
+  .command('gate')
+  .description('Verify PR commits or staged files against architectural boundaries in CI/CD pipelines')
+  .option('-r, --repo <repo>', 'Repository full name (owner/repo)')
+  .option('--sha <sha>', 'Pull request head commit SHA')
+  .option('-b, --branch <branch>', 'Target branch name')
+  .option('--strict', 'Fail when verification server or graph is unreachable')
+  .action(async (options) => {
+    const success = await runGate(options);
     process.exit(success ? 0 : 1);
   });
 
