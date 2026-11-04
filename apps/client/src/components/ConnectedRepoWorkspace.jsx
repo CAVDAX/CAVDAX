@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
@@ -40,7 +41,7 @@ function splitFullName(fullName = '') {
 }
 
 // Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
-function usePillTracker(activeKey) {
+function usePillTracker(activeKey, extraDep = null) {
   const refs = useRef({});
   const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
 
@@ -76,7 +77,7 @@ function usePillTracker(activeKey) {
       if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('resize', update);
     };
-  }, [activeKey]);
+  }, [activeKey, extraDep]);
 
   return { refs, position };
 }
@@ -101,7 +102,23 @@ export default function ConnectedRepoWorkspace({
   const [showProposeAdrModal, setShowProposeAdrModal] = useState(false);
   const [agentSetupTab, setAgentSetupTab] = useState('cursor');
   const [copiedSnippet, setCopiedSnippet] = useState(false);
-  const agentPill = usePillTracker(agentSetupTab);
+  const agentPill = usePillTracker(agentSetupTab, showAgentSetupModal);
+
+  // Pause Lenis global smooth-scroll while any modal is mounted to guarantee native mouse wheel scrolling in code editors & modal cards
+  const anyModalOpen = showInitConfirmModal || showAgentSetupModal || showCiGateModal || showProposeAdrModal;
+  useEffect(() => {
+    if (anyModalOpen) {
+      if (window.__lenis) {
+        window.__lenis.stop();
+      }
+      return () => {
+        if (window.__lenis) {
+          window.__lenis.start();
+        }
+      };
+    }
+  }, [anyModalOpen]);
+
   const [isOpeningCiGatePr, setIsOpeningCiGatePr] = useState(false);
   const [ciGatePrResult, setCiGatePrResult] = useState(null);
   const [isProposingAdr, setIsProposingAdr] = useState(false);
@@ -1226,10 +1243,10 @@ export default function ConnectedRepoWorkspace({
         </div>
       )}
 
-      {/* Confirmation modal before opening starter PR on external repo */}
-      {showInitConfirmModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowInitConfirmModal(false); } }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
-          <div className="max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4">
+      {/* Confirmation modal before opening starter PR on external repo (Hoisted via createPortal) */}
+      {showInitConfirmModal && typeof document !== 'undefined' && createPortal(
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowInitConfirmModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
+          <div data-lenis-prevent className="max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
               <GitPullRequest className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
               <h3 className="font-bold text-sm">Confirm Starter Pull Request</h3>
@@ -1263,14 +1280,15 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
-      {/* 1. Contextual 1-Click Agent Setup Modal */}
-      {showAgentSetupModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowAgentSetupModal(false); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
+      {/* 1. Contextual 1-Click Agent Setup Modal (Hoisted via createPortal) */}
+      {showAgentSetupModal && typeof document !== 'undefined' && createPortal(
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowAgentSetupModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <Terminal className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1288,19 +1306,17 @@ export default function ConnectedRepoWorkspace({
               Equip Cursor, Claude Code, Cline, or Windsurf with real-time architectural graph constraints for <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong> on branch <strong className="font-mono">{selectedBranch}</strong>.
             </p>
 
-            {/* Platform Selector Tabs with Container-Relative Slider Tracker (No Layout Flight) */}
+            {/* Platform Selector Tabs with Container-Relative Slider Tracker (Locked Y-Bounds, No Downward Shift) */}
             <div className="relative flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono">
               {agentPill.position.ready && (
                 <motion.div
                   initial={false}
                   animate={{
                     x: agentPill.position.x,
-                    y: agentPill.position.y,
                     width: agentPill.position.width,
-                    height: agentPill.position.height,
                   }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                  className="absolute bg-white dark:bg-white/15 rounded-lg shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                  transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+                  className="absolute top-1 bottom-1 left-0 bg-white dark:bg-white/15 rounded-lg shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
                 />
               )}
               {[
@@ -1377,7 +1393,8 @@ export default function ConnectedRepoWorkspace({
 
               <pre
                 tabIndex={0}
-                className="p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-72 leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
+                data-lenis-prevent
+                className="h-60 p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
               >
                 {agentSetupTab === 'cursor' && JSON.stringify({
                   mcpServers: {
@@ -1391,7 +1408,9 @@ export default function ConnectedRepoWorkspace({
                   }
                 }, null, 2)}
 
-                {agentSetupTab === 'claude' && `claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
+                {agentSetupTab === 'claude' && (
+                  `claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}\n\n# Registered Tools Enclosed Behind FalkorDB GraphBLAS Gate:\n# • check_intent_clearance           Pre-flight architectural radar before token burn\n# • check_file_status                Real-time active ADR governance and boundary status\n# • apply_code_change                Enclosed diff execution rejected on superseded ADRs\n# • get_architectural_blast_radius   Transitive downstream impact graph traversal\n# • revalidate_decision              GraphBLAS cache invalidation on superseding ADR\n# • get_active_invariants            Fetch active machine-verifiable rules for repo`
+                )}
 
                 {agentSetupTab === 'cline' && JSON.stringify({
                   mcpServers: {
@@ -1419,13 +1438,14 @@ export default function ConnectedRepoWorkspace({
               </pre>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* 2. 1-Click CI Gate Modal */}
-      {showCiGateModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
+      {/* 2. 1-Click CI Gate Modal (Hoisted via createPortal) */}
+      {showCiGateModal && typeof document !== 'undefined' && createPortal(
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <GitBranch className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1561,13 +1581,14 @@ jobs:
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* 3. In-Console ADR Authoring & Supersession Modal */}
-      {showProposeAdrModal && (
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
+      {/* 3. In-Console ADR Authoring & Supersession Modal (Hoisted via createPortal) */}
+      {showProposeAdrModal && typeof document !== 'undefined' && createPortal(
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div data-lenis-prevent className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <FileText className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1722,7 +1743,8 @@ jobs:
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
