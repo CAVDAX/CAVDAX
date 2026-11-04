@@ -435,14 +435,14 @@ export default function ConnectedRepoWorkspace({
     if (!isBranchDropdownOpen) return;
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setHighlightedBranchIndex(prev => Math.min(prev + 1, Math.max(0, filteredBranches.length - 1)));
+      setHighlightedBranchIndex(prev => Math.min(prev + 1, Math.max(0, flattenedFilteredBranches.length - 1)));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlightedBranchIndex(prev => Math.max(prev - 1, 0));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (filteredBranches.length > 0 && filteredBranches[highlightedBranchIndex]) {
-        handleSelectBranch(filteredBranches[highlightedBranchIndex].name);
+      if (flattenedFilteredBranches.length > 0 && flattenedFilteredBranches[highlightedBranchIndex]) {
+        handleSelectBranch(flattenedFilteredBranches[highlightedBranchIndex].name);
       } else if (branchSearch.trim()) {
         handleSelectBranch(branchSearch.trim());
       }
@@ -462,20 +462,57 @@ export default function ConnectedRepoWorkspace({
     setHighlightedBranchIndex(0);
   }, [branchSearch, isBranchDropdownOpen]);
 
-  const allBranchesList = useMemo(() => {
-    if (!branches.length) {
-      return [{ name: selectedBranch, isDefault: true }];
-    }
-    const hasCurrent = branches.some(b => b.name === selectedBranch);
-    if (!hasCurrent && selectedBranch) {
-      return [{ name: selectedBranch, isDefault: false }, ...branches];
-    }
-    return branches;
-  }, [branches, selectedBranch]);
+  const { groupedBranches, flattenedFilteredBranches } = useMemo(() => {
+    const query = branchSearch.toLowerCase().trim();
+    const list = (!branches.length)
+      ? [{ name: selectedBranch, isDefault: true }]
+      : (!branches.some(b => b.name === selectedBranch) && selectedBranch)
+        ? [{ name: selectedBranch, isDefault: false }, ...branches]
+        : branches;
 
-  const filteredBranches = allBranchesList.filter(b =>
-    b.name.toLowerCase().includes(branchSearch.toLowerCase().trim())
-  );
+    const filtered = query
+      ? list.filter(b => b.name.toLowerCase().includes(query))
+      : list;
+
+    const defaultGroup = [];
+    const prGroup = [];
+    const otherGroup = [];
+
+    const prBranchName = repo.adrPr?.branch;
+
+    filtered.forEach(b => {
+      const isDefault = b.isDefault || b.name === (repo.default_branch || 'main');
+      const isPr = Boolean(prBranchName && b.name === prBranchName);
+
+      if (isDefault) {
+        defaultGroup.push({ ...b, isDefault: true, isPr });
+      } else if (isPr) {
+        prGroup.push({ ...b, isPr: true });
+      } else {
+        otherGroup.push(b);
+      }
+    });
+
+    otherGroup.sort((a, b) => a.name.localeCompare(b.name));
+
+    const groups = [];
+    if (defaultGroup.length > 0) {
+      groups.push({ id: 'default', title: 'Default Branch', items: defaultGroup });
+    }
+    if (prGroup.length > 0) {
+      groups.push({ id: 'pr', title: 'Active Pull Request', items: prGroup });
+    }
+    if (otherGroup.length > 0) {
+      groups.push({ id: 'other', title: 'All Branches', items: otherGroup });
+    }
+
+    const flat = groups.flatMap(g => g.items);
+
+    return {
+      groupedBranches: groups,
+      flattenedFilteredBranches: flat
+    };
+  }, [branches, selectedBranch, branchSearch, repo.default_branch, repo.adrPr]);
 
   return (
     <div className="flex-1 min-h-0 flex flex-col font-mono select-none">
@@ -487,91 +524,170 @@ export default function ConnectedRepoWorkspace({
           </div>
           <div className="min-w-0">
             <span className="text-xs font-bold text-slate-950 dark:text-white truncate block">{repo.full_name}</span>
-            <div className="relative mt-0.5" ref={branchDropdownRef}>
+            <div className="flex items-center gap-1.5 flex-wrap mt-1">
+              <div className="relative" ref={branchDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => { playClick(); setIsBranchDropdownOpen(prev => !prev); }}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/15 transition-colors cursor-pointer"
+                  title="Switch branch"
+                  aria-expanded={isBranchDropdownOpen}
+                >
+                  <GitBranch className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span className="font-bold truncate max-w-[140px]">{selectedBranch}</span>
+                  <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
+                </button>
+
+                {isBranchDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 max-w-[90vw] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0c0e] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans">
+                    <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-white/[0.02]">
+                      <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-900 dark:text-slate-100 mb-1.5 px-1 font-mono">
+                        <span>Switch branch</span>
+                        {isLoadingBranches && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
+                      </div>
+                      <div className="relative">
+                        <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={branchSearch}
+                          onChange={(e) => setBranchSearch(e.target.value)}
+                          onKeyDown={handleBranchKeyDown}
+                          placeholder="Filter branches..."
+                          className="w-full pl-7 pr-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-white/30 font-mono"
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    <div 
+                      ref={branchListRef}
+                      data-lenis-prevent
+                      tabIndex={0}
+                      onKeyDown={handleBranchKeyDown}
+                      className="max-h-60 overflow-y-auto overscroll-contain has-scrubbar divide-y divide-slate-100 dark:divide-white/5 py-1 focus:outline-none"
+                    >
+                      {groupedBranches.length > 0 ? (
+                        groupedBranches.map(group => (
+                          <div key={group.id} className="py-1 first:pt-0 last:pb-0">
+                            <div className="px-3 py-1 text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400 dark:text-slate-500 bg-slate-50/50 dark:bg-white/[0.02]">
+                              {group.title}
+                            </div>
+                            {group.items.map(b => {
+                              const isCurrent = b.name === selectedBranch;
+                              const globalIdx = flattenedFilteredBranches.findIndex(fb => fb.name === b.name);
+                              const isHighlighted = globalIdx === highlightedBranchIndex;
+                              const isBranchPr = pr && pr.branch === b.name;
+
+                              return (
+                                <div
+                                  key={b.name}
+                                  ref={el => { if (globalIdx >= 0) branchItemRefs.current[globalIdx] = el; }}
+                                  onMouseEnter={() => { if (globalIdx >= 0) setHighlightedBranchIndex(globalIdx); }}
+                                  onClick={() => handleSelectBranch(b.name)}
+                                  className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
+                                    isHighlighted ? 'bg-slate-200/70 dark:bg-white/15' : 'hover:bg-slate-100/80 dark:hover:bg-white/[0.05]'
+                                  } ${isCurrent ? 'font-bold text-slate-950 dark:text-white' : ''}`}
+                                >
+                                  <div className="flex items-center gap-1.5 min-w-0">
+                                    <GitBranch className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
+                                    <span className="truncate font-mono text-[11px] text-slate-800 dark:text-slate-200">{b.name}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    {b.isDefault && (
+                                      <span className="px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-mono font-semibold bg-slate-200/80 dark:bg-white/10 text-slate-600 dark:text-slate-300">default</span>
+                                    )}
+                                    {isBranchPr && (
+                                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded text-[9px] font-mono font-semibold bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300 border border-slate-300/80 dark:border-white/15">
+                                        <GitPullRequest className="w-2.5 h-2.5 text-slate-500 dark:text-slate-400" />
+                                        PR #{pr.number}
+                                      </span>
+                                    )}
+                                    {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
+                                    <a
+                                      href={`https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/tree/${encodeURIComponent(b.name)}`}
+                                      target="_blank"
+                                      rel="noreferrer noopener"
+                                      onClick={e => e.stopPropagation()}
+                                      className="p-1 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70 dark:hover:bg-white/10 transition-colors"
+                                      title={`Open "${b.name}" on GitHub`}
+                                    >
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="p-3 text-center text-xs text-slate-500 font-mono">
+                          {branchSearch.trim() ? (
+                            <div>
+                              <p className="mb-2">No matching branch found.</p>
+                              <button
+                                type="button"
+                                onClick={() => handleSelectBranch(branchSearch.trim())}
+                                className="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-[11px] text-slate-900 dark:text-white transition-colors cursor-pointer"
+                              >
+                                Scan &quot;{branchSearch.trim()}&quot; anyway
+                              </button>
+                            </div>
+                          ) : (
+                            'No branches available'
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Immediate header-level "Rescan Branch" button */}
               <button
                 type="button"
-                onClick={() => { playClick(); setIsBranchDropdownOpen(prev => !prev); }}
-                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-white/15 transition-colors cursor-pointer"
-                title="Switch branch"
+                onClick={() => { playClick(); runScan(); }}
+                disabled={phase === 'scanning'}
+                className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors cursor-pointer disabled:opacity-50"
+                title={`Rescan branch "${selectedBranch}"`}
               >
-                <GitBranch className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span className="font-bold truncate max-w-[150px]">{selectedBranch}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
+                <RefreshCw className={`w-3 h-3 ${phase === 'scanning' ? 'animate-spin' : ''}`} />
               </button>
 
-              {isBranchDropdownOpen && (
-                <div className="absolute left-0 top-full mt-1.5 w-64 max-w-[90vw] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0c0e] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans">
-                  <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-white/[0.02]">
-                    <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-900 dark:text-slate-100 mb-1.5 px-1 font-mono">
-                      <span>Switch branch</span>
-                      {isLoadingBranches && <Loader2 className="w-3 h-3 animate-spin text-slate-400" />}
-                    </div>
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        value={branchSearch}
-                        onChange={(e) => setBranchSearch(e.target.value)}
-                        onKeyDown={handleBranchKeyDown}
-                        placeholder="Filter branches..."
-                        className="w-full pl-7 pr-2 py-1 text-xs rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-black/40 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 dark:focus:ring-white/30 font-mono"
-                        autoFocus
-                      />
-                    </div>
-                  </div>
+              {/* Quick Jump "View Branch on GitHub" link button */}
+              <a
+                href={`https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/tree/${encodeURIComponent(selectedBranch)}`}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors"
+                title={`View branch "${selectedBranch}" on GitHub`}
+              >
+                <ExternalLink className="w-3 h-3" />
+              </a>
 
-                  <div 
-                    ref={branchListRef}
-                    data-lenis-prevent
-                    tabIndex={0}
-                    onKeyDown={handleBranchKeyDown}
-                    className="max-h-56 overflow-y-auto overscroll-contain has-scrubbar divide-y divide-slate-100 dark:divide-white/5 py-1 focus:outline-none"
-                  >
-                    {filteredBranches.length > 0 ? (
-                      filteredBranches.map((b, idx) => {
-                        const isCurrent = b.name === selectedBranch;
-                        const isHighlighted = idx === highlightedBranchIndex;
-                        return (
-                          <button
-                            key={b.name}
-                            ref={el => { branchItemRefs.current[idx] = el; }}
-                            type="button"
-                            onMouseEnter={() => setHighlightedBranchIndex(idx)}
-                            onClick={() => handleSelectBranch(b.name)}
-                            className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between gap-2 transition-colors cursor-pointer ${
-                              isHighlighted ? 'bg-slate-200/70 dark:bg-white/15' : 'hover:bg-slate-100/80 dark:hover:bg-white/[0.05]'
-                            } ${isCurrent ? 'font-bold text-slate-950 dark:text-white' : ''}`}
-                          >
-                            <span className="truncate font-mono text-[11px] text-slate-800 dark:text-slate-200">{b.name}</span>
-                            <div className="flex items-center gap-1 shrink-0">
-                              {b.isDefault && (
-                                <span className="px-1.5 py-0.2 rounded text-[9px] uppercase tracking-wider font-mono font-semibold bg-slate-200/80 dark:bg-white/10 text-slate-600 dark:text-slate-300">default</span>
-                              )}
-                              {isCurrent && <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />}
-                            </div>
-                          </button>
-                        );
-                      })
-                    ) : (
-                      <div className="p-3 text-center text-xs text-slate-500 font-mono">
-                        {branchSearch.trim() ? (
-                          <div>
-                            <p className="mb-2">No matching branch found.</p>
-                            <button
-                              type="button"
-                              onClick={() => handleSelectBranch(branchSearch.trim())}
-                              className="px-2 py-1 rounded bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-[11px] text-slate-900 dark:text-white transition-colors cursor-pointer"
-                            >
-                              Scan &quot;{branchSearch.trim()}&quot; anyway
-                            </button>
-                          </div>
-                        ) : (
-                          'No branches available'
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+              {/* Open Pull Request Association badge */}
+              {pr && pr.branch === selectedBranch && (
+                <a
+                  href={pr.url || `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pull/${pr.number}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium border border-slate-300 dark:border-white/15 bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 transition-colors"
+                  title={`View Pull Request #${pr.number} on GitHub`}
+                >
+                  <GitPullRequest className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span>PR #{pr.number}</span>
+                  <ExternalLink className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+                </a>
+              )}
+
+              {/* Causal Divergence / Decision Count Indicator */}
+              {phase === 'ready' && scan && (
+                <span
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-white/10 bg-slate-100/60 dark:bg-white/[0.04]"
+                  title={`${scan.count} Architecture Decision Records indexed on branch "${selectedBranch}"`}
+                >
+                  <FileText className="w-3 h-3 text-slate-400 dark:text-slate-500 shrink-0" />
+                  <span>{scan.count} {scan.count === 1 ? 'ADR' : 'ADRs'}</span>
+                </span>
               )}
             </div>
           </div>
