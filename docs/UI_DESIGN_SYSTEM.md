@@ -3106,3 +3106,140 @@ When combining scroll-driven or scroll-jacked 3D camera transitions (e.g. Three.
    - Only when $\Delta > 6\text{px}$ is the pointer marked as intentionally moving (`hasIntentionalPointerMoveRef.current = true`).
    - Every programmatic step change, scroll event, or canvas exit resets `hasIntentionalPointerMoveRef.current = false`.
    - Result: Users can scroll through all stages smoothly and without friction, while intentional mouse exploration remains instantaneous, precise, and fluid.
+
+
+---
+
+## 49. Decoupled Code Viewport & Isolated Command Header Standard
+
+To eliminate visual text occlusion and guarantee uncompromised ergonomic readability across all code snippet and terminal blocks:
+
+### 49.1 The Floating Copy Button Collision Anti-Pattern
+1. **The Defect**:
+   - Nesting an absolutely positioned Copy button inside a scrollable `<pre>` or code container (`absolute top-2.5 right-2.5`) is a severe usability defect.
+   - For single-line CLI commands (`claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ...`), the text flows directly underneath the semi-transparent Copy pill, occluding critical parameters, repository names, and flags.
+   - When the user scrolls horizontally, the text drags directly behind the button, creating visual clutter and preventing clean text selection.
+
+### 49.2 The 2-Tier Decoupled Container Architecture
+1. **Tier 1: Dedicated Header Bar (`px-3 py-1.5 bg-slate-900 border-b border-white/10`)**:
+   - **Left**: Format indicator badge (`JSON Config`, `Terminal Command`, `YAML Workflow`) paired with a live status pip (`w-2 h-2 rounded-full bg-emerald-400`).
+   - **Right**: Isolated interactive Copy button (`flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-mono rounded bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer`).
+2. **Tier 2: Standalone Focusable Viewport (`<pre tabIndex={0}>`)**:
+   - Placed strictly underneath the header bar with zero floating overlays.
+   - Attributes: `overflow-x-auto select-all text-[11px] font-mono text-emerald-400 dark:text-emerald-400 bg-black/90 p-3`.
+   - `tabIndex={0}` allows keyboard and mousewheel navigation without stealing focus from the parent modal.
+
+```jsx
+{/* Dedicated Header Bar */}
+<div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-white/10">
+  <div className="flex items-center gap-2">
+    <span className="w-2 h-2 rounded-full bg-emerald-400" />
+    <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">
+      {tab === 'cursor' ? 'JSON Config' : 'Terminal Command'}
+    </span>
+  </div>
+  <button
+    onClick={handleCopy}
+    className="flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-mono rounded bg-white/10 hover:bg-white/20 text-white transition-colors border border-white/10 cursor-pointer"
+  >
+    {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    <span>{copied ? 'Copied' : 'Copy'}</span>
+  </button>
+</div>
+
+{/* Isolated Code Viewport */}
+<pre
+  tabIndex={0}
+  className="p-3 bg-black/90 text-[11px] font-mono text-emerald-400 overflow-x-auto select-all focus:outline-none focus:ring-1 focus:ring-white/20"
+>
+  <code>{codeSnippet}</code>
+</pre>
+```
+
+---
+
+## 50. Container-Relative Slider Motion vs. LayoutId Projection Flight
+
+When designing animated pill indicators, sliding tabs, or segmented controls inside modals, popovers, or floating drawers:
+
+### 50.1 The Framer Motion `layoutId` Cross-Screen Flight Trap
+1. **The Defect**:
+   - Using Framer Motion `<motion.div layoutId="active-pill" />` across modal tabs can trigger severe visual glitches if another element on the page (e.g. the top navigation bar or an unmounted drawer) shares or previously registered the same or colliding layout context.
+   - When the modal mounts or switches tabs, Framer Motion's projection engine attempts to interpolate between absolute viewport coordinates, causing the pill to fly diagonally across the entire screen from the top navbar into the modal.
+
+### 50.2 The Container-Relative `usePillTracker` Solution
+1. **Geometric Containment**:
+   - Constrain sliding motion strictly to the relative bounding coordinates of the parent container using a lightweight layout hook (`usePillTracker`).
+   - Measure `offsetLeft`, `offsetTop`, `offsetWidth`, and `offsetHeight` of the active button ref directly within the container.
+2. **Implementation Blueprint**:
+
+```jsx
+function usePillTracker(activeKey) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    let rafId;
+    const update = () => {
+      const el = refs.current[activeKey];
+      if (el) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        setPosition((prev) => {
+          if (
+            prev.ready &&
+            prev.x === x &&
+            prev.y === y &&
+            prev.width === width &&
+            prev.height === height
+          ) {
+            return prev;
+          }
+          return { x, y, width, height, ready: true };
+        });
+      }
+    };
+
+    update();
+    rafId = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', update);
+    };
+  }, [activeKey]);
+
+  return { refs, position };
+}
+```
+
+3. **Motion Pill Rendering**:
+```jsx
+<div className="relative flex items-center p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+  {pill.position.ready && (
+    <motion.div
+      className="absolute top-1 bottom-1 rounded-lg bg-slate-900 dark:bg-white shadow-xs"
+      initial={false}
+      animate={{
+        x: pill.position.x,
+        width: pill.position.width,
+        height: pill.position.height,
+      }}
+      transition={{ type: 'spring', stiffness: 500, damping: 38 }}
+    />
+  )}
+  {tabs.map((tab) => (
+    <button
+      key={tab.id}
+      ref={(el) => (pill.refs.current[tab.id] = el)}
+      onClick={() => setActiveTab(tab.id)}
+      className="relative z-10 px-3 py-1.5 text-xs font-mono font-medium"
+    >
+      {tab.label}
+    </button>
+  ))}
+</div>
+```
