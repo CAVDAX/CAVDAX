@@ -1426,7 +1426,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@latest gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: ${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
@@ -1434,7 +1434,7 @@ jobs:
                   <button
                     onClick={() => {
                       playClick();
-                      const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@latest gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
+                      const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
                       navigator.clipboard.writeText(yaml);
                       setCopiedSnippet(true);
                       setTimeout(() => setCopiedSnippet(false), 2000);
