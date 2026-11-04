@@ -65,7 +65,7 @@ npx cavdax ingest --repo .          # Ingest ADRs from current repo into FalkorD
 npx cavdax check --staged           # Validate staged files (git pre-commit hook)
 npx cavdax check --staged --strict  # ...and fail if FalkorDB is unreachable (CI)
 npx cavdax check --pr 42            # Validate PR #42 changed files (CI)
-npx cavdax gate --repo org/repo     # Verify PR commit against architectural invariants in CI/CD
+npx cavdax gate --repo org/repo --sha <commit_sha> [--strict] # Verify PR commit against invariants in CI/CD
 npx cavdax doctor                   # Diagnose FalkorDB & MCP readiness
 ```
 
@@ -116,6 +116,8 @@ npx cavdax ingest --repo .     # ADRs may declare decision_id / decision_title i
 | `FALKORDB_GRAPH_NAME` | `cavdax_core_graph` | Graph to use |
 | `CAVDAX_MODE` | `auto` | `auto`, `live` or `simulation` |
 | `CAVDAX_REPO_ROOT` | current directory | Directory file writes are confined to |
+| `CAVDAX_SERVER_URL` | _(none)_ | Remote CAVDAX server URL for CI/CD gate fallback |
+| `CAVDAX_API_KEY` | _(none)_ | Bearer API token for authenticated remote decision checks |
 
 ---
 

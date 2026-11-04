@@ -880,8 +880,8 @@ npx cavdax ingest --repo .
 npx cavdax check --staged
 npx cavdax check --pr <number>
 
-# CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions)
-npx cavdax gate --repo <owner/repo> --sha $GITHUB_SHA
+# CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
+npx -y @cavdax/mcp-server@1.2.5 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---
@@ -901,7 +901,7 @@ CAVDAX/
 │   │   ├── email.js             # Resend API transactional divergence alert dispatcher & debouncer
 │   │   ├── webPush.js           # VAPID key manager & Web Push background notification broker
 │   │   ├── systemState.js       # Atomic persistent state & user notification preferences
-│   │   ├── test/                # Unit & security test suite (57 automated tests)
+│   │   ├── test/                # Unit & security test suite (90 automated tests)
 │   │   └── Dockerfile           # Server containerization
 │   └── mcp-server/              # Standalone NPM package (@cavdax/mcp-server — published)
 │       ├── bin/cavdax.js        # Universal CLI: npx cavdax mcp|ingest|check|doctor

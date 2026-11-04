@@ -9,7 +9,28 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.80 Latest Session Achievements (November 4, 2026 - Branch Workspace Critique Implementation: PR Association, Live Rescan, Jump to GitHub & Categorized Branch Grouping)
+## 1.0.81 Latest Session Achievements (November 5, 2026 - Security Hardening, ADR Numbering Collision Prevention, GitHub Release v1.2.5, Dynamic MCP Versioning & Rule 0y Enforcement)
+
+- **Official GitHub Release v1.2.5 Published**:
+  - Published official release tag `v1.2.5` on GitHub (`gh release create v1.2.5`) targeting `main` commit `eaef4b3`.
+  - Encompasses command injection defenses, remote decision map validation, SSE tenant scoping, monorepo diff inclusion, and open PR ADR numbering collision avoidance.
+- **Rule 0y (Published Package Immutability & Registry Synchronization Law)**:
+  - Formulated and committed inviolable rule `0y` to Section 1 of `AGENTS.md` and mirrored in master prompts.
+  - Establishes the Triple-Surface Version Triangulation Invariant (Source Manifest <-> Consumer Templates/UI <-> Distribution Registry/Release Tags) to permanently eradicate registry drift.
+- **ADR Numbering Race Condition Prevention (`apps/server/githubAdr.js`)**:
+  - Proposing an ADR previously determined sequential numbers strictly by reading committed files on `main`. Concurrent proposals from multiple agents or PRs produced duplicate identifiers (`ADR-002`).
+  - Added live GitHub API scan (`/repos/:owner/:repo/pulls?state=open`) inspecting in-flight `cavdax/propose-*` branches and titles. Added automated unit test verifying that in-flight `ADR-003` proposals cause subsequent allocations to skip to `ADR-004`.
+- **Client IP Proxy Header Trust Hardening (`apps/server/index.js`)**:
+  - Stripped blind `NODE_ENV === 'production'` trust from `extractClientIp`. Forwarding headers (`CF-Connecting-IP`, `X-Forwarded-For`) are now trusted strictly from verified loopback proxies (`127.0.0.1`, `::1`) or when `TRUST_PROXY === 'true'` is explicitly declared.
+- **Dynamic Frontend MCP Package Versioning (`apps/client`)**:
+  - Eradicated static `v1.2.0` badges from `ConnectMcpPage.jsx` and `McpConnectModal.jsx`.
+  - Injected build-time version via `vite.config.js` with a graceful filesystem try/catch fallback for isolated Docker builds.
+  - Added runtime registry querying (`https://registry.npmjs.org/@cavdax/mcp-server/latest`) on mount, automatically keeping the displayed badge in lockstep with live releases.
+- **Verification & Invariants**:
+  - Backend test suite: all 90/90 tests passing cleanly in 2.6s (`node --test apps/server/test/*.test.mjs`).
+  - Frontend production build: compiled cleanly via `npm run build` in 18.73s with zero errors.
+
+## 1.0.80 Previous Session Achievements (November 4, 2026 - Branch Workspace Critique Implementation: PR Association, Live Rescan, Jump to GitHub & Categorized Branch Grouping)
 
 - **Connected Repository Branch Workspace Enhancements (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
   - Implemented all 5 Devil's Advocate Architecture Critique recommendations for connected repository workspaces:
