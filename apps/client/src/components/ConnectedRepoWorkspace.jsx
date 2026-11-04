@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Compass, GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
   CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search } from 'lucide-react';
@@ -57,7 +57,13 @@ export default function ConnectedRepoWorkspace({
   const [expandedAdrId, setExpandedAdrId] = useState(null);
   const [selectedProbeDecisionId, setSelectedProbeDecisionId] = useState(null);
   const [logs, setLogs] = useState([]);
-  const [selectedBranch, setSelectedBranch] = useState(repo.default_branch || 'main');
+  const [selectedBranch, setSelectedBranch] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`cavdax.selected_branch.${repo.full_name}`);
+      if (saved) return saved;
+    } catch {}
+    return repo.selected_branch || repo.default_branch || 'main';
+  });
   const [branches, setBranches] = useState([]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
   const [isBranchDropdownOpen, setIsBranchDropdownOpen] = useState(false);
@@ -181,6 +187,12 @@ export default function ConnectedRepoWorkspace({
       if (data.branch) {
         setSelectedBranch(data.branch);
         selectedBranchRef.current = data.branch;
+        try {
+          localStorage.setItem(`cavdax.selected_branch.${repo.full_name}`, data.branch);
+        } catch {}
+        if (onUpdateRepoRef.current && repoRef.current?.selected_branch !== data.branch) {
+          onUpdateRepoRef.current({ ...repoRef.current, selected_branch: data.branch });
+        }
       }
       setPhase('ready');
       addLog('PARSER', `Found ${data.count} ADR file${data.count === 1 ? '' : 's'} on branch ${data.branch}.`, data.count ? 'CASCADE' : 'INFO');
@@ -205,7 +217,16 @@ export default function ConnectedRepoWorkspace({
 
   // Scan once per repository. Keyed on full_name so branch changes never retrigger it.
   useEffect(() => {
-    const initialBranch = repo.default_branch || 'main';
+    let initialBranch = repo.default_branch || 'main';
+    try {
+      const saved = localStorage.getItem(`cavdax.selected_branch.${repo.full_name}`);
+      if (saved) {
+        initialBranch = saved;
+      } else if (repo.selected_branch) {
+        initialBranch = repo.selected_branch;
+      }
+    } catch {}
+
     setSelectedBranch(initialBranch);
     selectedBranchRef.current = initialBranch;
     setScan(null);
@@ -398,6 +419,13 @@ export default function ConnectedRepoWorkspace({
     }
     playClick();
     setSelectedBranch(branchName);
+    selectedBranchRef.current = branchName;
+    try {
+      localStorage.setItem(`cavdax.selected_branch.${repo.full_name}`, branchName);
+    } catch {}
+    if (onUpdateRepo && repo.selected_branch !== branchName) {
+      onUpdateRepo({ ...repo, selected_branch: branchName });
+    }
     setIsBranchDropdownOpen(false);
     setBranchSearch('');
     runScan(branchName);
@@ -434,9 +462,16 @@ export default function ConnectedRepoWorkspace({
     setHighlightedBranchIndex(0);
   }, [branchSearch, isBranchDropdownOpen]);
 
-  const allBranchesList = branches.length > 0
-    ? branches
-    : [{ name: selectedBranch, isDefault: true }];
+  const allBranchesList = useMemo(() => {
+    if (!branches.length) {
+      return [{ name: selectedBranch, isDefault: true }];
+    }
+    const hasCurrent = branches.some(b => b.name === selectedBranch);
+    if (!hasCurrent && selectedBranch) {
+      return [{ name: selectedBranch, isDefault: false }, ...branches];
+    }
+    return branches;
+  }, [branches, selectedBranch]);
 
   const filteredBranches = allBranchesList.filter(b =>
     b.name.toLowerCase().includes(branchSearch.toLowerCase().trim())
