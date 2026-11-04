@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import {
-  Compass, GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
-  CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search, Plus, Copy, Sliders, X, Code2 } from 'lucide-react';
+  GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
+  CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2 } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
-import McpActionPlayground from './McpActionPlayground';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
 
@@ -57,7 +57,6 @@ export default function ConnectedRepoWorkspace({
   const [showAgentSetupModal, setShowAgentSetupModal] = useState(false);
   const [showCiGateModal, setShowCiGateModal] = useState(false);
   const [showProposeAdrModal, setShowProposeAdrModal] = useState(false);
-  const [showPlaygroundModal, setShowPlaygroundModal] = useState(false);
   const [agentSetupTab, setAgentSetupTab] = useState('cursor');
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const [isOpeningCiGatePr, setIsOpeningCiGatePr] = useState(false);
@@ -140,7 +139,6 @@ export default function ConnectedRepoWorkspace({
         setShowAgentSetupModal(false);
         setShowCiGateModal(false);
         setShowProposeAdrModal(false);
-        setShowPlaygroundModal(false);
         setShowInitConfirmModal(false);
         setIsBranchDropdownOpen(false);
       }
@@ -823,18 +821,6 @@ export default function ConnectedRepoWorkspace({
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            type="button"
-            onClick={() => {
-              playClick();
-              window.dispatchEvent(new CustomEvent('cavdax:open-tour', { detail: { mode: 'repo' } }));
-            }}
-            className={btnSecondary}
-            title="Launch interactive tour for this connected repository (Press T)"
-          >
-            <Compass className="w-4 h-4 text-slate-700 dark:text-slate-300 group-hover:rotate-45 transition-transform" />
-            <span>Tour</span>
-          </button>
-          <button
             onClick={() => {
               playClick();
               setShowAgentSetupModal(true);
@@ -1069,23 +1055,9 @@ export default function ConnectedRepoWorkspace({
                 <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono font-bold">
                   Intent Verification Gate
                 </span>
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono text-slate-400">
-                    {decisions.length} {decisions.length === 1 ? 'Decision' : 'Decisions'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playClick();
-                      setShowPlaygroundModal(true);
-                    }}
-                    className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 flex items-center gap-1 transition-colors cursor-pointer"
-                    title="Open Custom Action Simulator to test code payloads against decisions"
-                  >
-                    <Sliders className="w-3 h-3" />
-                    <span>Action Simulator</span>
-                  </button>
-                </div>
+                <span className="text-[9px] font-mono text-slate-400">
+                  {decisions.length} {decisions.length === 1 ? 'Decision' : 'Decisions'}
+                </span>
               </div>
 
               {decisions.length === 0 ? (
@@ -1273,31 +1245,42 @@ export default function ConnectedRepoWorkspace({
               Equip Cursor, Claude Code, Cline, or Windsurf with real-time architectural graph constraints for <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong> on branch <strong className="font-mono">{selectedBranch}</strong>.
             </p>
 
-            {/* Platform Selector Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono">
+            {/* Platform Selector Tabs with Framer Motion Sliding Pillbar */}
+            <div className="relative flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono">
               {[
-                { id: 'cursor', label: 'Cursor (~/.cursor/mcp.json)' },
-                { id: 'claude', label: 'Claude Code CLI' },
+                { id: 'cursor', label: 'Cursor' },
+                { id: 'claude', label: 'Claude Code' },
                 { id: 'cline', label: 'Cline' },
                 { id: 'windsurf', label: 'Windsurf' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => { playClick(); setAgentSetupTab(tab.id); setCopiedSnippet(false); }}
-                  className={`flex-1 py-1 px-2 rounded-lg text-center transition-all cursor-pointer font-bold ${
-                    agentSetupTab === tab.id
-                      ? 'bg-white dark:bg-white/15 text-slate-950 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {tab.id.toUpperCase()}
-                </button>
-              ))}
+              ].map((tab) => {
+                const isActive = agentSetupTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => { playClick(); setAgentSetupTab(tab.id); setCopiedSnippet(false); }}
+                    className={`relative flex-1 py-1.5 px-2 rounded-lg text-center transition-colors cursor-pointer font-bold z-10 ${
+                      isActive
+                        ? 'text-slate-950 dark:text-white'
+                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="agentSetupTabSlidingPill"
+                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                        className="absolute inset-0 bg-white dark:bg-white/15 rounded-lg shadow-xs border border-slate-300/60 dark:border-white/10 -z-10"
+                      />
+                    )}
+                    <span>{tab.id.toUpperCase()}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Snippet Display */}
             <div className="relative">
-              <pre className="p-3.5 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800">
+              <pre className="p-3.5 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto has-scrubbar leading-relaxed border border-slate-800">
                 {agentSetupTab === 'cursor' && JSON.stringify({
                   mcpServers: {
                     cavdax: {
@@ -1364,17 +1347,7 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-xs pt-1">
-              <span className="text-[11px] font-mono text-slate-500">
-                Protocol: Model Context Protocol (MCP 2024-11-05)
-              </span>
-              <button
-                onClick={() => { playClick(); setShowAgentSetupModal(false); }}
-                className={btnPrimary}
-              >
-                Done
-              </button>
-            </div>
+
           </div>
         </div>
       )}
@@ -1382,7 +1355,7 @@ export default function ConnectedRepoWorkspace({
       {/* 2. 1-Click CI Gate Modal */}
       {showCiGateModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
+          <div className="max-w-2xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <GitBranch className="w-5 h-5 text-sky-500 shrink-0" />
@@ -1396,9 +1369,10 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              Enforce architectural boundaries as a mandatory Status Check on Pull Requests. Blocks rogue AI agents and breaking changes before code reaches <strong className="font-mono text-slate-900 dark:text-white">{scan?.branch || repo.default_branch || 'main'}</strong>.
-            </p>
+            <div className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed space-y-1">
+              <p>Enforce architectural boundaries as a mandatory Status Check on Pull Requests.</p>
+              <p>Blocks rogue AI agents and breaking changes before code reaches <strong className="font-mono text-slate-900 dark:text-white">{scan?.branch || repo.default_branch || 'main'}</strong>.</p>
+            </div>
 
             {ciGatePrResult ? (
               <div className="p-4 rounded-xl bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-300 dark:border-emerald-500/30 space-y-3">
@@ -1431,7 +1405,7 @@ export default function ConnectedRepoWorkspace({
             ) : (
               <>
                 <div className="relative">
-                  <pre className="p-3.5 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto leading-relaxed border border-slate-800 max-h-56">
+                  <pre className="p-4 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-80 sm:max-h-96 leading-relaxed border border-slate-800 select-text">
 {`name: CAVDAX Architectural Gate
 
 on:
@@ -1671,30 +1645,7 @@ jobs:
         </div>
       )}
 
-      {/* 4. Action Simulator (Playground Modal) */}
-      {showPlaygroundModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full">
-            <McpActionPlayground
-              repo={repo}
-              decisions={decisions}
-              onClose={() => setShowPlaygroundModal(false)}
-              onRunCustomAction={(actionData) => {
-                const verdict = actionData?.gate_verdict || (actionData?.clearance_granted || actionData?.is_approved ? 'APPROVED' : 'BLOCKED');
-                const isApproved = verdict === 'APPROVED';
-                setLogs((prev) => [
-                  ...prev,
-                  {
-                    time: new Date().toLocaleTimeString(),
-                    component: isApproved ? 'GATE_APPROVE' : 'GATE_BLOCK',
-                    text: `Action Simulator: evaluated custom tool -> ${verdict} (${actionData?.latency_ms || '<15'}ms)`
-                  }
-                ]);
-              }}
-            />
-          </div>
-        </div>
-      )}
+
 
       {/* Activity log for the empty and error states */}
       {!hasAdrs && phase !== 'scanning' && logs.length > 0 && (
