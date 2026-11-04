@@ -665,9 +665,14 @@ function broadcastEvent(eventType, rawPayload, options = {}) {
       // Cross-Tenant Isolation: if event is scoped to a specific non-demo repository
       if (targetRepo && targetRepo !== 'demo') {
         const userLogin = (client.user?.login || client.session?.user?.login || '').toLowerCase();
-        const isAdmin = userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin);
+        const isAdmin = Boolean(
+          client.user?.role === 'admin' ||
+          userLogin === 'system' ||
+          (userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin))
+        );
         const connected = Array.isArray(client.session?.connectedRepos) ? client.session.connectedRepos : [];
-        const isConnected = connected.some(r => r.toLowerCase() === targetRepo.toLowerCase());
+        const authorized = Array.isArray(client.session?.authorizedReposCache) ? client.session.authorizedReposCache : [];
+        const isConnected = connected.some(r => r.toLowerCase() === targetRepo.toLowerCase()) || authorized.includes(targetRepo.toLowerCase());
         const [owner] = targetRepo.split('/');
         const isOwner = Boolean(owner && userLogin && owner.toLowerCase() === userLogin);
 
@@ -1074,6 +1079,13 @@ export async function verifyUserRepoAccess(req, requestedRepo) {
   if (!isSessionAuth) return false;
 
   const userLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
+  
+  // 1. Root system user or admin role
+  if (req.authUser?.role === 'admin' || userLogin === 'system') {
+    return true;
+  }
+
+  // 2. Global developer roster
   if (userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin)) {
     return true;
   }
@@ -1105,8 +1117,13 @@ export async function verifyUserRepoAccess(req, requestedRepo) {
         }
       });
       if (ghRes.ok) {
-        req.session.authorizedReposCache.push(requestedRepo.toLowerCase());
-        return true;
+        const ghData = await ghRes.json();
+        // REQUIRE push (write) or admin permission — public read access does NOT constitute tenant tenancy!
+        const canWrite = Boolean(ghData.permissions?.push || ghData.permissions?.admin);
+        if (canWrite) {
+          req.session.authorizedReposCache.push(requestedRepo.toLowerCase());
+          return true;
+        }
       }
     } catch {
       // Network or GitHub API error - fallback to false
@@ -2396,7 +2413,7 @@ app.get('/api/auth/github', (req, res) => {
   const params = new URLSearchParams({
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: GITHUB_CALLBACK_URL,
-    scope: 'repo read:user read:org user:email',
+    scope: 'repo workflow read:user read:org user:email',
     state
   });
 
@@ -3006,6 +3023,15 @@ app.post('/api/github/repos/:owner/:repo/init-adr', githubActionLimiter, async (
 app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req, res) => {
   const token = req.session?.user?.accessToken;
   const { owner, repo } = req.params;
+  const repoFullName = `${owner}/${repo}`;
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  if (!hasAccess) {
+    return res.status(403).json({
+      success: false,
+      code: 'FORBIDDEN',
+      error: 'You do not have permission to verify actions against this repository.'
+    });
+  }
   const { decisionId, targetFile, branch } = req.body || {};
   const actionBranch = sanitizeBranchName(branch, 'main');
 
@@ -3921,7 +3947,7 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
  * POST /api/github/webhook
  * Real GitHub repository webhook receiver for push and pull_request events.
  */
-app.post('/api/github/webhook', async (req, res) => {
+const handleGithubWebhook = async (req, res) => {
   const event = req.headers['x-github-event'];
   const signature = req.headers['x-hub-signature-256'];
   const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
@@ -4105,7 +4131,10 @@ app.post('/api/github/webhook', async (req, res) => {
       console.error('[CAVDAX Webhook] Error during background alert dispatch:', err.message);
     }
   });
-});
+};
+
+app.post('/api/github/webhook', handleGithubWebhook);
+app.post('/api/webhooks/github', handleGithubWebhook);
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {

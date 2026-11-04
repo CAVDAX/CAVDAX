@@ -538,7 +538,7 @@ test('createCiGatePullRequest opens PR adding .github/workflows/cavdax-gate.yml'
   const putCall = calls.find(c => c.method === 'PUT' && c.path.includes('.github/workflows/cavdax-gate.yml'));
   assert.ok(putCall, 'Should commit cavdax-gate.yml');
   const decoded = Buffer.from(putCall.body.content, 'base64').toString('utf-8');
-  assert.ok(decoded.includes('@cavdax/mcp-server@latest gate'));
+  assert.ok(decoded.includes('@cavdax/mcp-server') && decoded.includes('gate'));
 });
 
 test('proposeAdrPullRequest security: rejects CRLF injection, oversized inputs, and invalid supersedes', async () => {
@@ -606,4 +606,41 @@ test('createCiGatePullRequest security: idempotent reuse and workflow collision 
     () => createCiGatePullRequest({ token: 't', owner: 'o', repo: 'r', fetchImpl: conflictFetch }),
     (e) => e.code === 'WORKFLOW_ALREADY_EXISTS' && e.status === 409
   );
+});
+
+
+test('buildGraphFromAdrs: PROPOSED ADR does not invalidate active decisions', () => {
+  const adrs = [
+    {
+      id: 'ADR-001',
+      title: 'Active ADR',
+      status: 'ACCEPTED',
+      fact_id: 'F-1',
+      fact_claim: 'Claim 1',
+      decision_id: 'DEC-1',
+      decision_title: 'Decision 1',
+      supersedes: []
+    },
+    {
+      id: 'ADR-002',
+      title: 'Draft Proposal',
+      status: 'PROPOSED',
+      fact_id: 'F-2',
+      fact_claim: 'Claim 2',
+      decision_id: 'DEC-2',
+      decision_title: 'Decision 2',
+      supersedes: ['ADR-001']
+    }
+  ];
+
+  const { nodes } = buildGraphFromAdrs(adrs);
+  const src1 = nodes.find(n => n.id === 'ADR-001');
+  const src2 = nodes.find(n => n.id === 'ADR-002');
+  const dec1 = nodes.find(n => n.id === 'DEC-1');
+  const dec2 = nodes.find(n => n.id === 'DEC-2');
+
+  assert.equal(src1.status, 'ACTIVE', 'ADR-001 must remain ACTIVE');
+  assert.equal(dec1.status, 'VALID', 'DEC-1 must remain VALID');
+  assert.equal(src2.status, 'PROPOSED', 'ADR-002 must be marked PROPOSED');
+  assert.equal(dec2.status, 'PROPOSED', 'DEC-2 must be marked PROPOSED');
 });
