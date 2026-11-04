@@ -713,3 +713,272 @@ export async function listRepoBranches({ token, owner, repo, fetchImpl = fetch }
     protected: Boolean(b.protected)
   }));
 }
+
+
+/**
+ * Opens a pull request proposing a new Architecture Decision Record (ADR).
+ * Creates a dedicated branch, commits the formatted MADR markdown file, and opens a PR.
+ */
+export async function proposeAdrPullRequest({
+  token,
+  owner,
+  repo,
+  title,
+  context,
+  decision,
+  consequences = '',
+  supersedes = null,
+  fetchImpl = fetch,
+  now = new Date()
+}) {
+  assertRepoName(owner, repo);
+  if (!title || typeof title !== 'string' || !title.trim()) {
+    throw new GithubAdrError(400, 'INVALID_TITLE', 'ADR title is required.');
+  }
+  if (/[\r\n]/.test(title)) {
+    throw new GithubAdrError(400, 'INVALID_TITLE', 'ADR title cannot contain newline characters.');
+  }
+  const cleanTitle = title.replace(/[\x00-\x1f\x7f]/g, '').trim();
+  if (cleanTitle.length < 3 || cleanTitle.length > 200) {
+    throw new GithubAdrError(400, 'INVALID_TITLE', 'ADR title must be between 3 and 200 characters.');
+  }
+  if (!decision || typeof decision !== 'string' || !decision.trim()) {
+    throw new GithubAdrError(400, 'INVALID_DECISION', 'ADR decision statement is required.');
+  }
+  if (decision.length > 20000) {
+    throw new GithubAdrError(400, 'INVALID_DECISION', 'ADR decision statement exceeds maximum allowed size of 20,000 characters.');
+  }
+  if (context && (typeof context !== 'string' || context.length > 20000)) {
+    throw new GithubAdrError(400, 'INVALID_CONTEXT', 'ADR context exceeds maximum allowed size of 20,000 characters.');
+  }
+  if (consequences && (typeof consequences !== 'string' || consequences.length > 20000)) {
+    throw new GithubAdrError(400, 'INVALID_CONSEQUENCES', 'ADR consequences exceeds maximum allowed size of 20,000 characters.');
+  }
+
+  let cleanSupersedes = null;
+  if (supersedes !== null && supersedes !== undefined && String(supersedes).trim()) {
+    const rawSup = String(supersedes).trim();
+    if (!/^[A-Za-z0-9_-]{1,64}$/.test(rawSup)) {
+      throw new GithubAdrError(400, 'INVALID_SUPERSEDES', 'Invalid supersedes reference format. Must be an alphanumeric ADR identifier (e.g. ADR-001).');
+    }
+    cleanSupersedes = rawSup;
+  }
+
+  const scan = await scanWithTree({ token, owner, repo, fetchImpl });
+  const base = scan.branch;
+
+  // Determine next sequential ADR number
+  let maxNum = 0;
+  for (const adr of scan.adrs) {
+    const match = (adr.id || '').match(/ADR-(\d+)/i);
+    if (match) {
+      const num = parseInt(match[1], 10);
+      if (!isNaN(num) && num > maxNum) maxNum = num;
+    }
+  }
+  const nextNum = maxNum + 1;
+  const adrId = `ADR-${String(nextNum).padStart(3, '0')}`;
+  
+  // Create URL-friendly slug from title (capped at 40 chars to prevent git/filesystem path overflows)
+  const slug = cleanTitle.toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40)
+    .replace(/-+$/, '') || 'decision';
+  
+  const targetDir = scan.adrs.length > 0
+    ? (scan.adrs[0].path.startsWith('docs/adrs') ? 'docs/adrs' : (scan.adrs[0].path.startsWith('docs/decisions') ? 'docs/decisions' : 'docs/adrs'))
+    : 'docs/adrs';
+  const filePath = `${targetDir}/${adrId}-${slug}.md`;
+
+  const dateIso = now.toISOString().slice(0, 10);
+  const safeFrontmatterTitle = cleanTitle.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  const frontmatterLines = [
+    '---',
+    `id: ${adrId}`,
+    `title: "${safeFrontmatterTitle}"`,
+    'status: PROPOSED',
+    `date: ${dateIso}`
+  ];
+  if (cleanSupersedes) {
+    frontmatterLines.push(`supersedes: ${cleanSupersedes}`);
+  }
+  frontmatterLines.push('---');
+
+  const adrMarkdown = `${frontmatterLines.join('\n')}
+
+# ${adrId}: ${cleanTitle}
+
+## Status
+PROPOSED
+
+## Context and Problem Statement
+${(context && context.trim()) ? context.trim() : 'Document the architectural context and driving requirements.'}
+
+## Decision Outcome
+${decision.trim()}
+
+## Consequences
+${(consequences && consequences.trim()) ? consequences.trim() : 'Active system invariants and downstream architectural impacts.'}
+`;
+
+  const baseRef = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/ref/heads/${enc(base)}`);
+  const baseSha = baseRef.object.sha;
+
+  let branch = `cavdax/propose-${adrId.toLowerCase()}`;
+  try {
+    await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
+  } catch (err) {
+    if (err.code !== 'UNPROCESSABLE') throw err;
+    branch = `cavdax/propose-${adrId.toLowerCase()}-${now.getTime().toString(36)}`;
+    await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
+  }
+
+  await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(filePath)}`, {
+    message: `docs: propose ${adrId} - ${title.trim()}`,
+    content: Buffer.from(adrMarkdown, 'utf-8').toString('base64'),
+    branch
+  });
+
+  const prBody = `## CAVDAX Proposed Architecture Decision Record (${adrId})
+
+This pull request was drafted via the **CAVDAX Architectural Console**.
+
+- **Decision ID:** \`${adrId}\`
+- **Title:** ${title.trim()}
+- **File:** \`${filePath}\`
+${supersedes ? `- **Supersedes:** \`${supersedes.trim()}\`` : ''}
+
+### Decision Outcome
+> ${decision.trim()}
+
+---
+*Created automatically by [CAVDAX](https://cavdax.sahnirmaan.live) Continuous Architectural Validation Engine.*`;
+
+  const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
+    title: `Propose ${adrId}: ${title.trim()}`,
+    head: branch,
+    base,
+    body: prBody
+  });
+
+  return {
+    number: pr.number,
+    url: pr.html_url,
+    branch,
+    path: filePath,
+    adrId,
+    base,
+    reused: false
+  };
+}
+
+
+/**
+ * Opens a pull request that adds .github/workflows/cavdax-gate.yml
+ * to enforce deterministic architectural invariants on Pull Requests in CI.
+ */
+export async function createCiGatePullRequest({
+  token,
+  owner,
+  repo,
+  fetchImpl = fetch,
+  now = new Date()
+}) {
+  assertRepoName(owner, repo);
+  const scan = await scanWithTree({ token, owner, repo, fetchImpl });
+  const base = scan.branch;
+
+  const workflowPath = '.github/workflows/cavdax-gate.yml';
+
+  // Security & Conflict check: Refuse if workflow already exists in default branch tree
+  const alreadyExists = (scan.tree || []).some(t => t.path === workflowPath);
+  if (alreadyExists) {
+    throw new GithubAdrError(409, 'WORKFLOW_ALREADY_EXISTS', 'CAVDAX CI verification workflow already exists on this repository.');
+  }
+
+  // Idempotency check: Reuse existing open CI Gate pull request if already active
+  const openPulls = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/pulls?state=open&per_page=100`);
+  const existingPr = (Array.isArray(openPulls) ? openPulls : []).find(p => typeof p.head?.ref === 'string' && p.head.ref.startsWith('cavdax/ci-architecture-gate'));
+  if (existingPr) {
+    return {
+      number: existingPr.number,
+      url: existingPr.html_url,
+      branch: existingPr.head.ref,
+      path: workflowPath,
+      base,
+      reused: true
+    };
+  }
+  const workflowContent = `name: CAVDAX Architectural Gate
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  cavdax-gate:
+    name: Verify Architectural Invariants
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run CAVDAX Invariant Gate Check
+        run: npx -y @cavdax/mcp-server@latest gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        env:
+          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
+          CAVDAX_SERVER_URL: https://cavdax.sahnirmaan.live
+`;
+
+  const baseRef = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/ref/heads/${enc(base)}`);
+  const baseSha = baseRef.object.sha;
+
+  let branch = 'cavdax/ci-architecture-gate';
+  try {
+    await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
+  } catch (err) {
+    if (err.code !== 'UNPROCESSABLE') throw err;
+    branch = `cavdax/ci-architecture-gate-${now.getTime().toString(36)}`;
+    await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
+  }
+
+  await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(workflowPath)}`, {
+    message: 'ci: add CAVDAX architectural verification gate workflow',
+    content: Buffer.from(workflowContent, 'utf-8').toString('base64'),
+    branch
+  });
+
+  const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
+    title: 'Add CAVDAX CI Architectural Verification Gate',
+    head: branch,
+    base,
+    body: `## CAVDAX Continuous Architectural Gate
+
+This pull request installs the **CAVDAX Invariant Verification Gate** as a GitHub Actions workflow.
+
+### What this does:
+1. Runs automatically on every pull request targeting your default branch.
+2. Validates proposed code changes against accepted Architecture Decision Records (ADRs).
+3. Hard-blocks autonomous AI agents and pull requests from merging if they violate system boundaries or introduce circular dependencies.
+
+Once merged, generate a CAVDAX API Key in your console and add it to repository secrets as \`CAVDAX_API_KEY\`.
+
+---
+*Created automatically by [CAVDAX](https://cavdax.sahnirmaan.live) Continuous Architectural Validation Engine.*`
+  });
+
+  return {
+    number: pr.number,
+    url: pr.html_url,
+    branch,
+    path: workflowPath,
+    base,
+    reused: false
+  };
+}

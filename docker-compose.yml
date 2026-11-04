@@ -32,7 +32,7 @@ services:
     ports:
       - "3001:3000"
     volumes:
-      - server-sessions:/app/apps/server/data/sessions
+      - server-data:/app/apps/server/data
     depends_on:
       falkordb:
         condition: service_healthy
@@ -57,5 +57,5 @@ services:
 volumes:
   falkordb-data:
     driver: local
-  server-sessions:
+  server-data:
     driver: local
