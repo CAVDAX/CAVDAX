@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Play, Terminal, AlertTriangle, CheckCircle2, RefreshCw, ShieldCheck, FileCode } from 'lucide-react';
+import { Play, Terminal, AlertTriangle, CheckCircle2, RefreshCw, FileCode, X, Cpu } from 'lucide-react';
 import { playClick, playRejectBuzz, playApprovalChime } from '../utils/soundFx';
 
-export default function McpActionPlayground({ onRunCustomAction }) {
+export default function McpActionPlayground({ onRunCustomAction, repo = null, decisions = [], onClose = null }) {
   const [activeTool, setActiveTool] = useState('check_intent_clearance'); // 'check_intent_clearance' | 'apply_code_change'
   const [decisionId, setDecisionId] = useState('DEC-102');
   const [filePath, setFilePath] = useState('src/services/payment.js');
@@ -133,7 +133,7 @@ export default function McpActionPlayground({ onRunCustomAction }) {
               : 'text-slate-400 hover:text-white'
           }`}
         >
-          <ShieldCheck className="w-3.5 h-3.5" />
+          <CheckCircle2 className="w-3.5 h-3.5" />
           <span>Pre-Flight Clearance</span>
         </button>
         <button
@@ -200,7 +200,7 @@ export default function McpActionPlayground({ onRunCustomAction }) {
               type="text"
               value={proposedAction}
               onChange={(e) => setProposedAction(e.target.value)}
-              className="w-full px-2.5 py-2 rounded-lg bg-[#060709] border border-white/10 text-white font-mono focus:outline-none focus:border-white/30 text-xs"
+              className="w-full px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-[#060709] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-slate-400 dark:focus:border-white/30 text-xs"
               placeholder="Describe proposed implementation before wasting tokens..."
               required
             />
@@ -217,7 +217,7 @@ export default function McpActionPlayground({ onRunCustomAction }) {
               value={codeSnippet}
               onChange={(e) => setCodeSnippet(e.target.value)}
               rows={3}
-              className="w-full p-2.5 rounded-lg bg-[#060709] border border-white/10 text-white font-mono focus:outline-none focus:border-white/30 text-xs leading-relaxed resize-none"
+              className="w-full p-2.5 rounded-lg bg-slate-50 dark:bg-[#060709] border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-slate-400 dark:focus:border-white/30 text-xs leading-relaxed resize-none"
               required
             />
           </div>
@@ -232,7 +232,7 @@ export default function McpActionPlayground({ onRunCustomAction }) {
           <button
             type="submit"
             disabled={isRunning}
-            className="px-4 py-2 rounded-lg bg-white text-black font-bold hover:bg-slate-200 transition-all flex items-center gap-1.5 tactile-btn disabled:opacity-50 text-xs"
+            className="px-4 py-2 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold hover:opacity-90 transition-all flex items-center gap-1.5 tactile-btn disabled:opacity-50 text-xs cursor-pointer"
           >
             {isRunning ? (
               <>
@@ -241,7 +241,7 @@ export default function McpActionPlayground({ onRunCustomAction }) {
               </>
             ) : isClearanceMode ? (
               <>
-                <ShieldCheck className="w-3.5 h-3.5" />
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Check Intent Clearance</span>
               </>
             ) : (
