@@ -260,6 +260,27 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
 
 
 
+0y. **Published Package Immutability, Exact-Pin Workflow Alignment & Registry Synchronization Law**:
+   - **The Registry Immutability & Phantom Resolution Trap**:
+     - Public package registries (`npm`, `pypi`) and release artifacts are strictly immutable and append-only.
+     - Modifying code in a monorepo subpackage (such as `apps/mcp-server`) and pushing git commits changes repository source code, but does NOT update what external CI runners or developer IDEs download via `npx -y @cavdax/mcp-server@<version>`.
+     - If CI workflow templates or client setup modals pin an exact version (e.g. `@1.2.4`) that was published prior to a bugfix, CI runners will continue downloading the stale, defective tarball regardless of what is on `main`.
+   - **The Triple-Surface Version Triangulation Invariant**:
+     Whenever a package's behavior or CLI contract is updated, three surfaces MUST be updated in strict atomic lockstep:
+     1. **Surface A (Source Manifest)**: `apps/<package>/package.json` -> increment `"version": "X.Y.Z"`.
+     2. **Surface B (Consumer Templates & UI Snippets)**: Update all generated workflow templates (`githubAdr.js`), client connection modals (`ConnectedRepoWorkspace.jsx`, `ConnectMcpPage.jsx`), and quickstart documentation to reference the exact new version `X.Y.Z`.
+     3. **Surface C (Distribution Registry & GitHub Release)**: Tag the commit and cut the GitHub Release (`gh release create vX.Y.Z`), followed by publishing to the npm registry (`npm publish`).
+   - **Zero Phantom Version References & Verification Gate**:
+     - Never point workflow generators, README quickstarts, or user-facing setup modals to a version tag without verifying or immediately completing the corresponding GitHub release and registry publication.
+     - Before closing a release or deployment milestone, verify release parity across all surfaces:
+       ```bash
+       gh release list
+       npm view @cavdax/mcp-server version
+       ```
+     - If a version bump is committed to source, the GitHub Release and package distribution step must be verified or explicitly flagged, preventing split-brain version drift.
+
+
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.
