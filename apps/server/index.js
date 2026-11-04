@@ -658,7 +658,13 @@ function sanitizeBroadcastPayload(eventType, payload) {
 function broadcastEvent(eventType, rawPayload, options = {}) {
   const payload = sanitizeBroadcastPayload(eventType, rawPayload);
   const data = JSON.stringify({ type: eventType, data: payload, timestamp: Date.now() });
-  const targetRepo = options.repo || rawPayload?.repo || rawPayload?.action?.repo || null;
+  let targetRepo = options.repo || rawPayload?.repo || rawPayload?.action?.repo || null;
+  if (!targetRepo && Array.isArray(rawPayload?.nodes)) {
+    const customRepoNode = rawPayload.nodes.find(n => n.repo && n.repo !== 'demo');
+    if (customRepoNode) {
+      targetRepo = customRepoNode.repo;
+    }
+  }
 
   for (const client of sseClients) {
     try {
@@ -2844,36 +2850,68 @@ export function sanitizeBranchName(branch, fallback = 'main') {
 }
 
 app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
-  const token = req.session?.user?.accessToken;
-  if (!token) {
-    return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
+  const authHeader = req.headers['authorization'] || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  const apiKey = bearerToken || req.headers['x-cavdax-api-key'] || null;
+
+  let isApiKeyAuth = false;
+  let authUser = null;
+
+  if (API_TOKEN && apiKey && timingSafeStringEqual(apiKey, API_TOKEN)) {
+    isApiKeyAuth = true;
+    authUser = { login: 'system', tier: 'enterprise', role: 'admin' };
+  } else if (apiKey && apiKey.startsWith('cvdx_live_')) {
+    const keyHash = hashApiKey(apiKey);
+    const keyRecord = userApiKeyRegistry.get(keyHash);
+    if (keyRecord && (keyRecord.createdAt || 0) >= globalKeyRevocationEpoch) {
+      isApiKeyAuth = true;
+      authUser = {
+        userId: keyRecord.userId,
+        login: keyRecord.login,
+        tier: keyRecord.tier || 'free',
+        role: 'user'
+      };
+    }
   }
+
+  const token = req.session?.user?.accessToken || process.env.GITHUB_TOKEN || null;
+
+  // Must have either GitHub OAuth session or a valid CAVDAX API key (or local dev mode)
+  if (!req.session?.user && !isApiKeyAuth) {
+    if (process.env.NODE_ENV !== 'production' && !API_TOKEN && userApiKeyRegistry.size === 0) {
+      // Local development without keys configured
+    } else {
+      return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'Authentication required. Provide a valid session cookie or CAVDAX Bearer API key.' });
+    }
+  }
+
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`.toLowerCase();
 
-  const sessionTier = req.session?.tier || req.session?.user?.tier;
+  const sessionTier = req.session?.tier || req.session?.user?.tier || authUser?.tier;
   const effectiveTier = globalHackathonMode ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
   const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 10 : -1);
 
-  if (req.session) {
-    if (!Array.isArray(req.session.connectedRepos)) {
-      req.session.connectedRepos = [];
-    }
-    if (!req.session.connectedRepos.includes(repoFullName)) {
-      if (repoLimit !== -1 && req.session.connectedRepos.length >= repoLimit) {
-        return res.status(403).json({
-          success: false,
-          code: 'TIER_REPO_LIMIT_EXCEEDED',
-          error: `Plan limit reached: ${effectiveTier === 'free' ? 'Community' : 'Pro'} tier allows up to ${repoLimit} connected repository. Upgrade to Pro Autonomous or Enterprise to connect additional repositories.`
-        });
-      }
-      req.session.connectedRepos.push(repoFullName);
-    }
-  }
-
   const requestedBranch = sanitizeBranchName(req.query.branch, null);
   try {
-    const result = await scanRepoAdrs({ token, owner, repo, branch: requestedBranch || undefined });
+    const result = await scanRepoAdrs({ token: token || undefined, owner, repo, branch: requestedBranch || undefined });
+
+    // ONLY after successful scan, track connected repo in session with limit enforcement
+    if (req.session) {
+      if (!Array.isArray(req.session.connectedRepos)) {
+        req.session.connectedRepos = [];
+      }
+      if (!req.session.connectedRepos.includes(repoFullName)) {
+        if (repoLimit !== -1 && req.session.connectedRepos.length >= repoLimit) {
+          return res.status(403).json({
+            success: false,
+            code: 'TIER_REPO_LIMIT_EXCEEDED',
+            error: `Plan limit reached: ${effectiveTier === 'free' ? 'Community' : 'Pro'} tier allows up to ${repoLimit} connected repository. Upgrade to Pro Autonomous or Enterprise to connect additional repositories.`
+          });
+        }
+        req.session.connectedRepos.push(repoFullName);
+      }
+    }
     const repoFullName = `${owner}/${repo}`;
     const targetBranch = sanitizeBranchName(requestedBranch || 'main');
     // Scope persisted actions to BOTH repository and active branch to prevent cross-branch leakage
@@ -3021,7 +3059,7 @@ app.post('/api/github/repos/:owner/:repo/init-adr', githubActionLimiter, async (
  * Records the resulting AgentAction in the persistent audit trail with real measured latency.
  */
 app.post('/api/github/repos/:owner/:repo/verify-action', requireAuth, async (req, res) => {
-  const token = req.session?.user?.accessToken;
+  const token = req.session?.user?.accessToken || process.env.GITHUB_TOKEN || null;
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`;
   const hasAccess = await verifyUserRepoAccess(req, repoFullName);
