@@ -67,21 +67,39 @@ export function buildGraphFromAdrs(adrs) {
   const decisions = new Map();
 
   for (const adr of adrs) {
-    sources.set(adr.id, { id: adr.id, label: 'Source', title: `${adr.id}: ${adr.title}`, status: 'ACTIVE', file: adr.path, adr_path: adr.path });
+    const isProposed = String(adr.status || '').toUpperCase().includes('PROPOSED');
+    sources.set(adr.id, {
+      id: adr.id,
+      label: 'Source',
+      title: `${adr.id}: ${adr.title}`,
+      status: isProposed ? 'PROPOSED' : 'ACTIVE',
+      file: adr.path,
+      adr_path: adr.path
+    });
     if (adr.fact_id && adr.fact_claim) {
-      facts.set(adr.fact_id, { id: adr.fact_id, label: 'Fact', title: adr.fact_claim, status: 'VALID', is_stale: false, from: adr.id, file: adr.path, adr_path: adr.path });
+      facts.set(adr.fact_id, {
+        id: adr.fact_id,
+        label: 'Fact',
+        title: adr.fact_claim,
+        status: isProposed ? 'PROPOSED' : 'VALID',
+        is_stale: false,
+        from: adr.id,
+        file: adr.path,
+        adr_path: adr.path
+      });
       edges.push({ source: adr.fact_id, target: adr.id, type: 'EXTRACTED_FROM' });
     }
   }
 
   for (const adr of adrs) {
     if (adr.decision_id && adr.fact_id && facts.has(adr.fact_id)) {
+      const isProposed = String(adr.status || '').toUpperCase().includes('PROPOSED');
       const derivedTarget = adr.target_file || adr.path || null;
       decisions.set(adr.decision_id, {
         id: adr.decision_id,
         label: 'Decision',
         title: adr.decision_title || adr.decision_id,
-        status: 'VALID',
+        status: isProposed ? 'PROPOSED' : 'VALID',
         on: adr.fact_id,
         source_adr: adr.id,
         adr_path: adr.path,
@@ -93,6 +111,10 @@ export function buildGraphFromAdrs(adrs) {
   }
 
   for (const adr of adrs) {
+    // Architectural Invariant: A PROPOSED ADR is an open draft or pull request.
+    // It must NOT actively supersede or invalidate approved architecture records!
+    if (String(adr.status || '').toUpperCase().includes('PROPOSED')) continue;
+
     for (const oldId of adr.supersedes) {
       const old = sources.get(oldId);
       if (!old || oldId === adr.id) continue;
@@ -834,43 +856,60 @@ ${(consequences && consequences.trim()) ? consequences.trim() : 'Active system i
     await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
   }
 
-  await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(filePath)}`, {
-    message: `docs: propose ${adrId} - ${title.trim()}`,
-    content: Buffer.from(adrMarkdown, 'utf-8').toString('base64'),
-    branch
-  });
+  try {
+    const cleanTitle = title.trim().replace(/[\r\n\t]/g, ' ');
+    await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(filePath)}`, {
+      message: `docs: propose ${adrId} - ${cleanTitle}`,
+      content: Buffer.from(adrMarkdown, 'utf-8').toString('base64'),
+      branch
+    });
 
-  const prBody = `## CAVDAX Proposed Architecture Decision Record (${adrId})
+    const cleanDecisionQuote = decision
+      .trim()
+      .split('\n')
+      .map(line => `> ${line.replace(/@([a-zA-Z0-9_-]+)/g, '@<!-- -->$1')}`)
+      .join('\n');
+
+    const prBody = `## CAVDAX Proposed Architecture Decision Record (${adrId})
 
 This pull request was drafted via the **CAVDAX Architectural Console**.
 
 - **Decision ID:** \`${adrId}\`
-- **Title:** ${title.trim()}
+- **Title:** ${cleanTitle}
 - **File:** \`${filePath}\`
 ${supersedes ? `- **Supersedes:** \`${supersedes.trim()}\`` : ''}
 
 ### Decision Outcome
-> ${decision.trim()}
+${cleanDecisionQuote}
 
 ---
 *Created automatically by [CAVDAX](https://cavdax.sahnirmaan.live) Continuous Architectural Validation Engine.*`;
 
-  const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
-    title: `Propose ${adrId}: ${title.trim()}`,
-    head: branch,
-    base,
-    body: prBody
-  });
+    const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
+      title: `Propose ${adrId}: ${cleanTitle}`,
+      head: branch,
+      base,
+      body: prBody
+    });
 
-  return {
-    number: pr.number,
-    url: pr.html_url,
-    branch,
-    path: filePath,
-    adrId,
-    base,
-    reused: false
-  };
+    return {
+      number: pr.number,
+      url: pr.html_url,
+      branch,
+      path: filePath,
+      adrId,
+      base,
+      reused: false
+    };
+  } catch (err) {
+    // Transactional cleanup: delete created branch if PUT or PR creation fails
+    try {
+      await gh(fetchImpl, token, 'DELETE', `/repos/${owner}/${repo}/git/refs/heads/${enc(branch)}`);
+    } catch {
+      // Best-effort cleanup, ignore ref delete errors
+    }
+    throw err;
+  }
 }
 
 
@@ -930,7 +969,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@latest gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: https://cavdax.sahnirmaan.live
@@ -948,17 +987,18 @@ jobs:
     await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/git/refs`, { ref: `refs/heads/${branch}`, sha: baseSha });
   }
 
-  await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(workflowPath)}`, {
-    message: 'ci: add CAVDAX architectural verification gate workflow',
-    content: Buffer.from(workflowContent, 'utf-8').toString('base64'),
-    branch
-  });
+  try {
+    await gh(fetchImpl, token, 'PUT', `/repos/${owner}/${repo}/contents/${enc(workflowPath)}`, {
+      message: 'ci: add CAVDAX architectural verification gate workflow',
+      content: Buffer.from(workflowContent, 'utf-8').toString('base64'),
+      branch
+    });
 
-  const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
-    title: 'Add CAVDAX CI Architectural Verification Gate',
-    head: branch,
-    base,
-    body: `## CAVDAX Continuous Architectural Gate
+    const pr = await gh(fetchImpl, token, 'POST', `/repos/${owner}/${repo}/pulls`, {
+      title: 'Add CAVDAX CI Architectural Verification Gate',
+      head: branch,
+      base,
+      body: `## CAVDAX Continuous Architectural Gate
 
 This pull request installs the **CAVDAX Invariant Verification Gate** as a GitHub Actions workflow.
 
@@ -971,14 +1011,23 @@ Once merged, generate a CAVDAX API Key in your console and add it to repository 
 
 ---
 *Created automatically by [CAVDAX](https://cavdax.sahnirmaan.live) Continuous Architectural Validation Engine.*`
-  });
+    });
 
-  return {
-    number: pr.number,
-    url: pr.html_url,
-    branch,
-    path: workflowPath,
-    base,
-    reused: false
-  };
+    return {
+      number: pr.number,
+      url: pr.html_url,
+      branch,
+      path: workflowPath,
+      base,
+      reused: false
+    };
+  } catch (err) {
+    // Transactional cleanup: delete created branch if PUT or PR creation fails
+    try {
+      await gh(fetchImpl, token, 'DELETE', `/repos/${owner}/${repo}/git/refs/heads/${enc(branch)}`);
+    } catch {
+      // Best-effort cleanup
+    }
+    throw err;
+  }
 }
