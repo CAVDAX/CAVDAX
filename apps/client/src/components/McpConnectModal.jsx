@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Terminal, ExternalLink, KeyRound, Lock } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
+import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
 export default function McpConnectModal({ isOpen, onClose }) {
   const [copiedKey, setCopiedKey] = useState(null);
@@ -181,7 +182,7 @@ export default function McpConnectModal({ isOpen, onClose }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[11px] font-mono uppercase font-bold text-slate-400">
             <span>Exposed MCP Tools (6 Registered Tools)</span>
-            <span className="text-amber-400/90 lowercase text-[10px]">v1.2.0 spec</span>
+            <span className="text-amber-400/90 lowercase text-[10px]">v{MCP_SERVER_DEFAULT_VERSION} spec</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-left">
             <div className="p-2 rounded-lg bg-white/[0.02] border border-white/10">
