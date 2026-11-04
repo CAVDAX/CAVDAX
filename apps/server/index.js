@@ -436,7 +436,7 @@ function extractClientIp(req) {
   const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '1' || socketIp === 'localhost' || socketIp === '::1';
 
   // Only inspect forwarding headers if request arrives through a reverse proxy or explicit trust proxy mode
-  if (isDirectLoopback || process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true') {
+  if (isDirectLoopback || process.env.TRUST_PROXY === 'true') {
     const cfIp = req.headers['cf-connecting-ip'] || req.headers['true-client-ip'];
     if (cfIp) {
       const clean = (typeof cfIp === 'string' ? cfIp.trim() : cfIp[0]).toLowerCase();

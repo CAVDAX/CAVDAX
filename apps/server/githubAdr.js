@@ -792,7 +792,7 @@ export async function proposeAdrPullRequest({
   const scan = await scanWithTree({ token, owner, repo, fetchImpl });
   const base = scan.branch;
 
-  // Determine next sequential ADR number
+  // Determine next sequential ADR number across both committed ADRs and in-flight open PR proposals
   let maxNum = 0;
   for (const adr of scan.adrs) {
     const match = (adr.id || '').match(/ADR-(\d+)/i);
@@ -801,6 +801,25 @@ export async function proposeAdrPullRequest({
       if (!isNaN(num) && num > maxNum) maxNum = num;
     }
   }
+
+  // Scan open PRs to prevent race condition collisions across simultaneous proposals
+  try {
+    const openPulls = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/pulls?state=open&per_page=50`);
+    if (Array.isArray(openPulls)) {
+      for (const pr of openPulls) {
+        const branchName = pr.head?.ref || '';
+        const prTitle = pr.title || '';
+        const match = (branchName + ' ' + prTitle).match(/ADR-(\d+)/i);
+        if (match) {
+          const num = parseInt(match[1], 10);
+          if (!isNaN(num) && num > maxNum) maxNum = num;
+        }
+      }
+    }
+  } catch {
+    // Non-blocking fallback if pulls endpoint is rate-limited or fails
+  }
+
   const nextNum = maxNum + 1;
   const adrId = `ADR-${String(nextNum).padStart(3, '0')}`;
   
@@ -972,7 +991,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@1.2.4 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: https://cavdax.sahnirmaan.live

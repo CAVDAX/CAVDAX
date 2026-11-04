@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 // and verifies per-client tenant scoping of repo-scoped and graph-bearing SSE events.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SRC = fs.readFileSync(path.resolve(__dirname, '../index.js'), 'utf8');
+const SRC = fs.readFileSync(path.resolve(__dirname, '../index.js'), 'utf8').replace(/\r\n/g, '\n');
 
 function load() {
   const start = SRC.indexOf('function clientCanSeeRepo(');
