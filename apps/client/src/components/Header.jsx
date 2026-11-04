@@ -62,6 +62,15 @@ export default function Header({
   // Track scroll morphing state
   const prevScrolledRef = useRef(false);
 
+  // Sync theme SVG rotation with both manual click and keyboard shortcut (D)
+  const prevDarkThemeRef = useRef(isDarkTheme);
+  useEffect(() => {
+    if (prevDarkThemeRef.current !== isDarkTheme) {
+      setThemeRotation((prev) => prev + 360);
+      prevDarkThemeRef.current = isDarkTheme;
+    }
+  }, [isDarkTheme]);
+
   // Industry-Standard Container-Relative Horizontal Slider Tracking (Immune to scroll jumps & Y-flying)
   const tabRefs = useRef({});
   const [pillPosition, setPillPosition] = useState({ x: 0, width: 0, ready: false });
@@ -160,7 +169,6 @@ export default function Header({
 
   const handleToggleTheme = () => {
     playClick();
-    setThemeRotation(prev => prev + 360);
     if (onToggleTheme) onToggleTheme();
   };
 

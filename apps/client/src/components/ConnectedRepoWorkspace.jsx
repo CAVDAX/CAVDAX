@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
@@ -39,6 +39,48 @@ function splitFullName(fullName = '') {
   return { owner, name: rest.join('/') };
 }
 
+// Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
+function usePillTracker(activeKey) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    let rafId;
+    const update = () => {
+      const el = refs.current[activeKey];
+      if (el) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        setPosition((prev) => {
+          if (
+            prev.ready &&
+            prev.x === x &&
+            prev.y === y &&
+            prev.width === width &&
+            prev.height === height
+          ) {
+            return prev;
+          }
+          return { x, y, width, height, ready: true };
+        });
+      }
+    };
+
+    update();
+    rafId = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', update);
+    };
+  }, [activeKey]);
+
+  return { refs, position };
+}
+
 export default function ConnectedRepoWorkspace({
   repo,
   isDarkTheme,
@@ -59,6 +101,7 @@ export default function ConnectedRepoWorkspace({
   const [showProposeAdrModal, setShowProposeAdrModal] = useState(false);
   const [agentSetupTab, setAgentSetupTab] = useState('cursor');
   const [copiedSnippet, setCopiedSnippet] = useState(false);
+  const agentPill = usePillTracker(agentSetupTab);
   const [isOpeningCiGatePr, setIsOpeningCiGatePr] = useState(false);
   const [ciGatePrResult, setCiGatePrResult] = useState(null);
   const [isProposingAdr, setIsProposingAdr] = useState(false);
@@ -1146,12 +1189,12 @@ export default function ConnectedRepoWorkspace({
           <div
             onMouseDown={handleSplitterMouseDown}
             className={`hidden lg:flex w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
-              isDraggingSplitter ? 'bg-sky-500/20 dark:bg-sky-400/20' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
+              isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
             }`}
             title="Drag to adjust ADR Panel and Graph width"
           >
             <div className={`w-1 h-10 rounded-full transition-colors ${
-              isDraggingSplitter ? 'bg-sky-500' : 'bg-slate-300 dark:bg-white/20 group-hover:bg-slate-400 dark:group-hover:bg-white/40'
+              isDraggingSplitter ? 'bg-slate-900 dark:bg-white' : 'bg-slate-300 dark:bg-white/20 group-hover:bg-slate-400 dark:group-hover:bg-white/40'
             }`} />
           </div>
 
@@ -1185,7 +1228,7 @@ export default function ConnectedRepoWorkspace({
 
       {/* Confirmation modal before opening starter PR on external repo */}
       {showInitConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowInitConfirmModal(false); } }} className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
           <div className="max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
               <GitPullRequest className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1226,8 +1269,8 @@ export default function ConnectedRepoWorkspace({
 
       {/* 1. Contextual 1-Click Agent Setup Modal */}
       {showAgentSetupModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowAgentSetupModal(false); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <Terminal className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1245,8 +1288,21 @@ export default function ConnectedRepoWorkspace({
               Equip Cursor, Claude Code, Cline, or Windsurf with real-time architectural graph constraints for <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong> on branch <strong className="font-mono">{selectedBranch}</strong>.
             </p>
 
-            {/* Platform Selector Tabs with Framer Motion Sliding Pillbar */}
+            {/* Platform Selector Tabs with Container-Relative Slider Tracker (No Layout Flight) */}
             <div className="relative flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-xs font-mono">
+              {agentPill.position.ready && (
+                <motion.div
+                  initial={false}
+                  animate={{
+                    x: agentPill.position.x,
+                    y: agentPill.position.y,
+                    width: agentPill.position.width,
+                    height: agentPill.position.height,
+                  }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                  className="absolute bg-white dark:bg-white/15 rounded-lg shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                />
+              )}
               {[
                 { id: 'cursor', label: 'Cursor' },
                 { id: 'claude', label: 'Claude Code' },
@@ -1257,6 +1313,7 @@ export default function ConnectedRepoWorkspace({
                 return (
                   <button
                     key={tab.id}
+                    ref={(el) => { if (el) agentPill.refs.current[tab.id] = el; }}
                     type="button"
                     onClick={() => { playClick(); setAgentSetupTab(tab.id); setCopiedSnippet(false); }}
                     className={`relative flex-1 py-1.5 px-2 rounded-lg text-center transition-colors cursor-pointer font-bold z-10 ${
@@ -1265,27 +1322,68 @@ export default function ConnectedRepoWorkspace({
                         : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                     }`}
                   >
-                    {isActive && (
-                      <motion.div
-                        layoutId="agentSetupTabSlidingPill"
-                        transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                        className="absolute inset-0 bg-white dark:bg-white/15 rounded-lg shadow-xs border border-slate-300/60 dark:border-white/10 -z-10"
-                      />
-                    )}
                     <span>{tab.id.toUpperCase()}</span>
                   </button>
                 );
               })}
             </div>
 
-            {/* Snippet Display */}
-            <div className="relative">
-              <pre className="p-3.5 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto has-scrubbar leading-relaxed border border-slate-800">
+            {/* Snippet Display — Header bar with format indicator & Copy button completely eliminates text overlap */}
+            <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
+              <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800/80 bg-slate-900/90 text-[11px] font-mono text-slate-400">
+                <div className="flex items-center gap-2 min-w-0">
+                  {agentSetupTab === 'claude' ? (
+                    <Terminal className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                  ) : (
+                    <Code2 className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                  )}
+                  <span className="font-semibold text-slate-200 truncate">
+                    {agentSetupTab === 'claude'
+                      ? 'Terminal CLI Command'
+                      : agentSetupTab === 'cursor'
+                      ? 'Configuration File · .cursor/mcp.json'
+                      : agentSetupTab === 'cline'
+                      ? 'Configuration File · cline_mcp_settings.json'
+                      : 'Configuration File · mcp_config.json'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    const snippet = agentSetupTab === 'claude'
+                      ? `claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${window.location.origin}`
+                      : JSON.stringify({
+                          mcpServers: {
+                            cavdax: {
+                              command: "npx",
+                              args: ["-y", "@cavdax/mcp-server@^1.2.3", "--repo", repo.full_name, "--branch", selectedBranch],
+                              env: {
+                                CAVDAX_SERVER_URL: window.location.origin
+                              }
+                            }
+                          }
+                        }, null, 2);
+                    navigator.clipboard.writeText(snippet);
+                    setCopiedSnippet(true);
+                    setTimeout(() => setCopiedSnippet(false), 2000);
+                  }}
+                  className="px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0"
+                >
+                  {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedSnippet ? 'Copied' : 'Copy'}</span>
+                </button>
+              </div>
+
+              <pre
+                tabIndex={0}
+                className="p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-72 leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
+              >
                 {agentSetupTab === 'cursor' && JSON.stringify({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@latest", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", "@cavdax/mcp-server@^1.2.3", "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1293,13 +1391,13 @@ export default function ConnectedRepoWorkspace({
                   }
                 }, null, 2)}
 
-                {agentSetupTab === 'claude' && `claude mcp add cavdax npx -y @cavdax/mcp-server@latest --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
+                {agentSetupTab === 'claude' && `claude mcp add cavdax npx -y @cavdax/mcp-server@^1.2.3 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
 
                 {agentSetupTab === 'cline' && JSON.stringify({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@latest", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", "@cavdax/mcp-server@^1.2.3", "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1311,7 +1409,7 @@ export default function ConnectedRepoWorkspace({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@latest", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", "@cavdax/mcp-server@^1.2.3", "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1319,43 +1417,15 @@ export default function ConnectedRepoWorkspace({
                   }
                 }, null, 2)}
               </pre>
-
-              <button
-                onClick={() => {
-                  playClick();
-                  const snippet = agentSetupTab === 'claude'
-                    ? `claude mcp add cavdax npx -y @cavdax/mcp-server@latest --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${window.location.origin}`
-                    : JSON.stringify({
-                        mcpServers: {
-                          cavdax: {
-                            command: "npx",
-                            args: ["-y", "@cavdax/mcp-server@latest", "--repo", repo.full_name, "--branch", selectedBranch],
-                            env: {
-                              CAVDAX_SERVER_URL: window.location.origin
-                            }
-                          }
-                        }
-                      }, null, 2);
-                  navigator.clipboard.writeText(snippet);
-                  setCopiedSnippet(true);
-                  setTimeout(() => setCopiedSnippet(false), 2000);
-                }}
-                className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
-              >
-                {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copiedSnippet ? 'Copied' : 'Copy'}</span>
-              </button>
             </div>
-
-
           </div>
         </div>
       )}
 
       {/* 2. 1-Click CI Gate Modal */}
       {showCiGateModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <GitBranch className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1404,8 +1474,31 @@ export default function ConnectedRepoWorkspace({
               </div>
             ) : (
               <>
-                <div className="relative">
-                  <pre className="p-4 rounded-xl bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-80 sm:max-h-96 leading-relaxed border border-slate-800 select-text">
+                <div className="rounded-xl overflow-hidden border border-slate-800 bg-slate-950 shadow-inner">
+                  <div className="flex items-center justify-between px-3.5 py-2 border-b border-slate-800/80 bg-slate-900/90 text-[11px] font-mono text-slate-400">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Code2 className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                      <span className="font-semibold text-slate-200 truncate">.github/workflows/cavdax-gate.yml</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
+                        navigator.clipboard.writeText(yaml);
+                        setCopiedSnippet(true);
+                        setTimeout(() => setCopiedSnippet(false), 2000);
+                      }}
+                      className="px-2.5 py-1 rounded-md bg-white/10 hover:bg-white/20 text-white text-[10.5px] font-mono font-bold flex items-center gap-1.5 transition-colors cursor-pointer active:scale-95 shrink-0"
+                    >
+                      {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                      <span>{copiedSnippet ? 'Copied' : 'Copy YAML'}</span>
+                    </button>
+                  </div>
+                  <pre
+                    tabIndex={0}
+                    className="p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-80 sm:max-h-96 leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
+                  >
 {`name: CAVDAX Architectural Gate
 
 on:
@@ -1431,19 +1524,6 @@ jobs:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: ${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
                   </pre>
-                  <button
-                    onClick={() => {
-                      playClick();
-                      const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
-                      navigator.clipboard.writeText(yaml);
-                      setCopiedSnippet(true);
-                      setTimeout(() => setCopiedSnippet(false), 2000);
-                    }}
-                    className="absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-mono font-bold flex items-center gap-1 transition-colors cursor-pointer"
-                  >
-                    {copiedSnippet ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copiedSnippet ? 'Copied' : 'Copy YAML'}</span>
-                  </button>
                 </div>
 
                 <div className="flex items-center justify-between gap-3 pt-2">
@@ -1486,7 +1566,7 @@ jobs:
 
       {/* 3. In-Console ADR Authoring & Supersession Modal */}
       {showProposeAdrModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); } }} className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
