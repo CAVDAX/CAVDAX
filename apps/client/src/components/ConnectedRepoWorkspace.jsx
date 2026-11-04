@@ -18,7 +18,7 @@ import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
  */
 
 const btnBase =
-  'h-9 px-3 rounded-xl border text-xs font-mono font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed';
+  'h-9 px-3 rounded-xl border text-xs font-mono font-bold uppercase tracking-wide flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap shrink-0';
 const btnSecondary =
   `${btnBase} border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-white`;
 const btnPrimary =
@@ -1472,11 +1472,11 @@ jobs:
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between pt-2">
-                  <span className="text-[10px] font-mono text-slate-500">
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <span className="text-[10px] font-mono text-slate-500 truncate min-w-0">
                     File: .github/workflows/cavdax-gate.yml
                   </span>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={() => { playClick(); setShowCiGateModal(false); }}
@@ -1498,7 +1498,7 @@ jobs:
                       ) : (
                         <>
                           <GitPullRequest className="w-3.5 h-3.5" />
-                          <span>Open Pull Request on GitHub</span>
+                          <span>Create Pull Request</span>
                         </>
                       )}
                     </button>
