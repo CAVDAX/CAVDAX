@@ -3243,3 +3243,22 @@ function usePillTracker(activeKey) {
   ))}
 </div>
 ```
+
+### 50.3 The Locked Y-Bounds Rule for Sliding Pillbars (Eliminating Downward Drift)
+1. **The Downward Shift Defect**:
+   - When placing an absolutely positioned pill (`<motion.div className="absolute ...">`) inside a flexbox container with `align-items: center` (e.g. `relative flex items-center p-1 rounded-xl`), omitting `top-0 left-0` causes modern browsers (Chromium, WebKit, Gecko) to calculate the initial static layout position based on flex cross-axis alignment.
+   - When Framer Motion applies `transform: translateY(offsetTop)`, the transform is added *on top of* the flex static offset, shifting the pill downward (top margin appears ~8px while bottom margin touches or bleeds past the track).
+2. **The Invariable Architecture**:
+   - **For 1-Row Segmented Controls**:
+     - Hard-lock vertical bounds using CSS matching parent padding: `className="absolute top-1 bottom-1 left-0 rounded-lg pointer-events-none ..."`.
+     - Animate **ONLY** `x` and `width`:
+       ```jsx
+       animate={{
+         x: pill.position.x,
+         width: pill.position.width,
+       }}
+       ```
+     - Never animate `y` or `height` for single-row segmented controls. This guarantees 100% vertical centering ($5\text{px}$ top, $5\text{px}$ bottom) with zero subpixel rounding drift across all platforms.
+   - **For Multi-Row Wrapped Grids**:
+     - When tabs wrap across rows (e.g. `grid grid-cols-2 sm:grid-cols-4`), ALWAYS specify `className="absolute top-0 left-0 ..."`.
+     - Overriding static placement to `(0, 0)` ensures `transform: translate(x, y)` accurately maps to `offsetLeft` and `offsetTop` without compound offset doubling.
