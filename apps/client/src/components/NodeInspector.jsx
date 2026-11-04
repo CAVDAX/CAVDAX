@@ -292,12 +292,12 @@ export default function NodeInspector({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={playClick}
-                  className="flex items-center gap-1.5 text-slate-800 hover:text-sky-600 dark:text-slate-200 dark:hover:text-sky-400 font-mono truncate text-[11px] group transition-colors no-underline"
+                  className="flex items-center gap-1.5 text-slate-800 hover:text-slate-950 dark:text-slate-200 dark:hover:text-white font-mono truncate text-[11px] group transition-colors no-underline"
                   title={`Open ${affectedCodeFiles[0]} on GitHub`}
                 >
-                  <FileCode2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-500 shrink-0" />
+                  <FileCode2 className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white shrink-0" />
                   <span className="truncate underline underline-offset-2">{affectedCodeFiles[0]}</span>
-                  <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-sky-500 shrink-0 ml-auto opacity-70 group-hover:opacity-100" />
+                  <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white shrink-0 ml-auto opacity-70 group-hover:opacity-100" />
                 </a>
               ) : (
                 <span className="text-slate-800 hover:text-black dark:text-slate-200 dark:hover:text-white font-mono truncate block text-[11px]" title={affectedCodeFiles[0]}>
@@ -318,14 +318,14 @@ export default function NodeInspector({
                       target="_blank"
                       rel="noopener noreferrer"
                       onClick={playClick}
-                      className="flex items-center justify-between gap-1.5 text-[10.5px] font-mono text-slate-700 hover:text-sky-600 dark:text-slate-300 dark:hover:text-sky-400 bg-slate-50 dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/10 px-2 py-1 rounded border border-slate-200 dark:border-white/10 transition-colors no-underline group"
+                      className="flex items-center justify-between gap-1.5 text-[10.5px] font-mono text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white bg-slate-50 dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/10 px-2 py-1 rounded border border-slate-200 dark:border-white/10 transition-colors no-underline group"
                       title={`Open ${file} on GitHub`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
-                        <FileCode2 className="w-3 h-3 text-slate-400 group-hover:text-sky-500 shrink-0" />
+                        <FileCode2 className="w-3 h-3 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white shrink-0" />
                         <span className="truncate">{file}</span>
                       </div>
-                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-sky-500 shrink-0 opacity-70 group-hover:opacity-100" />
+                      <ExternalLink className="w-3 h-3 text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white shrink-0 opacity-70 group-hover:opacity-100" />
                     </a>
                   ) : (
                     <div key={fIdx} className="flex items-center gap-1.5 text-[10.5px] font-mono text-slate-700 dark:text-slate-300 truncate bg-slate-50 dark:bg-white/[0.03] px-2 py-1 rounded border border-slate-200 dark:border-white/10" title={file}>
