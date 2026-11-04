@@ -9,13 +9,14 @@
  * Designed for use in:
  *   - git pre-commit hooks: `npx cavdax check --staged`
  *   - GitHub Actions CI:    `npx cavdax check --pr ${{ github.event.pull_request.number }}`
+ *   - CAVDAX CI Gate:      `npx cavdax gate --sha <sha>`
  *
  * Only text-based source files are scanned for CAVDAX decision ID references.
  * Binary files, lock files, and generated assets are skipped to prevent false
  * positives and crashes from calling readFileSync on non-UTF-8 content.
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import path from 'path';
 import { connectGraph, closeQuietly, describeConnectError, falkorConfig, loadCore } from './runtime.js';
 
@@ -35,9 +36,9 @@ const SCANNABLE_EXTENSIONS = new Set([
 
 /**
  * Returns true if the file path should be scanned for decision ID references.
- * Excludes lock files explicitly regardless of extension.
+ * Excludes lock files and build artifacts explicitly regardless of extension.
  */
-function isScannableFile(filePath) {
+export function isScannableFile(filePath) {
   const normalized = filePath.replace(/\\/g, '/');
   const basename = path.basename(normalized);
 
@@ -52,15 +53,18 @@ function isScannableFile(filePath) {
     return false;
   }
 
-  // Exclude CAVDAX internal engine code, test suites, and scripts
+  // Exclude third-party dependencies, build outputs, and test specs
   if (
-    normalized.startsWith('apps/mcp-server/') ||
-    normalized.startsWith('core/') ||
-    normalized.startsWith('apps/server/') ||
-    normalized.startsWith('apps/client/') ||
-    normalized.startsWith('scripts/') ||
-    normalized.startsWith('test/') ||
-    normalized.startsWith('tests/') ||
+    normalized.includes('node_modules/') ||
+    normalized.includes('/node_modules/') ||
+    normalized.startsWith('.git/') ||
+    normalized.includes('/.git/') ||
+    normalized.includes('dist/') ||
+    normalized.includes('/dist/') ||
+    normalized.includes('build/') ||
+    normalized.includes('/build/') ||
+    normalized.includes('.next/') ||
+    normalized.includes('.turbo/') ||
     basename.includes('.test.') ||
     basename.includes('.spec.')
   ) {
@@ -76,8 +80,8 @@ function isScannableFile(filePath) {
  */
 function getStagedFiles() {
   try {
-    const output = execSync('git diff --cached --name-only', { encoding: 'utf-8' });
-    return output.trim().split('\n').filter(Boolean);
+    const output = execFileSync('git', ['diff', '--cached', '--name-only'], { encoding: 'utf-8' });
+    return output.trim().split('\n').map(s => s.trim()).filter(Boolean);
   } catch {
     return [];
   }
@@ -85,14 +89,13 @@ function getStagedFiles() {
 
 /**
  * Attempts to connect to FalkorDB and verify whether a given decision ID
- * (extracted heuristically from staged file content) is still valid.
- * Falls back to simulation if FalkorDB is unavailable.
+ * (extracted heuristically from source file content) is still valid.
  *
  * @param {string[]} files - List of file paths to check.
  * @param {object} options - CLI options (host, port passed via env).
  * @returns {Promise<boolean>} true if all checks pass, false if any violations found.
  */
-async function verifyFiles(files, options) {
+async function verifyFiles(files, options = {}) {
   let client = null;
   let graph = null;
   let verifyActionGate = null;
@@ -106,17 +109,17 @@ async function verifyFiles(files, options) {
     graph = null;
   }
 
-  // --strict: an unverifiable gate must not silently pass (use in CI / pre-commit).
-  if (!graph && options.strict) {
+  const isCi = Boolean(process.env.CI || process.env.GITHUB_ACTIONS || options.strict);
+
+  // --strict / CI: an unverifiable gate must not silently pass.
+  if (!graph && isCi) {
     console.error(`   ⛔ ${unreachableReason}`);
-    console.error('      --strict is set, so unverifiable references are treated as failures.');
+    console.error('      CI / Strict mode active: unverifiable decisions are treated as failures.');
   }
 
   let allPassed = true;
 
   for (const filePath of files) {
-    // Skip non-text files before attempting readFileSync to prevent crashes
-    // on binary content (images, compiled bundles, lock files, etc.)
     if (!isScannableFile(filePath)) {
       console.log(`   ⏭️  ${filePath} — skipped (binary/lock/generated file)`);
       continue;
@@ -130,13 +133,13 @@ async function verifyFiles(files, options) {
       const matches = content.match(/\bDEC-\d+\b/g) || [];
       decisionIds = [...new Set(matches)];
     } catch {
-      // File deleted between git diff and now — skip gracefully
+      // File unreadable or deleted — skip gracefully
       console.log(`   ⏭️  ${filePath} — skipped (file unreadable or deleted)`);
       continue;
     }
 
     if (decisionIds.length === 0) {
-      console.log(`   ✅ ${filePath} — no CAVDAX decision references found, skipping`);
+      console.log(`   ✅ ${filePath} — no CAVDAX decision references found`);
       continue;
     }
 
@@ -146,27 +149,21 @@ async function verifyFiles(files, options) {
       if (graph && verifyActionGate) {
         result = await verifyActionGate(graph, decId);
       } else {
-        // FalkorDB is not reachable — skip causal check, do not block.
-        //
-        // Why: blocking without a live graph causes false positives because
-        // the check command has no way to know whether a decision is actually
-        // stale in THIS repo's graph — it only knows it's stale in the CAVDAX
-        // demo graph. Any repo that mentions a decision in a comment or doc
-        // would be incorrectly blocked.
-        //
-        // The hardcoded decision simulation below this point is intentionally
-        // removed. It existed only for the interactive Web HUD demo and must
-        // never run in CI where FalkorDB is absent (syntax-check jobs, PRs
-        // from forks, cavdax-gate.yml before FalkorDB is healthy, etc.).
-        //
-        // Operators who want strict enforcement must ensure FalkorDB is
-        // reachable (set FALKORDB_HOST + FALKORDB_PORT, or run via docker).
-        console.warn(`   ⚠️  FalkorDB unreachable — skipping causal check for ${decId} in ${filePath}`);
-        result = {
-          is_approved: !options.strict,
-          gate_verdict: options.strict ? 'BLOCKED_GATE_UNREACHABLE' : 'SKIPPED_NO_FALKORDB',
-          violation_paths: []
-        };
+        if (isCi) {
+          console.error(`   ⛔ CI Error: FalkorDB is unreachable. Cannot verify causal invariant ${decId} in ${filePath}.`);
+          result = {
+            is_approved: false,
+            gate_verdict: 'BLOCKED_GATE_UNREACHABLE',
+            violation_paths: []
+          };
+        } else {
+          console.warn(`   ⚠️  FalkorDB unreachable — skipping causal check for ${decId} in ${filePath}`);
+          result = {
+            is_approved: true,
+            gate_verdict: 'SKIPPED_NO_FALKORDB',
+            violation_paths: []
+          };
+        }
       }
 
       if (!result.is_approved) {
@@ -189,12 +186,15 @@ async function verifyFiles(files, options) {
  * @param {object} options - Commander options object.
  * @returns {Promise<boolean>} true = pass, false = fail
  */
-export async function runCheck(options) {
+export async function runCheck(options = {}) {
   console.log('\n🛡️  CAVDAX Check — causal provenance validation\n');
 
   let filesToCheck = [];
 
-  if (options.staged) {
+  if (Array.isArray(options.files)) {
+    filesToCheck = options.files;
+    console.log(`   Direct mode: checking ${filesToCheck.length} target file(s)...\n`);
+  } else if (options.staged) {
     filesToCheck = getStagedFiles();
     if (filesToCheck.length === 0) {
       console.log('   No staged files found. Nothing to check.');
@@ -203,12 +203,11 @@ export async function runCheck(options) {
     console.log(`   Checking ${filesToCheck.length} staged file(s)...\n`);
   } else if (options.pr) {
     console.log(`   PR mode: checking files changed in PR #${options.pr}`);
-    // In CI: rely on git diff vs. base branch for changed files
     try {
-      const output = execSync('git diff --name-only origin/main...HEAD', { encoding: 'utf-8' });
-      filesToCheck = output.trim().split('\n').filter(Boolean);
+      const output = execFileSync('git', ['diff', '--name-only', 'origin/main...HEAD'], { encoding: 'utf-8' });
+      filesToCheck = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
     } catch {
-      console.warn('   ⚠️  Could not determine changed files via git diff — checking all staged files.');
+      console.warn('   ⚠️  Could not determine changed files via git diff — checking staged files.');
       filesToCheck = getStagedFiles();
     }
     if (filesToCheck.length === 0) {
@@ -218,6 +217,11 @@ export async function runCheck(options) {
     console.log(`   Checking ${filesToCheck.length} PR file(s)...\n`);
   } else {
     console.log('   Usage: npx cavdax check --staged   OR   npx cavdax check --pr <number>');
+    return false;
+  }
+
+  if (filesToCheck.length === 0) {
+    console.log('   No scannable files found. Clearance granted.\n');
     return true;
   }
 

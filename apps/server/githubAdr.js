@@ -150,6 +150,9 @@ export function detectUnsyncedSupersessions(adrs) {
   const unsynced = [];
 
   for (const adr of adrs) {
+    const isProposed = String(adr.status || '').toUpperCase().includes('PROPOSED');
+    if (isProposed) continue;
+
     for (const oldId of (adr.supersedes || [])) {
       const target = byId.get(oldId);
       if (!target || target.id === adr.id) continue;
@@ -969,7 +972,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@^1.2.3 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@1.2.4 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: https://cavdax.sahnirmaan.live

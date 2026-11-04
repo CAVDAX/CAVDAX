@@ -9,7 +9,7 @@
  * Returns exit code 0 on clearance, or 1 on blocked architectural violations.
  */
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import path from 'path';
 import { runCheck } from './checkCommand.js';
 
@@ -23,15 +23,26 @@ export async function runGate(options = {}) {
 
   const serverUrl = process.env.CAVDAX_SERVER_URL || '';
   const apiKey = process.env.CAVDAX_API_KEY || '';
+  const isCi = Boolean(process.env.CI || process.env.GITHUB_ACTIONS || options.strict);
 
-  // 1. If remote CAVDAX server is configured, perform remote tenant verification
+  // 1. Security Check: Validate commit SHA format to prevent command injection
+  if (options.sha) {
+    const trimmedSha = String(options.sha).trim();
+    if (!/^[0-9a-f]{7,40}$/i.test(trimmedSha)) {
+      console.error(`   ⛔ Security Error: Invalid commit SHA format "${options.sha}". Expected 7-40 hex characters.`);
+      return false;
+    }
+    options.sha = trimmedSha;
+  }
+
+  // 2. If remote CAVDAX server is configured, perform remote tenant verification
   if (serverUrl && options.repo) {
     try {
       console.log(`   Connecting to verification engine at ${serverUrl}...`);
       const [owner, name] = options.repo.split('/');
       const headers = {
         'Accept': 'application/json',
-        'User-Agent': 'CAVDAX-Gate-Runner/1.2.3'
+        'User-Agent': 'CAVDAX-Gate-Runner/1.2.4'
       };
       if (apiKey) {
         headers['Authorization'] = `Bearer ${apiKey}`;
@@ -47,9 +58,17 @@ export async function runGate(options = {}) {
         const data = await res.json();
         console.log(`   ✅ CAVDAX Server synchronized (${data.count || 0} active ADRs registered in graph).`);
       } else if (res.status === 401 || res.status === 403) {
-        console.warn(`   ⚠️  CAVDAX API Key authentication notice (${res.status}). Falling back to local causal engine.`);
+        console.error(`   ⛔ CAVDAX API Key authentication failure (${res.status}). Authorization denied.`);
+        if (isCi) {
+          console.error('      Failing closed in CI: Provide a valid CAVDAX_API_KEY secret.');
+          return false;
+        }
       } else {
         console.warn(`   ⚠️  Remote server response ${res.status}. Falling back to local causal verification.`);
+        if (options.strict) {
+          console.error('      --strict is set: failing closed on non-OK server response.');
+          return false;
+        }
       }
     } catch (err) {
       console.warn(`   ⚠️  Remote CAVDAX endpoint unreachable (${err.message}). Falling back to local causal verification.`);
@@ -60,26 +79,32 @@ export async function runGate(options = {}) {
     }
   }
 
-  // 2. Delegate file and decision reference checking to checkCommand
-  // If in PR context, pass the git diff options
-  const checkOptions = {
-    ...options,
-    staged: false
-  };
-
-  // Determine changed files in commit
+  // 3. Determine changed files safely without shell interpolation
+  let changedFiles = [];
   try {
-    const diffCmd = options.sha 
-      ? `git diff-tree --no-commit-id --name-only -r ${options.sha}` 
-      : 'git diff --name-only origin/main...HEAD';
-    const changedFiles = execSync(diffCmd, { encoding: 'utf-8' }).trim().split('\n').filter(Boolean);
-    console.log(`   Scanned ${changedFiles.length} file(s) changed in commit.`);
+    if (options.sha) {
+      const output = execFileSync('git', ['diff-tree', '--no-commit-id', '--name-only', '-r', options.sha], { encoding: 'utf-8' });
+      changedFiles = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
+    } else {
+      const output = execFileSync('git', ['diff', '--name-only', 'origin/main...HEAD'], { encoding: 'utf-8' });
+      changedFiles = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
+    }
   } catch {
-    // If git diff-tree fails (e.g. shallow clone), check staged/modified
-    checkOptions.staged = true;
+    try {
+      const output = execFileSync('git', ['diff', '--cached', '--name-only'], { encoding: 'utf-8' });
+      changedFiles = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
+    } catch {
+      changedFiles = [];
+    }
   }
 
-  const passed = await runCheck(checkOptions);
+  console.log(`   Scanned ${changedFiles.length} file(s) changed in commit.`);
+
+  // 4. Delegate verification with explicit files list
+  const passed = await runCheck({
+    ...options,
+    files: changedFiles
+  });
 
   if (passed) {
     console.log('\n✅ CAVDAX Architectural Gate: All invariants verified. Clearance granted.\n');
