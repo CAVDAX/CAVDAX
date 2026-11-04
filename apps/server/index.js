@@ -655,37 +655,59 @@ function sanitizeBroadcastPayload(eventType, payload) {
   return payload;
 }
 
+function clientCanSeeRepo(client, repo) {
+  if (!repo || repo === 'demo') return true;
+  const target = String(repo).toLowerCase();
+  const userLogin = (client.user?.login || client.session?.user?.login || '').toLowerCase();
+  const isAdmin = Boolean(
+    client.user?.role === 'admin' ||
+    userLogin === 'system' ||
+    (userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin))
+  );
+  const connected = Array.isArray(client.session?.connectedRepos) ? client.session.connectedRepos : [];
+  const authorized = Array.isArray(client.session?.authorizedReposCache) ? client.session.authorizedReposCache : [];
+  const isConnected = connected.some(r => r.toLowerCase() === target) || authorized.includes(target);
+  const [owner] = target.split('/');
+  const isOwner = Boolean(owner && userLogin && owner === userLogin);
+  return isAdmin || isConnected || isOwner;
+}
+
+function isForeignRepoNode(n) {
+  return Boolean(n && n.repo && n.repo !== 'demo' && !n.is_demo);
+}
+
+// Returns a copy of `graph` containing only the nodes (and their edges) this client may see.
+function scopeGraphForClient(graph, client) {
+  const nodes = graph.nodes.filter(n => !isForeignRepoNode(n) || clientCanSeeRepo(client, n.repo));
+  const ids = new Set(nodes.map(n => n.id));
+  const edges = Array.isArray(graph.edges) ? graph.edges.filter(e => ids.has(e.source) && ids.has(e.target)) : graph.edges;
+  return { ...graph, nodes, edges };
+}
+
 function broadcastEvent(eventType, rawPayload, options = {}) {
   const payload = sanitizeBroadcastPayload(eventType, rawPayload);
-  const data = JSON.stringify({ type: eventType, data: payload, timestamp: Date.now() });
-  let targetRepo = options.repo || rawPayload?.repo || rawPayload?.action?.repo || null;
-  if (!targetRepo && Array.isArray(rawPayload?.nodes)) {
-    const customRepoNode = rawPayload.nodes.find(n => n.repo && n.repo !== 'demo');
-    if (customRepoNode) {
-      targetRepo = customRepoNode.repo;
-    }
-  }
+  const targetRepo = options.repo || rawPayload?.repo || rawPayload?.action?.repo || null;
+  const timestamp = Date.now();
+  const sharedData = JSON.stringify({ type: eventType, data: payload, timestamp });
+
+  // Graph-bearing payloads (top-level or nested under `graph`) are filtered per client.
+  const graphAtRoot = Array.isArray(payload?.nodes);
+  const graphNested = !graphAtRoot && Array.isArray(payload?.graph?.nodes);
+  const graphNodes = graphAtRoot ? payload.nodes : (graphNested ? payload.graph.nodes : null);
+  const needsGraphScoping = Boolean(graphNodes && graphNodes.some(isForeignRepoNode));
 
   for (const client of sseClients) {
     try {
       // Cross-Tenant Isolation: if event is scoped to a specific non-demo repository
-      if (targetRepo && targetRepo !== 'demo') {
-        const userLogin = (client.user?.login || client.session?.user?.login || '').toLowerCase();
-        const isAdmin = Boolean(
-          client.user?.role === 'admin' ||
-          userLogin === 'system' ||
-          (userLogin && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin))
-        );
-        const connected = Array.isArray(client.session?.connectedRepos) ? client.session.connectedRepos : [];
-        const authorized = Array.isArray(client.session?.authorizedReposCache) ? client.session.authorizedReposCache : [];
-        const isConnected = connected.some(r => r.toLowerCase() === targetRepo.toLowerCase()) || authorized.includes(targetRepo.toLowerCase());
-        const [owner] = targetRepo.split('/');
-        const isOwner = Boolean(owner && userLogin && owner.toLowerCase() === userLogin);
-
-        // If client is neither repo owner, connected tenant, nor admin, do not leak event
-        if (!isAdmin && !isConnected && !isOwner) {
-          continue;
-        }
+      if (!clientCanSeeRepo(client, targetRepo)) {
+        continue;
+      }
+      let data = sharedData;
+      if (needsGraphScoping) {
+        const scoped = graphAtRoot
+          ? scopeGraphForClient(payload, client)
+          : { ...payload, graph: scopeGraphForClient(payload.graph, client) };
+        data = JSON.stringify({ type: eventType, data: scoped, timestamp });
       }
       client.res.write(`event: ${eventType}\ndata: ${data}\n\n`);
     } catch {
@@ -2874,8 +2896,6 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
     }
   }
 
-  const token = req.session?.user?.accessToken || process.env.GITHUB_TOKEN || null;
-
   // Must have either GitHub OAuth session or a valid CAVDAX API key (or local dev mode)
   if (!req.session?.user && !isApiKeyAuth) {
     if (process.env.NODE_ENV !== 'production' && !API_TOKEN && userApiKeyRegistry.size === 0) {
@@ -2888,6 +2908,21 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`.toLowerCase();
 
+  if (isApiKeyAuth) req.authUser = authUser;
+  const hasAccess = (req.session?.user || isApiKeyAuth) ? await verifyUserRepoAccess(req, repoFullName) : false;
+
+  // API-key callers may only read repos they are entitled to; they must never reach the server token otherwise.
+  if (isApiKeyAuth && !hasAccess) {
+    return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'This API key does not have access to this repository.' });
+  }
+
+  // Session users scan with their own OAuth token (GitHub enforces their access).
+  // The server GITHUB_TOKEN is only used for API-key callers that passed the access check above.
+  const token = req.session?.user?.accessToken || (isApiKeyAuth ? process.env.GITHUB_TOKEN : null) || null;
+  if (!token) {
+    return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
+  }
+
   const sessionTier = req.session?.tier || req.session?.user?.tier || authUser?.tier;
   const effectiveTier = globalHackathonMode ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
   const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 10 : -1);
@@ -2896,8 +2931,9 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   try {
     const result = await scanRepoAdrs({ token: token || undefined, owner, repo, branch: requestedBranch || undefined });
 
-    // ONLY after successful scan, track connected repo in session with limit enforcement
-    if (req.session) {
+    // ONLY after a successful scan AND verified write access, track connected repo with limit enforcement.
+    // Read-only visibility must never grant tenant access (connectedRepos feeds verifyUserRepoAccess).
+    if (req.session?.user && hasAccess) {
       if (!Array.isArray(req.session.connectedRepos)) {
         req.session.connectedRepos = [];
       }
@@ -2912,10 +2948,9 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
         req.session.connectedRepos.push(repoFullName);
       }
     }
-    const repoFullName = `${owner}/${repo}`;
     const targetBranch = sanitizeBranchName(requestedBranch || 'main');
     // Scope persisted actions to BOTH repository and active branch to prevent cross-branch leakage
-    const persistedRepoActions = (savedSystemState.auditEntries || []).filter(e => {
+    const persistedRepoActions = (!hasAccess ? [] : (savedSystemState.auditEntries || [])).filter(e => {
       const matchRepo = e.repo?.toLowerCase() === repoFullName.toLowerCase();
       const matchBranch = sanitizeBranchName(e.branch || 'main') === targetBranch;
       return matchRepo && matchBranch;

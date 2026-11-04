@@ -82,3 +82,30 @@ test('detectUnsyncedSupersessions: ACCEPTED ADR correctly marks target ADR as su
   assert.equal(unsynced[0].targetId, 'ADR-001');
   assert.equal(unsynced[0].supersedingId, 'ADR-002');
 });
+
+test('checkCommand: remoteDecisions blocks stale decisions, passes valid and unknown ones (no FalkorDB)', async () => {
+  const fs = await import('node:fs');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cavdax-gate-'));
+  const mk = (name, body) => { const p = path.join(dir, name); fs.writeFileSync(p, body); return p; };
+  const stale = mk('stale.js', '// grounded in DEC-101\n');
+  const valid = mk('valid.js', '// grounded in DEC-102\n');
+  const unknown = mk('unknown.js', '// grounded in DEC-999\n');
+
+  const prevPort = process.env.FALKORDB_PORT;
+  const prevCi = process.env.CI;
+  process.env.FALKORDB_PORT = '6399';
+  process.env.CI = 'true';
+  try {
+    const remoteDecisions = { 'DEC-101': 'INVALIDATED_NEEDS_REVALIDATION', 'DEC-102': 'VALID' };
+    assert.equal(await runCheck({ files: [stale], remoteDecisions }), false, 'stale decision must block');
+    assert.equal(await runCheck({ files: [valid], remoteDecisions }), true, 'valid decision must pass');
+    assert.equal(await runCheck({ files: [unknown], remoteDecisions }), true, 'decision unknown to the server is not a violation');
+    assert.equal(await runCheck({ files: [valid] }), false, 'without any graph source CI still fails closed');
+  } finally {
+    if (prevPort === undefined) delete process.env.FALKORDB_PORT; else process.env.FALKORDB_PORT = prevPort;
+    if (prevCi === undefined) delete process.env.CI; else process.env.CI = prevCi;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});

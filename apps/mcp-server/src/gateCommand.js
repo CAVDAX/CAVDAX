@@ -35,6 +35,8 @@ export async function runGate(options = {}) {
     options.sha = trimmedSha;
   }
 
+  let remoteDecisions = null;
+
   // 2. If remote CAVDAX server is configured, perform remote tenant verification
   if (serverUrl && options.repo) {
     try {
@@ -57,6 +59,11 @@ export async function runGate(options = {}) {
       if (res.ok) {
         const data = await res.json();
         console.log(`   ✅ CAVDAX Server synchronized (${data.count || 0} active ADRs registered in graph).`);
+        // Decision statuses from the server's graph are the source of truth when no local graph exists.
+        remoteDecisions = {};
+        for (const n of (data.graph?.nodes || [])) {
+          if (n.label === 'Decision' && n.id) remoteDecisions[n.id] = n.status;
+        }
       } else if (res.status === 401 || res.status === 403) {
         console.error(`   ⛔ CAVDAX API Key authentication failure (${res.status}). Authorization denied.`);
         if (isCi) {
@@ -103,7 +110,8 @@ export async function runGate(options = {}) {
   // 4. Delegate verification with explicit files list
   const passed = await runCheck({
     ...options,
-    files: changedFiles
+    files: changedFiles,
+    remoteDecisions
   });
 
   if (passed) {

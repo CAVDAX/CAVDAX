@@ -111,8 +111,10 @@ async function verifyFiles(files, options = {}) {
 
   const isCi = Boolean(process.env.CI || process.env.GITHUB_ACTIONS || options.strict);
 
-  // --strict / CI: an unverifiable gate must not silently pass.
-  if (!graph && isCi) {
+  const remoteDecisions = options.remoteDecisions || null;
+
+  // --strict / CI: an unverifiable gate must not silently pass (a remote decision map counts as verifiable).
+  if (!graph && isCi && !remoteDecisions) {
     console.error(`   ⛔ ${unreachableReason}`);
     console.error('      CI / Strict mode active: unverifiable decisions are treated as failures.');
   }
@@ -148,6 +150,15 @@ async function verifyFiles(files, options = {}) {
 
       if (graph && verifyActionGate) {
         result = await verifyActionGate(graph, decId);
+      } else if (remoteDecisions) {
+        const status = remoteDecisions[decId];
+        if (status === undefined) {
+          result = { is_approved: true, gate_verdict: 'SKIPPED_UNKNOWN_DECISION', violation_paths: [] };
+        } else if (status === 'VALID') {
+          result = { is_approved: true, gate_verdict: 'APPROVED_REMOTE_GRAPH', violation_paths: [] };
+        } else {
+          result = { is_approved: false, gate_verdict: 'BLOCKED_STALE_DECISION', violation_paths: [{ decision: decId, status }] };
+        }
       } else {
         if (isCi) {
           console.error(`   ⛔ CI Error: FalkorDB is unreachable. Cannot verify causal invariant ${decId} in ${filePath}.`);
