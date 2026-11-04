@@ -3262,3 +3262,52 @@ function usePillTracker(activeKey) {
    - **For Multi-Row Wrapped Grids**:
      - When tabs wrap across rows (e.g. `grid grid-cols-2 sm:grid-cols-4`), ALWAYS specify `className="absolute top-0 left-0 ..."`.
      - Overriding static placement to `(0, 0)` ensures `transform: translate(x, y)` accurately maps to `offsetLeft` and `offsetTop` without compound offset doubling.
+
+### 50.4 Modal Hoisting via React Portal (createPortal) & The CSS Stacking Context Trap
+1. **The Root Cause of Un-dimmed Navbars**:
+   - According to CSS Transforms Module Level 1 (§6.1), any element with a non-none `transform`, `perspective`, `filter`, or `will-change: transform` creates a **new containing block and local stacking context** for all descendants, including `position: fixed`.
+   - When a modal overlay (`fixed inset-0 z-[100]`) is declared inside a nested component wrapped in a page transition (e.g. `<PageAscentTransition>` using `transform: translateY(...)`), the modal is trapped inside that component's stacking context.
+   - Any root-level element outside this container (such as a sticky or fixed `<header className="fixed top-0 z-50">`) paints **in front of** the modal backdrop. The navbar remains completely bright and un-dimmed while the modal is active.
+2. **The Invariable Architecture (createPortal)**:
+   - NEVER leave full-screen overlays or modals inside nested DOM subtrees.
+   - ALWAYS hoist modals to `document.body` using React's `createPortal`:
+     ```jsx
+     import { createPortal } from 'react-dom';
+
+     {isOpen && typeof document !== 'undefined' && createPortal(
+       <div
+         onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+         data-lenis-prevent
+         className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+       >
+         <div data-lenis-prevent className="max-w-3xl w-full ...">
+           {/* Modal Body */}
+         </div>
+       </div>,
+       document.body
+     )}
+     ```
+   - Guard with `typeof document !== 'undefined'` for isomorphic / SSR safety.
+   - This ensures the modal's `z-[100]` operates on the document root stacking context, uniformly dimming the entire viewport including navigation bars, sidebars, and floating action buttons.
+
+### 50.5 Zero-Jerk Viewport Standardization & Smooth-Scroll Isolation
+1. **Zero-Jerk Viewport Standardization**:
+   - In tabbed modal interfaces containing code blocks, shell commands, or configuration files (e.g. Cursor JSON vs Claude command vs Cline YAML), tab contents vary dramatically in line count (1 line to 25+ lines).
+   - Unconstrained dynamic heights cause violent vertical layout jumps (e.g. 236px sudden collapse), disorienting users.
+   - **Rule**: Standardize code display viewports to a fixed container height (e.g. `h-60` / 240px) across all tabs with `overflow-x-auto overflow-y-auto font-mono`.
+   - Provide informative registered-tool comments or schemas for shorter tabs so all tabs feel balanced, professional, and visually harmonious.
+2. **Smooth-Scroll Isolation (Lenis Interop)**:
+   - When global smooth-scroll engines (such as Lenis) hijack window scroll events, mouse scroll-wheel events over modal viewports and code blocks can be swallowed or blocked.
+   - **Rule**:
+     1. Mark modal backdrop overlays, modal cards, and scrollable pre/code containers with `data-lenis-prevent`.
+     2. Bind modal mount/unmount lifecycles to stop and restart the global scroll engine:
+        ```javascript
+        useEffect(() => {
+          if (isOpen) {
+            window.__lenis?.stop();
+            return () => window.__lenis?.start();
+          }
+        }, [isOpen]);
+        ```
+     3. Ensure backdrop dismissal checks `e.target === e.currentTarget` so internal clicks do not accidentally dismiss the modal.
+
