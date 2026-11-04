@@ -22,7 +22,7 @@ import { motion } from 'framer-motion';
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck, GitBranch } from 'lucide-react';
+import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck, GitBranch, Loader2 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import Combobox from './Combobox';
 
@@ -171,6 +171,85 @@ export default function AuditPage() {
       return [];
     }
   });
+  const [repoBranches, setRepoBranches] = useState([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+
+  // Synchronize connected repositories from localStorage & custom events
+  useEffect(() => {
+    const handleSync = (e) => {
+      if (e?.detail?.repos && Array.isArray(e.detail.repos)) {
+        setConnectedRepos(e.detail.repos);
+      } else {
+        try {
+          const saved = localStorage.getItem('cavdax_connected_repos');
+          if (saved) setConnectedRepos(JSON.parse(saved));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('cavdax:repos-updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('cavdax:repos-updated', handleSync);
+    };
+  }, []);
+
+  // Fetch live git branches whenever a connected repository is selected
+  useEffect(() => {
+    if (selectedRepo === 'all' || selectedRepo === 'demo') {
+      setRepoBranches([]);
+      setLoadingBranches(false);
+      return;
+    }
+
+    const targetRepoLower = selectedRepo.toLowerCase();
+    const matched = connectedRepos.find(r => 
+      (r.full_name || r.name || '').toLowerCase() === targetRepoLower ||
+      (r.name && r.name.toLowerCase() === targetRepoLower)
+    );
+
+    if (!matched) {
+      setRepoBranches([]);
+      setLoadingBranches(false);
+      return;
+    }
+
+    const parts = (matched.full_name || matched.name || '').split('/');
+    const owner = parts.length === 2 ? parts[0] : (matched.owner || '');
+    const name = parts.length === 2 ? parts[1] : (matched.name || '');
+
+    if (!owner || !name) {
+      if (matched.default_branch) setRepoBranches([matched.default_branch]);
+      return;
+    }
+
+    let isCancelled = false;
+    setLoadingBranches(true);
+    fetch(`/api/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/branches`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        if (!isCancelled) {
+          if (data.success && Array.isArray(data.branches)) {
+            const branchNames = data.branches.map(b => (typeof b === 'string' ? b : b.name)).filter(Boolean);
+            setRepoBranches(branchNames);
+          } else if (matched.default_branch) {
+            setRepoBranches([matched.default_branch]);
+          }
+        }
+      })
+      .catch(() => {
+        if (!isCancelled && matched.default_branch) {
+          setRepoBranches([matched.default_branch]);
+        }
+      })
+      .finally(() => {
+        if (!isCancelled) setLoadingBranches(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [selectedRepo, connectedRepos]);
 
   const fetchAudit = useCallback(async () => {
     setLoading(true);
@@ -218,10 +297,35 @@ export default function AuditPage() {
     }
 
     const branchSet = new Set();
+
+    // 1. Live Git branches fetched from repository API
+    repoBranches.forEach(b => {
+      if (b) branchSet.add(b);
+    });
+
+    // 2. Default branch from connected repo metadata
+    const targetRepoLower = selectedRepo.toLowerCase();
+    const matched = connectedRepos.find(r => 
+      (r.full_name || r.name || '').toLowerCase() === targetRepoLower ||
+      (r.name && r.name.toLowerCase() === targetRepoLower)
+    );
+    if (matched?.default_branch) {
+      branchSet.add(matched.default_branch);
+    }
+
+    // 3. Harvest any branches recorded in past audit log entries (case-insensitive repo matching)
+    const validRepoNames = new Set([targetRepoLower]);
+    if (matched) {
+      if (matched.full_name) validRepoNames.add(matched.full_name.toLowerCase());
+      if (matched.name) validRepoNames.add(matched.name.toLowerCase());
+    }
+
     entries.forEach(e => {
       const itemRepo = (e.repo || 'demo').toLowerCase();
-      if (itemRepo !== selectedRepo.toLowerCase()) return;
-      if (e.branch) branchSet.add(e.branch);
+      const itemShort = itemRepo.includes('/') ? itemRepo.split('/')[1] : itemRepo;
+      if (validRepoNames.has(itemRepo) || validRepoNames.has(itemShort)) {
+        if (e.branch) branchSet.add(e.branch);
+      }
     });
 
     const list = Array.from(branchSet).sort();
@@ -233,17 +337,22 @@ export default function AuditPage() {
         sublabel: `Filter actions on branch ${b}`
       }))
     ];
-  }, [entries, selectedRepo]);
+  }, [entries, selectedRepo, repoBranches, connectedRepos]);
 
   const filteredEntries = useMemo(() => {
     return entries.filter(e => {
-      // 1. Repo scope filter
+      // 1. Repo scope filter (handles both full_name e.g. 'owner/repo' and short name 'repo')
       if (selectedRepo !== 'all') {
         const itemRepo = (e.repo || 'demo').toLowerCase();
         if (selectedRepo === 'demo') {
           if (itemRepo !== 'demo') return false;
         } else {
-          if (itemRepo !== selectedRepo.toLowerCase()) return false;
+          const targetLower = selectedRepo.toLowerCase();
+          const targetShort = targetLower.includes('/') ? targetLower.split('/')[1] : targetLower;
+          const itemShort = itemRepo.includes('/') ? itemRepo.split('/')[1] : itemRepo;
+          if (itemRepo !== targetLower && itemShort !== targetShort) {
+            return false;
+          }
         }
       }
 
@@ -371,9 +480,13 @@ export default function AuditPage() {
               value={selectedBranch}
               onChange={(val) => setSelectedBranch(val)}
               options={availableBranchOptions}
+              searchable={availableBranchOptions.length > 4}
               ariaLabel="Select branch filter"
               disabled={selectedRepo === 'all'}
             />
+            {loadingBranches && (
+              <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
+            )}
           </div>
 
           <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">·</span>

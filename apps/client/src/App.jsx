@@ -205,6 +205,7 @@ export default function App() {
     setConnectedRepos(prev => {
       const updated = [newRepo, ...prev.filter(r => r.id !== newRepo.id)];
       try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(updated)); } catch {}
+      window.dispatchEvent(new CustomEvent('cavdax:repos-updated', { detail: { repos: updated } }));
       return updated;
     });
     setSelectedConnectedRepo(newRepo);
@@ -215,6 +216,7 @@ export default function App() {
     setConnectedRepos(prev => {
       const updated = prev.map(r => r.id === updatedRepo.id ? updatedRepo : r);
       try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(updated)); } catch {}
+      window.dispatchEvent(new CustomEvent('cavdax:repos-updated', { detail: { repos: updated } }));
       return updated;
     });
     setSelectedConnectedRepo(updatedRepo);
@@ -224,6 +226,7 @@ export default function App() {
     setConnectedRepos(prev => {
       const updated = prev.filter(r => String(r.id) !== String(repoId));
       try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(updated)); } catch {}
+      window.dispatchEvent(new CustomEvent('cavdax:repos-updated', { detail: { repos: updated } }));
       return updated;
     });
     if (activeWorkspace === repoId || selectedConnectedRepo?.id === repoId) {
