@@ -9,7 +9,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
-## 1.0.79 Latest Session Achievements (November 4, 2026 - Connected Workspace Branch Persistence & Multi-Tab Remount State Guard)
+## 1.0.80 Latest Session Achievements (November 4, 2026 - Branch Workspace Critique Implementation: PR Association, Live Rescan, Jump to GitHub & Categorized Branch Grouping)
+
+- **Connected Repository Branch Workspace Enhancements (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Implemented all 5 Devil's Advocate Architecture Critique recommendations for connected repository workspaces:
+    1. **Active Pull Request Association Badge**: Automatically surfaces an interactive `PR #<number>` badge beside the branch selector when the active branch has an associated open ADR pull request (e.g. `cavdax/init-adr` linked to PR #1), with direct click-through to GitHub.
+    2. **Causal Divergence & ADR Count Indicator**: Added live `${scan.count} ADRs` indicator on active branches during `phase === 'ready'`, giving developers immediate visibility into architectural decision density.
+    3. **Immediate Header-Level "Rescan Branch" Button**: Added 1-click icon button directly adjacent to the branch dropdown with an interactive spinning indicator while scanning, eliminating the need to search across the header ribbon.
+    4. **Quick Jump "View Branch on GitHub" Link**: Added 1-click external link icon button navigating directly to `https://github.com/<owner>/<repo>/tree/<branch>`, with sanitized encoding.
+    5. **Categorized Branch Grouping in Dropdown Popover**: Restructured the branch dropdown list into distinct categorized sections:
+       - **Default Branch**: Displays the repository's primary trunk (e.g. `main`) with an uppercase `default` badge.
+       - **Active Pull Request**: Surfaced actively targeted pull request branches with a dedicated `PR #<number>` badge.
+       - **All Branches**: Alphabetically sorted list of all additional repository branches.
+       - Each branch item in the popover includes a direct hover external link to GitHub, active branch checkmark, and keyboard arrow navigation (<kbd>↑</kbd>/<kbd>↓</kbd>/<kbd>Enter</kbd>/<kbd>Escape</kbd>) that seamlessly traverses across all category boundaries.
+- **Verification & Invariants**:
+  - Tested production client compilation with `npm run build`: built cleanly in 8.38s with zero errors or warnings.
+  - Executed backend test suite with `node --test apps/server/test/*.mjs`: 64/64 tests passed with zero failures in 749ms.
+  - Enforced strict monochromatic design system (`slate`/`zinc`/`white`/`black`), zero emojis, and preserved Lenis scroll isolation (`data-lenis-prevent`).
+
+## 1.0.79 Previous Session Achievements (November 4, 2026 - Connected Workspace Branch Persistence & Multi-Tab Remount State Guard)
 
 - **Connected Repository Active Branch State Persistence (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
   - Addressed Devil's Advocate finding where selecting a non-default branch (e.g. `cavdax/init-adr`) was discarded when switching across navigation tabs (Console -> Audit/Walkthrough -> Console), unexpectedly resetting the workspace back to `main`.
