@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
@@ -1242,8 +1243,8 @@ export default function ConnectedRepoWorkspace({
         </div>
       )}
 
-      {/* Confirmation modal before opening starter PR on external repo */}
-      {showInitConfirmModal && (
+      {/* Confirmation modal before opening starter PR on external repo (Hoisted via createPortal) */}
+      {showInitConfirmModal && typeof document !== 'undefined' && createPortal(
         <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowInitConfirmModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
           <div data-lenis-prevent className="max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
@@ -1279,12 +1280,13 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
-      {/* 1. Contextual 1-Click Agent Setup Modal */}
-      {showAgentSetupModal && (
+      {/* 1. Contextual 1-Click Agent Setup Modal (Hoisted via createPortal) */}
+      {showAgentSetupModal && typeof document !== 'undefined' && createPortal(
         <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowAgentSetupModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
@@ -1436,11 +1438,12 @@ export default function ConnectedRepoWorkspace({
               </pre>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* 2. 1-Click CI Gate Modal */}
-      {showCiGateModal && (
+      {/* 2. 1-Click CI Gate Modal (Hoisted via createPortal) */}
+      {showCiGateModal && typeof document !== 'undefined' && createPortal(
         <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
@@ -1578,11 +1581,12 @@ jobs:
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* 3. In-Console ADR Authoring & Supersession Modal */}
-      {showProposeAdrModal && (
+      {/* 3. In-Console ADR Authoring & Supersession Modal (Hoisted via createPortal) */}
+      {showProposeAdrModal && typeof document !== 'undefined' && createPortal(
         <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div data-lenis-prevent className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
@@ -1739,7 +1743,8 @@ jobs:
               </form>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
 
