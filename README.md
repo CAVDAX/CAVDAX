@@ -8,8 +8,8 @@
   <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
   <p>
     Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong><br />
-    <span style="white-space: nowrap"><strong>Primary Track:</strong> Track 2 — Agent Memory and Coordination</span><br />
-    <span style="white-space: nowrap"><strong>Secondary Track:</strong> Track 1 — Agents That Act on Connected Data</span>
+    <span style="white-space: nowrap"><strong>Primary Track:</strong> Track 1 — Agents That Act on Connected Data</span><br />
+    <span style="white-space: nowrap"><strong>Coordination &amp; Memory Layer:</strong> Track 2 — Agent Memory and Coordination</span>
   </p>
 
   <p>
@@ -34,6 +34,23 @@
 [![Latency](https://img.shields.io/badge/Gate%20Latency-%3C%202.5ms-8B5CF6?style=for-the-badge)](#empirical-benchmarks)
 
 </div>
+
+---
+
+### Hackathon Track Alignment & Systemic Synthesis
+
+CAVDAX was engineered specifically for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**, strategically synthesizing **Track 1** and **Track 2**:
+
+- 🕵️ **Track 1 — Agents That Act on Connected Data (Execution Core):**
+  - **Multi-Hop Reasoning**: Evaluates complex, variable-length architectural dependency paths (`[:DEPENDS_ON*1..4]`) across decisions, facts, and source documents.
+  - **Graph Queries as Agent Tools**: Exposes real-time Cypher verification directly to agents through the Model Context Protocol (MCP) (`verifyActionGate`, `get_architectural_blast_radius`).
+  - **Actions Based on Graph Topology**: Coding agents cannot execute file writes without graph clearance; actions are approved or blocked based on live topological invariant clearance.
+  - **Explainable Results & Provenance**: Returns complete mathematical proof paths (`violation_paths`) with line-level ADR citations, eliminating opaque agent hallucinations.
+
+- 🤖 **Track 2 — Agent Memory and Coordination (State & Memory Layer):**
+  - **Procedural & Episodic Memory**: Stores persistent architectural rules, invariant constraints, and historical decision supersessions across sessions.
+  - **Multi-Agent Coordination & Shared State**: Disparate agent runtimes (Cursor, Claude Code, Cline, Windsurf, and GitHub Actions CI) share the exact same FalkorDB graph state in real time.
+  - **Multi-Tenant Graph Isolation**: Leverages FalkorDB's native multigraph topology to create completely isolated graphs per repository and branch (`cavdax_{repo}_{branch}`).
 
 ---
 
@@ -568,6 +585,19 @@ SET oldDecision.status = 'REPLACED_ARCHIVED'
 RETURN newDecision.id AS active_decision_id, oldDecision.id AS archived_decision_id
 ```
 
+### FalkorDB GraphBLAS vs. Whole-Graph Batch Algorithms (Engineering Rationale)
+
+A fundamental design question for graph-grounded agent architectures is: *Why leverage targeted variable-length path traversals (`*1..4`) rather than global graph algorithms like PageRank or Louvain Community Detection?*
+
+1. **The Synchronous Agent Latency Budget (< 2.5ms):**
+   When an autonomous coding agent invokes an MCP tool call prior to a code edit, the tool execution time directly blocks the LLM token generation stream. Running whole-graph iterative eigenvector algorithms (e.g. PageRank across thousands of nodes) introduces 200ms–1500ms of latency, causing disruptive UI stutter in the developer's IDE. In contrast, FalkorDB's **GraphBLAS linear-algebraic sparse-matrix core** executes targeted BFS/DFS path traversals in **1.2ms to 2.4ms**, delivering instant verification without stalling agent velocity.
+2. **Deterministic Causal Invariants vs. Probabilistic Centrality:**
+   An architectural invariant is a binary, enforceable rule—not a statistical popularity contest. If `ADR-002` supersedes `ADR-001`, any downstream decision depending on `ADR-001` is invalid regardless of how "popular" or central `ADR-001` was in the graph. Targeted multi-hop causal walks guarantee **zero-false-positive invalidation**.
+3. **Shortest Justification Path & Minimal Proof:**
+   When an agent action is blocked, both the human engineer and the AI agent require the **minimal mathematical proof path** explaining the rejection. Variable-length path extraction (`nodes(path)`) returns the exact causal chain `(Decision)-[:DEPENDS_ON]->(Fact)-[:EXTRACTED_FROM]->(Source)`, allowing the agent to self-correct autonomously.
+4. **Sub-Millisecond Dynamic Blast Radius:**
+   When an ADR is edited or superseded, CAVDAX computes the downstream transitive impact radius (`(d:Decision)-[:DEPENDS_ON*1..4]->(staleFact)`) dynamically, identifying every affected microservice and component in < 3ms.
+
 ---
 
 ## Empirical Benchmarks
@@ -722,6 +752,16 @@ CAVDAX implements the Anthropic Model Context Protocol (MCP) specification `2024
 ### Supported Transports & Connectors
 - **Local Stdio (`stdio`):** `npx -y @cavdax/mcp-server` (zero-latency, runs the MCP gate locally against your own FalkorDB instance).
 - **Remote Cloud SSE (`SSE`):** Connect to `https://cavdax.sahnirmaan.live/api/mcp/sse` (for centralized team graphs and remote CI/CD pipelines).
+
+### Transport Authentication Matrix & Security Boundaries
+
+CAVDAX enforces a tailored security model based on the execution boundary:
+
+| Transport | Surface | Execution Boundary | Auth Model | Rationale |
+|---|---|---|---|---|
+| **Local Stdio (`stdio`)** | Cursor, Claude, Cline, Windsurf | Local Developer Host | **Zero-Key** | Enclosed local subprocess running on developer's machine; zero friction, talks directly to local FalkorDB or sandbox. |
+| **Remote Cloud SSE (`SSE`)** | Remote Agent Teams | Public Internet (`/api/mcp/sse`) | **Bearer API Key** | Enforces rate limits and isolates multi-tenant graphs in hosted deployments. |
+| **CI/CD Invariant Gate (`gate`)** | GitHub Actions Workflow | Cloud CI Runner | **GitHub Secret (`CAVDAX_API_KEY`)** | Authenticates status checks against central repository graphs on pull requests. |
 
 ### Client Configuration Snippets
 
