@@ -3361,3 +3361,119 @@ To enable immediate visual verification of architectural evolution across supers
    - When inspecting any node connected via `SUPERSEDES` or `REPLACES` edges in `NodeInspector`, render a synchronized two-column comparison.
    - **Left Column (Deprecated/Superseded)**: Displays superseded ADR ID, title, and deprecated architectural pattern with an unbracketed `SUPERSEDED` status pill.
    - **Right Column (Active/Superseding)**: Displays superseding ADR ID, active decision rationale, and enforced invariant rules with an emerald `ACCEPTED` status pill.
+
+
+---
+
+## 54. Left Architectural Scroll Cue Rail for Structured Master-Detail Panels (`.scroll-cue-rail`)
+
+When designing high-density split workspaces (e.g. `ConnectedRepoWorkspace`) where a draggable mid-section resizing divider sits on the panel's right boundary, placing a standard native scrollbar on the right creates severe ergonomic conflicts:
+
+### 54.1 The Native Right-Scrollbar & Splitter Collision Trap
+1. **Accidental Splitter Grabs**: Attempting to grab the native right scrollbar thumb frequently triggers the adjacent resizable divider handle, accidentally resizing the workspace columns instead of scrolling the list.
+2. **The `[direction:rtl]` Anti-Pattern**: Attempting to move the scrollbar to the left by applying CSS `[direction:rtl]` to the list container is a destructive anti-pattern: it flips text alignment, causes punctuation (periods, parentheses, hyphens) to jump to the wrong side of sentences, and disrupts mousewheel kinetic momentum.
+
+### 54.2 The Left Scroll Cue Rail Solution
+The institutional solution is a decoupled, non-intrusive **Left Architectural Scroll Cue Rail**:
+```jsx
+{/* Left Architectural Scroll Cue Rail */}
+<div className="relative flex-1 min-h-0 flex overflow-hidden">
+  {hasAdrScroll && (
+    <div
+      ref={adrTrackRef}
+      className="w-1.5 my-1 mr-1.5 rounded-full bg-slate-200 dark:bg-white/5 relative flex-shrink-0 cursor-pointer overflow-hidden transition-opacity duration-200"
+      title="Scroll progress (Left Cue Rail)"
+    >
+      <div
+        ref={adrThumbRef}
+        className="absolute top-0 left-0 right-0 rounded-full bg-slate-400 dark:bg-white/25 hover:bg-emerald-500 dark:hover:bg-emerald-400 transition-colors"
+        style={{ height: '24px' }}
+      />
+    </div>
+  )}
+  {/* Native LTR scrollable viewport with hidden native scrollbar */}
+  <div
+    ref={adrListRef}
+    className="flex-1 overflow-y-auto no-scrollbar space-y-1 pr-1"
+  >
+    {/* List items */}
+  </div>
+</div>
+```
+- The native viewport retains standard LTR mousewheel, trackpad, and keyboard accessibility.
+- The visual scroll progress thumb is reflected on the left edge, leaving the right edge 100% clean for the draggable split divider.
+
+---
+
+## 55. Resizable Mid-Section Splitter Handle & Persisted Percentage Widths
+
+Operational consoles (both Interactive Demo Sandbox and Connected Live Repositories) must provide responsive, ergonomic split-view control:
+
+### 55.1 Parity Across Demo and Live Workspaces
+1. **Symmetrical Geometry**: Both the Demo Sandbox and Live Connected Repository consoles must feature identical draggable splitter affordances between the Graph/Verification Canvas (left) and the Detail Inspector/Terminal (right).
+2. **The Symmetrical Splitter Handle**:
+   ```jsx
+   {/* Draggable Mid-Section Resizer */}
+   <div
+     onMouseDown={handleMouseDownSplitter}
+     className="w-1.5 relative group cursor-col-resize flex-shrink-0 bg-slate-200 dark:bg-white/5 hover:bg-emerald-500/50 transition-colors"
+   >
+     <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4 h-8 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-emerald-500 flex items-center justify-center shadow-sm pointer-events-none transition-colors">
+       <div className="w-0.5 h-3 bg-white/60 rounded-full" />
+     </div>
+   </div>
+   ```
+3. **Clamped Bounds & LocalStorage Persistence**:
+   - Left panel width is dynamically clamped between **25%** and **75%** of the container width to eliminate layout collapse.
+   - Percentage width is atomically persisted to `localStorage` (`cavdax_split_width` and `cavdax_demo_split_width`) so user preferences survive page refreshes and route transitions.
+   - While dragging, `user-select: none` is applied to the document body to prevent text selection interference.
+
+---
+
+## 56. Code Payload Diff Hover-Scrollbar Architecture (`.hover-scrollbar`)
+
+High-density inspection terminals and code verification payloads must never display heavy, permanent scrollbars that consume visual real estate, nor should they clip code without an obvious scroll affordance:
+
+### 56.1 The Hover-Scrollbar Standard
+Apply the `.hover-scrollbar` utility class to code payload containers (`<pre>`, `<code>`, terminal logs):
+```css
+/* Subtle auto-hiding scrollbar that reveals on container hover */
+.hover-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-in-out;
+}
+
+.hover-scrollbar:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.dark .hover-scrollbar:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+```
+- At rest: Clean, borderless code viewport without scrollbar clutter.
+- On hover: Ultra-thin, rounded thumb appears smoothly.
+- Full support for trackpad gestures, Shift+MouseWheel horizontal panning, and arrow key navigation.
+
+---
+
+## 57. Anti-Orphan Copy Budgeting & Text Folding Discipline
+
+In institutional engineering dashboards, text elements must maintain rigorous horizontal rhythm:
+
+### 57.1 The "Lonely Child" Anti-Pattern
+A single trailing word wrapping onto a second line (e.g., *"All decisions valid. Select a canvas node to probe its gate"* wrapping the word *"clearance."* onto line 2) wastes vertical padding, creates visual imbalance, and signals unpolished UI copy budgeting.
+
+### 57.2 The Trimming & Tooltip Standard
+1. **Tight Copy Trimming**: Express operational state concisely. Reduce redundant phrasing (e.g. from 107 characters down to 48 characters: *"All decisions valid. Select a canvas node to probe."*).
+2. **Mandatory `truncate` + Native Tooltip**:
+   ```jsx
+   <p
+     className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-full"
+     title="All decisions currently valid. Select a decision node on the canvas to inspect or probe its gate clearance."
+   >
+     All decisions valid. Select a canvas node to probe.
+   </p>
+   ```
+   This guarantees that the text never wraps or creates lonely child words across any screen width or resized split view, while the complete explanatory context remains instantly accessible via native hover tooltip.

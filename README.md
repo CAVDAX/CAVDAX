@@ -713,6 +713,10 @@ CAVDAX implements comprehensive defense-in-depth security across both API and ru
   * `X-Frame-Options: DENY` (Clickjacking defense)
   * `Strict-Transport-Security: max-age=31536000; includeSubDomains` (Enforced HTTPS)
 * **Cryptographic Billing Plan Validation**: Razorpay order IDs are cryptographically linked to target subscription tiers in server memory (`pendingBillingOrders`), preventing client-side parameter tampering.
+* **Exact Integer Bitmasking & Cloudflare IPv6 Proxy Trust**: Reverse proxy verification parses all 15 official Cloudflare IPv4 CIDR blocks with exact bitwise matching and recognizes official IPv6 prefixes (`2606:4700::/32`, `2400:cb00::/32`), defeating neighbor spoofing attacks on shared cloud networks.
+* **Monetization Invariant & Session Regeneration Entitlement Persistence**: Verified Razorpay tier entitlements are atomically preserved in disk-backed system state (`paidUsers`), eliminating post-login Pro tier loss during OWASP A07 session regeneration.
+* **Sponsor Pass Forgery Shield**: Ephemeral evaluation passes reject arbitrary client-supplied `user_override` payloads, automatically binding directly to verified GitHub identities or watermarking unauthenticated judge passes to preserve the cryptographic integrity of the live public Sponsor Wall.
+* **Organization CI Access Delegation**: The Invariant Gate runner forwards `GITHUB_TOKEN` in `X-GitHub-Token` headers, enabling direct status check clearance on private organization and collaborator repositories without requiring centralized god-tokens.
 
 ---
 
@@ -916,7 +920,7 @@ CAVDAX/
 │   │   ├── email.js             # Resend API transactional divergence alert dispatcher & debouncer
 │   │   ├── webPush.js           # VAPID key manager & Web Push background notification broker
 │   │   ├── systemState.js       # Atomic persistent state & user notification preferences
-│   │   ├── test/                # Unit & security test suite (104 automated tests)
+│   │   ├── test/                # Unit & security test suite (111 automated tests)
 │   │   └── Dockerfile           # Server containerization
 │   └── mcp-server/              # Standalone NPM package (@cavdax/mcp-server — published)
 │       ├── bin/cavdax.js        # Universal CLI: npx cavdax mcp|ingest|check|doctor
