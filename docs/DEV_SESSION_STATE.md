@@ -9,6 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.91 Latest Session Achievements (November 5, 2026 - Master Prompts Synchronization, Sandbox Normalization Hardening & 111-Test Suite Verification)
+
+- **Master Knowledge & Architecture Prompts Fully Synchronized (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main\`)**:
+  - `##OAuth-Session-Fixation-And-Callback-Resilience-Playbook.md`: Codified Principle 7 (*Post-Regeneration Entitlement & State Restoration*), updating the 7 Laws of Hardened OAuth, the production code blueprint, and the master audit prompt to eliminate silent tier demotion.
+  - `##Unslopping-And-Anti-AI-Slop-Design-Craft-Architecture.md`: Added Section 4 (*Advanced Ergonomic & Micro-Interaction Craft Architecture*), codifying the Left Architectural Scroll Cue Rail, the Code Payload `.hover-scrollbar`, Symmetrical Resizable Splitter Handles across environments, and Anti-Orphan Copy Budgeting (`truncate` + native tooltip).
+  - `#UI_DESIGN_SYSTEM.md file.md`: Synchronized Sections 48 through 57 from the codebase design system, including 3D Raycasting Scroll Lock Immunity, Decoupled Code Viewports, Modal Portal Hoisting via `createPortal`, and Side-by-Side ADR Semantic Diffs.
+  - `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` & `##CI-CD-Architectural-Invariant-Gates-And-MCP-Distribution-Playbook.md`: Codified Vectors 14–18 covering body identity override forgery, proxy CIDR bitmasking, and deployment tag separation (`[skip vercel]` vs `[skip ci]`).
+- **Sandbox File Path Normalization (`apps/server/index.js`)**:
+  - Investigated and eliminated accidental redundant directory nesting (`demo-repo/demo-repo/`) when callers or simulators pass paths prefixed with `demo-repo/`.
+  - Normalized incoming `args.file_path` across both `/api/mcp/call` validation and sandbox execution before resolving against `resolvedRepo`.
+- **Comprehensive Quality & Test Verification**:
+  - Client PWA production build (`npm run build`) succeeded in **15.14s** with zero errors.
+  - Full automated backend test suite executed: **111 / 111 tests passing** (0 failures, 0 regressions).
+  - Verified clean working trees across both `backend` and `docs` branches.
+
 ## 1.0.90 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 5 Remediation: Sponsor Pass Forgery Defense, Paid Tier Persistence Across Session Regeneration, Cloudflare IPv6 & Integer CIDR Proxy Matching, and Org CI Gate GITHUB_TOKEN Forwarding)
 
 - **Evaluation Sponsor Pass Forgery Sealed (`apps/server/index.js`)**:
