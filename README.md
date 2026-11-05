@@ -25,6 +25,8 @@
 <div align="center">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/suneetchugh-dev/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/suneetchugh-dev/CAVDAX/actions)
+[![GitHub Release](https://img.shields.io/github/v/release/suneetchugh-dev/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/suneetchugh-dev/CAVDAX/releases/tag/v1.2.6)
+[![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-GraphBLAS-FF2D55?style=for-the-badge&logo=redis&logoColor=white)](https://falkordb.com/)
@@ -891,7 +893,7 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Autho
 6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
 7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
-### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.5)
+### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.6)
 ```bash
 # Start local Model Context Protocol stdio daemon
 npx -y @cavdax/mcp-server
@@ -907,7 +909,7 @@ npx cavdax check --staged
 npx cavdax check --pr <number>
 
 # CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
-npx -y @cavdax/mcp-server@1.2.5 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
+npx -y @cavdax/mcp-server@1.2.6 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---
@@ -964,6 +966,7 @@ Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**
 
 * **Suneet Chugh** ([@suneetchugh-dev](https://github.com/suneetchugh-dev)) — Lead Architect & Systems Engineer: FalkorDB GraphBLAS Causal Core, Enclosed MCP Gate, Visual Operational Console (9 Views), Cloudflare Edge Mesh & Empirical Benchmarks.
 * **Geetika Chugh** ([@GeetikaChughIBM](https://github.com/GeetikaChughIBM)) — Co-Creator & Systems Engineer: Official 10-Minute Demo Video Walkthrough, `@cavdax/mcp-server` NPM Distribution (Sigstore Provenance), GitHub Repo AST Scanner & Ingestion Engine, and Razorpay Sponsor Architecture.
+* **Official Community & Maintainer Inquiries**: Follow [@cavdax_dev](https://x.com/cavdax_dev) on X • Official Contact: [`cavdax.dev@gmail.com`](mailto:cavdax.dev@gmail.com)
 
 ---
 *License: GNU GPL 3.0 &bull; Powered by FalkorDB GraphBLAS & Model Context Protocol (MCP)*

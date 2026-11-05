@@ -9,6 +9,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.94 Latest Session Achievements (November 6, 2026 - Official GitHub Release v1.2.6, Automated Sigstore NPM Distribution, Dynamic Version Interpolation & Guard 0z Codification)
+
+- **Official GitHub Release v1.2.6 Published**:
+  - Cut and published official GitHub release tag `v1.2.6` targeting `main` commit `2b194d0`.
+  - Authored release notes detailing homepage alignment to `https://cavdax.sahnirmaan.live`, zero-fallback email sanitization, and modal portal hoisting.
+- **Automated Sigstore Provenance NPM Distribution**:
+  - Triggered `.github/workflows/publish-mcp.yml` workflow (Run ID `42121296956`).
+  - Hermetically signed and published `@cavdax/mcp-server@1.2.6` to npm with public Sigstore transparency log entry (`https://search.sigstore.dev/?logIndex=3702852050`).
+  - Verified live on `registry.npmjs.org`: `dist-tags.latest` reflects `1.2.6` and `homepage` reflects `https://cavdax.sahnirmaan.live`.
+- **Dynamic In-Code Version Interpolation (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
+  - Replaced hardcoded static `@1.2.5` version strings with dynamic `${MCP_SERVER_DEFAULT_VERSION}` across all copy-to-clipboard terminal snippets and GitHub Action YAML generators.
+  - Bumped client build fallbacks in `vite.config.js` and `constants/version.js` to `1.2.6`.
+- **README & Official Contact Alignment (`README.md`)**:
+  - Updated Universal CLI Daemon headings and npx gate check commands to `v1.2.6`.
+  - Added official GitHub Release badge and official X follow badge (`@cavdax_dev`) in the hero badge cluster.
+  - Added maintainer contact channel (`cavdax.dev@gmail.com`) and X profile under Team & Attribution.
+- **Inviolable Constitution Expansion (`AGENTS.md`)**:
+  - Codified **Guard 0z: Version Synchronization & Stale Release Number Elimination Standard (Anti-Stale Tag Invariant)**, mandating dynamic interpolation in UI code and whole-repo forensic scanning to eliminate obsolete version references across docs and code.
+
 ## 1.0.93 Latest Session Achievements (November 6, 2026 - Fallback Credential Sanitization, Multi-Layer Email Validation, NPM Package Homepage Alignment & Master Knowledge Sync)
 
 - **Hardcoded Prototype Recipient Fallback Eradication (`apps/server/index.js` — Commit `dfa44df` on `backend`)**:
