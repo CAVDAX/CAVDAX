@@ -202,8 +202,20 @@ export default function PreferencesModal({
     }
   };
 
+  const isEmailValid = /^[^s@]+@[^s@]+.[^s@]+$/.test(targetEmail.trim());
+
   const handleSimulateAlert = async () => {
     playClick();
+    const trimmedEmail = targetEmail.trim();
+    if (!trimmedEmail) {
+      setSimulateStatus('Please enter a target recipient email address above.');
+      return;
+    }
+    if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(trimmedEmail)) {
+      setSimulateStatus('Please enter a valid email address.');
+      return;
+    }
+
     setIsSimulatingAlert(true);
     setSimulateStatus(null);
     try {
@@ -212,13 +224,13 @@ export default function PreferencesModal({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          targetEmail: targetEmail.trim() || undefined
+          targetEmail: trimmedEmail
         })
       });
       const data = await res.json();
       if (data.success) {
         playAlert();
-        setSimulateStatus(`Dispatched divergence alert to ${data.recipient || 'inbox'}!`);
+        setSimulateStatus(`Dispatched divergence alert to ${data.recipient}!`);
       } else {
         setSimulateStatus('Simulation failed: ' + (data.error || 'Server error'));
       }
@@ -668,9 +680,15 @@ export default function PreferencesModal({
                 <button
                   type="button"
                   onClick={handleSimulateAlert}
-                  disabled={isSimulatingAlert}
-                  className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-[10px] font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
-                  title="Send a sample invalidation alert to your configured email"
+                  disabled={isSimulatingAlert || !isEmailValid}
+                  className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-[10px] font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-xs"
+                  title={
+                    !targetEmail.trim()
+                      ? "Enter a target recipient email above to dispatch a test alert"
+                      : !isEmailValid
+                      ? "Enter a valid email address above to dispatch a test alert"
+                      : "Send a sample invalidation alert to your configured email"
+                  }
                 >
                   {isSimulatingAlert ? (
                     <Loader2 size={11} className="animate-spin text-slate-500 dark:text-slate-400 shrink-0" />
