@@ -992,7 +992,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@1.2.6 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           CAVDAX_SERVER_URL: ${process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://cavdax.sahnirmaan.live'}
