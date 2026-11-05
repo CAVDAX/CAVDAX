@@ -264,7 +264,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
             </span>
           </div>
 
-          <div className="p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 overflow-x-auto text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed max-h-36">
+          <div data-lenis-prevent tabIndex={0} className="p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 hover-scrollbar text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed max-h-36 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/15">
             <pre><code>{latestAction.codeSnippet}</code></pre>
           </div>
         </div>

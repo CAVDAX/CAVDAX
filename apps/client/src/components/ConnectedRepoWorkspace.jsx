@@ -242,6 +242,44 @@ export default function ConnectedRepoWorkspace({
     };
   }, [repo.full_name]);
 
+  // Left Architectural Scroll Cue for ADRs List
+  const adrListRef = useRef(null);
+  const adrTrackRef = useRef(null);
+  const adrThumbRef = useRef(null);
+  const [hasAdrScroll, setHasAdrScroll] = useState(false);
+  const isHoldingAdrCue = useRef(false);
+
+  const updateAdrScrollProgress = useCallback(() => {
+    if (!adrListRef.current) return;
+    const el = adrListRef.current;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    const canScroll = maxScroll > 4;
+    setHasAdrScroll(canScroll);
+    if (!canScroll) return;
+    const ratio = Math.min(1, Math.max(0, el.scrollTop / maxScroll));
+    if (adrThumbRef.current && !isHoldingAdrCue.current) {
+      adrThumbRef.current.style.top = `${Math.min(84, Math.max(8, ratio * 100))}%`;
+    }
+  }, []);
+
+  const handleAdrListWheel = (e) => {
+    if (!adrListRef.current) return;
+    const el = adrListRef.current;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    if (maxScroll <= 0) return;
+    el.scrollTop += e.deltaY;
+    updateAdrScrollProgress();
+    e.stopPropagation();
+  };
+
+  const adrListLen = scan?.adrs?.length || 0;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      updateAdrScrollProgress();
+    }, 80);
+    return () => clearTimeout(timer);
+  }, [adrListLen, updateAdrScrollProgress]);
+
   const handleSplitterMouseDown = useCallback((e) => {
     e.preventDefault();
     setIsDraggingSplitter(true);
@@ -1006,8 +1044,64 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
 
-            <div data-lenis-prevent className="max-h-24 overflow-y-auto overscroll-contain border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent select-text [direction:rtl]">
-            <div className="[direction:ltr] divide-y divide-slate-100 dark:divide-white/5">
+            <div className="relative border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent">
+              {/* Left Architectural Scroll Cue Rail */}
+              {hasAdrScroll && (
+                <div
+                  ref={adrTrackRef}
+                  onWheel={handleAdrListWheel}
+                  onPointerDown={(e) => {
+                    if (e.button !== 0) return;
+                    isHoldingAdrCue.current = true;
+                    const rect = adrTrackRef.current?.getBoundingClientRect();
+                    if (rect && adrListRef.current) {
+                      const maxScroll = adrListRef.current.scrollHeight - adrListRef.current.clientHeight;
+                      const ratio = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height));
+                      adrListRef.current.scrollTop = ratio * maxScroll;
+                      if (adrThumbRef.current) {
+                        adrThumbRef.current.style.top = `${Math.min(84, Math.max(8, ratio * 100))}%`;
+                      }
+                    }
+                    const onMove = (moveEvent) => {
+                      if (!isHoldingAdrCue.current || !adrTrackRef.current || !adrListRef.current) return;
+                      const r = adrTrackRef.current.getBoundingClientRect();
+                      const maxScroll = adrListRef.current.scrollHeight - adrListRef.current.clientHeight;
+                      const ratio = Math.min(1, Math.max(0, (moveEvent.clientY - r.top) / r.height));
+                      adrListRef.current.scrollTop = ratio * maxScroll;
+                      if (adrThumbRef.current) {
+                        adrThumbRef.current.style.top = `${Math.min(84, Math.max(8, ratio * 100))}%`;
+                      }
+                    };
+                    const onUp = () => {
+                      isHoldingAdrCue.current = false;
+                      window.removeEventListener('pointermove', onMove);
+                      window.removeEventListener('pointerup', onUp);
+                    };
+                    window.addEventListener('pointermove', onMove);
+                    window.addEventListener('pointerup', onUp);
+                  }}
+                  className="absolute left-0.5 top-1 bottom-1 w-2 z-20 cursor-pointer flex justify-center group"
+                  title="ADR list scroll cue (hold or scroll to navigate)"
+                  aria-label="ADR list scroll cue"
+                >
+                  <div
+                    ref={adrThumbRef}
+                    className="absolute left-1/2 -translate-x-1/2 w-1 h-4 rounded-full bg-slate-400/60 dark:bg-white/40 group-hover:bg-slate-700 dark:group-hover:bg-white transition-colors pointer-events-none"
+                    style={{ top: '8%' }}
+                  />
+                </div>
+              )}
+
+              <div
+                ref={adrListRef}
+                data-lenis-prevent
+                tabIndex={0}
+                onWheel={handleAdrListWheel}
+                onScroll={updateAdrScrollProgress}
+                className={`max-h-24 overflow-y-auto overscroll-contain select-text repo-cue-only-scroll focus:outline-none divide-y divide-slate-100 dark:divide-white/5 ${
+                  hasAdrScroll ? 'pl-3.5 pr-2' : 'px-3'
+                }`}
+              >
               {scan.adrs.map(a => {
                 const gitAdrUrl = (repo?.full_name && a?.path) ? `https://github.com/${repo.full_name}/blob/${scan?.branch || selectedBranch || repo.default_branch || 'main'}/${String(a.path).replace(/^\.?\//, '')}` : null;
                 // Find downstream impacted decisions and code files for this ADR
@@ -1049,7 +1143,7 @@ export default function ConnectedRepoWorkspace({
                           </a>
                         )}
                       </div>
-                    </div>
+            </div>
                     <div className="text-slate-500 dark:text-slate-400 truncate text-[10px] font-mono mt-0.5">{a.path}</div>
 
                     {/* Impacted Target Files Dropdown */}
@@ -1192,8 +1286,8 @@ export default function ConnectedRepoWorkspace({
                   </button>
 
                   {staleDecisions.length === 0 && validDecisions.length > 0 && (
-                    <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 leading-normal pt-0.5">
-                      All decisions currently valid. Select a decision node on the canvas to inspect or probe its gate clearance.
+                    <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate pt-0.5" title="All decisions valid. Select a decision node on the canvas to inspect or probe its gate clearance.">
+                      All decisions valid. Select a canvas node to probe.
                     </div>
                   )}
                 </div>

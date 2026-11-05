@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Lenis from 'lenis';
 import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, SlidersHorizontal, Trash2, Zap, AlertTriangle, X } from 'lucide-react';
 import Header from './components/Header.jsx';
@@ -171,6 +171,52 @@ export default function App() {
   const [selectedConnectedRepo, setSelectedConnectedRepo] = useState(null);
   const [divergenceAlert, setDivergenceAlert] = useState(null);
   const [isSimulatingAlertGlobal, setIsSimulatingAlertGlobal] = useState(false);
+
+  // Draggable Mid-Section Divider state for Demo Sandbox (Terminal vs GraphCanvas)
+  const demoSplitContainerRef = useRef(null);
+  const [demoLeftWidthPercent, setDemoLeftWidthPercent] = useState(() => {
+    if (typeof window === 'undefined') return 41.66;
+    try {
+      const saved = localStorage.getItem('cavdax.demo.splitter.width');
+      if (saved) {
+        const val = parseFloat(saved);
+        if (!isNaN(val) && val >= 25 && val <= 65) return val;
+      }
+    } catch {}
+    return 41.66;
+  });
+  const [isDraggingDemoSplitter, setIsDraggingDemoSplitter] = useState(false);
+
+  const handleDemoSplitterMouseDown = useCallback((e) => {
+    e.preventDefault();
+    setIsDraggingDemoSplitter(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDraggingDemoSplitter) return;
+
+    const handleMouseMove = (e) => {
+      if (!demoSplitContainerRef.current) return;
+      const rect = demoSplitContainerRef.current.getBoundingClientRect();
+      const currentX = e.clientX - rect.left;
+      const newPercent = Math.min(65, Math.max(25, (currentX / rect.width) * 100));
+      setDemoLeftWidthPercent(newPercent);
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingDemoSplitter(false);
+      try {
+        localStorage.setItem('cavdax.demo.splitter.width', String(demoLeftWidthPercent));
+      } catch {}
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingDemoSplitter, demoLeftWidthPercent]);
 
   // Intelligent Background Prefetching: Download secondary route chunks during browser idle
   useEffect(() => {
@@ -1603,9 +1649,16 @@ export default function App() {
               </div>
 
               {/* Split Screen Console Container (Terminal + GraphCanvas) — Dynamic single-screen flex expansion */}
-              <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 rounded-2xl overflow-hidden console-split-container">
-                {/* Left: Terminal HUD (5 Cols) */}
-                <div data-tour="terminal-view" className="lg:col-span-5 h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10">
+              <div
+                ref={demoSplitContainerRef}
+                style={{ '--demo-left-width': `${demoLeftWidthPercent}%` }}
+                className="flex-1 min-h-0 flex flex-col lg:flex-row rounded-2xl overflow-hidden console-split-container select-none"
+              >
+                {/* Left: Terminal HUD (Resizable width on desktop) */}
+                <div
+                  data-tour="terminal-view"
+                  className="w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0"
+                >
                   <TerminalView
                     terminalLogs={terminalLogs}
                     activeVerdict={activeVerdict}
@@ -1615,8 +1668,25 @@ export default function App() {
                   />
                 </div>
 
-                {/* Right: Graph Canvas (7 Cols) */}
-                <div data-tour="graph-canvas" className="lg:col-span-7 h-full relative overflow-hidden">
+                {/* Draggable Mid-Section Divider Holder Button */}
+                <div
+                  onMouseDown={handleDemoSplitterMouseDown}
+                  className={`hidden lg:flex w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
+                    isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
+                  }`}
+                  title="Drag to adjust Terminal and Graph width"
+                >
+                  <div
+                    className={`w-1 h-10 rounded-full transition-colors ${
+                      isDraggingDemoSplitter
+                        ? 'bg-slate-900 dark:bg-white'
+                        : 'bg-slate-300 dark:bg-white/20 group-hover:bg-slate-400 dark:group-hover:bg-white/40'
+                    }`}
+                  />
+                </div>
+
+                {/* Right: Graph Canvas */}
+                <div data-tour="graph-canvas" className={`flex-1 min-w-0 h-full relative overflow-hidden ${isDraggingDemoSplitter ? 'pointer-events-none select-none' : ''}`}>
                   <SubsystemErrorBoundary name="Knowledge Graph Canvas">
                     <GraphCanvas
                       graphData={graphData}
