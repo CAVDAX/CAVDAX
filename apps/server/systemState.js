@@ -37,7 +37,9 @@ export function loadSystemState() {
         notificationPreferences: (typeof parsed.notificationPreferences === 'object' && parsed.notificationPreferences !== null)
           ? parsed.notificationPreferences
           : {},
-        sponsors: Array.isArray(parsed.sponsors) ? parsed.sponsors : []
+        sponsors: Array.isArray(parsed.sponsors) ? parsed.sponsors : [],
+        paidUsers: (typeof parsed.paidUsers === 'object' && parsed.paidUsers !== null) ? parsed.paidUsers : {},
+        userRepos: (typeof parsed.userRepos === 'object' && parsed.userRepos !== null) ? parsed.userRepos : {}
       };
     }
   } catch (err) {
@@ -73,6 +75,8 @@ export function saveSystemState(state) {
         ? state.notificationPreferences
         : {},
       sponsors: Array.isArray(state.sponsors) ? state.sponsors.slice(0, 100) : [],
+      paidUsers: (typeof state.paidUsers === 'object' && state.paidUsers !== null) ? state.paidUsers : {},
+      userRepos: (typeof state.userRepos === 'object' && state.userRepos !== null) ? state.userRepos : {},
       updatedAt: new Date().toISOString()
     }, null, 2);
 

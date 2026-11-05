@@ -804,7 +804,7 @@ export async function proposeAdrPullRequest({
 
   // Scan open PRs to prevent race condition collisions across simultaneous proposals
   try {
-    const openPulls = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/pulls?state=open&per_page=50`);
+    const openPulls = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/pulls?state=open&per_page=100`);
     if (Array.isArray(openPulls)) {
       for (const pr of openPulls) {
         const branchName = pr.head?.ref || '';
@@ -994,7 +994,7 @@ jobs:
       - name: Run CAVDAX Invariant Gate Check
         run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
-          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
+          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
           CAVDAX_SERVER_URL: ${process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://cavdax.sahnirmaan.live'}
 `;
 

@@ -50,6 +50,11 @@ export async function runGate(options = {}) {
         headers['Authorization'] = `Bearer ${apiKey}`;
         headers['X-CAVDAX-API-KEY'] = apiKey;
       }
+      const callerGhToken = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '';
+      if (callerGhToken) {
+        headers['X-GitHub-Token'] = callerGhToken;
+        headers['X-GitHub-Actions-Token'] = callerGhToken;
+      }
 
       const res = await fetch(`${serverUrl}/api/github/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/adrs`, {
         headers,

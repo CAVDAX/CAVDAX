@@ -395,7 +395,9 @@ function syncSystemStateToDisk() {
     devRoster: globalDevRoster,
     apiKeys: Array.from(userApiKeyRegistry.values()),
     auditEntries: Array.isArray(savedSystemState.auditEntries) ? savedSystemState.auditEntries : [],
-    sponsors: Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : []
+    sponsors: Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : [],
+    paidUsers: (typeof savedSystemState.paidUsers === 'object' && savedSystemState.paidUsers !== null) ? savedSystemState.paidUsers : {},
+    userRepos: (typeof savedSystemState.userRepos === 'object' && savedSystemState.userRepos !== null) ? savedSystemState.userRepos : {}
   });
 }
 
@@ -437,42 +439,54 @@ const activeTier = TIER_CONFIG[CAVDAX_TIER] || TIER_CONFIG.free;
 // Detect if socket connection originates from a trusted reverse proxy, Docker network, or Cloudflare edge
 export function isTrustedProxyIp(ip) {
   if (!ip) return false;
-  const clean = ip.toLowerCase();
+  const clean = String(ip).trim().toLowerCase();
   // 1. Direct loopback
   if (clean === '127.0.0.1' || clean === '::1' || clean === 'localhost' || clean === '1') return true;
-  // 2. Private subnets (Docker bridges, internal ingress controllers, Caddy, Nginx)
+
+  // 2. Explicit configured trusted reverse proxies (e.g. Caddy container IP or gateway)
+  const configured = (typeof process !== 'undefined' && process.env?.TRUSTED_PROXIES || '')
+    .split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+  if (configured.includes(clean)) return true;
+
+  // 3. Official Cloudflare IPv6 Edge prefixes (https://www.cloudflare.com/ips-v6)
+  const CF_V6 = ['2400:cb00:', '2606:4700:', '2803:f800:', '2405:b500:', '2405:8100:', '2a06:98c0:', '2c0f:f248:'];
+  if (CF_V6.some(p => clean.startsWith(p))) return true;
+
+  // 4. Official Cloudflare IPv4 Edge CIDR blocks with exact integer bitmasking (https://www.cloudflare.com/ips-v4)
+  const parts = clean.split('.').map(Number);
+  if (parts.length === 4 && !parts.some(p => isNaN(p) || p < 0 || p > 255)) {
+    const ipInt = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+    const CF_V4 = [
+      [2918526976, 20], // 173.245.48.0/20
+      [1729491968, 22], // 103.21.244.0/22
+      [1729546240, 22], // 103.22.200.0/22
+      [1730085888, 22], // 103.31.4.0/22
+      [2372222976, 18], // 141.101.64.0/18
+      [1822605312, 18], // 108.162.192.0/18
+      [3193827328, 20], // 190.93.240.0/20
+      [3161612288, 20], // 188.114.96.0/20
+      [3320508416, 22], // 197.234.240.0/22
+      [3324608512, 17], // 198.41.128.0/17
+      [2728263680, 15], // 162.158.0.0/15
+      [1745879040, 13], // 104.16.0.0/13
+      [1746403328, 14], // 104.24.0.0/14
+      [2889875456, 13], // 172.64.0.0/13
+      [2197833728, 22]  // 131.0.72.0/22
+    ];
+    for (const [netInt, bits] of CF_V4) {
+      const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0;
+      if ((ipInt & mask) === (netInt & mask)) return true;
+    }
+  }
+
+  // 5. In strict proxy mode, reject untrusted private subnets
+  if (typeof process !== 'undefined' && process.env?.STRICT_PROXY_TRUST === 'true') {
+    return false;
+  }
+
+  // 6. Private subnets (Docker bridges, internal ingress controllers)
   if (clean.startsWith('10.') || clean.startsWith('192.168.')) return true;
   if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(clean)) return true;
-  // 3. Known Cloudflare edge proxy IPv4 ranges (https://www.cloudflare.com/ips-v4)
-  if (
-    clean.startsWith('173.245.') ||
-    clean.startsWith('103.21.') ||
-    clean.startsWith('103.22.') ||
-    clean.startsWith('103.31.') ||
-    clean.startsWith('141.101.') ||
-    clean.startsWith('108.162.') ||
-    clean.startsWith('190.93.') ||
-    clean.startsWith('188.114.') ||
-    clean.startsWith('197.234.') ||
-    clean.startsWith('198.41.') ||
-    clean.startsWith('162.158.') ||
-    clean.startsWith('162.159.') ||
-    clean.startsWith('104.16.') ||
-    clean.startsWith('104.17.') ||
-    clean.startsWith('104.18.') ||
-    clean.startsWith('104.19.') ||
-    clean.startsWith('104.20.') ||
-    clean.startsWith('104.21.') ||
-    clean.startsWith('104.22.') ||
-    clean.startsWith('104.23.') ||
-    clean.startsWith('104.24.') ||
-    clean.startsWith('104.25.') ||
-    clean.startsWith('104.26.') ||
-    clean.startsWith('104.27.') ||
-    clean.startsWith('131.0.72.')
-  ) return true;
-  // Cloudflare 172.64.0.0/13 CIDR block (covers 172.64.0.0 through 172.71.255.255)
-  if (/^172\.(6[4-9]|7[0-1])\./.test(clean)) return true;
   return false;
 }
 
@@ -628,11 +642,16 @@ function requireAuth(req, res, next) {
     const keyRecord = userApiKeyRegistry.get(keyHash);
     if (keyRecord && (keyRecord.createdAt || 0) >= globalKeyRevocationEpoch) {
       keyRecord.lastUsedAt = Date.now();
+      const userLoginLower = (keyRecord.login || '').toLowerCase();
+      const connected = (typeof savedSystemState !== 'undefined' && savedSystemState?.userRepos && savedSystemState.userRepos[userLoginLower])
+        || keyRecord.connectedRepos
+        || [];
       req.authUser = {
         userId: keyRecord.userId,
         login: keyRecord.login,
         tier: keyRecord.tier || 'free',
-        role: 'user'
+        role: 'user',
+        connectedRepos: Array.isArray(connected) ? connected : []
       };
       return next();
     }
@@ -2637,7 +2656,13 @@ app.get('/api/auth/github/callback', async (req, res) => {
       return res.redirect(`${frontendBase}${returnTo}${sep}oauth_error=user_fetch_failed`);
     }
 
-    // 3. Persist user in session & sign persistent auth cookie
+    // 3. Look up existing paid tier and connectedRepos
+    const userIdStr = String(userData.id);
+    const userLoginLower = (userData.login || '').toLowerCase();
+    const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers) ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLoginLower]) : null;
+    const userTier = paidRecord?.tier || req.session?.tier || 'free';
+    const existingConnectedRepos = Array.isArray(req.session?.connectedRepos) ? [...req.session.connectedRepos] : [];
+
     req.session.user = {
       githubId:   userData.id,
       login:      userData.login,
@@ -2645,8 +2670,9 @@ app.get('/api/auth/github/callback', async (req, res) => {
       avatarUrl:  userData.avatar_url,
       email:      primaryEmail,
       accessToken,
-      tier:       req.session?.tier || 'free'
+      tier:       userTier
     };
+    req.session.tier = userTier;
 
     // Set signed persistent cookie for instant re-hydration across server restarts
     // Strip sensitive OAuth access token from client cookie payload (OWASP A01/A02 Defense-in-depth)
@@ -2656,7 +2682,7 @@ app.get('/api/auth/github/callback', async (req, res) => {
       name:      userData.name || userData.login,
       avatarUrl: userData.avatar_url,
       email:     primaryEmail,
-      tier:      req.session?.tier || 'free'
+      tier:      userTier
     };
     const signedAuth = signAuthToken(cookieUser);
     if (signedAuth) {
@@ -2668,7 +2694,7 @@ app.get('/api/auth/github/callback', async (req, res) => {
       });
     }
 
-    console.log(`[CAVDAX OAuth] User authenticated: ${userData.login} (id: ${userData.id})`);
+    console.log(`[CAVDAX OAuth] User authenticated: ${userData.login} (id: ${userData.id}, tier: ${userTier})`);
 
     // 4. Prevent Session Fixation (OWASP A07): Regenerate session upon authentication
     const redirectUrl = `${frontendBase}${returnTo}${returnTo.includes("?") ? "&" : "?"}connected=1&login=${encodeURIComponent(userData.login)}&name=${encodeURIComponent(userData.name || userData.login)}&avatar=${encodeURIComponent(userData.avatar_url || '')}&githubId=${userData.id}`;
@@ -2680,9 +2706,11 @@ app.get('/api/auth/github/callback', async (req, res) => {
           name:      userData.name || userData.login,
           avatarUrl: userData.avatar_url,
           email:     primaryEmail,
-          tier:      'free',
+          tier:      userTier,
           accessToken: accessToken
         };
+        req.session.tier = userTier;
+        req.session.connectedRepos = existingConnectedRepos;
         req.session.save((err) => {
           if (err) console.error('[CAVDAX OAuth] Session save error:', err);
           res.redirect(redirectUrl);
@@ -2832,6 +2860,14 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
       });
     }
 
+    const userIdStr = String(userData.id);
+    const userLoginLower = (userData.login || '').toLowerCase();
+    const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers)
+      ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLoginLower])
+      : null;
+    const userTier = paidRecord?.tier || req.session?.tier || 'free';
+    const existingConnectedRepos = Array.isArray(req.session?.connectedRepos) ? [...req.session.connectedRepos] : [];
+
     const executeSave = () => {
       req.session.user = {
         githubId: userData.id,
@@ -2840,8 +2876,10 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
         avatarUrl: userData.avatar_url || '',
         email: userData.email || '',
         accessToken: trimmedToken,
-        tier: 'free'
+        tier: userTier
       };
+      req.session.tier = userTier;
+      req.session.connectedRepos = existingConnectedRepos;
 
       const cookieUser = {
         githubId: userData.id,
@@ -2849,7 +2887,7 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
         name: userData.name || userData.login,
         avatarUrl: userData.avatar_url || '',
         email: userData.email || '',
-        tier: 'free'
+        tier: userTier
       };
 
       const signedAuth = signAuthToken(cookieUser);
@@ -2863,7 +2901,7 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
         });
       }
 
-      console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id})`);
+      console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id}, tier: ${userTier})`);
 
       req.session.save((saveErr) => {
         if (saveErr) {
@@ -2877,7 +2915,7 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
             login: userData.login,
             name: userData.name || userData.login,
             avatarUrl: userData.avatar_url || '',
-            tier: 'free'
+            tier: userTier
           }
         });
       });
@@ -3177,11 +3215,16 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
     const keyRecord = userApiKeyRegistry.get(keyHash);
     if (keyRecord && (keyRecord.createdAt || 0) >= globalKeyRevocationEpoch) {
       isApiKeyAuth = true;
+      const userLoginLower = (keyRecord.login || '').toLowerCase();
+      const connected = (savedSystemState?.userRepos && savedSystemState.userRepos[userLoginLower])
+        || keyRecord.connectedRepos
+        || [];
       authUser = {
         userId: keyRecord.userId,
         login: keyRecord.login,
         tier: keyRecord.tier || 'free',
-        role: 'user'
+        role: 'user',
+        connectedRepos: Array.isArray(connected) ? connected : []
       };
     }
   }
@@ -3236,6 +3279,15 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
           });
         }
         req.session.connectedRepos.push(repoFullName);
+      }
+    }
+    const recordUserLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
+    if (recordUserLogin && typeof savedSystemState !== 'undefined' && savedSystemState) {
+      if (!savedSystemState.userRepos) savedSystemState.userRepos = {};
+      if (!Array.isArray(savedSystemState.userRepos[recordUserLogin])) savedSystemState.userRepos[recordUserLogin] = [];
+      if (!savedSystemState.userRepos[recordUserLogin].includes(repoFullName.toLowerCase())) {
+        savedSystemState.userRepos[recordUserLogin].push(repoFullName.toLowerCase());
+        if (typeof syncSystemStateToDisk === 'function') syncSystemStateToDisk();
       }
     }
     const targetBranch = sanitizeBranchName(requestedBranch || 'main');
@@ -3812,6 +3864,19 @@ app.post('/api/billing/verify-payment', (req, res) => {
     console.log(`[CAVDAX Sponsors] Backer registered: ${backerRecord.name} (${backerRecord.tier_label})`);
   }
 
+  // Record persistent paid tier entitlement for this GitHub identity
+  const userIdentifier = req.session?.user?.githubId ? String(req.session.user.githubId) : (req.session?.user?.login?.toLowerCase() || null);
+  if (userIdentifier && !isSupporter) {
+    if (!savedSystemState.paidUsers) savedSystemState.paidUsers = {};
+    savedSystemState.paidUsers[userIdentifier] = {
+      tier: authorizedTier,
+      purchasedAt: new Date().toISOString(),
+      paymentId: razorpay_payment_id,
+      login: req.session.user.login || null
+    };
+    syncSystemStateToDisk();
+  }
+
   if (req.session) {
     if (!isSupporter) {
       req.session.tier = authorizedTier;
@@ -3891,8 +3956,34 @@ app.post('/api/billing/activate-evaluation-sponsor', (req, res) => {
   };
   const tierInfo = tierMap[tierNum];
 
-  // Evaluation sponsor pass strictly requires a connected GitHub account or developer identity
-  const effectiveUser = req.session?.user || user_override || null;
+  // Invariant Defense: An unauthenticated caller must NEVER forge arbitrary names/avatars via user_override.
+  // user_override is ONLY honored if caller is an authenticated root token, dev roster member, or test environment.
+  const authHeader = req.headers?.authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  const isRootAuth = Boolean(typeof API_TOKEN !== 'undefined' && API_TOKEN && typeof timingSafeStringEqual === 'function' && timingSafeStringEqual(bearerToken, API_TOKEN));
+  const sessionLogin = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
+  const isDevRosterAuth = Boolean(sessionLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.includes(sessionLogin));
+  const isTrustedDev = isRootAuth || isDevRosterAuth;
+
+  let effectiveUser = req.session?.user || null;
+  if (!effectiveUser && isTrustedDev && user_override && user_override.login) {
+    effectiveUser = {
+      id: user_override.id || user_override.login,
+      login: String(user_override.login).replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 39),
+      name: String(user_override.name || user_override.login).slice(0, 50),
+      avatar_url: typeof user_override.avatar_url === 'string' && user_override.avatar_url.startsWith('https://') ? user_override.avatar_url : null
+    };
+  } else if (!effectiveUser && (typeof globalHackathonMode !== 'undefined' ? globalHackathonMode : false)) {
+    // Ephemeral evaluation pass for unauthenticated judge: Mint deterministic, watermarked Judge identity
+    effectiveUser = {
+      id: 'judge_eval_' + (req.sessionID ? req.sessionID.slice(0, 8) : 'evaluator'),
+      login: 'hackathon-evaluator',
+      name: 'Hackathon Evaluator',
+      avatar_url: 'https://avatars.githubusercontent.com/u/9919?v=4',
+      is_evaluation: true
+    };
+  }
+
   if (!effectiveUser || !effectiveUser.login) {
     return res.status(401).json({
       success: false,
