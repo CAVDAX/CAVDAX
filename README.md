@@ -880,7 +880,7 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Autho
 6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
 7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
-### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.3)
+### Universal CLI Daemon (`@cavdax/mcp-server` v1.2.5)
 ```bash
 # Start local Model Context Protocol stdio daemon
 npx -y @cavdax/mcp-server
@@ -908,7 +908,7 @@ CAVDAX/
 ├── apps/
 │   ├── client/                  # React 18 + Vite + Tailwind Porcelain Dark Web HUD
 │   │   ├── public/sw.js         # Service Worker (Web Push & background divergence alerts)
-│   │   ├── src/components/      # AuditPage, DevConsolePage, McpActionPlayground, PreferencesModal, etc.
+│   │   ├── src/components/      # CommandPalette, DevPatLoginModal, AuditPage, DevConsolePage, NodeInspector diff, etc.
 │   │   ├── src/services/        # webPush.js (VAPID PushManager subscription manager)
 │   │   └── Dockerfile           # Client containerization
 │   ├── server/                  # Node.js + Express Backend Gateway
@@ -916,7 +916,7 @@ CAVDAX/
 │   │   ├── email.js             # Resend API transactional divergence alert dispatcher & debouncer
 │   │   ├── webPush.js           # VAPID key manager & Web Push background notification broker
 │   │   ├── systemState.js       # Atomic persistent state & user notification preferences
-│   │   ├── test/                # Unit & security test suite (90 automated tests)
+│   │   ├── test/                # Unit & security test suite (102 automated tests)
 │   │   └── Dockerfile           # Server containerization
 │   └── mcp-server/              # Standalone NPM package (@cavdax/mcp-server — published)
 │       ├── bin/cavdax.js        # Universal CLI: npx cavdax mcp|ingest|check|doctor

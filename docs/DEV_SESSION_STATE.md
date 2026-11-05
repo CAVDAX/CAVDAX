@@ -9,6 +9,28 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.88 Latest Session Achievements (November 5, 2026 - Production 502 Triage & Caddy Upstream Retry Absorption, Dev PAT Copy Polish, External Knowledge Prompts Sync & UI Design System Sections 51-53)
+
+- **Production 502 Bad Gateway Triage & Forensic Root-Cause Resolution (`infra/Caddyfile`)**:
+  - Investigated user incident where clicking "Connect GitHub" (`/api/auth/github`) on production (`cavdax.sahnirmaan.live`) at 09:50:46 UTC returned a Cloudflare `502 Bad Gateway` (Host Error).
+  - Traced root cause to transient container recreation on the AWS EC2 `t3.micro` (1 GB RAM) instance during GitHub Actions workflow run `#42004877856` deployment: while `cavdax-server` was executing `await initDb()` before listening on port 3000, Caddy received an initial `ECONNREFUSED`.
+  - Configured upstream retry absorption in `infra/Caddyfile`:
+    - Added `lb_try_duration 5s` and `lb_retry_interval 250ms` to `reverse_proxy server:3000` and `reverse_proxy client:5173`.
+    - Enables Caddy to gracefully buffer and retry incoming requests for up to 5 seconds during rolling container re-creations, preventing transient 502s from reaching Cloudflare edge nodes.
+  - Probed live production with `curl.exe -ILsS`: confirmed backend is online, healthy, and redirecting with HTTP `302 Found` to GitHub OAuth with active rate limit headers (`1200 req/min`).
+- **Dev PAT Authentication Copy Polish (`apps/client/src/components/DevPatLoginModal.jsx`)**:
+  - Removed `<span>Offline / Localhost Capability</span>` banner and `<ShieldCheck />` icon from the modal dialog body.
+  - Removed unused `ShieldCheck` import from `lucide-react`.
+  - Verified Vite client production build: compiled cleanly in 11.49s (`0 errors, 0 warnings`).
+- **External Master AI Prompts & Knowledge Architecture Sync (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main`)**:
+  - Updated `##Cloudflare-Zero-Trust-And-Edge-WAF-Hardening-Architecture.md`: added Section 3.5 ("Reverse Proxy Client IP Extraction & Edge-Node Pooling Defense") with the trusted proxy table, and Section 3.6 ("Upstream Container Swap & Rolling Reload 502 Mitigation").
+  - Updated `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md`: expanded schema to 13 Forensic Vectors, codifying Vector 11 (Proxy Edge Pooling & Upstream 502s), Vector 12 (CI Gate Org Repo Authorization), and Vector 13 (Session Fixation & Anonymous Dev Auth Leakage).
+  - Authored new comprehensive guide: `##Puppeteer-CDP-Adversarial-Visual-And-Interaction-Testing.md` documenting Chrome CDP request interception, credentialed CORS mock headers, pre-mount storage seeding, and anti-false-positive strict assertions.
+- **Codebase Documentation Hardening (`README.md` & `docs/UI_DESIGN_SYSTEM.md`)**:
+  - Aligned `@cavdax/mcp-server` CLI daemon version to `v1.2.5` in `README.md`.
+  - Updated automated test suite count to 102 passing tests in `README.md`.
+  - Appended Section 51 (Evaluation Pass & Identity Binding), Section 52 (Command Palette Omnibar Specification), and Section 53 (Side-by-Side ADR Semantic Diff Specification) to `docs/UI_DESIGN_SYSTEM.md`.
+
 ## 1.0.87 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 4 Remediation: Proxy-Aware IP Rate Limiting, Org Repo Access, Session Fixation & Sequential ADR Scoping)
 
 - **Proxy-Aware Client IP Extraction & Anti-Edge Pooling (`apps/server/index.js`)**:

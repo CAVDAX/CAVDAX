@@ -3311,3 +3311,53 @@ function usePillTracker(activeKey) {
         ```
      3. Ensure backdrop dismissal checks `e.target === e.currentTarget` so internal clicks do not accidentally dismiss the modal.
 
+
+
+---
+
+## 51. Evaluation Pass & Identity Binding (Unauthenticated Gate vs Authenticated 0-Friction Switching)
+
+To ensure high-assurance evaluation flows that prevent anonymous abuse while providing seamless zero-friction exploration for verified judges:
+
+### 51.1 Active Identity Requirement for Evaluation Passes
+1. **The Anonymous Bypass Vulnerability**:
+   - Setting `hasEvaluationPass = Boolean(isAuthorizedDev || isHackathonMode)` naively grants free commercial tier switches and API key provisioning to unauthenticated, anonymous visitors.
+   - Anyone stumbling upon the deployment can switch tiers or generate keys anonymously without establishing identity.
+2. **The Enforced Invariant**:
+   - The evaluation pass MUST be strictly bound to active user presence:
+     ```javascript
+     const activeUser = user || getStoredUser() || getActiveDevSession();
+     const hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)));
+     ```
+   - **Unauthenticated Visitor UI**:
+     - Profile Page: Primary CTA renders as `[Lock] Sign In to Activate` linking to `/api/auth/github?returnTo=/profile`.
+     - Support Page: Primary CTA renders as `[Lock] Sign In to Sponsor` linking to `/api/auth/github?returnTo=/support`.
+   - **Authenticated Evaluator UI**:
+     - Instant, 1-click free tier switching between Community, Pro, and Enterprise (or Cookie, 2 Cups, and Core Supporter) with zero payment modal blockers.
+     - Header displays an explicit `Log Out` action separated by a divider, ensuring clean account lifecycle control.
+
+---
+
+## 52. Command Palette (Cmd+K / Ctrl+K) Omnibar Specification
+
+To provide institutional, instant search across high-density graph topologies without camera disorienation:
+
+### 52.1 Architecture & Physics
+1. **Fuzzy Node Traversal**:
+   - Pressing `Cmd+K` (macOS) or `Ctrl+K` (Windows/Linux) triggers the `CommandPalette` modal hoisted to `document.body` via `createPortal`.
+   - Indexes all DAG nodes (ADRs, Decisions, Atomic Facts, Agent Actions, and code files) with type badges and status indicators.
+2. **Keyboard Navigation & Camera Centering**:
+   - Supports Up/Down arrow selection, Enter to activate, and Escape to dismiss with 120ms spring kinetics.
+   - Selecting a node automatically focuses the canvas camera onto that node via `GraphCanvas.centerOnNode(id)` and opens its detailed `NodeInspector`.
+
+---
+
+## 53. Side-by-Side ADR Semantic Diff Specification
+
+To enable immediate visual verification of architectural evolution across superseding decisions:
+
+### 53.1 Split-Column Topological Comparison
+1. **Supersession Edge Traversal**:
+   - When inspecting any node connected via `SUPERSEDES` or `REPLACES` edges in `NodeInspector`, render a synchronized two-column comparison.
+   - **Left Column (Deprecated/Superseded)**: Displays superseded ADR ID, title, and deprecated architectural pattern with an unbracketed `SUPERSEDED` status pill.
+   - **Right Column (Active/Superseding)**: Displays superseding ADR ID, active decision rationale, and enforced invariant rules with an emerald `ACCEPTED` status pill.
