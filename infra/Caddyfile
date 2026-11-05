@@ -10,12 +10,17 @@ cavdax.sahnirmaan.live, {$DOMAIN:localhost} {
     handle /api/* {
         reverse_proxy server:3000 {
             flush_interval -1
+            lb_try_duration 5s
+            lb_retry_interval 250ms
         }
     }
 
     # 2. Route all frontend Web HUD requests to the Client
     handle {
-        reverse_proxy client:5173
+        reverse_proxy client:5173 {
+            lb_try_duration 5s
+            lb_retry_interval 250ms
+        }
     }
 
     @sounds path /sounds/*
