@@ -3739,18 +3739,25 @@ app.post('/api/billing/activate-evaluation-sponsor', (req, res) => {
   };
   const tierInfo = tierMap[tierNum];
 
-  // Preserve user session and avatar from session or verified client override
+  // Evaluation sponsor pass strictly requires a connected GitHub account or developer identity
   const effectiveUser = req.session?.user || user_override || null;
-  const backerId = effectiveUser?.id ? ('spn_eval_' + effectiveUser.id) : ('spn_eval_guest_' + Date.now());
+  if (!effectiveUser || !effectiveUser.login) {
+    return res.status(401).json({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Evaluation Sponsor activation requires a connected GitHub account or developer session.' }
+    });
+  }
+
+  const backerId = 'spn_eval_' + (effectiveUser.id || effectiveUser.login);
   const backerRecord = {
     id: backerId,
-    name: effectiveUser?.name || effectiveUser?.login || 'Hackathon Evaluator',
-    github_handle: effectiveUser?.login || 'evaluator-pass',
+    name: effectiveUser.name || effectiveUser.login,
+    github_handle: effectiveUser.login,
     tier_id: tierNum,
     tier_label: tierInfo.label,
     amount_paise: tierInfo.paise,
     currency: 'INR',
-    avatar_url: effectiveUser?.avatar_url || effectiveUser?.avatarUrl || null,
+    avatar_url: effectiveUser.avatar_url || effectiveUser.avatarUrl || null,
     created_at: new Date().toISOString(),
     highlighted: tierInfo.highlighted,
     is_evaluation: true,
@@ -3807,7 +3814,7 @@ app.post('/api/billing/activate-evaluation-sponsor', (req, res) => {
  */
 app.post('/api/billing/reset-evaluation-sponsor', (req, res) => {
   const user = req.session?.user;
-  const backerId = user?.id ? ('spn_eval_' + user.id) : ('spn_eval_guest_' + Date.now());
+  const backerId = user?.id ? ('spn_eval_' + user.id) : (user?.login ? ('spn_eval_' + user.login) : null);
   if (Array.isArray(savedSystemState.sponsors)) {
     savedSystemState.sponsors = savedSystemState.sponsors.filter(s => {
       if (s.is_evaluation && (s.id === backerId || (user?.login && s.github_handle === user.login) || !user)) {
