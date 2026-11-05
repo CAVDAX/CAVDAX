@@ -64,6 +64,9 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -73,6 +76,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https: blob:; " +
     "connect-src 'self' https://api.github.com https://lumberjack.razorpay.com https://api.razorpay.com wss: ws:; " +
     "frame-src 'self' https://api.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com; " +
+    "form-action 'self' https://github.com; " +
     "worker-src 'self' blob:; " +
     "object-src 'none'; " +
     "base-uri 'self';"
@@ -2611,6 +2615,140 @@ if (process.env.NODE_ENV === 'test') {
     res.json({ success: true, user: req.session.user });
   });
 }
+
+const devAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => {
+    const clientIp = extractClientIp(req).toLowerCase();
+    if (globalWhitelistedIps.includes(clientIp)) return true;
+    return false;
+  },
+  message: { success: false, code: 'AUTH_RATE_LIMIT_EXCEEDED', error: 'Too many authentication attempts. Please wait 15 minutes.' }
+});
+
+/**
+ * POST /api/auth/dev-login
+ * Developer Personal Access Token (PAT) authentication for local/offline environments.
+ * Strictly forbidden in production environments (OWASP A01 Access Control).
+ */
+app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
+  if (isProduction) {
+    return res.status(403).json({
+      success: false,
+      error: 'DEV_AUTH_DISABLED_IN_PRODUCTION',
+      message: 'Dev PAT authentication is strictly disabled in production environments.'
+    });
+  }
+
+  const { token } = req.body || {};
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'TOKEN_REQUIRED',
+      message: 'GitHub Personal Access Token is required.'
+    });
+  }
+
+  const trimmedToken = token.trim();
+  // Strict format validation: GitHub tokens are alphanumeric + underscores only.
+  // Blocks CRLF injection into outgoing HTTP headers and prevents malicious payloads.
+  if (!/^[a-zA-Z0-9_]{10,255}$/.test(trimmedToken)) {
+    return res.status(400).json({
+      success: false,
+      error: 'INVALID_TOKEN_FORMAT',
+      message: 'GitHub Personal Access Token format is invalid. Must be 10-255 alphanumeric characters.'
+    });
+  }
+
+  try {
+    const ghRes = await fetch('https://api.github.com/user', {
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'CAVDAX-Dev-Gateway'
+      }
+    });
+
+    if (!ghRes.ok) {
+      const status = ghRes.status;
+      return res.status(status === 401 ? 401 : 400).json({
+        success: false,
+        error: 'INVALID_GITHUB_TOKEN',
+        message: status === 401
+          ? 'GitHub rejected this token: Bad credentials.'
+          : 'GitHub API verification failed for this token.'
+      });
+    }
+
+    const userData = await ghRes.json();
+    if (!userData || !userData.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'USER_FETCH_FAILED',
+        message: 'Unable to retrieve GitHub profile using provided token.'
+      });
+    }
+
+    req.session.user = {
+      githubId: userData.id,
+      login: userData.login,
+      name: userData.name || userData.login,
+      avatarUrl: userData.avatar_url || '',
+      email: userData.email || '',
+      accessToken: trimmedToken,
+      tier: req.session?.tier || 'free'
+    };
+
+    const cookieUser = {
+      githubId: userData.id,
+      login: userData.login,
+      name: userData.name || userData.login,
+      avatarUrl: userData.avatar_url || '',
+      email: userData.email || '',
+      tier: req.session?.tier || 'free'
+    };
+
+    const signedAuth = signAuthToken(cookieUser);
+    if (signedAuth) {
+      res.cookie('cavdax_auth', signedAuth, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000
+      });
+    }
+
+    console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id})`);
+
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('[CAVDAX DevAuth] Session save error:', saveErr.message);
+        return res.status(500).json({ success: false, error: 'SESSION_SAVE_FAILED' });
+      }
+      return res.json({
+        success: true,
+        user: {
+          githubId: userData.id,
+          login: userData.login,
+          name: userData.name || userData.login,
+          avatarUrl: userData.avatar_url || '',
+          tier: req.session?.tier || 'free'
+        }
+      });
+    });
+  } catch (err) {
+    console.error('[CAVDAX DevAuth] Network error validating token:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: 'GITHUB_API_UNREACHABLE',
+      message: 'Failed to connect to GitHub API.'
+    });
+  }
+});
 
 /**
  * GET /api/user/api-key
