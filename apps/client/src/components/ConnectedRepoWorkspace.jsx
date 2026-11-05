@@ -1006,7 +1006,8 @@ export default function ConnectedRepoWorkspace({
               </button>
             </div>
 
-            <div data-lenis-prevent className="max-h-24 overflow-y-auto overscroll-contain border-b border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-white/5 bg-slate-50/40 dark:bg-transparent select-text">
+            <div data-lenis-prevent className="max-h-24 overflow-y-auto overscroll-contain border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent select-text [direction:rtl]">
+            <div className="[direction:ltr] divide-y divide-slate-100 dark:divide-white/5">
               {scan.adrs.map(a => {
                 const gitAdrUrl = repo?.full_name ? `https://github.com/${repo.full_name}/blob/${scan?.branch || selectedBranch || repo.default_branch || 'main'}/${a.path.replace(/^\.?\//, '')}` : null;
                 // Find downstream impacted decisions and code files for this ADR
@@ -1084,6 +1085,7 @@ export default function ConnectedRepoWorkspace({
                   </div>
                 );
               })}
+            </div>
             </div>
 
             {scan.unsynced && scan.unsynced.length > 0 && (
@@ -1186,7 +1188,7 @@ export default function ConnectedRepoWorkspace({
                     title="Open interactive custom tool execution bench (test arbitrary decision IDs, file paths, and code snippets)"
                   >
                     <Cpu className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                    <span>Custom Action Simulator (Arbitrary Tool Probe)</span>
+                    <span>Custom Action Simulator</span>
                   </button>
 
                   {staleDecisions.length === 0 && validDecisions.length > 0 && (
