@@ -739,6 +739,14 @@ Whenever your current task touches, modifies, refactors, creates, adds, or **REM
     - **Code Commits (`backend`, `infra`, `scripts`, `contracts`, `server`)**: **ALWAYS use `[skip vercel]` — NEVER use `[skip ci]`**. This instructs Vercel to skip building preview deployments (saving our 100/day quota) while **allowing GitHub Actions CI to execute all backend automated test suites and status checks**. Using `[skip ci]` on code commits inadvertently cancels GitHub Actions CI, blinding the team to regressions.
     - **Documentation & Meta Commits (`docs/`, `*.md`, `README.md`, `DEV_SESSION_STATE.md`)**: Use `[skip ci] [skip vercel]` (or `[skip ci]`) to skip both Vercel preview builds and GitHub Actions runners when no executable code is modified.
 
+- **Experimental Spikes & Archive Tags Invariant (Never Merge Spikes into Main/Feature Branches)**:
+
+  - Exploratory design spikes, prototypes, or experimental branches (e.g. `Damir-Design-Try`, `experiment/*`, `spike/*`) must **NEVER** be merged into `main`, `frontend`, `backend`, or `docs`.
+  - When an exploratory spike is concluded or paused, follow the **Archive Tag + Branch Deletion Standard**:
+    1. Tag the tip commit: `git tag archive/<spike-name> <branch-name>`
+    2. Delete the active branch: `git branch -D <branch-name>`
+  - This safely preserves the commit history and visual exploration assets under `archive/*` tags for future reference while ensuring git branch lists and automated merge scripts remain 100% clean and immune to accidental merges.
+
 - **Atomic Feature Squashing & History Cleanliness (Mandatory)**:
 
   - **Ban on Micro-Commit Churn**: Avoid polluting Git commit history with rapid, back-and-forth micro-commits (e.g., *"shift 4px down"*, *"shift a bit up"*, *"fix padding"*, *"revert size"*).
