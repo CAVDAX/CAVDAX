@@ -287,6 +287,22 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
 
 
 
+
+0z. **Version Synchronization & Stale Release Number Elimination Standard (Anti-Stale Tag Invariant)**:
+   - **The Stale Version Anti-Pattern**:
+     - Following an npm package publish or GitHub release (e.g. releasing `v1.2.6`), documentation files (`README.md`), CLI quickstarts, and client snippet generators often continue displaying obsolete previous version numbers (e.g. `@cavdax/mcp-server@1.2.5`).
+     - This confuses developers, breaks CI workflows expecting latest invariants, and signals poor engineering hygiene to judges.
+   - **The Invariant**:
+     - **Dynamic In-Code Interpolation Over Static Strings**: In client UI components (e.g. `ConnectedRepoWorkspace.jsx`, `ConnectMcpPage.jsx`, `McpConnectModal.jsx`), never hardcode static version numbers into copy-to-clipboard command strings or YAML generators. Always import `MCP_SERVER_DEFAULT_VERSION` from `constants/version.js` (dynamically injected at build-time from `apps/mcp-server/package.json`).
+     - **Comprehensive Whole-Repo Forensic Scan**: Before concluding any release milestone, run an exhaustive grep for the prior version string across the entire repository (`git grep "<old-version>"`). Every occurrence in:
+       1. `README.md` (CLI headers, quickstart badges, and npx gate check commands)
+       2. Client build configuration fallbacks (`vite.config.js`, `constants/version.js`)
+       3. Workflow generators (`apps/server/githubAdr.js`)
+       4. Session state logs (`docs/DEV_SESSION_STATE.md`)
+       MUST be synchronized to the newly published release tag (`vX.Y.Z`).
+     - **Release Verification Triple-Check**: Confirm that `gh release view vX.Y.Z` and `npm view @cavdax/mcp-server version` return matching release tags before closing the release loop.
+
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.
