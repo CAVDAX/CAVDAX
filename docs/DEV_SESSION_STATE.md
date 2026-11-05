@@ -9,6 +9,139 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.93 Latest Session Achievements (November 6, 2026 - Fallback Credential Sanitization, Multi-Layer Email Validation, NPM Package Homepage Alignment & Master Knowledge Sync)
+
+- **Hardcoded Prototype Recipient Fallback Eradication (`apps/server/index.js` — Commit `dfa44df` on `backend`)**:
+  - Completely purged hardcoded developer personal email (`'suneetchugh@gmail.com'`) from the simulation alert handler (`/api/alerts/simulate-invalidation`).
+  - Implemented strict candidate resolution: `((typeof targetEmail === 'string' && targetEmail.trim() ? targetEmail.trim() : null) || userPrefs?.targetEmail || user?.email || '').toLowerCase().trim()`.
+  - Added strict server-side guards:
+    1. Returns `HTTP 400 Bad Request` with error `MISSING_RECIPIENT_EMAIL` if candidate is empty or whitespace-only.
+    2. Returns `HTTP 400 Bad Request` with error `INVALID_EMAIL_FORMAT` if candidate fails RFC 5322 regex.
+  - Added regression unit tests in `apps/server/test/invalidationAlerts.test.mjs` asserting empty payloads, malformed emails, valid targets, preference fallbacks, and automated text inspection verifying zero occurrences of personal emails across `apps/server/index.js`. All 114 test suites pass.
+- **Client-Side Form Validation & Dynamic Tooltip Guidance (`apps/client/src/components/PreferencesModal.jsx` — Commit `603e7f0` on `frontend`)**:
+  - Implemented dynamic `isEmailValid` RFC 5322 regex validation.
+  - Conditionally disabled the **Dispatch Test Alert** button when the target email field is empty or malformed (`disabled={!targetEmail.trim() || !isEmailValid || isSimulatingAlert}`).
+  - Added dynamic, instructive tooltip guidance:
+    - Empty: *"Enter a valid recipient email to dispatch an alert"*
+    - Invalid: *"Please enter a valid email format (e.g., dev@domain.com)"*
+    - Valid: *"Dispatch simulated divergence alert via Resend"*
+  - Added defensive short-circuit in client handler with status toast if invoked with empty or invalid parameters.
+- **NPM Package Homepage Alignment (`apps/mcp-server/package.json` — Commit `b0eb30b` on `backend`)**:
+  - Updated package manifest `"homepage"` from redundant GitHub README anchor (`https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme`) to the live production platform: `https://cavdax.sahnirmaan.live`.
+  - Aligned with industry tier-1 standards (`stripe`, `supabase`, `prisma`, `modelcontextprotocol`), ensuring the npmjs.com sidebar displays distinct, non-redundant **Homepage** (interactive visual canvas) and **Repository** (open source code) links.
+- **Codebase Design System Expansion (`docs/UI_DESIGN_SYSTEM.md`)**:
+  - Appended **Section 63**: *Disabled Action State Ergonomics & Dynamic Instructive Tooltip Guidance*.
+  - Appended **Section 64**: *Single Source of Truth for Settings Controls (Anti-Duplication)*.
+- **External Master AI Prompts & Knowledge Architecture Sync (`C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
+  - Expanded `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` to **22 Forensic Attack Vectors**:
+    - **Vector 21**: *Prototype Fallback Credentials & Default Identity Traps*.
+    - **Vector 22**: *Package Monorepo Metadata Asymmetry & NPM Distribution Invariants*.
+  - Updated Master AI Prompt Template list to incorporate all 22 vectors.
+  - Appended Sections 63 & 64 to `#UI_DESIGN_SYSTEM.md file.md`.
+  - Authored new dedicated master playbooks:
+    - `##Prototype-Fallback-Credentials-And-Identity-Trap-Sanitization.md` in `#General-Main/`.
+    - `##Form-Validation-Dynamic-Tooltips-And-Disabled-Action-Ergonomics.md` in `UI-Components/`.
+
+## 1.0.92 Latest Session Achievements (November 5, 2026 - Frontend UX & Accessibility Hardening, Modal Portal Hoisting, Anti-Flying Pill Tracking, and 8-Test Automated E2E Suite)
+
+- **Interactive Target Code Diff Collapse & Disclosure Accessibility (`apps/client/src/components/TerminalView.jsx`)**:
+  - Implemented an accessible disclosure toggle (`ChevronUp`/`ChevronDown`) on the target file diff preview container.
+  - Added WCAG standard `aria-expanded={!isCodeCollapsed}` and `aria-label`, enabling developers to toggle code blocks without losing the target path or decision ID badge.
+  - Added smooth fade-in animation (`animate-in fade-in duration-150`) upon re-expansion.
+- **Hover-Activated Terminal Log Scroll Cue & Scrubber (`apps/client/src/components/TerminalView.jsx`)**:
+  - Encapsulated terminal logs in `.group/term` container and styled the visual scroll cue and rail scrubber with `group-hover/term:opacity-100 transition-opacity duration-200`.
+  - In rest state, the cue remains completely invisible (`opacity-0`), eliminating visual noise while maintaining immediate visibility when hovered or during active scrubbing.
+- **Dynamic Contextual Empty States in Audit Ledger (`apps/client/src/components/AuditPage.jsx`)**:
+  - Replaced the hardcoded *"Run the 4-Act demo..."* copy with dynamic, context-aware empty state messaging:
+    1. Filter / Search Query Mismatch: *"No audit entries match your current search query or active filter criteria"* with a prominent one-click **"Clear all filters"** reset button.
+    2. Live Intercepted Repository: *"No autonomous agent actions have been intercepted or recorded for this repository yet."*
+    3. Simulation / Demo Mode: *"Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger."*
+- **Ribbon Toolbar Ergonomics & OS-Aware Keyboard Shortcut (`apps/client/src/components/GraphCanvas.jsx`)**:
+  - Reordered toolbar ribbon controls according to primary action hierarchy: Search (`Ctrl+K`/`⌘K`) now precedes the Drift Filter and SVG Download buttons.
+  - Implemented OS-aware dynamic badge detection: renders `⌘K` for macOS and `Ctrl+K` for Windows/Linux.
+  - Added explicit accessibility tags: `aria-label="Search DAG Nodes"` and `aria-label="Download graph as SVG"`.
+- **System Preferences Modal De-Duplication (`apps/client/src/components/PreferencesModal.jsx`)**:
+  - Removed duplicate "Display Appearance" theme toggle section and unused `Sun`/`Moon` imports from the preferences modal, centralizing theme toggling exclusively in the global navigation bar.
+- **Dev PAT Liquid Wavefill Animation Parity (`apps/client/src/components/ConnectMcpPage.jsx`)**:
+  - Eliminated the opaque background collision (`bg-slate-100 dark:bg-white/5` + `.tactile-btn`) that was occluding the rising wavefill animation.
+  - Configured `bg-transparent` transparent base and synchronized SVG wave crest and solid flood body to match the Connect GitHub button.
+- **Connect GitHub Repository Modal Portal Hoisting & Lenis Event Isolation (`apps/client/src/components/ConnectRepoModal.jsx`)**:
+  - Hoisted modal overlay directly to `document.body` via `createPortal`, isolating it from parent page ascent transforms (`transform: translateY`).
+  - Added `data-lenis-prevent` across modal overlays, cards, and scrollable lists, and paused Lenis smooth-scroll on mount (`window.__lenis.stop()`).
+  - Implemented `Escape` key and backdrop click dismissal (`e.target === e.currentTarget`).
+- **External Master AI Prompts & Knowledge Architecture Sync (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
+  - Appended Sections 54 through 62 to `#UI_DESIGN_SYSTEM.md file.md`.
+  - Expanded `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` to 20 Forensic Attack Vectors (adding Vector 19: Cross-Route Shared Layouts / `layoutId` and Vector 20: Modal Portal & Lenis Isolation).
+  - Authored new dedicated master prompts in `UI-Components/`:
+    - `##Modal-Portal-Hoisting-And-Smooth-Scroll-Isolation-Playbook.md`
+    - `##Container-Relative-Kinetic-Tracking-And-Anti-Flying-Element-Architecture.md`
+- **End-to-End Automated Headless Browser Verification Suite (`scripts/verify-all-recent-fixes.js`)**:
+  - Authored and executed dedicated headless Puppeteer test suite verifying:
+    1. Ribbon order (Search -> Drift -> Download) and `Ctrl+K` badge: ✅ PASS
+    2. TerminalView target code collapse / expand toggle: ✅ PASS
+    3. Preferences modal appearance de-duplication: ✅ PASS
+    4. ConnectRepoModal portal hoisting and Lenis prevention: ✅ PASS
+    5. ConnectRepoModal `Escape` key dismissal: ✅ PASS
+    6. ConnectRepoModal backdrop click dismissal: ✅ PASS
+    7. AuditPage dynamic empty states and reset: ✅ PASS
+    8. ConnectMcpPage Dev PAT wavefill animation parity: ✅ PASS
+  - Client production build verified cleanly with `vite build` in 34.93s (`0 errors`).
+
+## 1.0.91 Latest Session Achievements (November 5, 2026 - Master Prompts Synchronization, Sandbox Normalization Hardening & 111-Test Suite Verification)
+
+- **Master Knowledge & Architecture Prompts Fully Synchronized (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main\`)**:
+  - `##OAuth-Session-Fixation-And-Callback-Resilience-Playbook.md`: Codified Principle 7 (*Post-Regeneration Entitlement & State Restoration*), updating the 7 Laws of Hardened OAuth, the production code blueprint, and the master audit prompt to eliminate silent tier demotion.
+  - `##Unslopping-And-Anti-AI-Slop-Design-Craft-Architecture.md`: Added Section 4 (*Advanced Ergonomic & Micro-Interaction Craft Architecture*), codifying the Left Architectural Scroll Cue Rail, the Code Payload `.hover-scrollbar`, Symmetrical Resizable Splitter Handles across environments, and Anti-Orphan Copy Budgeting (`truncate` + native tooltip).
+  - `#UI_DESIGN_SYSTEM.md file.md`: Synchronized Sections 48 through 57 from the codebase design system, including 3D Raycasting Scroll Lock Immunity, Decoupled Code Viewports, Modal Portal Hoisting via `createPortal`, and Side-by-Side ADR Semantic Diffs.
+  - `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` & `##CI-CD-Architectural-Invariant-Gates-And-MCP-Distribution-Playbook.md`: Codified Vectors 14–18 covering body identity override forgery, proxy CIDR bitmasking, and deployment tag separation (`[skip vercel]` vs `[skip ci]`).
+- **Sandbox File Path Normalization (`apps/server/index.js`)**:
+  - Investigated and eliminated accidental redundant directory nesting (`demo-repo/demo-repo/`) when callers or simulators pass paths prefixed with `demo-repo/`.
+  - Normalized incoming `args.file_path` across both `/api/mcp/call` validation and sandbox execution before resolving against `resolvedRepo`.
+- **Comprehensive Quality & Test Verification**:
+  - Client PWA production build (`npm run build`) succeeded in **15.14s** with zero errors.
+  - Full automated backend test suite executed: **111 / 111 tests passing** (0 failures, 0 regressions).
+  - Verified clean working trees across both `backend` and `docs` branches.
+
+## 1.0.90 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 5 Remediation: Sponsor Pass Forgery Defense, Paid Tier Persistence Across Session Regeneration, Cloudflare IPv6 & Integer CIDR Proxy Matching, and Org CI Gate GITHUB_TOKEN Forwarding)
+
+- **Evaluation Sponsor Pass Forgery Sealed (`apps/server/index.js`)**:
+  - Investigated and resolved the critical vulnerability where arbitrary `user_override: { login: '...', name: '...' }` in `POST /api/billing/activate-evaluation-sponsor` allowed unauthenticated callers to inject fake sponsor entries onto the live public Sponsor Wall in hackathon evaluation mode.
+  - Hardened handler: `user_override` is strictly ignored for unauthenticated guests. Authenticated callers bind directly to their verified GitHub session (`req.session.user`).
+  - Unauthenticated evaluators receive an immutable, watermarked `"Hackathon Evaluator"` badge with zero capability to customize the name, avatar, or handle.
+- **Paid Tier & Connected Repos Persistence Across Session Regeneration (`apps/server/index.js`, `apps/server/systemState.js`)**:
+  - Investigated teammate finding where `session.regenerate()` in OAuth callback and dev-login reset `tier: 'free'`, losing purchased Pro/Autonomous tiers.
+  - Enhanced `systemState.js` to persist `paidUsers` and `userRepos` atomically to disk.
+  - In `POST /api/billing/verify-payment`, records purchased Pro/Enterprise tier to `savedSystemState.paidUsers[githubId]`.
+  - In both `/auth/github/callback` and `/api/auth/dev-login`, checks `paidUsers` and restores the user's purchased tier during session regeneration, cookie signing, and response payload.
+  - Preserves `req.session.connectedRepos` across session regeneration.
+- **Trusted Proxy CIDR Hardening & Cloudflare IPv6 (`apps/server/index.js`)**:
+  - Replaced crude string prefix matching in `isTrustedProxyIp` with exact integer bitmasking across all 15 official Cloudflare IPv4 CIDRs (e.g. `131.0.72.0/22`, `172.64.0.0/13`).
+  - Added support for official Cloudflare IPv6 edge prefixes (`2606:4700::/32`, `2400:cb00::/32`, etc.).
+  - Added `STRICT_PROXY_TRUST` support and explicit `TRUSTED_PROXIES` configuration to prevent neighbor containers in cloud VPCs or shared Docker networks from forging `CF-Connecting-IP`.
+- **API Key Connected Repos & CI Invariant Gate Token Forwarding (`apps/server/index.js`, `apps/mcp-server/src/gateCommand.js`, `apps/server/githubAdr.js`)**:
+  - Resolved dead-code path in `verifyUserRepoAccess`: `req.authUser.connectedRepos` is now dynamically populated from `savedSystemState.userRepos` on Bearer API key lookups.
+  - Updated `gateCommand.js` to forward `process.env.GITHUB_TOKEN || process.env.GH_TOKEN` in `X-GitHub-Token` and `X-GitHub-Actions-Token` headers.
+  - Updated CI workflow YAML generation in `githubAdr.js` to include `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}`, enabling direct GitHub permission verification for organization and collaborator repositories without requiring master server tokens.
+  - Increased open PR scan `per_page=100` to prevent sequential ADR numbering collisions.
+- **Automated Regression Test Suite (`apps/server/test/round5Hardening.test.mjs`)**:
+  - Added 7 comprehensive regression tests proving that `user_override` cannot deface the sponsor wall, that Pro tiers persist across session regeneration, that Cloudflare IPv6 and exact CIDR boundaries are verified, and that API key `connectedRepos` is populated.
+  - Full backend test suite passing: **111 / 111 tests passing** (0 failures).
+
+## 1.0.89 Latest Session Achievements (November 5, 2026 - OAuth Callback ReferenceError Triage, Automated Route Test Suite, Guard 0l Codification & Playbook Sync)
+
+- **OAuth Callback Fatal ReferenceError Resolution & Session Resilience (`apps/server/index.js`)**:
+  - Investigated and resolved the production bug where completing GitHub OAuth on Edge, Chrome, or Brave returned a Cloudflare `502 Bad Gateway`.
+  - Root cause: line 2683 referenced undeclared variable `access_token` (`accessToken: access_token`) inside the asynchronous callback passed to `req.session.regenerate(callback)`.
+  - In Node.js, exceptions thrown inside asynchronous callbacks escape Express route `try...catch` blocks, triggering an uncaught exception that terminates the Node.js process, drops active sockets, and causes Caddy to return 502 Bad Gateway.
+  - Corrected variable to declared `accessToken: accessToken` and enclosed all callback bodies in internal `try...catch` blocks with safe error redirection.
+- **Automated OAuth Callback Unit Test Suite (`apps/server/test/oauthCallbackRoute.test.mjs`)**:
+  - Authored comprehensive automated tests verifying the happy path of the OAuth exchange: mocks token exchange, profile query, email extraction, session regeneration, and redirection with user identity.
+  - Expanded test suite: **104 / 104 server tests passing** (0 failures).
+- **Codification of Guard 0l in `AGENTS.md` & Devil's Advocate Skill**:
+  - Inscribed Guard 0l (*Asynchronous Callback Exception Enclosure & Scope Identifier Invariant*) into `AGENTS.md` and updated global `devils-advocate` skill attack vectors 4 & 13.
+- **New Master Playbook Authored (`##OAuth-Session-Fixation-And-Callback-Resilience-Playbook.md`)**:
+  - Added dedicated playbook in `C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main\` codifying the 6 architectural principles of hardened OAuth.
+
 ## 1.0.88 Latest Session Achievements (November 5, 2026 - Production 502 Triage & Caddy Upstream Retry Absorption, Dev PAT Copy Polish, External Knowledge Prompts Sync & UI Design System Sections 51-53)
 
 - **Production 502 Bad Gateway Triage & Forensic Root-Cause Resolution (`infra/Caddyfile`)**:

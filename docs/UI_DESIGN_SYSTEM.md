@@ -3361,3 +3361,327 @@ To enable immediate visual verification of architectural evolution across supers
    - When inspecting any node connected via `SUPERSEDES` or `REPLACES` edges in `NodeInspector`, render a synchronized two-column comparison.
    - **Left Column (Deprecated/Superseded)**: Displays superseded ADR ID, title, and deprecated architectural pattern with an unbracketed `SUPERSEDED` status pill.
    - **Right Column (Active/Superseding)**: Displays superseding ADR ID, active decision rationale, and enforced invariant rules with an emerald `ACCEPTED` status pill.
+
+
+---
+
+## 54. Left Architectural Scroll Cue Rail for Structured Master-Detail Panels (`.scroll-cue-rail`)
+
+When designing high-density split workspaces (e.g. `ConnectedRepoWorkspace`) where a draggable mid-section resizing divider sits on the panel's right boundary, placing a standard native scrollbar on the right creates severe ergonomic conflicts:
+
+### 54.1 The Native Right-Scrollbar & Splitter Collision Trap
+1. **Accidental Splitter Grabs**: Attempting to grab the native right scrollbar thumb frequently triggers the adjacent resizable divider handle, accidentally resizing the workspace columns instead of scrolling the list.
+2. **The `[direction:rtl]` Anti-Pattern**: Attempting to move the scrollbar to the left by applying CSS `[direction:rtl]` to the list container is a destructive anti-pattern: it flips text alignment, causes punctuation (periods, parentheses, hyphens) to jump to the wrong side of sentences, and disrupts mousewheel kinetic momentum.
+
+### 54.2 The Left Scroll Cue Rail Solution
+The institutional solution is a decoupled, non-intrusive **Left Architectural Scroll Cue Rail**:
+```jsx
+{/* Left Architectural Scroll Cue Rail */}
+<div className="relative flex-1 min-h-0 flex overflow-hidden">
+  {hasAdrScroll && (
+    <div
+      ref={adrTrackRef}
+      className="w-1.5 my-1 mr-1.5 rounded-full bg-slate-200 dark:bg-white/5 relative flex-shrink-0 cursor-pointer overflow-hidden transition-opacity duration-200"
+      title="Scroll progress (Left Cue Rail)"
+    >
+      <div
+        ref={adrThumbRef}
+        className="absolute top-0 left-0 right-0 rounded-full bg-slate-400 dark:bg-white/25 hover:bg-emerald-500 dark:hover:bg-emerald-400 transition-colors"
+        style={{ height: '24px' }}
+      />
+    </div>
+  )}
+  {/* Native LTR scrollable viewport with hidden native scrollbar */}
+  <div
+    ref={adrListRef}
+    className="flex-1 overflow-y-auto no-scrollbar space-y-1 pr-1"
+  >
+    {/* List items */}
+  </div>
+</div>
+```
+- The native viewport retains standard LTR mousewheel, trackpad, and keyboard accessibility.
+- The visual scroll progress thumb is reflected on the left edge, leaving the right edge 100% clean for the draggable split divider.
+
+---
+
+## 55. Resizable Mid-Section Splitter Handle & Persisted Percentage Widths
+
+Operational consoles (both Interactive Demo Sandbox and Connected Live Repositories) must provide responsive, ergonomic split-view control:
+
+### 55.1 Parity Across Demo and Live Workspaces
+1. **Symmetrical Geometry**: Both the Demo Sandbox and Live Connected Repository consoles must feature identical draggable splitter affordances between the Graph/Verification Canvas (left) and the Detail Inspector/Terminal (right).
+2. **The Symmetrical Splitter Handle**:
+   ```jsx
+   {/* Draggable Mid-Section Resizer */}
+   <div
+     onMouseDown={handleMouseDownSplitter}
+     className="w-1.5 relative group cursor-col-resize flex-shrink-0 bg-slate-200 dark:bg-white/5 hover:bg-emerald-500/50 transition-colors"
+   >
+     <div className="absolute top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 w-4 h-8 rounded-full bg-slate-300 dark:bg-slate-700 group-hover:bg-emerald-500 flex items-center justify-center shadow-sm pointer-events-none transition-colors">
+       <div className="w-0.5 h-3 bg-white/60 rounded-full" />
+     </div>
+   </div>
+   ```
+3. **Clamped Bounds & LocalStorage Persistence**:
+   - Left panel width is dynamically clamped between **25%** and **75%** of the container width to eliminate layout collapse.
+   - Percentage width is atomically persisted to `localStorage` (`cavdax_split_width` and `cavdax_demo_split_width`) so user preferences survive page refreshes and route transitions.
+   - While dragging, `user-select: none` is applied to the document body to prevent text selection interference.
+
+---
+
+## 56. Code Payload Diff Hover-Scrollbar Architecture (`.hover-scrollbar`)
+
+High-density inspection terminals and code verification payloads must never display heavy, permanent scrollbars that consume visual real estate, nor should they clip code without an obvious scroll affordance:
+
+### 56.1 The Hover-Scrollbar Standard
+Apply the `.hover-scrollbar` utility class to code payload containers (`<pre>`, `<code>`, terminal logs):
+```css
+/* Subtle auto-hiding scrollbar that reveals on container hover */
+.hover-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.2s ease-in-out;
+}
+
+.hover-scrollbar:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+.dark .hover-scrollbar:hover {
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+```
+- At rest: Clean, borderless code viewport without scrollbar clutter.
+- On hover: Ultra-thin, rounded thumb appears smoothly.
+- Full support for trackpad gestures, Shift+MouseWheel horizontal panning, and arrow key navigation.
+
+---
+
+## 57. Anti-Orphan Copy Budgeting & Text Folding Discipline
+
+In institutional engineering dashboards, text elements must maintain rigorous horizontal rhythm:
+
+### 57.1 The "Lonely Child" Anti-Pattern
+A single trailing word wrapping onto a second line (e.g., *"All decisions valid. Select a canvas node to probe its gate"* wrapping the word *"clearance."* onto line 2) wastes vertical padding, creates visual imbalance, and signals unpolished UI copy budgeting.
+
+### 57.2 The Trimming & Tooltip Standard
+1. **Tight Copy Trimming**: Express operational state concisely. Reduce redundant phrasing (e.g. from 107 characters down to 48 characters: *"All decisions valid. Select a canvas node to probe."*).
+2. **Mandatory `truncate` + Native Tooltip**:
+   ```jsx
+   <p
+     className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-full"
+     title="All decisions currently valid. Select a decision node on the canvas to inspect or probe its gate clearance."
+   >
+     All decisions valid. Select a canvas node to probe.
+   </p>
+   ```
+   This guarantees that the text never wraps or creates lonely child words across any screen width or resized split view, while the complete explanatory context remains instantly accessible via native hover tooltip.
+
+
+---
+
+## 58. Container-Relative Pill Tracking (Anti-Flying Element Standard — `usePillTracker`)
+
+When building sliding indicators across tabs, filters, or segmented switches:
+
+### 58.1 The `layoutId` Projection Failure
+Framer Motion's `layoutId` mechanism calculates transitions across global coordinate space. When multiple components across different views or routes declare the same `layoutId` (or when mounting/unmounting during page ascent transitions), the indicator pill teleports or flies across the screen.
+
+### 58.2 The Container-Relative Tracking Standard (`usePillTracker`)
+Decouple sliding motion from global layout projection by computing bounding box coordinates strictly relative to the immediate offset parent:
+```javascript
+export function usePillTracker(activeKey) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    const el = refs.current[activeKey];
+    if (!el) return;
+    setPosition({
+      x: el.offsetLeft,
+      y: el.offsetTop,
+      width: el.offsetWidth,
+      height: el.offsetHeight,
+      ready: true,
+    });
+  }, [activeKey]);
+
+  return { refs, position };
+}
+```
+Animate `x`, `y`, `width`, and `height` explicitly with spring physics (`stiffness: 500, damping: 35`), ensuring zero flying pills or cross-route visual collisions.
+
+---
+
+## 59. Modal Portal Hoisting & Lenis Smooth-Scroll Event Isolation Standard
+
+To ensure modals, dialog overlays, and slide-over panels are 100% accessible, responsive, and visually isolated:
+
+### 59.1 The Transform Stacking Context Trap
+If a modal is rendered inside a parent container that applies CSS transforms (such as Framer Motion's `<PageTransition>` with `transform: translateY(...)`), CSS `position: fixed` is confined to the bounding box of that transformed container, clipping the modal or disrupting full-screen overlays.
+
+### 59.2 The Three Inviolable Modal Invariants
+1. **Always Hoist to `document.body` via `createPortal`**:
+   ```jsx
+   const modalContent = (
+     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+       <div role="dialog" aria-modal="true" aria-label="Title" onClick={(e) => e.stopPropagation()}>
+         {/* Body */}
+       </div>
+     </div>
+   );
+   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+   ```
+2. **Deconflict Global Smooth-Scroll Engines (Lenis)**:
+   - Mark the backdrop, modal card, and all scrollable inner containers with `data-lenis-prevent`.
+   - Pause Lenis on modal mount and resume on unmount:
+     ```javascript
+     useEffect(() => {
+       if (isOpen) {
+         window.__lenis?.stop();
+         return () => window.__lenis?.start();
+       }
+     }, [isOpen]);
+     ```
+3. **Double Dismissal Protection**:
+   - Provide `Escape` key listener on `window`.
+   - Provide backdrop click listener with `if (e.target === e.currentTarget) onClose()`.
+
+---
+
+## 60. Collapsible Target Diff Previews & Hover-Activated Terminal Scrubbing
+
+In developer terminals and verification consoles:
+
+### 60.1 Accessible Code Disclosure Toggle
+Large code blocks must not permanently consume vertical terminal space when an engineer only needs to inspect log output:
+```jsx
+<button
+  type="button"
+  onClick={() => setIsCodeCollapsed(prev => !prev)}
+  aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
+  aria-expanded={!isCodeCollapsed}
+  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10"
+>
+  {isCodeCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+</button>
+```
+
+### 60.2 Hover-Activated Scrubbing Affordance
+Secondary rail scrubbers and visual cues should remain invisible at rest to maintain visual calmness:
+```jsx
+<div className="relative flex-1 min-h-0 flex flex-col overflow-hidden group/term">
+  {/* Terminal output */}
+  <div className={`absolute right-1.5 top-3 bottom-3 w-4 transition-opacity duration-200 ${
+    isHolding || isFocused ? 'opacity-100' : 'opacity-0 group-hover/term:opacity-100'
+  }`}>
+    {/* Scrubber thumb */}
+  </div>
+</div>
+```
+
+---
+
+## 61. Contextual Empty States & One-Click Filter Reset Invariant
+
+Blank tables or empty query states must never display generic, unhelpful copy:
+
+### 61.1 Multi-State Empty Ledger Taxonomy
+1. **Filter / Search Query Mismatch**:
+   - Message: *"No audit entries match your current search query or active filter criteria."*
+   - Mandatory Action: Explicit, high-contrast **"Clear all filters"** button that resets search queries, repo scopes, and verdict filters in one click.
+2. **Live Intercepted Workspace with Zero Events**:
+   - Message: *"No autonomous agent actions have been intercepted or recorded for this repository yet."*
+3. **Simulation / Demo Mode**:
+   - Message: *"Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger."*
+
+---
+
+## 62. Fluid Water Wavefill Transparency Invariant
+
+For interactive buttons utilizing fluid SVG wave kinetics (e.g. `Connect GitHub` and `Dev PAT`):
+
+### 62.1 Background Collision Failure
+Applying opaque backgrounds (`bg-slate-100`, `bg-white/5`) to buttons containing rising liquid SVG layers obstructs and flattens the rising wave animation.
+
+### 62.2 The Transparent Base Standard
+- Set the button's base background to strictly `bg-transparent`:
+  ```jsx
+  <button
+    onMouseEnter={() => setIsHovered(true)}
+    onMouseLeave={() => setIsHovered(false)}
+    className={`relative overflow-hidden group h-[34px] flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-semibold select-none transition-all duration-500 ${
+      isHovered
+        ? 'border-slate-950 dark:border-white text-white dark:text-slate-950'
+        : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white'
+    }`}
+  >
+    {/* Rising Wave SVG Layer & Body Flood */}
+    <div
+      aria-hidden="true"
+      style={{
+        transform: isHovered ? 'translateY(0%)' : 'translateY(105%)',
+        opacity: isHovered ? 1 : 0,
+        transition: isHovered
+          ? 'transform 1000ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 200ms ease-out'
+          : 'opacity 250ms ease-out, transform 0s 250ms'
+      }}
+      className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
+    >
+      <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-slate-950 dark:text-white fill-current block">
+        <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
+      </svg>
+      <div className="flex-1 w-full bg-slate-950 dark:bg-white" />
+    </div>
+    {/* Icon and label hoisted with relative z-10 */}
+  </button>
+  ```
+
+---
+
+## 63. Disabled Action State Ergonomics & Dynamic Instructive Tooltip Guidance
+
+Conditionally disabling an interactive button without communicative feedback creates dead-end UX and user frustration:
+
+### 63.1 The Silent Dead-End Antipattern
+Rendering `disabled={true}` with `cursor-not-allowed` or reduced opacity while omitting any explanation forces users to guess why clicking does nothing.
+
+### 63.2 Dynamic Descriptive Tooltip Invariant
+Every conditionally disabled action button MUST provide a live, dynamic tooltip or accessible `title` attribute communicating the exact missing prerequisite:
+```jsx
+const isEmailValid = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(email.trim());
+const isActionDisabled = !email.trim() || !isEmailValid || isSubmitting;
+
+<button
+  type="button"
+  disabled={isActionDisabled}
+  title={
+    !email.trim()
+      ? 'Enter a valid recipient email to dispatch an alert'
+      : !isEmailValid
+      ? 'Please enter a valid email format (e.g., dev@domain.com)'
+      : 'Dispatch simulated divergence alert via transactional mailer'
+  }
+  className="relative px-3 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-300 dark:disabled:hover:border-white/10"
+>
+  {isSubmitting ? 'Dispatching...' : 'Dispatch Test Alert'}
+</button>
+```
+Additionally, client handlers should implement defensive short-circuits with explanatory status toasts if invoked programmatically or via synthetic events.
+
+---
+
+## 64. Single Source of Truth for Settings Controls (Anti-Duplication)
+
+Global preferences and environment parameters must maintain an unambiguous single source of truth:
+
+### 64.1 The Cognitive Redundancy Antipattern
+Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches, or Global Sound) inside subordinate settings modals when the primary toggle is already permanently hoisted in the application shell navbar:
+1. Causes cognitive fatigue: users question whether the inner modal toggle applies locally (modal-scoped) or globally (app-wide).
+2. Increases bug surface area: two separate reactive state bindings must stay synchronized across portal mounts and unmounts.
+
+### 64.2 The Unified Header Invariant
+1. Hoist primary environment switches (Theme, Account Identity, Global Audio) exclusively in the universal top navbar or command palette.
+2. Reserve subordinate modals (e.g. `PreferencesModal`) strictly for granular, non-shell settings: Notification Thresholds, Webhook Ingestion Secrets, Resend/Email Target Recipients, and Web Push Subscriptions.
+3. If an inner modal requires access to global parameters, display a read-only badge linked directly to the primary shell toggle with a tooltip (*"Configured in application header"*).

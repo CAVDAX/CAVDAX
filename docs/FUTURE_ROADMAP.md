@@ -666,5 +666,43 @@ Phase 4 — Enterprise (Remaining)
 
 ---
 
+
+---
+
+## 9. NPM Package Distribution & Metadata Strategy (Pending Team Review with Geetika)
+
+**Status**: Scheduled for Co-Architect Alignment (Suneet & Geetika)  
+**Target Package**: `@cavdax/mcp-server` (`apps/mcp-server/package.json`)
+
+### 9.1 The Architectural Decision
+Currently, `apps/mcp-server/package.json` configures:
+```json
+"homepage": "https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme"
+```
+
+### 9.2 Industry Benchmark Comparison
+
+| Platform / Tool | Package Name | `package.json` Homepage | Behavior on npmjs.com |
+| :--- | :--- | :--- | :--- |
+| **Stripe** | `stripe` | `https://stripe.com` | Directs to live product & API platform |
+| **Supabase** | `@supabase/supabase-js` | `https://supabase.com` | Directs to live backend platform |
+| **Prisma** | `prisma` | `https://www.prisma.io` | Directs to ORM product portal |
+| **Model Context Protocol** | `@modelcontextprotocol/sdk` | `https://modelcontextprotocol.io` | Directs to official protocol specification |
+| **FalkorDB** | `falkordb` | `https://falkordb.com` | Directs to GraphBLAS database site |
+| **PostHog** | `posthog-js` | `https://posthog.com` | Directs to live product analytics platform |
+
+### 9.3 Options for Evaluation
+1. **Option A (Current — Monorepo Subtree)**:
+   - Retain `https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme`.
+   - *Pros*: Completely hermetic to the open-source GitHub monorepo subfolder.
+   - *Cons*: NPM already displays the README directly on the page, and the "Repository" button already links to GitHub. Clicking Homepage provides a redundant duplicate view.
+2. **Option B (Recommended SaaS Product Standard)**:
+   - Update to `https://cavdax.sahnirmaan.live`.
+   - *Pros*: Sidebar on npm displays distinct **Homepage** (live 3D causal graph & visual console) and **Repository** (GitHub source code). Elevates CAVDAX from a raw script to a full live platform.
+3. **Option C (Dedicated Docs Subpath)**:
+   - Update to `https://cavdax.sahnirmaan.live/mcp` or dedicated quickstart page.
+
+*Decision pending discussion between Geetika Chugh and Suneet Chugh before next npm release (v1.2.6).*
+
 *This document is the single source of truth for CAVDAX product roadmap decisions.*  
 *Update this file when any planned item is completed or reprioritised.*

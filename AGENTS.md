@@ -134,6 +134,12 @@ Operational constitution, architecture standards, and safety governance for AI c
        ```
      - Any commit introducing hardcoded benchmark strings or fake latency constants will be rejected at pre-commit.
 
+0l. **Inviolable Guard: Asynchronous Callback Exception Enclosure & Scope Identifier Invariant (Zero-502 Anti-Crash Standard)**:
+   - **Strict Ban on Unenclosed Asynchronous Callbacks**: In Node.js / Express, route handlers wrapped in `try { ... } catch (err)` only intercept synchronous exceptions or awaited promises. Any callback passed to third-party asynchronous methods (`req.session.regenerate`, `req.session.save`, `db.query`, `fs.readFile`, event handlers) executes asynchronously on the Node.js event loop. If code inside that callback throws an error, it is **NOT** caught by the outer route handler, immediately terminating the Node.js process (`uncaughtException`) and causing reverse proxies (Caddy/Nginx) and CDNs (Cloudflare) to emit a `502 Bad Gateway`.
+   - **Mandatory Callback Enclosure**: Every callback body passed to an asynchronous method MUST be enclosed in its own internal `try { ... } catch (innerErr) { ... }` block that logs the exception and responds or redirects gracefully without killing the server process.
+   - **Zero Identifier Scope Drift**: Never alter the naming convention of a variable across scopes in closures (e.g. declaring `const accessToken = ...` in outer scope and referencing `access_token` inside an inner callback).
+   - **Mandatory Success-Branch Unit Testing**: Testing only error branches (missing state, invalid tokens) leaves closure and scope ReferenceErrors completely untested. Every authentication, session, or mutation route MUST have an automated unit test executing the **successful execution branch** of all inner callbacks, verifying that session properties hydrate without throwing.
+
 0c. **Production Deployment & Docker Parity Guard (Zero 502 Bad Gateway Standard)**:
 
    - **Mandatory Dockerfile Dependency Parity**:
@@ -725,11 +731,21 @@ Whenever your current task touches, modifies, refactors, creates, adds, or **REM
 
      - Return to the active feature branch (`git checkout frontend`).
 
-- **Conventional Commit Standard**:
+- **Conventional Commit Standard & Vercel Quota Optimization**:
 
   - Use conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 
-  - Add `[skip ci]` to documentation/backend commits that do not trigger frontend builds to preserve daily Vercel deployment quotas.
+  - **Strict `[skip vercel]` vs `[skip ci]` Distinction (Critical Invariant)**:
+    - **Code Commits (`backend`, `infra`, `scripts`, `contracts`, `server`)**: **ALWAYS use `[skip vercel]` — NEVER use `[skip ci]`**. This instructs Vercel to skip building preview deployments (saving our 100/day quota) while **allowing GitHub Actions CI to execute all backend automated test suites and status checks**. Using `[skip ci]` on code commits inadvertently cancels GitHub Actions CI, blinding the team to regressions.
+    - **Documentation & Meta Commits (`docs/`, `*.md`, `README.md`, `DEV_SESSION_STATE.md`)**: Use `[skip ci] [skip vercel]` (or `[skip ci]`) to skip both Vercel preview builds and GitHub Actions runners when no executable code is modified.
+
+- **Experimental Spikes & Archive Tags Invariant (Never Merge Spikes into Main/Feature Branches)**:
+
+  - Exploratory design spikes, prototypes, or experimental branches (e.g. `Damir-Design-Try`, `experiment/*`, `spike/*`) must **NEVER** be merged into `main`, `frontend`, `backend`, or `docs`.
+  - When an exploratory spike is concluded or paused, follow the **Archive Tag + Branch Deletion Standard**:
+    1. Tag the tip commit: `git tag archive/<spike-name> <branch-name>`
+    2. Delete the active branch: `git branch -D <branch-name>`
+  - This safely preserves the commit history and visual exploration assets under `archive/*` tags for future reference while ensuring git branch lists and automated merge scripts remain 100% clean and immune to accidental merges.
 
 - **Atomic Feature Squashing & History Cleanliness (Mandatory)**:
 
