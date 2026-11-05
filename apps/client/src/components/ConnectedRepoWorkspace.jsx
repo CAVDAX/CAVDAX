@@ -1009,14 +1009,14 @@ export default function ConnectedRepoWorkspace({
             <div data-lenis-prevent className="max-h-24 overflow-y-auto overscroll-contain border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent select-text [direction:rtl]">
             <div className="[direction:ltr] divide-y divide-slate-100 dark:divide-white/5">
               {scan.adrs.map(a => {
-                const gitAdrUrl = repo?.full_name ? `https://github.com/${repo.full_name}/blob/${scan?.branch || selectedBranch || repo.default_branch || 'main'}/${a.path.replace(/^\.?\//, '')}` : null;
+                const gitAdrUrl = (repo?.full_name && a?.path) ? `https://github.com/${repo.full_name}/blob/${scan?.branch || selectedBranch || repo.default_branch || 'main'}/${String(a.path).replace(/^\.?\//, '')}` : null;
                 // Find downstream impacted decisions and code files for this ADR
                 const associatedDecisions = (scan?.graph?.nodes || []).filter(n => n.label === 'Decision' && (n.source_adr === a.id || n.adr_path === a.path));
                 const targetFiles = Array.from(new Set(associatedDecisions.map(d => d.target_file).filter(Boolean)));
                 const isExpanded = expandedAdrId === a.id;
 
                 return (
-                  <div key={a.path} className="px-3 py-2 text-[11px] leading-snug hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors">
+                  <div key={a.path || a.id} className="px-3 py-2 text-[11px] leading-snug hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors">
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="text-slate-900 dark:text-slate-100 font-semibold truncate flex items-center gap-1.5 min-w-0">
                         <span>{a.id}: {a.title}</span>
@@ -1060,7 +1060,7 @@ export default function ConnectedRepoWorkspace({
                           <span>GitHub Links</span>
                         </div>
                         {targetFiles.map((tf, tfIdx) => {
-                          const tfUrl = repo?.full_name ? `https://github.com/${repo.full_name}/blob/${scan?.branch || repo.default_branch || 'main'}/${tf.replace(/^\.?\//, '')}` : null;
+                          const tfUrl = (repo?.full_name && tf) ? `https://github.com/${repo.full_name}/blob/${scan?.branch || repo.default_branch || 'main'}/${String(tf).replace(/^\.?\//, '')}` : null;
                           return tfUrl ? (
                             <a
                               key={tfIdx}
