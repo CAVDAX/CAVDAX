@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion';
 import React, { useState, useRef, useEffect } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import NodeInspector from './NodeInspector';
+import CommandPalette from './CommandPalette';
 
 function computeDownstreamBlast(nodes, edges, rootNodeId) {
   if (!rootNodeId) return { blastNodeIds: new Set(), summary: { facts: 0, decisions: 0, actions: 0, files: [] } };
@@ -75,6 +76,28 @@ export default function GraphCanvas({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [simulatedBlastNode, setSimulatedBlastNode] = useState(null);
   const [driftFilter, setDriftFilter] = useState('ALL'); // 'ALL' | 'GROUNDED' | 'DRIFTED'
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        playClick();
+        setIsCommandPaletteOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const handleNodeSelectAndCenter = (node) => {
+    if (onSelectNode) onSelectNode(node);
+    if (node && node.x !== undefined && node.y !== undefined && containerRef.current) {
+      const cw = containerRef.current.clientWidth;
+      const ch = containerRef.current.clientHeight;
+      setPan({ x: cw / 2 - node.x * zoom, y: ch / 2 - node.y * zoom });
+    }
+  };
 
 
   const containerRef = useRef(null);
@@ -659,6 +682,20 @@ export default function GraphCanvas({
             title="Download Vector Graph (SVG)"
           >
             <Download className="w-3.5 h-3.5 text-current transition-colors" />
+          </button>
+
+          {/* Command Palette Trigger (Cmd+K / Ctrl+K) */}
+          <button
+            type="button"
+            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
+            title="Search DAG Nodes (Cmd+K / Ctrl+K)"
+          >
+            <Search className="w-3.5 h-3.5 text-current shrink-0" />
+            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
+            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
+              Cmd+K
+            </kbd>
           </button>
 
           {/* Zoom & Fullscreen Controls */}

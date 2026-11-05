@@ -322,11 +322,11 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
               )}
               {isClearanceMode
                 ? isApprovedResult
-                  ? 'PRE-FLIGHT CLEARANCE GRANTED (PROCEED)'
-                  : 'PRE-FLIGHT CLEARANCE DENIED (TOKEN DRAIN PREVENTED)'
+                  ? 'CLEARANCE GRANTED • PROCEED'
+                  : 'CLEARANCE DENIED • TOKEN DRAIN PREVENTED'
                 : isApprovedResult
-                  ? 'MCP GATE APPROVED (200 OK)'
-                  : 'MCP GATE REFUSAL (403 HARD REJECT)'}
+                  ? 'MCP GATE APPROVED • 200 OK'
+                  : 'MCP GATE REFUSAL • 403 FORBIDDEN'}
             </span>
             <span className="text-[10px] font-mono opacity-80">
               Latency: {result.latency_ms || '< 15'}ms
@@ -364,7 +364,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
               <span className="text-slate-500 block mb-0.5 font-sans font-bold">Detected Stale Dependency Chain:</span>
               {result.violation_paths.map((p, idx) => (
                 <div key={idx} className="text-rose-600 dark:text-rose-300">
-                  ↳ {Array.isArray(p) ? p.join(' ➔ ') : p}
+                  ↳ {Array.isArray(p) ? p.join(' -> ') : p}
                 </div>
               ))}
             </div>
