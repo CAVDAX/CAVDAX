@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 
-let mcpVersion = '1.2.5';
+let mcpVersion = '1.2.6';
 try {
   const mcpPkgPath = path.resolve(__dirname, '../mcp-server/package.json');
   if (fs.existsSync(mcpPkgPath)) {
