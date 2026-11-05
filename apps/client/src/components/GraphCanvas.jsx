@@ -1131,6 +1131,14 @@ export default function GraphCanvas({
           containerRef={containerRef}
         />
       )}
+
+      {/* Command Palette (Cmd+K / Ctrl+K) & Large DAG Search */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        nodes={nodes}
+        onSelectNode={handleNodeSelectAndCenter}
+      />
     </div>
   );
 }

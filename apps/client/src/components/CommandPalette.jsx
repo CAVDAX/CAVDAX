@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Search, FileText, CheckCircle2, AlertTriangle, Cpu, Terminal, ArrowRight, CornerDownLeft, X } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 
@@ -20,8 +20,10 @@ export default function CommandPalette({
       setQuery('');
       setSelectedIndex(0);
       const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 50);
+        if (inputRef.current) {
+          inputRef.current.focus();
+        }
+      }, 40);
       return () => clearTimeout(timer);
     }
   }, [isOpen]);
@@ -117,7 +119,7 @@ export default function CommandPalette({
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.98, y: -8 }}
         transition={{ duration: 0.12, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden font-mono text-xs select-none"
+        className="w-full max-w-xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl rounded-2xl overflow-hidden font-mono text-xs"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Omnibar Input */}
@@ -129,7 +131,8 @@ export default function CommandPalette({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search DAG nodes, decisions, ADRs, or target files..."
-            className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-mono text-xs focus:outline-none"
+            className="w-full bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-mono text-xs focus:outline-none select-text cursor-text"
+            autoFocus
           />
           {query ? (
             <button
@@ -147,7 +150,7 @@ export default function CommandPalette({
         </div>
 
         {/* Results List */}
-        <div ref={listRef} className="max-h-72 overflow-y-auto has-scrubbar p-1.5 space-y-0.5">
+        <div ref={listRef} className="max-h-72 overflow-y-auto has-scrubbar p-1.5 space-y-0.5 select-none">
           {filteredNodes.length === 0 ? (
             <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs font-sans">
               No matching nodes found for "{query}".
