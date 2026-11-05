@@ -1491,7 +1491,8 @@ app.post('/api/mcp/call', requireAuth, async (req, res) => {
 
     // Hosted Demo Security Confinement: writes from /api/mcp/call are strictly confined to demo-repo sandbox
     const sandboxDir = path.resolve(REPO_ROOT, 'demo-repo');
-    const resolvedPath = path.resolve(sandboxDir, args.file_path);
+    const normalizedFilePath = typeof args.file_path === 'string' ? args.file_path.replace(/^[/\\]?demo-repo[/\\]/, '') : '';
+    const resolvedPath = path.resolve(sandboxDir, normalizedFilePath);
     if (!resolvedPath.startsWith(sandboxDir + path.sep) && resolvedPath !== sandboxDir) {
       return res.status(403).json({
         isError: true,
@@ -1660,7 +1661,8 @@ app.post('/api/mcp/call', requireAuth, async (req, res) => {
         } else {
           // Approved — Security Confinement: verify file target resides within demo-repo sandbox
           const resolvedRepo = path.resolve(REPO_ROOT, 'demo-repo');
-          const targetPath = path.resolve(resolvedRepo, args.file_path);
+          const normalizedFilePath = typeof args.file_path === 'string' ? args.file_path.replace(/^[/\\]?demo-repo[/\\]/, '') : '';
+          const targetPath = path.resolve(resolvedRepo, normalizedFilePath);
           if (!targetPath.startsWith(resolvedRepo + path.sep)) {
             return res.status(403).json({
               isError: true,
