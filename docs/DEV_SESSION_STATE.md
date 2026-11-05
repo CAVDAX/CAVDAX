@@ -41,6 +41,15 @@
 - **Automated Test Suite Expansion (`apps/server/test/round4Hardening.test.mjs`)**:
   - Added dedicated proxy IP resolution tests and non-spoofing tests.
   - Full server test suite passing: **102 / 102 tests passed, 0 failures**.
+- **Real Browser Puppeteer Visual & Interaction Audit Verified (`ProfilePage.jsx` & `SupportPage.jsx`)**:
+  - Uncovered and remediated a critical edge case where global `isHackathonMode = true` granted evaluation pass bypass to unauthenticated visitors before checking for an active user identity.
+  - Aligned `hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)))` and bound `activeUser = user || getStoredUser() || getActiveDevSession()` across Profile & Support surfaces.
+  - Executed automated Puppeteer browser audit across 4 critical flows:
+    1. Unauthenticated Profile: Verified buttons demand authentication (`Sign In to Activate` with Lock icon) and reject anonymous tier bypass.
+    2. Unauthenticated Support: Verified sponsor cards demand authentication (`Sign In to Sponsor` with Lock icon) and reject anonymous backer injection.
+    3. Authenticated Profile: Verified instantaneous free tier switching (`Switch to Community`, `Switch to Pro`, `Current Plan` Enterprise) with zero credit card friction and authentic `Log Out` action.
+    4. Authenticated Support: Verified instantaneous free sponsor tier switching (`Switch to Cookie`, `Switch to 2 Cups`, `Switch to Core`).
+  - Production build verified with Vite `npm run build` passing 100% clean in 1m 3s.
 
 ## 1.0.86 Latest Session Achievements (November 5, 2026 - Identity-Bound Evaluation Architecture & GitHub Auth Enforcement for Tier/Sponsor Switching)
 
