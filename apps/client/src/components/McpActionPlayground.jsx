@@ -122,35 +122,25 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
     : false;
 
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl font-mono text-xs select-none space-y-4">
+    <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl font-mono text-xs select-none space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/10">
         <div className="flex items-center gap-2.5">
           <Cpu className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
-          <div>
-            <h3 className="font-bold text-sm text-slate-950 dark:text-white uppercase tracking-wider">
-              Custom Action Simulator
-            </h3>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-sans">
-              Test arbitrary tool calls, custom decision IDs, and payloads against the live FalkorDB DAG.
-            </span>
-          </div>
+          <h3 className="font-bold text-sm text-slate-950 dark:text-white uppercase tracking-wider">
+            Custom Action Simulator
+          </h3>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-400 font-mono">
-            tool: {activeTool}
-          </span>
-          {onClose && (
-            <button
-              type="button"
-              onClick={() => { playClick(); onClose(); }}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              title="Close Simulator (Esc)"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={() => { playClick(); onClose(); }}
+            className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            title="Close Simulator (Esc)"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {/* Dual Mode Switcher */}
@@ -185,7 +175,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <label className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold block mb-1">
-              Architecture Decision ID:
+              Decision ID:
             </label>
             <div className="flex gap-1.5">
               <input
@@ -200,14 +190,13 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
                 type="button"
                 onClick={handleToggleDecision}
                 className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-slate-200 dark:hover:bg-white/10 text-[10px] text-slate-700 dark:text-slate-300 whitespace-nowrap cursor-pointer transition-colors"
-                title="Toggle between Stale DEC-102 & Fresh DEC-103"
+                title="Toggle test decisions"
               >
-                {decisionId === 'DEC-102' ? 'Try DEC-103' : 'Try DEC-102'}
+                {decisionId === 'DEC-102' ? 'DEC-103' : 'DEC-102'}
               </button>
             </div>
             {decisions && decisions.length > 0 && (
               <div className="flex items-center gap-1 mt-1.5 flex-wrap">
-                <span className="text-[9px] text-slate-400">Repo decisions:</span>
                 {decisions.slice(0, 4).map((d) => (
                   <button
                     key={d.id}
@@ -228,7 +217,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
 
           <div>
             <label className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold block mb-1">
-              Target File Path:
+              File Path:
             </label>
             <input
               type="text"
@@ -244,24 +233,21 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
         {isClearanceMode ? (
           <div>
             <label className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold block mb-1">
-              Proposed Agent Intent / Action:
+              Proposed Intent / Action:
             </label>
             <input
               type="text"
               value={proposedAction}
               onChange={(e) => setProposedAction(e.target.value)}
               className="w-full px-2.5 py-2 rounded-lg bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-mono focus:outline-none focus:border-slate-400 dark:focus:border-white/30 text-xs"
-              placeholder="Describe proposed implementation before wasting tokens..."
+              placeholder="Describe proposed action..."
               required
             />
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block mt-1">
-              Pre-flight checks verify active provenance before Claude Code or Cursor generates a single line of code.
-            </span>
           </div>
         ) : (
           <div>
             <label className="text-[10px] uppercase text-slate-500 dark:text-slate-400 font-bold block mb-1">
-              Agent Code Payload:
+              Code Payload:
             </label>
             <textarea
               value={codeSnippet}
@@ -273,12 +259,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-1">
-          <div className="text-[10px] text-slate-500 dark:text-slate-400">
-            {isClearanceMode
-              ? 'FalkorDB verifies intent clearance in < 2ms (0 tokens wasted).'
-              : 'FalkorDB verifies causal graph provenance in < 15ms.'}
-          </div>
+        <div className="flex items-center justify-end pt-1">
           <button
             type="submit"
             disabled={isRunning}
@@ -287,17 +268,17 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
             {isRunning ? (
               <>
                 <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Evaluating DAG...</span>
+                <span>Evaluating...</span>
               </>
             ) : isClearanceMode ? (
               <>
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Check Intent Clearance</span>
+                <span>Check Clearance</span>
               </>
             ) : (
               <>
                 <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Test Execution via MCP Gate</span>
+                <span>Test Execution</span>
               </>
             )}
           </button>
@@ -322,11 +303,11 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
               )}
               {isClearanceMode
                 ? isApprovedResult
-                  ? 'CLEARANCE GRANTED • PROCEED'
-                  : 'CLEARANCE DENIED • TOKEN DRAIN PREVENTED'
+                  ? 'CLEARANCE GRANTED'
+                  : 'CLEARANCE DENIED'
                 : isApprovedResult
-                  ? 'MCP GATE APPROVED • 200 OK'
-                  : 'MCP GATE REFUSAL • 403 FORBIDDEN'}
+                  ? 'APPROVED (200 OK)'
+                  : 'BLOCKED (403 FORBIDDEN)'}
             </span>
             <span className="text-[10px] font-mono opacity-80">
               Latency: {result.latency_ms || '< 15'}ms
@@ -337,23 +318,21 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
             {isClearanceMode ? (
               isApprovedResult ? (
                 <span>
-                  Active provenance verified. Decision <code className="font-bold text-emerald-950 dark:text-white">{decisionId}</code> is grounded in current ADR-002. Clearance granted to begin code generation.
+                  Active provenance verified. Decision <code className="font-bold text-emerald-950 dark:text-white">{decisionId}</code> grounded in active baseline.
                 </span>
               ) : (
                 <span>
-                  Clearance rejected before code generation! Decision <code className="font-bold text-rose-950 dark:text-rose-200">{decisionId}</code> depends on superseded source <code className="font-bold text-rose-950 dark:text-rose-200">ADR-001</code>. Agent tokens saved.
+                  Clearance rejected. Decision <code className="font-bold text-rose-950 dark:text-rose-200">{decisionId}</code> depends on superseded source <code className="font-bold text-rose-950 dark:text-rose-200">ADR-001</code>.
                 </span>
               )
             ) : (
               isApprovedResult ? (
                 <span>
-                  Causal chain verified against active ADR-002. Code safely authorized for write to{' '}
-                  <code className="font-bold text-emerald-950 dark:text-white">{filePath}</code>.
+                  Causal chain verified. Write authorized for <code className="font-bold text-emerald-950 dark:text-white">{filePath}</code>.
                 </span>
               ) : (
                 <span>
-                  Action blocked! Decision <code className="font-bold text-rose-950 dark:text-rose-200">{decisionId}</code> depends
-                  on superseded source <code className="font-bold text-rose-950 dark:text-rose-200">ADR-001</code>. Zero disk writes permitted.
+                  Write blocked. Decision <code className="font-bold text-rose-950 dark:text-rose-200">{decisionId}</code> depends on superseded source <code className="font-bold text-rose-950 dark:text-rose-200">ADR-001</code>.
                 </span>
               )
             )}
@@ -361,7 +340,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
 
           {result.violation_paths && result.violation_paths.length > 0 && (
             <div className="mt-2 p-2 rounded bg-white/60 dark:bg-black/50 border border-slate-200 dark:border-white/10 text-[10px] font-mono text-slate-800 dark:text-slate-300">
-              <span className="text-slate-500 block mb-0.5 font-sans font-bold">Detected Stale Dependency Chain:</span>
+              <span className="text-slate-500 block mb-0.5 font-mono">Dependency Chain:</span>
               {result.violation_paths.map((p, idx) => (
                 <div key={idx} className="text-rose-600 dark:text-rose-300">
                   ↳ {Array.isArray(p) ? p.join(' -> ') : p}
@@ -372,7 +351,7 @@ export default function McpActionPlayground({ onRunCustomAction, repo = null, de
 
           {result.instructions_for_agent && (
             <div className="mt-2 p-2 rounded bg-amber-50 dark:bg-white/5 border border-amber-500/20 dark:border-white/10 text-[10px] font-mono text-amber-800 dark:text-amber-300">
-              <span className="text-amber-700 dark:text-slate-400 block mb-0.5 font-sans font-bold">Directive for Agent:</span>
+              <span className="text-amber-700 dark:text-slate-400 block mb-0.5 font-mono">Directive:</span>
               {result.instructions_for_agent}
             </div>
           )}

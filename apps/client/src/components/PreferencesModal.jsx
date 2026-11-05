@@ -8,8 +8,6 @@ import {
   VolumeX, 
   ChevronDown, 
   Check, 
-  Sun, 
-  Moon, 
   Activity, 
   MousePointer, 
   Waves, 
@@ -204,8 +202,20 @@ export default function PreferencesModal({
     }
   };
 
+  const isEmailValid = /^[^s@]+@[^s@]+.[^s@]+$/.test(targetEmail.trim());
+
   const handleSimulateAlert = async () => {
     playClick();
+    const trimmedEmail = targetEmail.trim();
+    if (!trimmedEmail) {
+      setSimulateStatus('Please enter a target recipient email address above.');
+      return;
+    }
+    if (!/^[^s@]+@[^s@]+.[^s@]+$/.test(trimmedEmail)) {
+      setSimulateStatus('Please enter a valid email address.');
+      return;
+    }
+
     setIsSimulatingAlert(true);
     setSimulateStatus(null);
     try {
@@ -214,13 +224,13 @@ export default function PreferencesModal({
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          targetEmail: targetEmail.trim() || undefined
+          targetEmail: trimmedEmail
         })
       });
       const data = await res.json();
       if (data.success) {
         playAlert();
-        setSimulateStatus(`Dispatched divergence alert to ${data.recipient || 'inbox'}!`);
+        setSimulateStatus(`Dispatched divergence alert to ${data.recipient}!`);
       } else {
         setSimulateStatus('Simulation failed: ' + (data.error || 'Server error'));
       }
@@ -377,41 +387,6 @@ export default function PreferencesModal({
         {/* Settings Grid Structure */}
         <div className="space-y-3 font-sans">
           
-          {/* 1. Theme Mode Selector */}
-          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/90 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/15 transition-all">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center space-x-2.5 sm:space-x-3 flex-1 min-w-0">
-                {isDarkTheme ? (
-                  <Moon size={16} className="text-white flex-shrink-0" />
-                ) : (
-                  <Sun size={16} className="text-slate-900 flex-shrink-0" />
-                )}
-                <div className="min-w-0">
-                  <div className="text-[11px] sm:text-xs font-semibold text-slate-950 dark:text-white leading-snug">
-                    Display Appearance
-                  </div>
-                  <div className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5">
-                    {isDarkTheme ? 'Deep Obsidian Dark' : 'Porcelain Light Minimalist'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                <ToggleSwitch 
-                  checked={isDarkTheme} 
-                  onChange={() => {
-                    playClick();
-                    spinGear();
-                    if (onToggleTheme) onToggleTheme();
-                  }}
-                  ariaLabel="Toggle display theme"
-                />
-                {/* 23px spacer to align with accordion chevron button */}
-                <div className="w-[23px] h-[23px]" aria-hidden="true" />
-              </div>
-            </div>
-          </div>
-
           {/* 2. Audio & Sensory Sound FX (Expandable Accordion) */}
           <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/90 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/15 transition-all">
             <div className="flex items-center justify-between gap-2">
@@ -705,9 +680,15 @@ export default function PreferencesModal({
                 <button
                   type="button"
                   onClick={handleSimulateAlert}
-                  disabled={isSimulatingAlert}
-                  className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-[10px] font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50 shrink-0 shadow-xs"
-                  title="Send a sample invalidation alert to your configured email"
+                  disabled={isSimulatingAlert || !isEmailValid}
+                  className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-[10px] font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0 shadow-xs"
+                  title={
+                    !targetEmail.trim()
+                      ? "Enter a target recipient email above to dispatch a test alert"
+                      : !isEmailValid
+                      ? "Enter a valid email address above to dispatch a test alert"
+                      : "Send a sample invalidation alert to your configured email"
+                  }
                 >
                   {isSimulatingAlert ? (
                     <Loader2 size={11} className="animate-spin text-slate-500 dark:text-slate-400 shrink-0" />

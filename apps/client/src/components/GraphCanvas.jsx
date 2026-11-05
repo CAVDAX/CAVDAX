@@ -1,9 +1,51 @@
 import { motion } from 'framer-motion';
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import NodeInspector from './NodeInspector';
 import CommandPalette from './CommandPalette';
+
+// Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
+function usePillTracker(activeKey, extraDep = null) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    let rafId;
+    const update = () => {
+      const el = refs.current[activeKey];
+      if (el) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        setPosition((prev) => {
+          if (
+            prev.ready &&
+            prev.x === x &&
+            prev.y === y &&
+            prev.width === width &&
+            prev.height === height
+          ) {
+            return prev;
+          }
+          return { x, y, width, height, ready: true };
+        });
+      }
+    };
+
+    update();
+    rafId = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', update);
+    };
+  }, [activeKey, extraDep]);
+
+  return { refs, position };
+}
 
 function computeDownstreamBlast(nodes, edges, rootNodeId) {
   if (!rootNodeId) return { blastNodeIds: new Set(), summary: { facts: 0, decisions: 0, actions: 0, files: [] } };
@@ -76,7 +118,11 @@ export default function GraphCanvas({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [simulatedBlastNode, setSimulatedBlastNode] = useState(null);
   const [driftFilter, setDriftFilter] = useState('ALL'); // 'ALL' | 'GROUNDED' | 'DRIFTED'
+  const driftPill = usePillTracker(driftFilter);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+  const searchKbd = isMac ? '⌘K' : 'Ctrl+K';
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -639,10 +685,38 @@ export default function GraphCanvas({
           </span>
         </div>
 
-        {/* Feature Controls: Monochromatic Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
+        {/* Feature Controls: Search (Cmd+K / Ctrl+K), Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
         <div className="flex items-center gap-2 shrink-0 font-mono">
-          {/* Monochromatic Architectural Drift Filter (Framer Motion Sliding Pillbar) */}
+          {/* Command Palette Trigger (Search primary action - precedes filters) */}
+          <button
+            type="button"
+            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+            title={`Search DAG Nodes (${searchKbd})`}
+            aria-label={`Search DAG Nodes (${searchKbd})`}
+          >
+            <Search className="w-3.5 h-3.5 text-current shrink-0" />
+            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
+            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
+              {searchKbd}
+            </kbd>
+          </button>
+
+          {/* Monochromatic Architectural Drift Filter (Container-Relative Slider Tracking — Anti-Flying Standard) */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] select-none">
+            {driftPill.position.ready && (
+              <motion.div
+                className="absolute top-0.5 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                initial={false}
+                animate={{
+                  x: driftPill.position.x,
+                  y: driftPill.position.y,
+                  width: driftPill.position.width,
+                  height: driftPill.position.height,
+                }}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
             {[
               { id: 'ALL', label: 'All', icon: Layers },
               { id: 'GROUNDED', label: 'Grounded', icon: CheckCheck, iconClass: 'text-emerald-500' },
@@ -653,6 +727,7 @@ export default function GraphCanvas({
               return (
                 <button
                   key={tab.id}
+                  ref={(el) => { if (el) driftPill.refs.current[tab.id] = el; }}
                   onClick={() => { playClick(); setDriftFilter(tab.id); }}
                   className={`relative px-2 py-0.5 rounded-md transition-colors cursor-pointer z-10 flex items-center gap-1.5 ${
                     active
@@ -660,13 +735,6 @@ export default function GraphCanvas({
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  {active && (
-                    <motion.div
-                      layoutId="canvasDriftSlidingPill"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      className="absolute inset-0 bg-white dark:bg-white/15 rounded-md shadow-xs border border-slate-300/60 dark:border-white/10 -z-10"
-                    />
-                  )}
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
                   <span>{tab.label}</span>
                 </button>
@@ -678,24 +746,11 @@ export default function GraphCanvas({
           <button
             type="button"
             onClick={handleDownloadGraph}
-            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
             title="Download Vector Graph (SVG)"
+            aria-label="Download Vector Graph (SVG)"
           >
             <Download className="w-3.5 h-3.5 text-current transition-colors" />
-          </button>
-
-          {/* Command Palette Trigger (Cmd+K / Ctrl+K) */}
-          <button
-            type="button"
-            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
-            title="Search DAG Nodes (Cmd+K / Ctrl+K)"
-          >
-            <Search className="w-3.5 h-3.5 text-current shrink-0" />
-            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
-            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
-              Cmd+K
-            </kbd>
           </button>
 
           {/* Zoom & Fullscreen Controls */}

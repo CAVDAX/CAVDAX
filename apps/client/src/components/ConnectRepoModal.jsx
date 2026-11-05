@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Github, Search, Plus, Check,
   X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound
@@ -40,6 +41,97 @@ export default function ConnectRepoModal({
   const rafIdRef = useRef(null);
   const [isHolding, setIsHolding] = useState(false);
   const [hasScroll, setHasScroll] = useState(false);
+
+  // Pause Lenis smooth-scroll while modal is open so native mouse wheel & trackpad scrolling is 100% responsive
+  useEffect(() => {
+    if (isOpen) {
+      if (window.__lenis) {
+        window.__lenis.stop();
+      }
+      return () => {
+        if (window.__lenis) {
+          window.__lenis.start();
+        }
+      };
+    }
+  }, [isOpen]);
+
+  // Direct mouse wheel / trackpad scroll handler to guarantee instant scrolling without needing to hold scrubber
+  const handleListWheel = (e) => {
+    if (!listContainerRef.current) return;
+    const el = listContainerRef.current;
+    const maxScroll = el.scrollHeight - el.clientHeight;
+    if (maxScroll <= 0) return;
+
+    el.scrollTop += e.deltaY;
+    updateScrollProgress();
+    e.stopPropagation();
+  };
+
+  // Keyboard navigation listener (ArrowUp, ArrowDown, PageUp, PageDown, Home, End)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleWindowKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+
+      const activeEl = document.activeElement;
+      const isInput = activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA');
+
+      // If user is focused on the search input, ArrowDown or Enter transfers focus to the repository list
+      if (isInput) {
+        if (activeEl.getAttribute('data-search-input') === 'true' && (e.key === 'ArrowDown' || e.key === 'Enter')) {
+          if (listContainerRef.current) {
+            e.preventDefault();
+            listContainerRef.current.focus();
+          }
+        }
+        return;
+      }
+
+      // If outside inputs or focused on list container, arrow keys / page keys scroll the repository list
+      if (!listContainerRef.current) return;
+      const el = listContainerRef.current;
+      const maxScroll = el.scrollHeight - el.clientHeight;
+      if (maxScroll <= 0) return;
+
+      const scrollStep = 52;
+      const pageStep = 208;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        el.scrollTop = Math.min(maxScroll, el.scrollTop + scrollStep);
+        updateScrollProgress();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        el.scrollTop = Math.max(0, el.scrollTop - scrollStep);
+        updateScrollProgress();
+      } else if (e.key === 'PageDown') {
+        e.preventDefault();
+        el.scrollTop = Math.min(maxScroll, el.scrollTop + pageStep);
+        updateScrollProgress();
+      } else if (e.key === 'PageUp') {
+        e.preventDefault();
+        el.scrollTop = Math.max(0, el.scrollTop - pageStep);
+        updateScrollProgress();
+      } else if (e.key === 'Home') {
+        e.preventDefault();
+        el.scrollTop = 0;
+        updateScrollProgress();
+      } else if (e.key === 'End') {
+        e.preventDefault();
+        el.scrollTop = maxScroll;
+        updateScrollProgress();
+      }
+    };
+
+    window.addEventListener('keydown', handleWindowKeyDown);
+    return () => window.removeEventListener('keydown', handleWindowKeyDown);
+  }, [isOpen, onClose]);
 
   const updateScrollProgress = () => {
     if (!listContainerRef.current) return;
@@ -248,10 +340,23 @@ export default function ConnectRepoModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <>
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      data-lenis-prevent
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          playClick();
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200"
+    >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Connect GitHub Repository"
+        data-lenis-prevent
         className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] font-mono select-none"
         onClick={(e) => e.stopPropagation()}
       >
@@ -282,7 +387,7 @@ export default function ConnectRepoModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4">
+        <div data-lenis-prevent className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4">
           {user ? (
             <>
               {/* Search Box */}
@@ -290,7 +395,8 @@ export default function ConnectRepoModal({
                 <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search your repositories..."
+                  data-search-input="true"
+                  placeholder="Search your repositories... (Press ↓ to navigate)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full h-8 pl-8 pr-3 rounded-lg border border-slate-200 dark:border-white/15 bg-slate-100/60 dark:bg-white/5 text-xs text-slate-950 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-slate-400 dark:focus:border-white/30"
@@ -320,6 +426,7 @@ export default function ConnectRepoModal({
                   {hasScroll && (
                     <div
                       ref={trackRef}
+                      onWheel={handleListWheel}
                       onPointerDown={handlePointerDown}
                       className={`absolute right-0.5 top-1 bottom-1 w-3 z-30 transition-all duration-200 select-none cursor-pointer flex justify-center ${
                         isHolding
@@ -347,8 +454,14 @@ export default function ConnectRepoModal({
 
                   <div
                     ref={listContainerRef}
+                    data-lenis-prevent
+                    tabIndex={0}
+                    role="region"
+                    aria-label="GitHub Repositories List"
+                    onWheel={handleListWheel}
                     onScroll={handleScroll}
-                    className={`space-y-1.5 max-h-60 overflow-y-auto repo-cue-only-scroll ${hasScroll ? 'pr-3.5' : 'pr-1'}`}
+                    onClick={() => listContainerRef.current?.focus()}
+                    className={`space-y-1.5 max-h-60 overflow-y-auto repo-cue-only-scroll focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/20 rounded-xl transition-all ${hasScroll ? 'pr-3.5' : 'pr-1'}`}
                   >
                     {filteredRepos.length > 0 ? (
                     filteredRepos.map((repo) => {
@@ -527,4 +640,6 @@ export default function ConnectRepoModal({
     />
   </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

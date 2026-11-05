@@ -21,12 +21,54 @@ import { motion } from 'framer-motion';
  *  - Zero-overflow containment (h-full flex flex-col)
  */
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect } from 'react';
 import { Activity, RefreshCw, FileText, CheckCircle2, Clock, Database, Compass, ScrollText, OctagonX, CheckCheck, GitBranch, Loader2 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import Combobox from './Combobox';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
+
+// Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
+function usePillTracker(activeKey, extraDep = null) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    let rafId;
+    const update = () => {
+      const el = refs.current[activeKey];
+      if (el) {
+        const x = el.offsetLeft;
+        const y = el.offsetTop;
+        const width = el.offsetWidth;
+        const height = el.offsetHeight;
+        setPosition((prev) => {
+          if (
+            prev.ready &&
+            prev.x === x &&
+            prev.y === y &&
+            prev.width === width &&
+            prev.height === height
+          ) {
+            return prev;
+          }
+          return { x, y, width, height, ready: true };
+        });
+      }
+    };
+
+    update();
+    rafId = requestAnimationFrame(update);
+    window.addEventListener('resize', update);
+
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', update);
+    };
+  }, [activeKey, extraDep]);
+
+  return { refs, position };
+}
 
 // ─── Realistic Fallback Audit Trail for Demo & Offline Resilience ─────────────
 const DEMO_FALLBACK_AUDIT_ENTRIES = [
@@ -134,7 +176,44 @@ function formatTs(ts) {
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState({ simulated }) {
+function EmptyState({ simulated, isFiltered, isLiveRepo, onResetFilters }) {
+  if (isFiltered) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
+        <Database className="w-8 h-8 opacity-30" />
+        <p className="text-xs font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          No matching agent actions found
+        </p>
+        <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
+          No audit entries match your current search query or active filter criteria.
+        </p>
+        {onResetFilters && (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="mt-1 px-3 py-1 rounded-lg text-xs font-mono border border-slate-300 dark:border-white/15 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+          >
+            Clear all filters
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (isLiveRepo) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
+        <Database className="w-8 h-8 opacity-30" />
+        <p className="text-xs font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          No agent actions recorded
+        </p>
+        <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
+          No autonomous agent actions have been intercepted or recorded for this repository yet.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
       <Database className="w-8 h-8 opacity-30" />
@@ -142,7 +221,7 @@ function EmptyState({ simulated }) {
         {simulated ? 'No agent actions recorded in simulation mode' : 'No agent actions found'}
       </p>
       <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
-        Run the 4-Act demo from the Console tab to generate audit entries via the MCP gate.
+        Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger.
       </p>
     </div>
   );
@@ -161,6 +240,7 @@ export default function AuditPage() {
   const [selectedRepo, setSelectedRepo] = useState('all');
   const [selectedBranch, setSelectedBranch] = useState('all');
   const [verdictFilter, setVerdictFilter] = useState('ALL');
+  const verdictPill = usePillTracker(verdictFilter);
   const [searchQuery, setSearchQuery] = useState('');
   const [connectedRepos, setConnectedRepos] = useState(() => {
     if (typeof window === 'undefined') return [];
@@ -491,8 +571,21 @@ export default function AuditPage() {
 
           <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">·</span>
 
-          {/* Monochromatic Verdict Sliding Pillbar (Framer Motion) */}
+          {/* Monochromatic Verdict Sliding Pillbar (Container-Relative Slider Tracking — Anti-Flying Standard) */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] font-mono select-none">
+            {verdictPill.position.ready && (
+              <motion.div
+                className="absolute top-0.5 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                initial={false}
+                animate={{
+                  x: verdictPill.position.x,
+                  y: verdictPill.position.y,
+                  width: verdictPill.position.width,
+                  height: verdictPill.position.height,
+                }}
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
             {[
               { id: 'ALL', label: 'All', icon: ScrollText },
               { id: 'BLOCKED', label: 'Blocked', icon: OctagonX, iconClass: 'text-rose-500' },
@@ -503,6 +596,7 @@ export default function AuditPage() {
               return (
                 <button
                   key={tab.id}
+                  ref={el => { if (el) verdictPill.refs.current[tab.id] = el; }}
                   onClick={() => { playClick(); setVerdictFilter(tab.id); }}
                   className={`relative px-2.5 py-0.5 rounded-md uppercase tracking-wider transition-colors cursor-pointer z-10 flex items-center gap-1.5 ${
                     active
@@ -510,13 +604,6 @@ export default function AuditPage() {
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
                   }`}
                 >
-                  {active && (
-                    <motion.div
-                      layoutId="auditVerdictSlidingPill"
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                      className="absolute inset-0 bg-white dark:bg-white/15 rounded-md shadow-xs border border-slate-300/60 dark:border-white/10 -z-10"
-                    />
-                  )}
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
                   <span>{tab.label}</span>
                 </button>
@@ -579,7 +666,17 @@ export default function AuditPage() {
       {/* ── Audit table ── */}
       <div data-tour="audit-ledger" className="flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
         {filteredEntries.length === 0 && !loading ? (
-          <EmptyState simulated={simulated} />
+          <EmptyState
+            simulated={simulated}
+            isFiltered={Boolean(searchQuery.trim() || selectedRepo !== 'all' || selectedBranch !== 'all' || verdictFilter !== 'ALL')}
+            isLiveRepo={selectedRepo !== 'all' && selectedRepo !== 'demo'}
+            onResetFilters={() => {
+              setSearchQuery('');
+              setSelectedRepo('all');
+              setSelectedBranch('all');
+              setVerdictFilter('ALL');
+            }}
+          />
         ) : (
           <div className="bezel-card overflow-hidden">
             {/* Table header */}
