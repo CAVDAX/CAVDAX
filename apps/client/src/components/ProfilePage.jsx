@@ -383,6 +383,7 @@ export default function ProfilePage({
   }, [quotaData, user]);
 
   // Check if current user is an authorized devteam member or has active dev enclave session
+  const activeUser = user || getActiveDevSession();
   const isAuthorizedDev = Boolean(
     isUserAuthorized(user) || getActiveDevSession()
   );
@@ -393,8 +394,8 @@ export default function ProfilePage({
   const prevHackathonModeRef = React.useRef(isHackathonMode);
 
   useEffect(() => {
-    // When Hackathon Mode transitions from OFF -> ON, elevate to Enterprise so judges start with flagship tier
-    if (isHackathonMode && !prevHackathonModeRef.current) {
+    // When Hackathon Mode transitions from OFF -> ON, elevate to Enterprise only if authenticated
+    if (isHackathonMode && !prevHackathonModeRef.current && activeUser) {
       setCurrentTier('enterprise');
       try {
         localStorage.setItem('cavdax_tier', 'enterprise');
@@ -421,7 +422,7 @@ export default function ProfilePage({
       }
     }
     prevHackathonModeRef.current = isHackathonMode;
-  }, [isHackathonMode, isAuthorizedDev, onSelectTier]);
+  }, [isHackathonMode, isAuthorizedDev, activeUser, onSelectTier]);
 
   // Sync external tier prop changes into local state
   useEffect(() => {
@@ -457,7 +458,16 @@ export default function ProfilePage({
       return;
     }
 
-    // Authorized developer or Hackathon Evaluation Pass bypass (allows switching to any tier without payment)
+    // Enforce GitHub / Dev authentication even during Evaluation Mode:
+    // Tiers, API keys, and quotas must always bind to a verified identity.
+    const activeUser = user || getActiveDevSession();
+    if (!activeUser) {
+      playClick();
+      window.location.href = '/api/auth/github?returnTo=/profile';
+      return;
+    }
+
+    // Authorized developer or Hackathon Evaluation Pass bypass (allows switching to any tier without payment once authenticated)
     if (hasEvaluationPass) {
       setCurrentTier(newTier);
       try {
@@ -470,12 +480,6 @@ export default function ProfilePage({
           ? `Activated ${newTier.toUpperCase()} Tier (Evaluation Pass)`
           : `Switched to ${newTier.toUpperCase()} Tier (Dev Override)`
       );
-      return;
-    }
-
-    if (!user) {
-      playClick();
-      window.location.href = '/api/auth/github?returnTo=/profile';
       return;
     }
 
@@ -1161,7 +1165,7 @@ export default function ProfilePage({
                   </div>
                 )}
                 <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                  {!hasEvaluationPass && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
+                  {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
                   <span>
                     {currentTier === 'pro'
                       ? 'Current Plan'
@@ -1170,7 +1174,7 @@ export default function ProfilePage({
                           : (hasEvaluationPass
                               ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
                               : (!user
-                                  ? 'Sign In to Unlock'
+                              ? 'Sign In to Activate'
                                   : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
                   </span>
                 </span>
@@ -1322,14 +1326,14 @@ export default function ProfilePage({
                   </div>
                 )}
                 <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                  {!hasEvaluationPass && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
+                  {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
                   <span>
                     {currentTier === 'enterprise'
                       ? 'Current Plan'
                       : (hasEvaluationPass
                           ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
                           : (!user
-                              ? 'Sign In to Unlock'
+                              ? 'Sign In to Activate'
                               : 'Upgrade (Custom)'))}
                   </span>
                 </span>
@@ -2087,7 +2091,7 @@ export default function ProfilePage({
                 </div>
               )}
               <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                {!hasEvaluationPass && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
+                {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
                 <span>
                   {currentTier === 'pro'
                     ? 'Current Plan'
@@ -2096,7 +2100,7 @@ export default function ProfilePage({
                         : (hasEvaluationPass
                             ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
                             : (!user
-                                ? 'Sign In to Unlock'
+                            ? 'Sign In to Activate'
                                 : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
                 </span>
               </span>
@@ -2248,14 +2252,14 @@ export default function ProfilePage({
                 </div>
               )}
               <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                {!hasEvaluationPass && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
+                {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
                 <span>
                   {currentTier === 'enterprise'
                     ? 'Current Plan'
                     : (hasEvaluationPass
                         ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
                         : (!user
-                            ? 'Sign In to Unlock'
+                            ? 'Sign In to Activate'
                             : 'Upgrade (Custom)'))}
                 </span>
               </span>

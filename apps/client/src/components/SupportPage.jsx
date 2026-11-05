@@ -401,6 +401,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
   const [isHackathonMode, setIsHackathonMode] = useState(() => {
     return typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true';
   });
+  const activeUser = user || getActiveDevSession();
   const isAuthorizedDev = Boolean(isUserAuthorized(user) || getActiveDevSession());
   const hasEvaluationPass = Boolean(isAuthorizedDev || isHackathonMode);
 
@@ -568,12 +569,19 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
     }
 
     const activeUser = user || getActiveDevSession();
-    const userOverride = activeUser ? {
+    if (!activeUser) {
+      setEvalLoadingTier(null);
+      playClick();
+      window.location.href = '/api/auth/github?returnTo=/support';
+      return;
+    }
+
+    const userOverride = {
       id: activeUser.id,
       login: activeUser.login,
       name: activeUser.name || activeUser.login,
       avatar_url: activeUser.avatarUrl || activeUser.avatar_url || null
-    } : null;
+    };
 
     try {
       const res = await fetch('/api/billing/activate-evaluation-sponsor', {
@@ -892,6 +900,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 <button
                   type="button"
                   onClick={() => {
+                    const activeUser = user || getActiveDevSession();
+                    if (!activeUser) {
+                      playClick();
+                      window.location.href = '/api/auth/github?returnTo=/support';
+                      return;
+                    }
                     if (isCurrentEvalTier) {
                       handleEvaluationSponsor(tier);
                       return;
@@ -956,7 +970,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                       <><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Active Sponsor Tier</>
                     ) : hasEvaluationPass ? (
                       <><TierIcon className="w-3 h-3 shrink-0" />Switch to {tier.tierName}</>
-                    ) : !user ? (
+                    ) : !activeUser ? (
                       <><Lock className="w-3 h-3 shrink-0" />Sign In to Sponsor</>
                     ) : (
                       <><TierIcon className="w-3 h-3 shrink-0" />Sponsor ({currency === 'INR' ? tier.inrPrice : tier.usdPrice})</>
