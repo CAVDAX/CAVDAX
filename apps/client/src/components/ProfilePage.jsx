@@ -8,6 +8,24 @@ import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 import ShimmerImage from './ui/ShimmerImage';
 
+
+function getStoredUser() {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('cavdax_user_session') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.username || parsed?.login) {
+        return {
+          login: parsed.username || parsed.login,
+          name: parsed.name || parsed.username || parsed.login,
+          avatarUrl: parsed.avatarUrl || parsed.avatar_url || ''
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
 // ProfilePage handles OAuth callback params if the user connected GitHub from
 // this page (server redirects back to /profile?connected=1 when returnTo=/profile).
 function consumeOAuthCallbackParams(onUserResolved) {
@@ -383,13 +401,13 @@ export default function ProfilePage({
   }, [quotaData, user]);
 
   // Check if current user is an authorized devteam member or has active dev enclave session
-  const activeUser = user || getActiveDevSession();
+  const activeUser = user || getStoredUser() || getActiveDevSession();
   const isAuthorizedDev = Boolean(
-    isUserAuthorized(user) || getActiveDevSession()
+    isUserAuthorized(activeUser) || getActiveDevSession()
   );
   // Full unrestricted access granted for core developers or global Hackathon Evaluation Mode
-  const hasEvaluationPass = Boolean(isAuthorizedDev || isHackathonMode);
-
+  const hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)));
+  
   // Set default flagship tier (Enterprise) when Hackathon Mode transitions, allowing free tier exploration
   const prevHackathonModeRef = React.useRef(isHackathonMode);
 
@@ -567,7 +585,7 @@ export default function ProfilePage({
     enterprise: 'ring-2 ring-purple-600/90 shadow-[0_0_12px_rgba(147,51,234,0.35)]',
   };
   const tierRingStyles = ROLE_RING;
-  const userInitial = (user?.name || user?.login || 'C').replace(/^@/, '').trim().charAt(0).toUpperCase() || 'C';
+  const userInitial = (activeUser?.name || user?.login || 'C').replace(/^@/, '').trim().charAt(0).toUpperCase() || 'C';
 
   // Calculate dynamic quota metrics based on active tier and real server/local state
   const now = new Date();
@@ -600,9 +618,9 @@ export default function ProfilePage({
           <div className="relative mb-3 sm:mb-4 flex justify-center">
             <div className="relative">
               <div className={`w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full overflow-hidden transition-all duration-500 bg-slate-100 dark:bg-white/5 ${tierRingStyles[currentTier] || tierRingStyles.free}`}>
-                {(user?.avatar_url || user?.avatarUrl || user?.avatar) ? (
+                {(activeUser?.avatar_url || activeUser?.avatarUrl || activeUser?.avatar) ? (
                   <ShimmerImage
-                    src={user?.avatar_url || user?.avatarUrl || user?.avatar}
+                    src={activeUser?.avatar_url || activeUser?.avatarUrl || activeUser?.avatar}
                     alt={user.login || 'User Avatar'}
                     containerClassName="h-full w-full rounded-full"
                     className="h-full w-full object-cover"
@@ -662,10 +680,10 @@ export default function ProfilePage({
   
           {/* Identity & Verified Handle */}
           <h1 className="text-base sm:text-lg font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-tight">
-            {user?.name || user?.login || 'Local Contributor'}
+            {activeUser?.name || activeUser?.login || 'Local Contributor'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-            {user ? `@${user.login} · GitHub Verified` : 'Unauthenticated Sandbox Session'}
+            {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
           </p>
 
           
@@ -729,9 +747,9 @@ export default function ProfilePage({
             </button>
   
             {/* Account Action: Log Out (if user) OR Connect GitHub (with Monochrome Fluid Wave Fill) */}
-            {user ? (
-              <button
-                onClick={handleLogout}
+            {activeUser ? (
+            <button
+              onClick={handleLogout}
                 onMouseEnter={() => setIsLogoutHovered(true)}
                 onMouseLeave={() => setIsLogoutHovered(false)}
                 className={`relative overflow-hidden group h-9 min-w-[130px] px-5 rounded-lg border text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none flex items-center justify-center gap-2 ${
@@ -1173,8 +1191,7 @@ export default function ProfilePage({
                           ? 'Connecting...'
                           : (hasEvaluationPass
                               ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
-                              : (!user
-                              ? 'Sign In to Activate'
+                              : (!activeUser ? 'Sign In to Activate'
                                   : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
                   </span>
                 </span>
@@ -1332,8 +1349,7 @@ export default function ProfilePage({
                       ? 'Current Plan'
                       : (hasEvaluationPass
                           ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
-                          : (!user
-                              ? 'Sign In to Activate'
+                          : (!activeUser ? 'Sign In to Activate'
                               : 'Upgrade (Custom)'))}
                   </span>
                 </span>
@@ -1541,9 +1557,9 @@ export default function ProfilePage({
         <div className="relative mt-2 sm:mt-3 mb-1.5 sm:mb-2 flex justify-center">
           <div className="relative">
             <div className={`w-14 h-14 sm:w-16 sm:h-16 lg:w-16 lg:h-16 xl:w-20 xl:h-20 rounded-full overflow-hidden transition-all duration-500 bg-slate-100 dark:bg-white/5 ${tierRingStyles[currentTier] || tierRingStyles.free}`}>
-              {(user?.avatar_url || user?.avatarUrl || user?.avatar) ? (
+              {(activeUser?.avatar_url || activeUser?.avatarUrl || activeUser?.avatar) ? (
                 <ShimmerImage
-                  src={user?.avatar_url || user?.avatarUrl || user?.avatar}
+                  src={activeUser?.avatar_url || activeUser?.avatarUrl || activeUser?.avatar}
                   alt={user.login || 'User Avatar'}
                   containerClassName="h-full w-full rounded-full"
                   className="h-full w-full object-cover"
@@ -1603,10 +1619,10 @@ export default function ProfilePage({
 
         {/* Identity & Verified Handle */}
         <h1 className="text-sm sm:text-base font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-tight">
-          {user?.name || user?.login || 'Local Contributor'}
+          {activeUser?.name || activeUser?.login || 'Local Contributor'}
         </h1>
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-          {user ? `@${user.login} · GitHub Verified` : 'Unauthenticated Sandbox Session'}
+          {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
         </p>
 
         
@@ -1670,7 +1686,7 @@ export default function ProfilePage({
           </button>
 
           {/* Account Action: Log Out (if user) OR Connect GitHub (with Monochrome Fluid Wave Fill) */}
-          {user ? (
+          {activeUser ? (
             <button
               onClick={handleLogout}
               onMouseEnter={() => setIsLogoutHovered(true)}
@@ -2099,8 +2115,7 @@ export default function ProfilePage({
                         ? 'Connecting...'
                         : (hasEvaluationPass
                             ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
-                            : (!user
-                            ? 'Sign In to Activate'
+                            : (!activeUser ? 'Sign In to Activate'
                                 : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
                 </span>
               </span>
@@ -2258,8 +2273,7 @@ export default function ProfilePage({
                     ? 'Current Plan'
                     : (hasEvaluationPass
                         ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
-                        : (!user
-                            ? 'Sign In to Activate'
+                        : (!activeUser ? 'Sign In to Activate'
                             : 'Upgrade (Custom)'))}
                 </span>
               </span>

@@ -377,6 +377,24 @@ function loadRazorpayScript() {
   });
 }
 
+
+function getStoredUser() {
+  try {
+    const raw = typeof window !== 'undefined' ? localStorage.getItem('cavdax_user_session') : null;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.username || parsed?.login) {
+        return {
+          login: parsed.username || parsed.login,
+          name: parsed.name || parsed.username || parsed.login,
+          avatarUrl: parsed.avatarUrl || parsed.avatar_url || ''
+        };
+      }
+    }
+  } catch {}
+  return null;
+}
+
 export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
   const [hoveredTier, setHoveredTier] = useState(null);
 
@@ -401,9 +419,9 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
   const [isHackathonMode, setIsHackathonMode] = useState(() => {
     return typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true';
   });
-  const activeUser = user || getActiveDevSession();
+  const activeUser = user || getStoredUser() || getActiveDevSession();
   const isAuthorizedDev = Boolean(isUserAuthorized(user) || getActiveDevSession());
-  const hasEvaluationPass = Boolean(isAuthorizedDev || isHackathonMode);
+  const hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)));
 
   const [activeEvaluationTier, setActiveEvaluationTier] = useState(() => {
     try {
