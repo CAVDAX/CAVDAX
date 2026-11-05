@@ -708,6 +708,7 @@ CAVDAX implements comprehensive defense-in-depth security across both API and ru
 * **Strict Administrative Authorization (`requireDevAuth`)**: Critical administrative endpoints (`POST /api/system/dev-ips`, `/api/system/dev-roster`, `/api/system/hackathon-mode`) enforce cryptographically hashed developer credentials and remote IP whitelisting.
 * **Path Traversal Defenses**: All file modification operations (`apply_code_change`, `/api/ingest`) validate target paths against project root boundaries to prevent arbitrary file access outside the sandbox.
 * **Client IP Spoofing Mitigation**: The gateway inspects proxy socket addresses rather than untrusted `X-Forwarded-For` headers to prevent spoofed IP bypasses.
+* **Zero-Fallback Identity Sanitization & Multi-Layer Recipient Validation**: Outbound alert simulation endpoints strictly reject empty or unconfigured targets with explicit HTTP 400 (`MISSING_RECIPIENT_EMAIL`, `INVALID_EMAIL_FORMAT`), eliminating prototype developer fallback stubs and preventing inadvertent notifications or identity leaks.
 * **Production Security Headers**: All responses include strict HTTP security directives:
   * `X-Content-Type-Options: nosniff` (MIME sniffing prevention)
   * `X-Frame-Options: DENY` (Clickjacking defense)
@@ -926,7 +927,7 @@ CAVDAX/
 │   │   ├── email.js             # Resend API transactional divergence alert dispatcher & debouncer
 │   │   ├── webPush.js           # VAPID key manager & Web Push background notification broker
 │   │   ├── systemState.js       # Atomic persistent state & user notification preferences
-│   │   ├── test/                # Unit & security test suite (111 automated tests)
+│   │   ├── test/                # Unit & security test suite (114 automated tests: 112 server + 2 MCP locks)
 │   │   └── Dockerfile           # Server containerization
 │   └── mcp-server/              # Standalone NPM package (@cavdax/mcp-server — published)
 │       ├── bin/cavdax.js        # Universal CLI: npx cavdax mcp|ingest|check|doctor

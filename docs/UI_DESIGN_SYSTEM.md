@@ -3637,3 +3637,51 @@ Applying opaque backgrounds (`bg-slate-100`, `bg-white/5`) to buttons containing
     {/* Icon and label hoisted with relative z-10 */}
   </button>
   ```
+
+---
+
+## 63. Disabled Action State Ergonomics & Dynamic Instructive Tooltip Guidance
+
+Conditionally disabling an interactive button without communicative feedback creates dead-end UX and user frustration:
+
+### 63.1 The Silent Dead-End Antipattern
+Rendering `disabled={true}` with `cursor-not-allowed` or reduced opacity while omitting any explanation forces users to guess why clicking does nothing.
+
+### 63.2 Dynamic Descriptive Tooltip Invariant
+Every conditionally disabled action button MUST provide a live, dynamic tooltip or accessible `title` attribute communicating the exact missing prerequisite:
+```jsx
+const isEmailValid = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/.test(email.trim());
+const isActionDisabled = !email.trim() || !isEmailValid || isSubmitting;
+
+<button
+  type="button"
+  disabled={isActionDisabled}
+  title={
+    !email.trim()
+      ? 'Enter a valid recipient email to dispatch an alert'
+      : !isEmailValid
+      ? 'Please enter a valid email format (e.g., dev@domain.com)'
+      : 'Dispatch simulated divergence alert via transactional mailer'
+  }
+  className="relative px-3 py-1.5 rounded-lg border text-xs font-mono font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-slate-300 dark:disabled:hover:border-white/10"
+>
+  {isSubmitting ? 'Dispatching...' : 'Dispatch Test Alert'}
+</button>
+```
+Additionally, client handlers should implement defensive short-circuits with explanatory status toasts if invoked programmatically or via synthetic events.
+
+---
+
+## 64. Single Source of Truth for Settings Controls (Anti-Duplication)
+
+Global preferences and environment parameters must maintain an unambiguous single source of truth:
+
+### 64.1 The Cognitive Redundancy Antipattern
+Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches, or Global Sound) inside subordinate settings modals when the primary toggle is already permanently hoisted in the application shell navbar:
+1. Causes cognitive fatigue: users question whether the inner modal toggle applies locally (modal-scoped) or globally (app-wide).
+2. Increases bug surface area: two separate reactive state bindings must stay synchronized across portal mounts and unmounts.
+
+### 64.2 The Unified Header Invariant
+1. Hoist primary environment switches (Theme, Account Identity, Global Audio) exclusively in the universal top navbar or command palette.
+2. Reserve subordinate modals (e.g. `PreferencesModal`) strictly for granular, non-shell settings: Notification Thresholds, Webhook Ingestion Secrets, Resend/Email Target Recipients, and Web Push Subscriptions.
+3. If an inner modal requires access to global parameters, display a read-only badge linked directly to the primary shell toggle with a tooltip (*"Configured in application header"*).

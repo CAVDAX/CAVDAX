@@ -9,6 +9,39 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.93 Latest Session Achievements (November 6, 2026 - Fallback Credential Sanitization, Multi-Layer Email Validation, NPM Package Homepage Alignment & Master Knowledge Sync)
+
+- **Hardcoded Prototype Recipient Fallback Eradication (`apps/server/index.js` — Commit `dfa44df` on `backend`)**:
+  - Completely purged hardcoded developer personal email (`'suneetchugh@gmail.com'`) from the simulation alert handler (`/api/alerts/simulate-invalidation`).
+  - Implemented strict candidate resolution: `((typeof targetEmail === 'string' && targetEmail.trim() ? targetEmail.trim() : null) || userPrefs?.targetEmail || user?.email || '').toLowerCase().trim()`.
+  - Added strict server-side guards:
+    1. Returns `HTTP 400 Bad Request` with error `MISSING_RECIPIENT_EMAIL` if candidate is empty or whitespace-only.
+    2. Returns `HTTP 400 Bad Request` with error `INVALID_EMAIL_FORMAT` if candidate fails RFC 5322 regex.
+  - Added regression unit tests in `apps/server/test/invalidationAlerts.test.mjs` asserting empty payloads, malformed emails, valid targets, preference fallbacks, and automated text inspection verifying zero occurrences of personal emails across `apps/server/index.js`. All 114 test suites pass.
+- **Client-Side Form Validation & Dynamic Tooltip Guidance (`apps/client/src/components/PreferencesModal.jsx` — Commit `603e7f0` on `frontend`)**:
+  - Implemented dynamic `isEmailValid` RFC 5322 regex validation.
+  - Conditionally disabled the **Dispatch Test Alert** button when the target email field is empty or malformed (`disabled={!targetEmail.trim() || !isEmailValid || isSimulatingAlert}`).
+  - Added dynamic, instructive tooltip guidance:
+    - Empty: *"Enter a valid recipient email to dispatch an alert"*
+    - Invalid: *"Please enter a valid email format (e.g., dev@domain.com)"*
+    - Valid: *"Dispatch simulated divergence alert via Resend"*
+  - Added defensive short-circuit in client handler with status toast if invoked with empty or invalid parameters.
+- **NPM Package Homepage Alignment (`apps/mcp-server/package.json` — Commit `b0eb30b` on `backend`)**:
+  - Updated package manifest `"homepage"` from redundant GitHub README anchor (`https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme`) to the live production platform: `https://cavdax.sahnirmaan.live`.
+  - Aligned with industry tier-1 standards (`stripe`, `supabase`, `prisma`, `modelcontextprotocol`), ensuring the npmjs.com sidebar displays distinct, non-redundant **Homepage** (interactive visual canvas) and **Repository** (open source code) links.
+- **Codebase Design System Expansion (`docs/UI_DESIGN_SYSTEM.md`)**:
+  - Appended **Section 63**: *Disabled Action State Ergonomics & Dynamic Instructive Tooltip Guidance*.
+  - Appended **Section 64**: *Single Source of Truth for Settings Controls (Anti-Duplication)*.
+- **External Master AI Prompts & Knowledge Architecture Sync (`C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
+  - Expanded `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` to **22 Forensic Attack Vectors**:
+    - **Vector 21**: *Prototype Fallback Credentials & Default Identity Traps*.
+    - **Vector 22**: *Package Monorepo Metadata Asymmetry & NPM Distribution Invariants*.
+  - Updated Master AI Prompt Template list to incorporate all 22 vectors.
+  - Appended Sections 63 & 64 to `#UI_DESIGN_SYSTEM.md file.md`.
+  - Authored new dedicated master playbooks:
+    - `##Prototype-Fallback-Credentials-And-Identity-Trap-Sanitization.md` in `#General-Main/`.
+    - `##Form-Validation-Dynamic-Tooltips-And-Disabled-Action-Ergonomics.md` in `UI-Components/`.
+
 ## 1.0.92 Latest Session Achievements (November 5, 2026 - Frontend UX & Accessibility Hardening, Modal Portal Hoisting, Anti-Flying Pill Tracking, and 8-Test Automated E2E Suite)
 
 - **Interactive Target Code Diff Collapse & Disclosure Accessibility (`apps/client/src/components/TerminalView.jsx`)**:
