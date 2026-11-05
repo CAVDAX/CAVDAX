@@ -2613,6 +2613,125 @@ if (process.env.NODE_ENV === 'test') {
 }
 
 /**
+ * POST /api/auth/dev-login
+ * Developer Personal Access Token (PAT) authentication for local/offline environments.
+ * Strictly forbidden in production environments (OWASP A01 Access Control).
+ */
+app.post('/api/auth/dev-login', async (req, res) => {
+  if (isProduction) {
+    return res.status(403).json({
+      success: false,
+      error: 'DEV_AUTH_DISABLED_IN_PRODUCTION',
+      message: 'Dev PAT authentication is strictly disabled in production environments.'
+    });
+  }
+
+  const { token } = req.body || {};
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({
+      success: false,
+      error: 'TOKEN_REQUIRED',
+      message: 'GitHub Personal Access Token is required.'
+    });
+  }
+
+  const trimmedToken = token.trim();
+  if (trimmedToken.length < 10 || trimmedToken.length > 512) {
+    return res.status(400).json({
+      success: false,
+      error: 'INVALID_TOKEN_FORMAT',
+      message: 'GitHub Personal Access Token format is invalid.'
+    });
+  }
+
+  try {
+    const ghRes = await fetch('https://api.github.com/user', {
+      headers: {
+        Authorization: `Bearer ${trimmedToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'CAVDAX-Dev-Gateway'
+      }
+    });
+
+    if (!ghRes.ok) {
+      const status = ghRes.status;
+      return res.status(status === 401 ? 401 : 400).json({
+        success: false,
+        error: 'INVALID_GITHUB_TOKEN',
+        message: status === 401
+          ? 'GitHub rejected this token: Bad credentials.'
+          : 'GitHub API verification failed for this token.'
+      });
+    }
+
+    const userData = await ghRes.json();
+    if (!userData || !userData.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'USER_FETCH_FAILED',
+        message: 'Unable to retrieve GitHub profile using provided token.'
+      });
+    }
+
+    req.session.user = {
+      githubId: userData.id,
+      login: userData.login,
+      name: userData.name || userData.login,
+      avatarUrl: userData.avatar_url || '',
+      email: userData.email || '',
+      accessToken: trimmedToken,
+      tier: req.session?.tier || 'free'
+    };
+
+    const cookieUser = {
+      githubId: userData.id,
+      login: userData.login,
+      name: userData.name || userData.login,
+      avatarUrl: userData.avatar_url || '',
+      email: userData.email || '',
+      tier: req.session?.tier || 'free'
+    };
+
+    const signedAuth = signAuthToken(cookieUser);
+    if (signedAuth) {
+      res.cookie('cavdax_auth', signedAuth, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60 * 1000
+      });
+    }
+
+    console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id})`);
+
+    req.session.save((saveErr) => {
+      if (saveErr) {
+        console.error('[CAVDAX DevAuth] Session save error:', saveErr.message);
+        return res.status(500).json({ success: false, error: 'SESSION_SAVE_FAILED' });
+      }
+      return res.json({
+        success: true,
+        user: {
+          githubId: userData.id,
+          login: userData.login,
+          name: userData.name || userData.login,
+          avatarUrl: userData.avatar_url || '',
+          tier: req.session?.tier || 'free'
+        }
+      });
+    });
+  } catch (err) {
+    console.error('[CAVDAX DevAuth] Network error validating token:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: 'GITHUB_API_UNREACHABLE',
+      message: 'Failed to connect to GitHub API.'
+    });
+  }
+});
+
+/**
  * GET /api/user/api-key
  * Returns the active cryptographic API key for the authenticated user or session.
  */
