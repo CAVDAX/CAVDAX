@@ -9,6 +9,66 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.87 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 4 Remediation: Proxy-Aware IP Rate Limiting, Org Repo Access, Session Fixation & Sequential ADR Scoping)
+
+- **Proxy-Aware Client IP Extraction & Anti-Edge Pooling (`apps/server/index.js`)**:
+  - Implemented and exported `isTrustedProxyIp(ip)` and `extractClientIp(req)`:
+    - Identifies loopback (`127.0.0.1`, `::1`), RFC 1918 private subnets (`10.0.0.0/8`, `192.168.0.0/16`, Docker `172.16.0.0/12`), and verified Cloudflare edge proxy CIDRs (including `172.64.0.0/13` and `172.70.1.1`).
+    - Fixes the critical edge-node IP pooling vulnerability where all users behind Cloudflare were collapsed into a single edge IP bucket (`172.70.1.1`), exhausting the SSE 10-stream cap and triggering collective 429 rate limit errors.
+    - Preserves loopback anti-spoofing: untrusted direct public callers cannot spoof `cf-connecting-ip` or `x-forwarded-for`.
+  - Configured Express `app.set('trust proxy', 1)`.
+- **API Key Access for Organization & Collaborator Repositories (`apps/server/index.js`)**:
+  - Remediated the `/adrs` access check in `verifyUserRepoAccess`:
+    - Previously, user-scoped API keys were strictly rejected on organization repos (e.g. `acme-corp/app`) or collaborator repos (e.g. `bob/lib`) because `owner !== userLogin`.
+    - Added multi-tier verification:
+      1. Inspects `req.authUser.connectedRepos` recorded on the key or system state.
+      2. Inspects caller-provided GitHub tokens (`x-github-token` or `x-github-actions-token`) with direct `ghData.permissions?.push || ghData.permissions?.admin` check.
+      3. For CI gate runs with server `GITHUB_TOKEN`, queries `GET /repos/:owner/:repo/collaborators/:user/permission` to verify whether the key owner has push/admin rights on an org repo.
+- **Session Fixation Defense & Dev-Login Hardening (`apps/server/index.js`)**:
+  - Added `req.session.regenerate()` calls to both the GitHub OAuth callback and `POST /api/auth/dev-login` flows before attaching user identity (mitigates OWASP A07 session fixation).
+  - Hardened `/api/auth/dev-login`:
+    - Enforces loopback-only callers in non-production environments unless `ALLOW_DEV_LOGIN=true` is explicitly configured.
+    - Sets cookie `secure: Boolean(isSecureReq)` dynamically based on `req.secure` and `x-forwarded-proto: https`.
+- **Sequential ADR Numbering Defenses (`apps/server/githubAdr.js`)**:
+  - Scoped open PR scanning in `proposeAdrPullRequest`:
+    - Replaced the loose `(branchName + ' ' + prTitle).match(/ADR-(\d+)/i)` with a strict branch prefix match: `pr.head?.ref.match(/^cavdax\/propose-(?:adr-)?(\d+)/i)`.
+    - Prevents unrelated open PR titles (e.g., 'Fix typo in ADR-2024 notes') from inflating the next sequential ADR number to 2025+.
+  - Added unit test in `apps/server/test/githubAdr.test.mjs` verifying isolation from noisy PR titles.
+- **CI Gate Template Parameterization (`apps/server/githubAdr.js`)**:
+  - Dynamic `CAVDAX_SERVER_URL` in the generated GitHub Actions workflow template: `${process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://cavdax.sahnirmaan.live'}`.
+- **Dependency & Lockfile Alignment (`package.json`)**:
+  - Aligned monorepo root `falkordb` dependency from `^7.0.0` to `^6.8.0` to match `apps/server`.
+- **Automated Test Suite Expansion (`apps/server/test/round4Hardening.test.mjs`)**:
+  - Added dedicated proxy IP resolution tests and non-spoofing tests.
+  - Full server test suite passing: **102 / 102 tests passed, 0 failures**.
+- **Real Browser Puppeteer Visual & Interaction Audit Verified (`ProfilePage.jsx` & `SupportPage.jsx`)**:
+  - Uncovered and remediated a critical edge case where global `isHackathonMode = true` granted evaluation pass bypass to unauthenticated visitors before checking for an active user identity.
+  - Aligned `hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)))` and bound `activeUser = user || getStoredUser() || getActiveDevSession()` across Profile & Support surfaces.
+  - Executed automated Puppeteer browser audit across 4 critical flows:
+    1. Unauthenticated Profile: Verified buttons demand authentication (`Sign In to Activate` with Lock icon) and reject anonymous tier bypass.
+    2. Unauthenticated Support: Verified sponsor cards demand authentication (`Sign In to Sponsor` with Lock icon) and reject anonymous backer injection.
+    3. Authenticated Profile: Verified instantaneous free tier switching (`Switch to Community`, `Switch to Pro`, `Current Plan` Enterprise) with zero credit card friction and authentic `Log Out` action.
+    4. Authenticated Support: Verified instantaneous free sponsor tier switching (`Switch to Cookie`, `Switch to 2 Cups`, `Switch to Core`).
+  - Production build verified with Vite `npm run build` passing 100% clean in 1m 3s.
+
+## 1.0.86 Latest Session Achievements (November 5, 2026 - Identity-Bound Evaluation Architecture & GitHub Auth Enforcement for Tier/Sponsor Switching)
+
+- **Enforced GitHub Identity for Evaluation Pass Switching (`ProfilePage.jsx` & `SupportPage.jsx`)**:
+  - Reordered tier-switch and sponsor activation handlers to strictly require an authenticated identity (`activeUser = user || getActiveDevSession()`) before evaluating the evaluation pass bypass.
+  - Eliminated the "Ghost State" trap where anonymous visitors could switch to Pro/Enterprise in `localStorage` but received an orphaned state (disabled API keys and 401 unauthenticated errors when copying keys or setting up MCP configs).
+  - Updated tier card button states: unauthenticated visitors see an explicit `Sign In to Activate` CTA with `<Lock />` icon. Once authenticated under Evaluation Mode, judges and developers can toggle between `Community`, `Pro`, and `Enterprise` instantaneously with 0 payment and 0 credit card friction.
+- **Elimination of Phantom Evaluation Backer Pollution (`SupportPage.jsx` & `apps/server/index.js`)**:
+  - `POST /api/billing/activate-evaluation-sponsor` now strictly requires an authenticated session (`req.session?.user` or verified `user_override`). Anonymous requests are rejected with `401 UNAUTHORIZED`.
+  - Deprecated the `spn_eval_guest_<timestamp>` anonymous fallback and `evaluator-pass` dummy handle.
+  - Sponsoring in Evaluation Mode now attaches the evaluator's real GitHub username, avatar, and ID, lighting up their authentic GitHub profile on the live community backer wall with the supporter halo.
+- **Automated Regression & Test Suite Expansion (`apps/server/test/evaluationSponsorAuth.test.mjs`)**:
+  - Added comprehensive automated unit tests covering:
+    - 401 rejection for unauthenticated evaluation sponsor activation attempts.
+    - Full session binding with `user.login` and avatar preservation for authenticated evaluators.
+    - Strict tier ID bounds validation (1, 2, or 3 only).
+  - Test suite passing at **99 / 99 tests** (0 fails, 0 skips, 100% pass rate).
+  - Client production build verified clean with Vite `npm run build` in 23.77s.
+
 ## 1.0.85 Latest Session Achievements (November 5, 2026 - Security Hardening, Cloudflare WAF/Edge Headers, CRLF Injection Defenses & Puppeteer Visual Audit)
 
 - **Cloudflare Edge & OWASP Security Headers Hardening (`apps/server/index.js`)**:
