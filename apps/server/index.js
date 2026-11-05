@@ -2673,25 +2673,37 @@ app.get('/api/auth/github/callback', async (req, res) => {
     // 4. Prevent Session Fixation (OWASP A07): Regenerate session upon authentication
     const redirectUrl = `${frontendBase}${returnTo}${returnTo.includes("?") ? "&" : "?"}connected=1&login=${encodeURIComponent(userData.login)}&name=${encodeURIComponent(userData.name || userData.login)}&avatar=${encodeURIComponent(userData.avatar_url || '')}&githubId=${userData.id}`;
     const saveAndRedirect = () => {
-      req.session.user = {
-        githubId:  userData.id,
-        login:     userData.login,
-        name:      userData.name || userData.login,
-        avatarUrl: userData.avatar_url,
-        email:     primaryEmail,
-        tier:      'free',
-        accessToken: access_token
-      };
-      req.session.save((err) => {
-        if (err) console.error('[CAVDAX OAuth] Session save error:', err);
-        res.redirect(redirectUrl);
-      });
+      try {
+        req.session.user = {
+          githubId:  userData.id,
+          login:     userData.login,
+          name:      userData.name || userData.login,
+          avatarUrl: userData.avatar_url,
+          email:     primaryEmail,
+          tier:      'free',
+          accessToken: accessToken
+        };
+        req.session.save((err) => {
+          if (err) console.error('[CAVDAX OAuth] Session save error:', err);
+          res.redirect(redirectUrl);
+        });
+      } catch (saveErr) {
+        console.error('[CAVDAX OAuth] Session population error:', saveErr.message);
+        const sep = returnTo.includes("?") ? "&" : "?";
+        res.redirect(`${frontendBase}${returnTo}${sep}oauth_error=${encodeURIComponent('server_error')}`);
+      }
     };
 
     if (typeof req.session.regenerate === 'function') {
       req.session.regenerate((regenErr) => {
-        if (regenErr) console.warn('[CAVDAX OAuth] Session regeneration warning:', regenErr.message);
-        saveAndRedirect();
+        try {
+          if (regenErr) console.warn('[CAVDAX OAuth] Session regeneration warning:', regenErr.message);
+          saveAndRedirect();
+        } catch (innerErr) {
+          console.error('[CAVDAX OAuth] Uncaught callback exception:', innerErr.message);
+          const sep = returnTo.includes("?") ? "&" : "?";
+          res.redirect(`${frontendBase}${returnTo}${sep}oauth_error=${encodeURIComponent('server_error')}`);
+        }
       });
     } else {
       saveAndRedirect();
