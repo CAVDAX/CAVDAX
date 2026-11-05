@@ -3,9 +3,10 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
-  CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2 } from 'lucide-react';
+  CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
+import McpActionPlayground from './McpActionPlayground';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
 
 /**
@@ -100,12 +101,13 @@ export default function ConnectedRepoWorkspace({
   const [showAgentSetupModal, setShowAgentSetupModal] = useState(false);
   const [showCiGateModal, setShowCiGateModal] = useState(false);
   const [showProposeAdrModal, setShowProposeAdrModal] = useState(false);
+  const [showPlaygroundModal, setShowPlaygroundModal] = useState(false);
   const [agentSetupTab, setAgentSetupTab] = useState('cursor');
   const [copiedSnippet, setCopiedSnippet] = useState(false);
   const agentPill = usePillTracker(agentSetupTab, showAgentSetupModal);
 
   // Pause Lenis global smooth-scroll while any modal is mounted to guarantee native mouse wheel scrolling in code editors & modal cards
-  const anyModalOpen = showInitConfirmModal || showAgentSetupModal || showCiGateModal || showProposeAdrModal;
+  const anyModalOpen = showInitConfirmModal || showAgentSetupModal || showCiGateModal || showProposeAdrModal || showPlaygroundModal;
   useEffect(() => {
     if (anyModalOpen) {
       if (window.__lenis) {
@@ -199,6 +201,7 @@ export default function ConnectedRepoWorkspace({
         setShowAgentSetupModal(false);
         setShowCiGateModal(false);
         setShowProposeAdrModal(false);
+        setShowPlaygroundModal(false);
         setShowInitConfirmModal(false);
         setIsBranchDropdownOpen(false);
       }
@@ -1175,6 +1178,17 @@ export default function ConnectedRepoWorkspace({
                     )}
                   </div>
 
+                  {/* Interactive Custom Tool Action Simulator Probe */}
+                  <button
+                    type="button"
+                    onClick={() => { playClick(); setShowPlaygroundModal(true); }}
+                    className="w-full mt-1.5 h-8 px-2.5 rounded-lg border border-dashed border-slate-300 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/30 bg-slate-50/60 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 text-[11px] font-mono flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    title="Open interactive custom tool execution bench (test arbitrary decision IDs, file paths, and code snippets)"
+                  >
+                    <Cpu className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                    <span>Custom Action Simulator (Arbitrary Tool Probe)</span>
+                  </button>
+
                   {staleDecisions.length === 0 && validDecisions.length > 0 && (
                     <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 leading-normal pt-0.5">
                       All decisions currently valid. Select a decision node on the canvas to inspect or probe its gate clearance.
@@ -1742,6 +1756,42 @@ jobs:
                 </div>
               </form>
             )}
+          </div>
+        </div>,
+        document.body
+      )}
+
+
+
+            {/* 4. Interactive Custom MCP Action Simulator Modal (Hoisted via createPortal) */}
+      {showPlaygroundModal && typeof document !== 'undefined' && createPortal(
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              playClick();
+              setShowPlaygroundModal(false);
+            }
+          }}
+          data-lenis-prevent
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
+        >
+          <div data-lenis-prevent className="max-w-2xl w-full my-auto">
+            <McpActionPlayground
+              repo={repo}
+              decisions={decisions}
+              onClose={() => {
+                playClick();
+                setShowPlaygroundModal(false);
+              }}
+              onRunCustomAction={(actionData) => {
+                const isClearance = Boolean(actionData.clearance_granted || actionData.gate_verdict === 'APPROVED');
+                addLog(
+                  'MCP-SIM',
+                  `Custom Simulator executed: verdict=${actionData.gate_verdict || (isClearance ? 'APPROVED' : 'BLOCKED')} (${actionData.latency_ms || '<15'}ms)`,
+                  isClearance ? 'APPROVED' : 'BLOCKED'
+                );
+              }}
+            />
           </div>
         </div>,
         document.body

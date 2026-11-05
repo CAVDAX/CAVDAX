@@ -74,6 +74,68 @@ export default function NodeInspector({
   };
 
   // Discover all target code files associated with this node (directly or through DAG lineage)
+  const supersessionDiff = useMemo(() => {
+    if (!node || !graphData?.edges || !graphData?.nodes) return null;
+    const nodeMap = new Map(graphData.nodes.map(n => [n.id, n]));
+
+    // Check if this node is superseded by another
+    const supersedingEdge = graphData.edges.find(e => e.type === 'SUPERSEDES' && (e.target === node.id || e.target?.id === node.id));
+    if (supersedingEdge) {
+      const activeId = typeof supersedingEdge.source === 'object' ? supersedingEdge.source.id : supersedingEdge.source;
+      const activeNode = nodeMap.get(activeId);
+      if (activeNode) {
+        return {
+          type: 'SUPERSEDED_BY',
+          deprecatedNode: node,
+          activeNode: activeNode
+        };
+      }
+    }
+
+    // Check if this node supersedes an older node
+    const supersededEdge = graphData.edges.find(e => e.type === 'SUPERSEDES' && (e.source === node.id || e.source?.id === node.id));
+    if (supersededEdge) {
+      const depId = typeof supersededEdge.target === 'object' ? supersededEdge.target.id : supersededEdge.target;
+      const depNode = nodeMap.get(depId);
+      if (depNode) {
+        return {
+          type: 'SUPERSEDES',
+          deprecatedNode: depNode,
+          activeNode: node
+        };
+      }
+    }
+
+    // Check REPLACES for decisions
+    const replacingEdge = graphData.edges.find(e => e.type === 'REPLACES' && (e.target === node.id || e.target?.id === node.id));
+    if (replacingEdge) {
+      const activeId = typeof replacingEdge.source === 'object' ? replacingEdge.source.id : replacingEdge.source;
+      const activeNode = nodeMap.get(activeId);
+      if (activeNode) {
+        return {
+          type: 'SUPERSEDED_BY',
+          deprecatedNode: node,
+          activeNode: activeNode
+        };
+      }
+    }
+
+    const replacedEdge = graphData.edges.find(e => e.type === 'REPLACES' && (e.source === node.id || e.source?.id === node.id));
+    if (replacedEdge) {
+      const depId = typeof replacedEdge.target === 'object' ? replacedEdge.target.id : replacedEdge.target;
+      const depNode = nodeMap.get(depId);
+      if (depNode) {
+        return {
+          type: 'SUPERSEDES',
+          deprecatedNode: depNode,
+          activeNode: node
+        };
+      }
+    }
+
+    return null;
+  }, [node, graphData]);
+
   const affectedCodeFiles = useMemo(() => {
     if (!node) return [];
     const filesSet = new Set();

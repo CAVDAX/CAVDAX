@@ -44,6 +44,7 @@ import {
 
 
 import { playClick } from '../utils/soundFx';
+import DevPatLoginModal from './DevPatLoginModal';
 import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
 
@@ -103,6 +104,7 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
   const [copiedKey, setCopiedKey] = useState(null);
 
   const [isGithubHovered, setIsGithubHovered] = useState(false);
+  const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
 
   const [isTourOpen, setIsTourOpen] = useState(false);
   const [userApiKey, setUserApiKey] = useState('');
@@ -868,6 +870,8 @@ EXECUTION WORKFLOW:
 
             ) : (
 
+              <div className="flex items-center gap-2">
+
               <button
 
                 onClick={handleGithubConnect}
@@ -983,6 +987,21 @@ EXECUTION WORKFLOW:
                 </span>
 
               </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsDevPatModalOpen(true);
+                }}
+                className="h-[34px] flex items-center gap-1.5 px-3 rounded-lg border border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-xs font-mono text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors cursor-pointer select-none"
+                title="Authenticate via GitHub Personal Access Token (for local development)"
+              >
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Dev PAT</span>
+              </button>
+
+              </div>
 
             )}
 
@@ -1984,6 +2003,20 @@ EXECUTION WORKFLOW:
 
       </section>
 
+      <DevPatLoginModal
+        isOpen={isDevPatModalOpen}
+        onClose={() => setIsDevPatModalOpen(false)}
+        onSuccess={() => {
+          fetch('/api/auth/me', { credentials: 'include' })
+            .then(r => r.json())
+            .then(d => {
+              if (d?.authenticated && d?.user) {
+                setGithubUser(d.user);
+              }
+            })
+            .catch(() => {});
+        }}
+      />
     </div>
 
   );
