@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Github, Search, Plus, Check,
   X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound
@@ -339,10 +340,22 @@ export default function ConnectRepoModal({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <>
-    <div data-lenis-prevent className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200">
+    <div
+      data-lenis-prevent
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          playClick();
+          onClose();
+        }
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-200"
+    >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Connect GitHub Repository"
         data-lenis-prevent
         className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] font-mono select-none"
         onClick={(e) => e.stopPropagation()}
@@ -627,4 +640,6 @@ export default function ConnectRepoModal({
     />
   </>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 }

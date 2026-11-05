@@ -176,7 +176,44 @@ function formatTs(ts) {
 }
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
-function EmptyState({ simulated }) {
+function EmptyState({ simulated, isFiltered, isLiveRepo, onResetFilters }) {
+  if (isFiltered) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
+        <Database className="w-8 h-8 opacity-30" />
+        <p className="text-xs font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          No matching agent actions found
+        </p>
+        <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
+          No audit entries match your current search query or active filter criteria.
+        </p>
+        {onResetFilters && (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="mt-1 px-3 py-1 rounded-lg text-xs font-mono border border-slate-300 dark:border-white/15 hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+          >
+            Clear all filters
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  if (isLiveRepo) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
+        <Database className="w-8 h-8 opacity-30" />
+        <p className="text-xs font-mono uppercase tracking-wider text-slate-700 dark:text-slate-300">
+          No agent actions recorded
+        </p>
+        <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
+          No autonomous agent actions have been intercepted or recorded for this repository yet.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-3 text-slate-500">
       <Database className="w-8 h-8 opacity-30" />
@@ -184,7 +221,7 @@ function EmptyState({ simulated }) {
         {simulated ? 'No agent actions recorded in simulation mode' : 'No agent actions found'}
       </p>
       <p className="text-[11px] font-sans text-slate-600 dark:text-slate-400 max-w-xs text-center text-pretty">
-        Run the 4-Act demo from the Console tab to generate audit entries via the MCP gate.
+        Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger.
       </p>
     </div>
   );
@@ -629,7 +666,17 @@ export default function AuditPage() {
       {/* ── Audit table ── */}
       <div data-tour="audit-ledger" className="flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
         {filteredEntries.length === 0 && !loading ? (
-          <EmptyState simulated={simulated} />
+          <EmptyState
+            simulated={simulated}
+            isFiltered={Boolean(searchQuery.trim() || selectedRepo !== 'all' || selectedBranch !== 'all' || verdictFilter !== 'ALL')}
+            isLiveRepo={selectedRepo !== 'all' && selectedRepo !== 'demo'}
+            onResetFilters={() => {
+              setSearchQuery('');
+              setSelectedRepo('all');
+              setSelectedBranch('all');
+              setVerdictFilter('ALL');
+            }}
+          />
         ) : (
           <div className="bezel-card overflow-hidden">
             {/* Table header */}

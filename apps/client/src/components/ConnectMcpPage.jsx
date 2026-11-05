@@ -997,10 +997,10 @@ EXECUTION WORKFLOW:
                 }}
                 onMouseEnter={() => setIsDevPatHovered(true)}
                 onMouseLeave={() => setIsDevPatHovered(false)}
-                className={`relative overflow-hidden group h-[34px] px-3.5 sm:px-4 rounded-lg border text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none flex items-center justify-center gap-2 ${
+                className={`relative overflow-hidden group h-[34px] flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-semibold shadow-xs cursor-pointer select-none transition-all duration-500 ${
                   isDevPatHovered
-                    ? 'border-slate-950 dark:border-white text-white dark:text-slate-950 shadow-slate-950/20 dark:shadow-white/20'
-                    : 'bg-slate-100 dark:bg-white/5 border-slate-300/80 dark:border-white/20 text-slate-800 dark:text-slate-200 hover:border-slate-400 dark:hover:border-white/40'
+                    ? 'border-slate-950 dark:border-white text-white dark:text-slate-950'
+                    : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white'
                 }`}
                 title="Authenticate via GitHub Personal Access Token (for local development)"
               >

@@ -120,6 +120,9 @@ export default function GraphCanvas({
   const [driftFilter, setDriftFilter] = useState('ALL'); // 'ALL' | 'GROUNDED' | 'DRIFTED'
   const driftPill = usePillTracker(driftFilter);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
+  const searchKbd = isMac ? '⌘K' : 'Ctrl+K';
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -682,8 +685,23 @@ export default function GraphCanvas({
           </span>
         </div>
 
-        {/* Feature Controls: Monochromatic Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
+        {/* Feature Controls: Search (Cmd+K / Ctrl+K), Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
         <div className="flex items-center gap-2 shrink-0 font-mono">
+          {/* Command Palette Trigger (Search primary action - precedes filters) */}
+          <button
+            type="button"
+            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+            title={`Search DAG Nodes (${searchKbd})`}
+            aria-label={`Search DAG Nodes (${searchKbd})`}
+          >
+            <Search className="w-3.5 h-3.5 text-current shrink-0" />
+            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
+            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
+              {searchKbd}
+            </kbd>
+          </button>
+
           {/* Monochromatic Architectural Drift Filter (Container-Relative Slider Tracking — Anti-Flying Standard) */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] select-none">
             {driftPill.position.ready && (
@@ -728,24 +746,11 @@ export default function GraphCanvas({
           <button
             type="button"
             onClick={handleDownloadGraph}
-            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
             title="Download Vector Graph (SVG)"
+            aria-label="Download Vector Graph (SVG)"
           >
             <Download className="w-3.5 h-3.5 text-current transition-colors" />
-          </button>
-
-          {/* Command Palette Trigger (Cmd+K / Ctrl+K) */}
-          <button
-            type="button"
-            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
-            title="Search DAG Nodes (Cmd+K / Ctrl+K)"
-          >
-            <Search className="w-3.5 h-3.5 text-current shrink-0" />
-            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
-            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
-              Cmd+K
-            </kbd>
           </button>
 
           {/* Zoom & Fullscreen Controls */}

@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
 import CavdaxAgentStateIndicator from './CavdaxAgentStateIndicator';
 
 export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle' }) {
@@ -10,6 +10,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
   const [isHolding, setIsHolding] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const isHoldingRef = useRef(false);
+  const [isCodeCollapsed, setIsCodeCollapsed] = useState(false);
   const rafIdRef = useRef(null);
 
   const updateScrollProgress = () => {
@@ -251,27 +252,45 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
         )}
       </div>
 
-      {/* Code Payload Inspector (Diff View) */}
+      {/* Code Payload Inspector (Diff View - Collapsible) */}
       {latestAction && (
         <div className="p-3 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 text-xs font-mono">
           <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 mb-1.5">
-            <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300">
-              <FileCode className="w-3.5 h-3.5 text-slate-900 dark:text-white" />
-              Target: <span className="text-slate-950 dark:text-white font-bold">{latestAction.filePath}</span>
-            </span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 font-mono">
+            <div className="flex items-center gap-2 min-w-0">
+              <button
+                type="button"
+                onClick={() => setIsCodeCollapsed(prev => !prev)}
+                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                title={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
+                aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
+                aria-expanded={!isCodeCollapsed}
+              >
+                {isCodeCollapsed ? (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                )}
+              </button>
+              <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate">
+                <FileCode className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
+                Target: <span className="text-slate-950 dark:text-white font-bold truncate">{latestAction.filePath}</span>
+              </span>
+            </div>
+            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300 font-mono shrink-0 ml-2">
               Decision: {latestAction.decisionId}
             </span>
           </div>
 
-          <div data-lenis-prevent tabIndex={0} className="p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 hover-scrollbar text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed max-h-36 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/15">
-            <pre><code>{latestAction.codeSnippet}</code></pre>
-          </div>
+          {!isCodeCollapsed && (
+            <div data-lenis-prevent tabIndex={0} className="p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 hover-scrollbar text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed max-h-36 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/15 animate-in fade-in duration-150">
+              <pre><code>{latestAction.codeSnippet}</code></pre>
+            </div>
+          )}
         </div>
       )}
 
       {/* Terminal Log Console with Activated Architectural Scroll Cue */}
-      <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden">
+      <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden group/term">
         <style>{`
           /* Pure Mini Scroll Cue Only: Browser scrollbars completely suppressed */
           .terminal-cue-only-scroll {
@@ -289,7 +308,11 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
         <div
           ref={trackRef}
           onPointerDown={handlePointerDown}
-          className="absolute right-1.5 top-3 bottom-3 w-4 flex items-center justify-center cursor-pointer select-none z-20 group"
+          className={`absolute right-1.5 top-3 bottom-3 w-4 flex items-center justify-center cursor-pointer select-none z-20 group transition-opacity duration-200 ${
+            isHolding || isFocused
+              ? 'opacity-100'
+              : 'opacity-0 group-hover/term:opacity-100'
+          }`}
           title="Click or drag to scrub terminal output (Arrow keys enabled on click)"
           aria-label="Terminal scroll cue and rail scrubber"
         >
