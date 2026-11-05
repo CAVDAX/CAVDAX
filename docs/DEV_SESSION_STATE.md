@@ -9,6 +9,24 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.86 Latest Session Achievements (November 5, 2026 - Identity-Bound Evaluation Architecture & GitHub Auth Enforcement for Tier/Sponsor Switching)
+
+- **Enforced GitHub Identity for Evaluation Pass Switching (`ProfilePage.jsx` & `SupportPage.jsx`)**:
+  - Reordered tier-switch and sponsor activation handlers to strictly require an authenticated identity (`activeUser = user || getActiveDevSession()`) before evaluating the evaluation pass bypass.
+  - Eliminated the "Ghost State" trap where anonymous visitors could switch to Pro/Enterprise in `localStorage` but received an orphaned state (disabled API keys and 401 unauthenticated errors when copying keys or setting up MCP configs).
+  - Updated tier card button states: unauthenticated visitors see an explicit `Sign In to Activate` CTA with `<Lock />` icon. Once authenticated under Evaluation Mode, judges and developers can toggle between `Community`, `Pro`, and `Enterprise` instantaneously with 0 payment and 0 credit card friction.
+- **Elimination of Phantom Evaluation Backer Pollution (`SupportPage.jsx` & `apps/server/index.js`)**:
+  - `POST /api/billing/activate-evaluation-sponsor` now strictly requires an authenticated session (`req.session?.user` or verified `user_override`). Anonymous requests are rejected with `401 UNAUTHORIZED`.
+  - Deprecated the `spn_eval_guest_<timestamp>` anonymous fallback and `evaluator-pass` dummy handle.
+  - Sponsoring in Evaluation Mode now attaches the evaluator's real GitHub username, avatar, and ID, lighting up their authentic GitHub profile on the live community backer wall with the supporter halo.
+- **Automated Regression & Test Suite Expansion (`apps/server/test/evaluationSponsorAuth.test.mjs`)**:
+  - Added comprehensive automated unit tests covering:
+    - 401 rejection for unauthenticated evaluation sponsor activation attempts.
+    - Full session binding with `user.login` and avatar preservation for authenticated evaluators.
+    - Strict tier ID bounds validation (1, 2, or 3 only).
+  - Test suite passing at **99 / 99 tests** (0 fails, 0 skips, 100% pass rate).
+  - Client production build verified clean with Vite `npm run build` in 23.77s.
+
 ## 1.0.85 Latest Session Achievements (November 5, 2026 - Security Hardening, Cloudflare WAF/Edge Headers, CRLF Injection Defenses & Puppeteer Visual Audit)
 
 - **Cloudflare Edge & OWASP Security Headers Hardening (`apps/server/index.js`)**:
