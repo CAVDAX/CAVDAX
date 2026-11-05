@@ -731,11 +731,13 @@ Whenever your current task touches, modifies, refactors, creates, adds, or **REM
 
      - Return to the active feature branch (`git checkout frontend`).
 
-- **Conventional Commit Standard**:
+- **Conventional Commit Standard & Vercel Quota Optimization**:
 
   - Use conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 
-  - Add `[skip ci]` to documentation/backend commits that do not trigger frontend builds to preserve daily Vercel deployment quotas.
+  - **Strict `[skip vercel]` vs `[skip ci]` Distinction (Critical Invariant)**:
+    - **Code Commits (`backend`, `infra`, `scripts`, `contracts`, `server`)**: **ALWAYS use `[skip vercel]` — NEVER use `[skip ci]`**. This instructs Vercel to skip building preview deployments (saving our 100/day quota) while **allowing GitHub Actions CI to execute all backend automated test suites and status checks**. Using `[skip ci]` on code commits inadvertently cancels GitHub Actions CI, blinding the team to regressions.
+    - **Documentation & Meta Commits (`docs/`, `*.md`, `README.md`, `DEV_SESSION_STATE.md`)**: Use `[skip ci] [skip vercel]` (or `[skip ci]`) to skip both Vercel preview builds and GitHub Actions runners when no executable code is modified.
 
 - **Atomic Feature Squashing & History Cleanliness (Mandatory)**:
 
