@@ -9,6 +9,31 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.90 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 5 Remediation: Sponsor Pass Forgery Defense, Paid Tier Persistence Across Session Regeneration, Cloudflare IPv6 & Integer CIDR Proxy Matching, and Org CI Gate GITHUB_TOKEN Forwarding)
+
+- **Evaluation Sponsor Pass Forgery Sealed (`apps/server/index.js`)**:
+  - Investigated and resolved the critical vulnerability where arbitrary `user_override: { login: '...', name: '...' }` in `POST /api/billing/activate-evaluation-sponsor` allowed unauthenticated callers to inject fake sponsor entries onto the live public Sponsor Wall in hackathon evaluation mode.
+  - Hardened handler: `user_override` is strictly ignored for unauthenticated guests. Authenticated callers bind directly to their verified GitHub session (`req.session.user`).
+  - Unauthenticated evaluators receive an immutable, watermarked `"Hackathon Evaluator"` badge with zero capability to customize the name, avatar, or handle.
+- **Paid Tier & Connected Repos Persistence Across Session Regeneration (`apps/server/index.js`, `apps/server/systemState.js`)**:
+  - Investigated teammate finding where `session.regenerate()` in OAuth callback and dev-login reset `tier: 'free'`, losing purchased Pro/Autonomous tiers.
+  - Enhanced `systemState.js` to persist `paidUsers` and `userRepos` atomically to disk.
+  - In `POST /api/billing/verify-payment`, records purchased Pro/Enterprise tier to `savedSystemState.paidUsers[githubId]`.
+  - In both `/auth/github/callback` and `/api/auth/dev-login`, checks `paidUsers` and restores the user's purchased tier during session regeneration, cookie signing, and response payload.
+  - Preserves `req.session.connectedRepos` across session regeneration.
+- **Trusted Proxy CIDR Hardening & Cloudflare IPv6 (`apps/server/index.js`)**:
+  - Replaced crude string prefix matching in `isTrustedProxyIp` with exact integer bitmasking across all 15 official Cloudflare IPv4 CIDRs (e.g. `131.0.72.0/22`, `172.64.0.0/13`).
+  - Added support for official Cloudflare IPv6 edge prefixes (`2606:4700::/32`, `2400:cb00::/32`, etc.).
+  - Added `STRICT_PROXY_TRUST` support and explicit `TRUSTED_PROXIES` configuration to prevent neighbor containers in cloud VPCs or shared Docker networks from forging `CF-Connecting-IP`.
+- **API Key Connected Repos & CI Invariant Gate Token Forwarding (`apps/server/index.js`, `apps/mcp-server/src/gateCommand.js`, `apps/server/githubAdr.js`)**:
+  - Resolved dead-code path in `verifyUserRepoAccess`: `req.authUser.connectedRepos` is now dynamically populated from `savedSystemState.userRepos` on Bearer API key lookups.
+  - Updated `gateCommand.js` to forward `process.env.GITHUB_TOKEN || process.env.GH_TOKEN` in `X-GitHub-Token` and `X-GitHub-Actions-Token` headers.
+  - Updated CI workflow YAML generation in `githubAdr.js` to include `GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}`, enabling direct GitHub permission verification for organization and collaborator repositories without requiring master server tokens.
+  - Increased open PR scan `per_page=100` to prevent sequential ADR numbering collisions.
+- **Automated Regression Test Suite (`apps/server/test/round5Hardening.test.mjs`)**:
+  - Added 7 comprehensive regression tests proving that `user_override` cannot deface the sponsor wall, that Pro tiers persist across session regeneration, that Cloudflare IPv6 and exact CIDR boundaries are verified, and that API key `connectedRepos` is populated.
+  - Full backend test suite passing: **111 / 111 tests passing** (0 failures).
+
 ## 1.0.89 Latest Session Achievements (November 5, 2026 - OAuth Callback ReferenceError Triage, Automated Route Test Suite, Guard 0l Codification & Playbook Sync)
 
 - **OAuth Callback Fatal ReferenceError Resolution & Session Resilience (`apps/server/index.js`)**:
