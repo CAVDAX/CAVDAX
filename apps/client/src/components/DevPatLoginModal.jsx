@@ -6,7 +6,6 @@ import {
   Loader2,
   X,
   ExternalLink,
-  ShieldCheck,
   AlertCircle
 } from 'lucide-react';
 import { playClick, playApprovalChime } from '../utils/soundFx';
@@ -14,7 +13,7 @@ import { playClick, playApprovalChime } from '../utils/soundFx';
 /**
  * DevPatLoginModal.jsx — Local Personal Access Token (PAT) Authentication Modal
  *
- * Provides full localhost / offline development capability without requiring
+ * Provides direct personal access token authentication without requiring
  * an external GitHub OAuth application registration.
  *
  * Adheres strictly to UI_DESIGN_SYSTEM.md:
@@ -178,10 +177,6 @@ export default function DevPatLoginModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-5 space-y-4">
           <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-slate-800 dark:text-slate-200 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span>Offline / Localhost Capability</span>
-            </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
               Bypasses GitHub OAuth redirect restrictions by authenticating directly with a personal token. Required scope: <code className="px-1 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-[10px]">repo</code>.
             </p>
