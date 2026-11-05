@@ -4308,20 +4308,29 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
   const savedState = loadSystemState();
   const userPrefs = savedState.notificationPreferences?.[login];
 
-  // Resolve and validate recipient strictly
-  let recipient = null;
-  if (targetEmail && typeof targetEmail === 'string') {
-    const trimmed = targetEmail.trim().toLowerCase();
-    if (!RFC5322_EMAIL_REGEX.test(trimmed)) {
-      return res.status(400).json({
-        success: false,
-        error: 'INVALID_EMAIL_FORMAT: The provided targetEmail is not a valid email address.'
-      });
-    }
-    recipient = trimmed;
-  } else {
-    recipient = (userPrefs?.targetEmail || user?.email || 'suneetchugh@gmail.com').toLowerCase().trim();
+  // Resolve and validate recipient strictly — zero fallback to hardcoded emails
+  const candidate = (
+    (typeof targetEmail === 'string' && targetEmail.trim() ? targetEmail.trim() : null) ||
+    userPrefs?.targetEmail ||
+    user?.email ||
+    ''
+  ).toLowerCase().trim();
+
+  if (!candidate) {
+    return res.status(400).json({
+      success: false,
+      error: 'MISSING_RECIPIENT_EMAIL: No recipient email address provided. Please configure a target email address in alert preferences or enter one before dispatching a test alert.'
+    });
   }
+
+  if (!RFC5322_EMAIL_REGEX.test(candidate)) {
+    return res.status(400).json({
+      success: false,
+      error: 'INVALID_EMAIL_FORMAT: The provided target email is not a valid email address.'
+    });
+  }
+
+  const recipient = candidate;
 
   // Recipient cooldown enforcement (60 seconds per recipient)
   const lastDispatched = simulationRecipientCooldown.get(recipient);

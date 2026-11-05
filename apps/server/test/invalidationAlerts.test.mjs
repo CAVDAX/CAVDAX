@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { dispatchOutgoingWebhook, isSafeWebhookUrl, isPrivateOrMetadataIp } from '../webhookDispatcher.js';
 import { getVapidPublicKey, savePushSubscription, removePushSubscription } from '../webPush.js';
 import test from 'node:test';
@@ -250,4 +251,47 @@ test('Outgoing Webhook: Anti-DNS Rebinding and Hostname Resolution (deterministi
   assert.equal(await isSafeWebhookUrl('http://fcm.googleapis.com/webhook'), false, 'Non-HTTPS must be rejected');
   assert.equal(await isSafeWebhookUrl('https://internal-service.local/hook'), false, '.local suffix must be rejected');
   assert.equal(await isSafeWebhookUrl('https://k8s.internal/hook'), false, '.internal suffix must be rejected');
+});
+
+
+test('Simulate Invalidation Alert: Rejects requests with missing or empty targetEmail', async () => {
+  // Test candidate extraction logic matching /api/alerts/simulate-invalidation
+  const RFC5322_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`\{|\}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+$/;
+  
+  function resolveRecipient(targetEmail, userPrefs, user) {
+    const candidate = (
+      (typeof targetEmail === 'string' && targetEmail.trim() ? targetEmail.trim() : null) ||
+      userPrefs?.targetEmail ||
+      user?.email ||
+      ''
+    ).toLowerCase().trim();
+
+    if (!candidate) {
+      return { error: 'MISSING_RECIPIENT_EMAIL' };
+    }
+    if (!RFC5322_EMAIL_REGEX.test(candidate)) {
+      return { error: 'INVALID_EMAIL_FORMAT' };
+    }
+    return { recipient: candidate };
+  }
+
+  // 1. Completely empty payload
+  assert.equal(resolveRecipient(undefined, null, null).error, 'MISSING_RECIPIENT_EMAIL');
+  assert.equal(resolveRecipient('', null, null).error, 'MISSING_RECIPIENT_EMAIL');
+  assert.equal(resolveRecipient('   ', null, null).error, 'MISSING_RECIPIENT_EMAIL');
+
+  // 2. Invalid format
+  assert.equal(resolveRecipient('not-an-email', null, null).error, 'INVALID_EMAIL_FORMAT');
+  assert.equal(resolveRecipient('user@', null, null).error, 'INVALID_EMAIL_FORMAT');
+  assert.equal(resolveRecipient('@domain.com', null, null).error, 'INVALID_EMAIL_FORMAT');
+
+  // 3. Valid target email
+  assert.equal(resolveRecipient('developer@sahnirmaan.live', null, null).recipient, 'developer@sahnirmaan.live');
+
+  // 4. Fallback to userPrefs when targetEmail is omitted
+  assert.equal(resolveRecipient(null, { targetEmail: 'alerts@example.com' }, null).recipient, 'alerts@example.com');
+
+  // 5. Hardcoded email check: Ensure zero references to suneetchugh@gmail.com in apps/server/index.js
+  const serverIndexContent = fs.readFileSync('apps/server/index.js', 'utf8');
+  assert.equal(serverIndexContent.includes('suneetchugh@gmail.com'), false, 'Hardcoded email must be eliminated');
 });
