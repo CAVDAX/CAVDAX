@@ -808,10 +808,11 @@ export async function proposeAdrPullRequest({
     if (Array.isArray(openPulls)) {
       for (const pr of openPulls) {
         const branchName = pr.head?.ref || '';
-        const prTitle = pr.title || '';
-        const match = (branchName + ' ' + prTitle).match(/ADR-(\d+)/i);
-        if (match) {
-          const num = parseInt(match[1], 10);
+        // Only inspect branches explicitly created by CAVDAX for ADR proposals (e.g. cavdax/propose-adr-005 or cavdax/propose-005)
+        // Prevents random PR titles ("Fix typo in ADR-2024 notes") from inflating sequential ADR numbers
+        const branchMatch = branchName.match(/^cavdax\/propose-(?:adr-)?(\d+)/i);
+        if (branchMatch) {
+          const num = parseInt(branchMatch[1], 10);
           if (!isNaN(num) && num > maxNum) maxNum = num;
         }
       }
@@ -994,7 +995,7 @@ jobs:
         run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
-          CAVDAX_SERVER_URL: https://cavdax.sahnirmaan.live
+          CAVDAX_SERVER_URL: ${process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://cavdax.sahnirmaan.live'}
 `;
 
   const baseRef = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/ref/heads/${enc(base)}`);

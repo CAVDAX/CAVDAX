@@ -434,13 +434,56 @@ const TIER_CONFIG = {
 
 const activeTier = TIER_CONFIG[CAVDAX_TIER] || TIER_CONFIG.free;
 
+// Detect if socket connection originates from a trusted reverse proxy, Docker network, or Cloudflare edge
+export function isTrustedProxyIp(ip) {
+  if (!ip) return false;
+  const clean = ip.toLowerCase();
+  // 1. Direct loopback
+  if (clean === '127.0.0.1' || clean === '::1' || clean === 'localhost' || clean === '1') return true;
+  // 2. Private subnets (Docker bridges, internal ingress controllers, Caddy, Nginx)
+  if (clean.startsWith('10.') || clean.startsWith('192.168.')) return true;
+  if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(clean)) return true;
+  // 3. Known Cloudflare edge proxy IPv4 ranges (https://www.cloudflare.com/ips-v4)
+  if (
+    clean.startsWith('173.245.') ||
+    clean.startsWith('103.21.') ||
+    clean.startsWith('103.22.') ||
+    clean.startsWith('103.31.') ||
+    clean.startsWith('141.101.') ||
+    clean.startsWith('108.162.') ||
+    clean.startsWith('190.93.') ||
+    clean.startsWith('188.114.') ||
+    clean.startsWith('197.234.') ||
+    clean.startsWith('198.41.') ||
+    clean.startsWith('162.158.') ||
+    clean.startsWith('162.159.') ||
+    clean.startsWith('104.16.') ||
+    clean.startsWith('104.17.') ||
+    clean.startsWith('104.18.') ||
+    clean.startsWith('104.19.') ||
+    clean.startsWith('104.20.') ||
+    clean.startsWith('104.21.') ||
+    clean.startsWith('104.22.') ||
+    clean.startsWith('104.23.') ||
+    clean.startsWith('104.24.') ||
+    clean.startsWith('104.25.') ||
+    clean.startsWith('104.26.') ||
+    clean.startsWith('104.27.') ||
+    clean.startsWith('131.0.72.')
+  ) return true;
+  // Cloudflare 172.64.0.0/13 CIDR block (covers 172.64.0.0 through 172.71.255.255)
+  if (/^172\.(6[4-9]|7[0-1])\./.test(clean)) return true;
+  return false;
+}
+
 // Helper to extract client IP safely with reverse-proxy trust validation (OWASP A07 Hardening)
-function extractClientIp(req) {
+export function extractClientIp(req) {
   const socketIp = (req.socket?.remoteAddress || '').replace(/^.*:/, '').toLowerCase();
   const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '1' || socketIp === 'localhost' || socketIp === '::1';
+  const isTrustedPeer = isDirectLoopback || process.env.TRUST_PROXY === 'true' || isTrustedProxyIp(socketIp);
 
-  // Only inspect forwarding headers if request arrives through a reverse proxy or explicit trust proxy mode
-  if (isDirectLoopback || process.env.TRUST_PROXY === 'true') {
+  // Only inspect forwarding headers if request arrives through a verified proxy, edge network, or loopback
+  if (isTrustedPeer) {
     const cfIp = req.headers['cf-connecting-ip'] || req.headers['true-client-ip'];
     if (cfIp) {
       const clean = (typeof cfIp === 'string' ? cfIp.trim() : cfIp[0]).toLowerCase();
@@ -1128,10 +1171,40 @@ export async function verifyUserRepoAccess(req, requestedRepo) {
   }
 
   const [owner] = requestedRepo.split('/');
+  // 3. Direct personal repository check (owner matches user login)
   if (owner && userLogin && owner.toLowerCase() === userLogin) {
     return true;
   }
 
+  // 4. Repositories recorded on the API key or system state for this user
+  if (req.authUser?.connectedRepos && Array.isArray(req.authUser.connectedRepos)) {
+    if (req.authUser.connectedRepos.some(r => r.toLowerCase() === requestedRepo.toLowerCase())) {
+      return true;
+    }
+  }
+
+  // 5. GitHub Actions / CI caller token:
+  // If the caller provides a GitHub token (e.g. via x-github-token or GITHUB_TOKEN header), verify write/admin permission directly!
+  const callerGhToken = req.headers?.['x-github-token'] || req.headers?.['x-github-actions-token'];
+  if (callerGhToken && typeof callerGhToken === 'string') {
+    try {
+      const ghRes = await fetch(`https://api.github.com/repos/${requestedRepo}`, {
+        headers: {
+          Authorization: `Bearer ${callerGhToken.trim()}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'CAVDAX-App'
+        }
+      });
+      if (ghRes.ok) {
+        const ghData = await ghRes.json();
+        if (ghData.permissions?.push || ghData.permissions?.admin) {
+          return true;
+        }
+      }
+    } catch {}
+  }
+
+  // 6. Interactive user OAuth token check
   const token = req.session?.user?.accessToken;
   if (token) {
     if (!Array.isArray(req.session.authorizedReposCache)) {
@@ -1159,6 +1232,29 @@ export async function verifyUserRepoAccess(req, requestedRepo) {
       }
     } catch {
       // Network or GitHub API error - fallback to false
+    }
+  }
+
+  // 7. Server GITHUB_TOKEN verification for API-key callers on Organization / Collaborator repos:
+  // Allows legitimate CI gates to verify if the key owner has push/admin rights on an org repo
+  if (req.authUser && process.env.GITHUB_TOKEN && userLogin) {
+    try {
+      const collaboratorRes = await fetch(`https://api.github.com/repos/${requestedRepo}/collaborators/${encodeURIComponent(userLogin)}/permission`, {
+        headers: {
+          Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
+          Accept: 'application/vnd.github+json',
+          'User-Agent': 'CAVDAX-App'
+        }
+      });
+      if (collaboratorRes.ok) {
+        const permData = await collaboratorRes.json();
+        const perm = permData.permission; // 'admin', 'write', 'read', 'none'
+        if (perm === 'admin' || perm === 'write') {
+          return true;
+        }
+      }
+    } catch (err) {
+      console.warn(`[CAVDAX verifyUserRepoAccess] Collaborator check failed for ${requestedRepo}:`, err.message);
     }
   }
 
@@ -2574,13 +2670,32 @@ app.get('/api/auth/github/callback', async (req, res) => {
 
     console.log(`[CAVDAX OAuth] User authenticated: ${userData.login} (id: ${userData.id})`);
 
-    // 4. Redirect back to the originating page with user info & success flag
-    const sep = returnTo.includes("?") ? "&" : "?";
-    const redirectUrl = `${frontendBase}${returnTo}${sep}connected=1&login=${encodeURIComponent(userData.login)}&name=${encodeURIComponent(userData.name || userData.login)}&avatar=${encodeURIComponent(userData.avatar_url || '')}&githubId=${userData.id}`;
-    req.session.save((err) => {
-      if (err) console.error('[CAVDAX OAuth] Session save error:', err);
-      res.redirect(redirectUrl);
-    });
+    // 4. Prevent Session Fixation (OWASP A07): Regenerate session upon authentication
+    const redirectUrl = `${frontendBase}${returnTo}${returnTo.includes("?") ? "&" : "?"}connected=1&login=${encodeURIComponent(userData.login)}&name=${encodeURIComponent(userData.name || userData.login)}&avatar=${encodeURIComponent(userData.avatar_url || '')}&githubId=${userData.id}`;
+    const saveAndRedirect = () => {
+      req.session.user = {
+        githubId:  userData.id,
+        login:     userData.login,
+        name:      userData.name || userData.login,
+        avatarUrl: userData.avatar_url,
+        email:     primaryEmail,
+        tier:      'free',
+        accessToken: access_token
+      };
+      req.session.save((err) => {
+        if (err) console.error('[CAVDAX OAuth] Session save error:', err);
+        res.redirect(redirectUrl);
+      });
+    };
+
+    if (typeof req.session.regenerate === 'function') {
+      req.session.regenerate((regenErr) => {
+        if (regenErr) console.warn('[CAVDAX OAuth] Session regeneration warning:', regenErr.message);
+        saveAndRedirect();
+      });
+    } else {
+      saveAndRedirect();
+    }
 
   } catch (err) {
     const frontendBase = CLIENT_URL || '';
@@ -2635,11 +2750,23 @@ const devAuthLimiter = rateLimit({
  * Strictly forbidden in production environments (OWASP A01 Access Control).
  */
 app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
+  const socketIp = (req.socket?.remoteAddress || '').replace(/^.*:/, '').toLowerCase();
+  const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '1' || socketIp === 'localhost' || socketIp === '::1';
+
   if (isProduction) {
     return res.status(403).json({
       success: false,
       error: 'DEV_AUTH_DISABLED_IN_PRODUCTION',
       message: 'Dev PAT authentication is strictly disabled in production environments.'
+    });
+  }
+
+  // In non-production, restrict to loopback unless ALLOW_DEV_LOGIN=true
+  if (process.env.NODE_ENV !== 'test' && process.env.ALLOW_DEV_LOGIN !== 'true' && !isDirectLoopback && req.socket?.remoteAddress) {
+    return res.status(403).json({
+      success: false,
+      error: 'DEV_AUTH_LOOPBACK_REQUIRED',
+      message: 'Dev PAT authentication is restricted to loopback unless ALLOW_DEV_LOGIN=true.'
     });
   }
 
@@ -2693,53 +2820,66 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
       });
     }
 
-    req.session.user = {
-      githubId: userData.id,
-      login: userData.login,
-      name: userData.name || userData.login,
-      avatarUrl: userData.avatar_url || '',
-      email: userData.email || '',
-      accessToken: trimmedToken,
-      tier: req.session?.tier || 'free'
-    };
+    const executeSave = () => {
+      req.session.user = {
+        githubId: userData.id,
+        login: userData.login,
+        name: userData.name || userData.login,
+        avatarUrl: userData.avatar_url || '',
+        email: userData.email || '',
+        accessToken: trimmedToken,
+        tier: 'free'
+      };
 
-    const cookieUser = {
-      githubId: userData.id,
-      login: userData.login,
-      name: userData.name || userData.login,
-      avatarUrl: userData.avatar_url || '',
-      email: userData.email || '',
-      tier: req.session?.tier || 'free'
-    };
+      const cookieUser = {
+        githubId: userData.id,
+        login: userData.login,
+        name: userData.name || userData.login,
+        avatarUrl: userData.avatar_url || '',
+        email: userData.email || '',
+        tier: 'free'
+      };
 
-    const signedAuth = signAuthToken(cookieUser);
-    if (signedAuth) {
-      res.cookie('cavdax_auth', signedAuth, {
-        httpOnly: true,
-        secure: false,
-        sameSite: 'lax',
-        maxAge: 30 * 24 * 60 * 60 * 1000
-      });
-    }
-
-    console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id})`);
-
-    req.session.save((saveErr) => {
-      if (saveErr) {
-        console.error('[CAVDAX DevAuth] Session save error:', saveErr.message);
-        return res.status(500).json({ success: false, error: 'SESSION_SAVE_FAILED' });
+      const signedAuth = signAuthToken(cookieUser);
+      if (signedAuth) {
+        const isSecureReq = isProduction || req.secure || req.headers?.['x-forwarded-proto'] === 'https';
+        res.cookie('cavdax_auth', signedAuth, {
+          httpOnly: true,
+          secure: Boolean(isSecureReq),
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 * 1000
+        });
       }
-      return res.json({
-        success: true,
-        user: {
-          githubId: userData.id,
-          login: userData.login,
-          name: userData.name || userData.login,
-          avatarUrl: userData.avatar_url || '',
-          tier: req.session?.tier || 'free'
+
+      console.log(`[CAVDAX DevAuth] Local user authenticated via PAT: ${userData.login} (id: ${userData.id})`);
+
+      req.session.save((saveErr) => {
+        if (saveErr) {
+          console.error('[CAVDAX DevAuth] Session save error:', saveErr.message);
+          return res.status(500).json({ success: false, error: 'SESSION_SAVE_FAILED' });
         }
+        return res.json({
+          success: true,
+          user: {
+            githubId: userData.id,
+            login: userData.login,
+            name: userData.name || userData.login,
+            avatarUrl: userData.avatar_url || '',
+            tier: 'free'
+          }
+        });
       });
-    });
+    };
+
+    // Prevent Session Fixation (OWASP A07)
+    if (typeof req.session.regenerate === 'function') {
+      req.session.regenerate((err) => {
+        if (err) console.warn('[CAVDAX DevAuth] Session regeneration warning:', err.message);
+        executeSave();
+      });
+    } else {
+      executeSave();
+    }
   } catch (err) {
     console.error('[CAVDAX DevAuth] Network error validating token:', err.message);
     return res.status(500).json({
@@ -3739,18 +3879,25 @@ app.post('/api/billing/activate-evaluation-sponsor', (req, res) => {
   };
   const tierInfo = tierMap[tierNum];
 
-  // Preserve user session and avatar from session or verified client override
+  // Evaluation sponsor pass strictly requires a connected GitHub account or developer identity
   const effectiveUser = req.session?.user || user_override || null;
-  const backerId = effectiveUser?.id ? ('spn_eval_' + effectiveUser.id) : ('spn_eval_guest_' + Date.now());
+  if (!effectiveUser || !effectiveUser.login) {
+    return res.status(401).json({
+      success: false,
+      error: { code: 'UNAUTHORIZED', message: 'Evaluation Sponsor activation requires a connected GitHub account or developer session.' }
+    });
+  }
+
+  const backerId = 'spn_eval_' + (effectiveUser.id || effectiveUser.login);
   const backerRecord = {
     id: backerId,
-    name: effectiveUser?.name || effectiveUser?.login || 'Hackathon Evaluator',
-    github_handle: effectiveUser?.login || 'evaluator-pass',
+    name: effectiveUser.name || effectiveUser.login,
+    github_handle: effectiveUser.login,
     tier_id: tierNum,
     tier_label: tierInfo.label,
     amount_paise: tierInfo.paise,
     currency: 'INR',
-    avatar_url: effectiveUser?.avatar_url || effectiveUser?.avatarUrl || null,
+    avatar_url: effectiveUser.avatar_url || effectiveUser.avatarUrl || null,
     created_at: new Date().toISOString(),
     highlighted: tierInfo.highlighted,
     is_evaluation: true,
@@ -3807,7 +3954,7 @@ app.post('/api/billing/activate-evaluation-sponsor', (req, res) => {
  */
 app.post('/api/billing/reset-evaluation-sponsor', (req, res) => {
   const user = req.session?.user;
-  const backerId = user?.id ? ('spn_eval_' + user.id) : ('spn_eval_guest_' + Date.now());
+  const backerId = user?.id ? ('spn_eval_' + user.id) : (user?.login ? ('spn_eval_' + user.login) : null);
   if (Array.isArray(savedSystemState.sponsors)) {
     savedSystemState.sponsors = savedSystemState.sponsors.filter(s => {
       if (s.is_evaluation && (s.id === backerId || (user?.login && s.github_handle === user.login) || !user)) {
