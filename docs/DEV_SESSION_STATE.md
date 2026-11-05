@@ -9,6 +9,26 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.84 Latest Session Achievements (November 5, 2026 - Local Dev PAT Authentication Modal & Gateway Endpoint for Full Localhost / Offline Capability)
+
+- **Local Dev PAT Authentication Endpoint (`POST /api/auth/dev-login` in `apps/server/index.js`)**:
+  - Implemented secure developer Personal Access Token gateway enabling offline and localhost operation without configuring an external GitHub OAuth application.
+  - Strictly forbidden in production environments via `isProduction` guard (OWASP A01 Access Control).
+  - Validates tokens against GitHub API (`https://api.github.com/user`), populates user session and signed `cavdax_auth` cookie, allowing direct repository discovery via `/api/github/repos`.
+  - Added 5 exhaustive automated unit tests (`apps/server/test/devLoginRoute.test.mjs`) covering production blocking, input validation, 401 propagation, and successful session hydration (95/95 server tests passing).
+- **Dev PAT Login Modal (`apps/client/src/components/DevPatLoginModal.jsx`)**:
+  - Engineered sleek, institutional authentication modal for entering GitHub Personal Access Tokens.
+  - Includes password show/hide toggle, live token validation feedback, direct GitHub token generation shortcut with `repo` scope pre-configured, and Escape/backdrop dismissal.
+  - Dispatches global `cavdax:user-changed` event and synchronizes `localStorage`, instantly rehydrating authenticated state across the entire client.
+- **Universal Localhost Connect Integrations**:
+  - Mounted PAT option in `ConnectRepoModal.jsx`: unauthenticated and expired sessions now provide a primary [ Use Personal Access Token ] button, automatically loading the user's real GitHub repositories on submit.
+  - Mounted [ Dev PAT ] trigger in `ConnectMcpPage.jsx` alongside the OAuth button for seamless local experimentation.
+- **Strict UI Design System Invariant Compliance**:
+  - 100% compliance verified with automated AST scanner: 0 Unicode emojis, clean monospace typography, calibrated semantic tints (emerald for valid invariants, rose for errors), zero card-in-card nesting, and 120ms spring kinetics.
+- **Verification & Invariants**:
+  - Server test suite: 95 passing tests (0 fails, 0 skips).
+  - Client production build: compiled cleanly with `npm run build` in 20.93s with zero errors.
+
 ## 1.0.83 Latest Session Achievements (November 5, 2026 - Command Palette Cmd+K DAG Navigation, Side-by-Side ADR Semantic Diff & Strict Design System Compliance)
 
 - **Command Palette (Cmd+K / Ctrl+K) Implemented (`apps/client/src/components/CommandPalette.jsx` & `GraphCanvas.jsx`)**:
