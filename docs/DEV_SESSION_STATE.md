@@ -9,6 +9,51 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.92 Latest Session Achievements (November 5, 2026 - Frontend UX & Accessibility Hardening, Modal Portal Hoisting, Anti-Flying Pill Tracking, and 8-Test Automated E2E Suite)
+
+- **Interactive Target Code Diff Collapse & Disclosure Accessibility (`apps/client/src/components/TerminalView.jsx`)**:
+  - Implemented an accessible disclosure toggle (`ChevronUp`/`ChevronDown`) on the target file diff preview container.
+  - Added WCAG standard `aria-expanded={!isCodeCollapsed}` and `aria-label`, enabling developers to toggle code blocks without losing the target path or decision ID badge.
+  - Added smooth fade-in animation (`animate-in fade-in duration-150`) upon re-expansion.
+- **Hover-Activated Terminal Log Scroll Cue & Scrubber (`apps/client/src/components/TerminalView.jsx`)**:
+  - Encapsulated terminal logs in `.group/term` container and styled the visual scroll cue and rail scrubber with `group-hover/term:opacity-100 transition-opacity duration-200`.
+  - In rest state, the cue remains completely invisible (`opacity-0`), eliminating visual noise while maintaining immediate visibility when hovered or during active scrubbing.
+- **Dynamic Contextual Empty States in Audit Ledger (`apps/client/src/components/AuditPage.jsx`)**:
+  - Replaced the hardcoded *"Run the 4-Act demo..."* copy with dynamic, context-aware empty state messaging:
+    1. Filter / Search Query Mismatch: *"No audit entries match your current search query or active filter criteria"* with a prominent one-click **"Clear all filters"** reset button.
+    2. Live Intercepted Repository: *"No autonomous agent actions have been intercepted or recorded for this repository yet."*
+    3. Simulation / Demo Mode: *"Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger."*
+- **Ribbon Toolbar Ergonomics & OS-Aware Keyboard Shortcut (`apps/client/src/components/GraphCanvas.jsx`)**:
+  - Reordered toolbar ribbon controls according to primary action hierarchy: Search (`Ctrl+K`/`⌘K`) now precedes the Drift Filter and SVG Download buttons.
+  - Implemented OS-aware dynamic badge detection: renders `⌘K` for macOS and `Ctrl+K` for Windows/Linux.
+  - Added explicit accessibility tags: `aria-label="Search DAG Nodes"` and `aria-label="Download graph as SVG"`.
+- **System Preferences Modal De-Duplication (`apps/client/src/components/PreferencesModal.jsx`)**:
+  - Removed duplicate "Display Appearance" theme toggle section and unused `Sun`/`Moon` imports from the preferences modal, centralizing theme toggling exclusively in the global navigation bar.
+- **Dev PAT Liquid Wavefill Animation Parity (`apps/client/src/components/ConnectMcpPage.jsx`)**:
+  - Eliminated the opaque background collision (`bg-slate-100 dark:bg-white/5` + `.tactile-btn`) that was occluding the rising wavefill animation.
+  - Configured `bg-transparent` transparent base and synchronized SVG wave crest and solid flood body to match the Connect GitHub button.
+- **Connect GitHub Repository Modal Portal Hoisting & Lenis Event Isolation (`apps/client/src/components/ConnectRepoModal.jsx`)**:
+  - Hoisted modal overlay directly to `document.body` via `createPortal`, isolating it from parent page ascent transforms (`transform: translateY`).
+  - Added `data-lenis-prevent` across modal overlays, cards, and scrollable lists, and paused Lenis smooth-scroll on mount (`window.__lenis.stop()`).
+  - Implemented `Escape` key and backdrop click dismissal (`e.target === e.currentTarget`).
+- **External Master AI Prompts & Knowledge Architecture Sync (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
+  - Appended Sections 54 through 62 to `#UI_DESIGN_SYSTEM.md file.md`.
+  - Expanded `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` to 20 Forensic Attack Vectors (adding Vector 19: Cross-Route Shared Layouts / `layoutId` and Vector 20: Modal Portal & Lenis Isolation).
+  - Authored new dedicated master prompts in `UI-Components/`:
+    - `##Modal-Portal-Hoisting-And-Smooth-Scroll-Isolation-Playbook.md`
+    - `##Container-Relative-Kinetic-Tracking-And-Anti-Flying-Element-Architecture.md`
+- **End-to-End Automated Headless Browser Verification Suite (`scripts/verify-all-recent-fixes.js`)**:
+  - Authored and executed dedicated headless Puppeteer test suite verifying:
+    1. Ribbon order (Search -> Drift -> Download) and `Ctrl+K` badge: ✅ PASS
+    2. TerminalView target code collapse / expand toggle: ✅ PASS
+    3. Preferences modal appearance de-duplication: ✅ PASS
+    4. ConnectRepoModal portal hoisting and Lenis prevention: ✅ PASS
+    5. ConnectRepoModal `Escape` key dismissal: ✅ PASS
+    6. ConnectRepoModal backdrop click dismissal: ✅ PASS
+    7. AuditPage dynamic empty states and reset: ✅ PASS
+    8. ConnectMcpPage Dev PAT wavefill animation parity: ✅ PASS
+  - Client production build verified cleanly with `vite build` in 34.93s (`0 errors`).
+
 ## 1.0.91 Latest Session Achievements (November 5, 2026 - Master Prompts Synchronization, Sandbox Normalization Hardening & 111-Test Suite Verification)
 
 - **Master Knowledge & Architecture Prompts Fully Synchronized (`C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main\`)**:

@@ -3477,3 +3477,163 @@ A single trailing word wrapping onto a second line (e.g., *"All decisions valid.
    </p>
    ```
    This guarantees that the text never wraps or creates lonely child words across any screen width or resized split view, while the complete explanatory context remains instantly accessible via native hover tooltip.
+
+
+---
+
+## 58. Container-Relative Pill Tracking (Anti-Flying Element Standard — `usePillTracker`)
+
+When building sliding indicators across tabs, filters, or segmented switches:
+
+### 58.1 The `layoutId` Projection Failure
+Framer Motion's `layoutId` mechanism calculates transitions across global coordinate space. When multiple components across different views or routes declare the same `layoutId` (or when mounting/unmounting during page ascent transitions), the indicator pill teleports or flies across the screen.
+
+### 58.2 The Container-Relative Tracking Standard (`usePillTracker`)
+Decouple sliding motion from global layout projection by computing bounding box coordinates strictly relative to the immediate offset parent:
+```javascript
+export function usePillTracker(activeKey) {
+  const refs = useRef({});
+  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+
+  useLayoutEffect(() => {
+    const el = refs.current[activeKey];
+    if (!el) return;
+    setPosition({
+      x: el.offsetLeft,
+      y: el.offsetTop,
+      width: el.offsetWidth,
+      height: el.offsetHeight,
+      ready: true,
+    });
+  }, [activeKey]);
+
+  return { refs, position };
+}
+```
+Animate `x`, `y`, `width`, and `height` explicitly with spring physics (`stiffness: 500, damping: 35`), ensuring zero flying pills or cross-route visual collisions.
+
+---
+
+## 59. Modal Portal Hoisting & Lenis Smooth-Scroll Event Isolation Standard
+
+To ensure modals, dialog overlays, and slide-over panels are 100% accessible, responsive, and visually isolated:
+
+### 59.1 The Transform Stacking Context Trap
+If a modal is rendered inside a parent container that applies CSS transforms (such as Framer Motion's `<PageTransition>` with `transform: translateY(...)`), CSS `position: fixed` is confined to the bounding box of that transformed container, clipping the modal or disrupting full-screen overlays.
+
+### 59.2 The Three Inviolable Modal Invariants
+1. **Always Hoist to `document.body` via `createPortal`**:
+   ```jsx
+   const modalContent = (
+     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+       <div role="dialog" aria-modal="true" aria-label="Title" onClick={(e) => e.stopPropagation()}>
+         {/* Body */}
+       </div>
+     </div>
+   );
+   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
+   ```
+2. **Deconflict Global Smooth-Scroll Engines (Lenis)**:
+   - Mark the backdrop, modal card, and all scrollable inner containers with `data-lenis-prevent`.
+   - Pause Lenis on modal mount and resume on unmount:
+     ```javascript
+     useEffect(() => {
+       if (isOpen) {
+         window.__lenis?.stop();
+         return () => window.__lenis?.start();
+       }
+     }, [isOpen]);
+     ```
+3. **Double Dismissal Protection**:
+   - Provide `Escape` key listener on `window`.
+   - Provide backdrop click listener with `if (e.target === e.currentTarget) onClose()`.
+
+---
+
+## 60. Collapsible Target Diff Previews & Hover-Activated Terminal Scrubbing
+
+In developer terminals and verification consoles:
+
+### 60.1 Accessible Code Disclosure Toggle
+Large code blocks must not permanently consume vertical terminal space when an engineer only needs to inspect log output:
+```jsx
+<button
+  type="button"
+  onClick={() => setIsCodeCollapsed(prev => !prev)}
+  aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
+  aria-expanded={!isCodeCollapsed}
+  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10"
+>
+  {isCodeCollapsed ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronUp className="w-3.5 h-3.5" />}
+</button>
+```
+
+### 60.2 Hover-Activated Scrubbing Affordance
+Secondary rail scrubbers and visual cues should remain invisible at rest to maintain visual calmness:
+```jsx
+<div className="relative flex-1 min-h-0 flex flex-col overflow-hidden group/term">
+  {/* Terminal output */}
+  <div className={`absolute right-1.5 top-3 bottom-3 w-4 transition-opacity duration-200 ${
+    isHolding || isFocused ? 'opacity-100' : 'opacity-0 group-hover/term:opacity-100'
+  }`}>
+    {/* Scrubber thumb */}
+  </div>
+</div>
+```
+
+---
+
+## 61. Contextual Empty States & One-Click Filter Reset Invariant
+
+Blank tables or empty query states must never display generic, unhelpful copy:
+
+### 61.1 Multi-State Empty Ledger Taxonomy
+1. **Filter / Search Query Mismatch**:
+   - Message: *"No audit entries match your current search query or active filter criteria."*
+   - Mandatory Action: Explicit, high-contrast **"Clear all filters"** button that resets search queries, repo scopes, and verdict filters in one click.
+2. **Live Intercepted Workspace with Zero Events**:
+   - Message: *"No autonomous agent actions have been intercepted or recorded for this repository yet."*
+3. **Simulation / Demo Mode**:
+   - Message: *"Trigger MCP tool executions or simulate actions from the Console to populate the causal audit ledger."*
+
+---
+
+## 62. Fluid Water Wavefill Transparency Invariant
+
+For interactive buttons utilizing fluid SVG wave kinetics (e.g. `Connect GitHub` and `Dev PAT`):
+
+### 62.1 Background Collision Failure
+Applying opaque backgrounds (`bg-slate-100`, `bg-white/5`) to buttons containing rising liquid SVG layers obstructs and flattens the rising wave animation.
+
+### 62.2 The Transparent Base Standard
+- Set the button's base background to strictly `bg-transparent`:
+  ```jsx
+  <button
+    onMouseEnter={() => setIsHovered(true)}
+    onMouseLeave={() => setIsHovered(false)}
+    className={`relative overflow-hidden group h-[34px] flex items-center gap-2 px-3.5 py-1.5 rounded-lg border text-xs font-mono font-semibold select-none transition-all duration-500 ${
+      isHovered
+        ? 'border-slate-950 dark:border-white text-white dark:text-slate-950'
+        : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white'
+    }`}
+  >
+    {/* Rising Wave SVG Layer & Body Flood */}
+    <div
+      aria-hidden="true"
+      style={{
+        transform: isHovered ? 'translateY(0%)' : 'translateY(105%)',
+        opacity: isHovered ? 1 : 0,
+        transition: isHovered
+          ? 'transform 1000ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 200ms ease-out'
+          : 'opacity 250ms ease-out, transform 0s 250ms'
+      }}
+      className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
+    >
+      <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-slate-950 dark:text-white fill-current block">
+        <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
+      </svg>
+      <div className="flex-1 w-full bg-slate-950 dark:bg-white" />
+    </div>
+    {/* Icon and label hoisted with relative z-10 */}
+  </button>
+  ```

@@ -717,6 +717,12 @@ CAVDAX implements comprehensive defense-in-depth security across both API and ru
 * **Monetization Invariant & Session Regeneration Entitlement Persistence**: Verified Razorpay tier entitlements are atomically preserved in disk-backed system state (`paidUsers`), eliminating post-login Pro tier loss during OWASP A07 session regeneration.
 * **Sponsor Pass Forgery Shield**: Ephemeral evaluation passes reject arbitrary client-supplied `user_override` payloads, automatically binding directly to verified GitHub identities or watermarking unauthenticated judge passes to preserve the cryptographic integrity of the live public Sponsor Wall.
 * **Organization CI Access Delegation**: The Invariant Gate runner forwards `GITHUB_TOKEN` in `X-GitHub-Token` headers, enabling direct status check clearance on private organization and collaborator repositories without requiring centralized god-tokens.
+* **Client HUD Ergonomics & Stacking Context Isolation**:
+  * Global `Ctrl+K` / `⌘K` Command Palette providing instant, keyboard-driven fuzzy search across all DAG nodes, ADRs, decisions, and files.
+  * Container-relative sliding indicator tracking (`usePillTracker`), eliminating cross-route `layoutId` animation artifacts.
+  * Portal-hoisted modals (`createPortal`) with `data-lenis-prevent` to deconflict global smooth-scroll momentum from dialog viewports.
+  * Collapsible code diff payload inspection with accessible disclosure states (`aria-expanded`).
+  * Decoupled left-rail architectural scroll cues for zero-collision master-detail workspace resizing.
 
 ---
 
