@@ -64,6 +64,9 @@ app.use((req, res, next) => {
   res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('X-XSS-Protection', '1; mode=block');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('X-Permitted-Cross-Domain-Policies', 'none');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), browsing-topics=()');
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
@@ -73,6 +76,7 @@ app.use((req, res, next) => {
     "img-src 'self' data: https: blob:; " +
     "connect-src 'self' https://api.github.com https://lumberjack.razorpay.com https://api.razorpay.com wss: ws:; " +
     "frame-src 'self' https://api.razorpay.com https://www.youtube-nocookie.com https://www.youtube.com; " +
+    "form-action 'self' https://github.com; " +
     "worker-src 'self' blob:; " +
     "object-src 'none'; " +
     "base-uri 'self';"
@@ -2612,12 +2616,25 @@ if (process.env.NODE_ENV === 'test') {
   });
 }
 
+const devAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => {
+    const clientIp = extractClientIp(req).toLowerCase();
+    if (globalWhitelistedIps.includes(clientIp)) return true;
+    return false;
+  },
+  message: { success: false, code: 'AUTH_RATE_LIMIT_EXCEEDED', error: 'Too many authentication attempts. Please wait 15 minutes.' }
+});
+
 /**
  * POST /api/auth/dev-login
  * Developer Personal Access Token (PAT) authentication for local/offline environments.
  * Strictly forbidden in production environments (OWASP A01 Access Control).
  */
-app.post('/api/auth/dev-login', async (req, res) => {
+app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
   if (isProduction) {
     return res.status(403).json({
       success: false,
@@ -2636,11 +2653,13 @@ app.post('/api/auth/dev-login', async (req, res) => {
   }
 
   const trimmedToken = token.trim();
-  if (trimmedToken.length < 10 || trimmedToken.length > 512) {
+  // Strict format validation: GitHub tokens are alphanumeric + underscores only.
+  // Blocks CRLF injection into outgoing HTTP headers and prevents malicious payloads.
+  if (!/^[a-zA-Z0-9_]{10,255}$/.test(trimmedToken)) {
     return res.status(400).json({
       success: false,
       error: 'INVALID_TOKEN_FORMAT',
-      message: 'GitHub Personal Access Token format is invalid.'
+      message: 'GitHub Personal Access Token format is invalid. Must be 10-255 alphanumeric characters.'
     });
   }
 

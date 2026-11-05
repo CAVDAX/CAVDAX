@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 // Regression coverage for POST /api/auth/dev-login.
 // Verifies dev PAT authentication, production rejection (OWASP A01), validation,
-// and session creation without boots or real external network calls.
+// CRLF injection defense, and session creation without boots or real external network calls.
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const INDEX_SRC = fs.readFileSync(path.resolve(__dirname, '../index.js'), 'utf8');
@@ -27,7 +27,12 @@ async function callDevLogin({
   let handler;
   const cookiesSet = [];
   const stubs = {
-    app: { post: (_p, fn) => { handler = fn; } },
+    app: {
+      post: (_p, ...args) => {
+        handler = args[args.length - 1];
+      }
+    },
+    devAuthLimiter: (_req, _res, next) => next && next(),
     isProduction,
     fetch: fetchStub,
     signAuthToken: (payload) => 'signed.' + Buffer.from(JSON.stringify(payload)).toString('base64url'),
@@ -77,10 +82,22 @@ test('POST /api/auth/dev-login rejects missing or non-string token', async () =>
   assert.equal(outType.body.error, 'TOKEN_REQUIRED');
 });
 
-test('POST /api/auth/dev-login rejects too short or invalid token format', async () => {
+test('POST /api/auth/dev-login rejects too short token format', async () => {
   const { out } = await callDevLogin({ body: { token: 'short' } });
   assert.equal(out.status, 400);
   assert.equal(out.body.error, 'INVALID_TOKEN_FORMAT');
+});
+
+test('POST /api/auth/dev-login security: rejects CRLF injection and malicious header characters in token', async () => {
+  // Test newline injection
+  const { out: outCrlf } = await callDevLogin({ body: { token: 'ghp_validToken123\r\nX-Injected: evil' } });
+  assert.equal(outCrlf.status, 400);
+  assert.equal(outCrlf.body.error, 'INVALID_TOKEN_FORMAT');
+
+  // Test special characters / spaces
+  const { out: outSpecial } = await callDevLogin({ body: { token: 'ghp_token with spaces!@#' } });
+  assert.equal(outSpecial.status, 400);
+  assert.equal(outSpecial.body.error, 'INVALID_TOKEN_FORMAT');
 });
 
 test('POST /api/auth/dev-login propagates GitHub 401 Bad credentials', async () => {
