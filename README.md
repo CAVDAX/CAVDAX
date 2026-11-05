@@ -916,7 +916,7 @@ CAVDAX/
 │   │   ├── email.js             # Resend API transactional divergence alert dispatcher & debouncer
 │   │   ├── webPush.js           # VAPID key manager & Web Push background notification broker
 │   │   ├── systemState.js       # Atomic persistent state & user notification preferences
-│   │   ├── test/                # Unit & security test suite (102 automated tests)
+│   │   ├── test/                # Unit & security test suite (104 automated tests)
 │   │   └── Dockerfile           # Server containerization
 │   └── mcp-server/              # Standalone NPM package (@cavdax/mcp-server — published)
 │       ├── bin/cavdax.js        # Universal CLI: npx cavdax mcp|ingest|check|doctor

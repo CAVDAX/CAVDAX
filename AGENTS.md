@@ -134,6 +134,12 @@ Operational constitution, architecture standards, and safety governance for AI c
        ```
      - Any commit introducing hardcoded benchmark strings or fake latency constants will be rejected at pre-commit.
 
+0l. **Inviolable Guard: Asynchronous Callback Exception Enclosure & Scope Identifier Invariant (Zero-502 Anti-Crash Standard)**:
+   - **Strict Ban on Unenclosed Asynchronous Callbacks**: In Node.js / Express, route handlers wrapped in `try { ... } catch (err)` only intercept synchronous exceptions or awaited promises. Any callback passed to third-party asynchronous methods (`req.session.regenerate`, `req.session.save`, `db.query`, `fs.readFile`, event handlers) executes asynchronously on the Node.js event loop. If code inside that callback throws an error, it is **NOT** caught by the outer route handler, immediately terminating the Node.js process (`uncaughtException`) and causing reverse proxies (Caddy/Nginx) and CDNs (Cloudflare) to emit a `502 Bad Gateway`.
+   - **Mandatory Callback Enclosure**: Every callback body passed to an asynchronous method MUST be enclosed in its own internal `try { ... } catch (innerErr) { ... }` block that logs the exception and responds or redirects gracefully without killing the server process.
+   - **Zero Identifier Scope Drift**: Never alter the naming convention of a variable across scopes in closures (e.g. declaring `const accessToken = ...` in outer scope and referencing `access_token` inside an inner callback).
+   - **Mandatory Success-Branch Unit Testing**: Testing only error branches (missing state, invalid tokens) leaves closure and scope ReferenceErrors completely untested. Every authentication, session, or mutation route MUST have an automated unit test executing the **successful execution branch** of all inner callbacks, verifying that session properties hydrate without throwing.
+
 0c. **Production Deployment & Docker Parity Guard (Zero 502 Bad Gateway Standard)**:
 
    - **Mandatory Dockerfile Dependency Parity**:

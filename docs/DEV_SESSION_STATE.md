@@ -9,6 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.89 Latest Session Achievements (November 5, 2026 - OAuth Callback ReferenceError Triage, Automated Route Test Suite, Guard 0l Codification & Playbook Sync)
+
+- **OAuth Callback Fatal ReferenceError Resolution & Session Resilience (`apps/server/index.js`)**:
+  - Investigated and resolved the production bug where completing GitHub OAuth on Edge, Chrome, or Brave returned a Cloudflare `502 Bad Gateway`.
+  - Root cause: line 2683 referenced undeclared variable `access_token` (`accessToken: access_token`) inside the asynchronous callback passed to `req.session.regenerate(callback)`.
+  - In Node.js, exceptions thrown inside asynchronous callbacks escape Express route `try...catch` blocks, triggering an uncaught exception that terminates the Node.js process, drops active sockets, and causes Caddy to return 502 Bad Gateway.
+  - Corrected variable to declared `accessToken: accessToken` and enclosed all callback bodies in internal `try...catch` blocks with safe error redirection.
+- **Automated OAuth Callback Unit Test Suite (`apps/server/test/oauthCallbackRoute.test.mjs`)**:
+  - Authored comprehensive automated tests verifying the happy path of the OAuth exchange: mocks token exchange, profile query, email extraction, session regeneration, and redirection with user identity.
+  - Expanded test suite: **104 / 104 server tests passing** (0 failures).
+- **Codification of Guard 0l in `AGENTS.md` & Devil's Advocate Skill**:
+  - Inscribed Guard 0l (*Asynchronous Callback Exception Enclosure & Scope Identifier Invariant*) into `AGENTS.md` and updated global `devils-advocate` skill attack vectors 4 & 13.
+- **New Master Playbook Authored (`##OAuth-Session-Fixation-And-Callback-Resilience-Playbook.md`)**:
+  - Added dedicated playbook in `C:\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\#General-Main\` codifying the 6 architectural principles of hardened OAuth.
+
 ## 1.0.88 Latest Session Achievements (November 5, 2026 - Production 502 Triage & Caddy Upstream Retry Absorption, Dev PAT Copy Polish, External Knowledge Prompts Sync & UI Design System Sections 51-53)
 
 - **Production 502 Bad Gateway Triage & Forensic Root-Cause Resolution (`infra/Caddyfile`)**:
