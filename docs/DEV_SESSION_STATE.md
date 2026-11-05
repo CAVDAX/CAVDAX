@@ -9,6 +9,34 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.85 Latest Session Achievements (November 5, 2026 - Security Hardening, Cloudflare WAF/Edge Headers, CRLF Injection Defenses & Puppeteer Visual Audit)
+
+- **Cloudflare Edge & OWASP Security Headers Hardening (`apps/server/index.js`)**:
+  - Implemented defense-in-depth zero-trust HTTP security headers:
+    - `X-Permitted-Cross-Domain-Policies: none` (Strictly denies Flash/PDF cross-domain policy access).
+    - `Permissions-Policy: camera=(), microphone=(), geolocation=(), browsing-topics=()` (Disables unused browser hardware capabilities and tracking topics).
+    - `Cross-Origin-Opener-Policy: same-origin-allow-popups` (Mitigates Spectre/cross-origin window referencing while enabling OAuth and payment dialogs).
+    - `Content-Security-Policy`: Added `form-action 'self' https://github.com;` restricting form post targets.
+    - Verified all existing headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`, `Referrer-Policy: strict-origin-when-cross-origin`, and `Strict-Transport-Security`.
+- **CRLF & Header Injection Defenses on Authentication Gateway**:
+  - Enforced strict token regex validation on `POST /api/auth/dev-login`: `/^[a-zA-Z0-9_]{10,255}$/`.
+  - Rejects tokens containing newlines (`\r\n`), whitespace, or non-alphanumeric punctuation, preventing HTTP response splitting and outgoing header injection.
+- **Dedicated Authentication Rate Limiting (`devAuthLimiter`)**:
+  - Configured strict rate limiter (`windowMs: 15min, max: 20 attempts`) using Cloudflare client IP resolution (`cf-connecting-ip`, `true-client-ip`) with loopback anti-spoofing protections.
+- **Supply-Chain & Dependency Hygiene**:
+  - `npm audit` verified on monorepo root: 0 vulnerabilities.
+  - `npm audit` verified on `apps/server`: 0 vulnerabilities.
+- **Automated Puppeteer Visual Audit Suite (`scripts/visual-audit-hardening.js`)**:
+  - Executed automated browser visual inspection across Microsoft Edge / Chromium:
+    - Verified `/mcp` page rendering with Dev PAT action button (`visual_audit_mcp_page.png`).
+    - Verified `DevPatLoginModal` token input, password reveal toggle, and shortcut link (`visual_audit_dev_pat_modal.png`).
+    - Verified `/console` with interactive `CommandPalette` (`Ctrl+K`) fuzzy search and node selection (`visual_audit_command_palette.png`).
+    - Verified `ConnectRepoModal` with dual GitHub OAuth & Dev PAT options (`visual_audit_connect_repo_modal.png`).
+    - **Total critical page/console errors detected**: **0**.
+- **Automated Test Suite Parity**:
+  - Server test suite: **96 passing tests** (0 fails, 0 skips, 0 errors).
+  - Client production build: verified passing with `npm run build` (0 errors).
+
 ## 1.0.84 Latest Session Achievements (November 5, 2026 - Local Dev PAT Authentication Modal & Gateway Endpoint for Full Localhost / Offline Capability)
 
 - **Local Dev PAT Authentication Endpoint (`POST /api/auth/dev-login` in `apps/server/index.js`)**:
