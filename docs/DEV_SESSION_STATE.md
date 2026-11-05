@@ -9,6 +9,39 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.87 Latest Session Achievements (November 5, 2026 - Devil's Advocate Round 4 Remediation: Proxy-Aware IP Rate Limiting, Org Repo Access, Session Fixation & Sequential ADR Scoping)
+
+- **Proxy-Aware Client IP Extraction & Anti-Edge Pooling (`apps/server/index.js`)**:
+  - Implemented and exported `isTrustedProxyIp(ip)` and `extractClientIp(req)`:
+    - Identifies loopback (`127.0.0.1`, `::1`), RFC 1918 private subnets (`10.0.0.0/8`, `192.168.0.0/16`, Docker `172.16.0.0/12`), and verified Cloudflare edge proxy CIDRs (including `172.64.0.0/13` and `172.70.1.1`).
+    - Fixes the critical edge-node IP pooling vulnerability where all users behind Cloudflare were collapsed into a single edge IP bucket (`172.70.1.1`), exhausting the SSE 10-stream cap and triggering collective 429 rate limit errors.
+    - Preserves loopback anti-spoofing: untrusted direct public callers cannot spoof `cf-connecting-ip` or `x-forwarded-for`.
+  - Configured Express `app.set('trust proxy', 1)`.
+- **API Key Access for Organization & Collaborator Repositories (`apps/server/index.js`)**:
+  - Remediated the `/adrs` access check in `verifyUserRepoAccess`:
+    - Previously, user-scoped API keys were strictly rejected on organization repos (e.g. `acme-corp/app`) or collaborator repos (e.g. `bob/lib`) because `owner !== userLogin`.
+    - Added multi-tier verification:
+      1. Inspects `req.authUser.connectedRepos` recorded on the key or system state.
+      2. Inspects caller-provided GitHub tokens (`x-github-token` or `x-github-actions-token`) with direct `ghData.permissions?.push || ghData.permissions?.admin` check.
+      3. For CI gate runs with server `GITHUB_TOKEN`, queries `GET /repos/:owner/:repo/collaborators/:user/permission` to verify whether the key owner has push/admin rights on an org repo.
+- **Session Fixation Defense & Dev-Login Hardening (`apps/server/index.js`)**:
+  - Added `req.session.regenerate()` calls to both the GitHub OAuth callback and `POST /api/auth/dev-login` flows before attaching user identity (mitigates OWASP A07 session fixation).
+  - Hardened `/api/auth/dev-login`:
+    - Enforces loopback-only callers in non-production environments unless `ALLOW_DEV_LOGIN=true` is explicitly configured.
+    - Sets cookie `secure: Boolean(isSecureReq)` dynamically based on `req.secure` and `x-forwarded-proto: https`.
+- **Sequential ADR Numbering Defenses (`apps/server/githubAdr.js`)**:
+  - Scoped open PR scanning in `proposeAdrPullRequest`:
+    - Replaced the loose `(branchName + ' ' + prTitle).match(/ADR-(\d+)/i)` with a strict branch prefix match: `pr.head?.ref.match(/^cavdax\/propose-(?:adr-)?(\d+)/i)`.
+    - Prevents unrelated open PR titles (e.g., 'Fix typo in ADR-2024 notes') from inflating the next sequential ADR number to 2025+.
+  - Added unit test in `apps/server/test/githubAdr.test.mjs` verifying isolation from noisy PR titles.
+- **CI Gate Template Parameterization (`apps/server/githubAdr.js`)**:
+  - Dynamic `CAVDAX_SERVER_URL` in the generated GitHub Actions workflow template: `${process.env.PUBLIC_APP_URL || process.env.CLIENT_URL || 'https://cavdax.sahnirmaan.live'}`.
+- **Dependency & Lockfile Alignment (`package.json`)**:
+  - Aligned monorepo root `falkordb` dependency from `^7.0.0` to `^6.8.0` to match `apps/server`.
+- **Automated Test Suite Expansion (`apps/server/test/round4Hardening.test.mjs`)**:
+  - Added dedicated proxy IP resolution tests and non-spoofing tests.
+  - Full server test suite passing: **102 / 102 tests passed, 0 failures**.
+
 ## 1.0.86 Latest Session Achievements (November 5, 2026 - Identity-Bound Evaluation Architecture & GitHub Auth Enforcement for Tier/Sponsor Switching)
 
 - **Enforced GitHub Identity for Evaluation Pass Switching (`ProfilePage.jsx` & `SupportPage.jsx`)**:
