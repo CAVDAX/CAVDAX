@@ -8,6 +8,7 @@ import GraphCanvas from './GraphCanvas';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
+import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
 /**
  * ConnectedRepoWorkspace.jsx — Live view of a connected GitHub repository.
@@ -1478,12 +1479,12 @@ export default function ConnectedRepoWorkspace({
                   onClick={() => {
                     playClick();
                     const snippet = agentSetupTab === 'claude'
-                      ? `claude mcp add cavdax npx -y @cavdax/mcp-server@1.2.5 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${window.location.origin}`
+                      ? `claude mcp add cavdax npx -y @cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION} --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${window.location.origin}`
                       : JSON.stringify({
                           mcpServers: {
                             cavdax: {
                               command: "npx",
-                              args: ["-y", "@cavdax/mcp-server@1.2.5", "--repo", repo.full_name, "--branch", selectedBranch],
+                              args: ["-y", `@cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION}`, "--repo", repo.full_name, "--branch", selectedBranch],
                               env: {
                                 CAVDAX_SERVER_URL: window.location.origin
                               }
@@ -1510,7 +1511,7 @@ export default function ConnectedRepoWorkspace({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@1.2.5", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", `@cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION}`, "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1519,14 +1520,14 @@ export default function ConnectedRepoWorkspace({
                 }, null, 2)}
 
                 {agentSetupTab === 'claude' && (
-                  `claude mcp add cavdax npx -y @cavdax/mcp-server@1.2.5 --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}\n\n# Registered Tools Enclosed Behind FalkorDB GraphBLAS Gate:\n# • check_intent_clearance           Pre-flight architectural radar before token burn\n# • check_file_status                Real-time active ADR governance and boundary status\n# • apply_code_change                Enclosed diff execution rejected on superseded ADRs\n# • get_architectural_blast_radius   Transitive downstream impact graph traversal\n# • revalidate_decision              GraphBLAS cache invalidation on superseding ADR\n# • get_active_invariants            Fetch active machine-verifiable rules for repo`
+                  `claude mcp add cavdax npx -y @cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION} --repo ${repo.full_name} --branch ${selectedBranch} -e CAVDAX_SERVER_URL=${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}\n\n# Registered Tools Enclosed Behind FalkorDB GraphBLAS Gate:\n# • check_intent_clearance           Pre-flight architectural radar before token burn\n# • check_file_status                Real-time active ADR governance and boundary status\n# • apply_code_change                Enclosed diff execution rejected on superseded ADRs\n# • get_architectural_blast_radius   Transitive downstream impact graph traversal\n# • revalidate_decision              GraphBLAS cache invalidation on superseding ADR\n# • get_active_invariants            Fetch active machine-verifiable rules for repo`
                 )}
 
                 {agentSetupTab === 'cline' && JSON.stringify({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@1.2.5", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", `@cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION}`, "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1538,7 +1539,7 @@ export default function ConnectedRepoWorkspace({
                   mcpServers: {
                     cavdax: {
                       command: "npx",
-                      args: ["-y", "@cavdax/mcp-server@1.2.5", "--repo", repo.full_name, "--branch", selectedBranch],
+                      args: ["-y", `@cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION}`, "--repo", repo.full_name, "--branch", selectedBranch],
                       env: {
                         CAVDAX_SERVER_URL: typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'
                       }
@@ -1614,7 +1615,7 @@ export default function ConnectedRepoWorkspace({
                       type="button"
                       onClick={() => {
                         playClick();
-                        const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
+                        const yaml = `name: CAVDAX Architectural Gate\n\non:\n  pull_request:\n    branches: [ main, master, develop ]\n\njobs:\n  cavdax-gate:\n    name: Verify Architectural Invariants\n    runs-on: ubuntu-latest\n    steps:\n      - name: Checkout code\n        uses: actions/checkout@v4\n\n      - name: Setup Node.js\n        uses: actions/setup-node@v4\n        with:\n          node-version: 20\n\n      - name: Run CAVDAX Invariant Gate Check\n        run: npx -y @cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION} gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}\n        env:\n          CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}\n          CAVDAX_SERVER_URL: ${window.location.origin}`;
                         navigator.clipboard.writeText(yaml);
                         setCopiedSnippet(true);
                         setTimeout(() => setCopiedSnippet(false), 2000);
@@ -1649,7 +1650,7 @@ jobs:
           node-version: 20
 
       - name: Run CAVDAX Invariant Gate Check
-        run: npx -y @cavdax/mcp-server@1.2.5 gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
+        run: npx -y @cavdax/mcp-server@${MCP_SERVER_DEFAULT_VERSION} gate --repo=\${{ github.repository }} --sha=\${{ github.event.pull_request.head.sha }}
         env:
           CAVDAX_API_KEY: \${{ secrets.CAVDAX_API_KEY }}
           CAVDAX_SERVER_URL: ${typeof window !== 'undefined' ? window.location.origin : 'https://cavdax.sahnirmaan.live'}`}
