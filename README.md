@@ -65,15 +65,30 @@ Modern autonomous coding agents (Claude Code, Cursor Composer, Windsurf, GitHub 
 
 ---
 
-## The CAVDAX Solution: Graph-Grounded Enclosed Execution
+## The CAVDAX Solution: Dual-Plane Enclosed Execution Architecture
 
-**CAVDAX** converts repository engineering artifacts into an active, temporal causal Directed Acyclic Graph (DAG) stored inside **FalkorDB**.
+Most agent governance tools are purely advisory (*"please respect this system prompt"*), which LLMs routinely ignore when context windows grow. CAVDAX converts repository engineering artifacts into an active, temporal causal Directed Acyclic Graph (DAG) stored inside **FalkorDB** and enforces **enclosed execution across two defensive planes**:
+
+```
++---------------------------------------------------------------------------------------------------------+
+| CAVDAX DUAL-PLANE ENCLOSED EXECUTION ARCHITECTURE                                                      |
++----------------------------------------------------+----------------------------------------------------+
+| PLANE 1: LOCAL IN-IDE PRE-WRITE FIREWALL           | PLANE 2: CLOUD CI/CD PULL REQUEST GATE            |
+| (Cursor, Claude Code, Cline, Windsurf)             | (GitHub Actions, Headless CI, Merge Checks)        |
++----------------------------------------------------+----------------------------------------------------+
+| • Intercepts apply_code_change over local stdio    | • Executes npx @cavdax/mcp-server gate --sha ...   |
+| • Traverses FalkorDB DAG in < 2.5ms before write   | • Scans git diff against repository decisions      |
+| • ZERO invalid bytes reach the developer's disk    | • HARD-BLOCKS pull requests before merge           |
+| • Proactive intent clearance (check_intent_...)    | • Emits rich Markdown proof to $GITHUB_STEP_SUMMARY|
++----------------------------------------------------+----------------------------------------------------+
+```
 
 When a superseding commit or ADR arrives:
 1. **Deterministic Ingestion:** Frontmatter (`supersedes: ADR-001`) and commit messages are parsed deterministically without probabilistic LLM hops.
-2. **Cascading Invalidation Wave:** FalkorDB establishes a `[:SUPERSEDES]` relationship and cascades invalidation status flags across the DAG in **< 4ms** via GraphBLAS sparse matrix operations.
-3. **Enclosed MCP Execution Gate:** The agent's file modification tool (`apply_code_change`) is enclosed inside an internal parameterized Cypher gate. If any ancestor source or fact has been superseded, the gate **hard-blocks** execution (`BLOCKED_SUPERSEDED_SOURCE`). Zero invalid bytes are written to disk.
-4. **Dynamic Invalidation Recovery:** The agent is prompted to invoke `revalidate_decision` to ground actions in active sources, enabling safe, verified execution.
+2. **Cascading Invalidation Wave:** FalkorDB establishes a `[:SUPERSEDES]` relationship and cascades invalidation status flags across the DAG in **< 2.5ms** via GraphBLAS sparse matrix operations.
+3. **Plane 1 (In-IDE stdio Enclosure):** The agent's file modification tool (`apply_code_change`) is enclosed inside an internal parameterized Cypher gate. If any ancestor source or fact has been superseded, the gate **hard-blocks** execution (`BLOCKED_SUPERSEDED_SOURCE`). Zero invalid bytes are written to disk.
+4. **Plane 2 (Cloud CI Pull Request Gate):** In automated workflows where autonomous agents open PRs, `cavdax-gate.yml` verifies grounding against the remote graph before code can ever merge into the protected branch.
+5. **Dynamic Invalidation Recovery:** The agent is prompted to invoke `revalidate_decision` to ground actions in active sources, enabling safe, verified execution.
 
 ---
 
