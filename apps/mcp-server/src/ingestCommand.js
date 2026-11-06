@@ -14,7 +14,6 @@
 
 import fs from 'fs';
 import path from 'path';
-import { glob } from 'glob';
 import { connectGraph, loadCore, describeConnectError, falkorConfig } from './runtime.js';
 
 // ─── FalkorDB connection helper ───────────────────────────────────────────────
@@ -30,37 +29,59 @@ async function connectFalkorDB(host, port) {
   }
 }
 
-// ─── ADR file discovery ───────────────────────────────────────────────────────
+// ─── ADR file discovery (Zero-Dependency Native Node.js fs) ───────────────────
+
+function findMarkdownFilesSync(dir) {
+  const results = [];
+  try {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === 'dist') continue;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results.push(...findMarkdownFilesSync(fullPath));
+      } else if (entry.isFile() && entry.name.endsWith('.md')) {
+        results.push(fullPath);
+      }
+    }
+  } catch {}
+  return results;
+}
 
 async function discoverAdrFiles(repoRoot) {
-  const patterns = [
-    '.adr/**/*.md',
-    'adr/**/*.md',
-    'adrs/**/*.md',
-    'doc/adr/**/*.md',
-    'doc/adrs/**/*.md',
-    'docs/adr/**/*.md',
-    'docs/adrs/**/*.md',
-    'docs/decisions/**/*.md',
-    'docs/architecture/decisions/**/*.md',
-    'architecture/decisions/**/*.md',
-    'architecture/**/*.md',
-    'decisions/**/*.md',
-    'design/adr/**/*.md',
-    'design/adrs/**/*.md',
-    'design/decisions/**/*.md',
-    'wiki/adr/**/*.md',
-    'wiki/adrs/**/*.md',
-    'demo-repo/docs/adrs/**/*.md',
-    'demo-repo/docs/adr/**/*.md',
-    'ADR-*.md',
-    'docs/ADR-*.md'
+  const candidateDirs = [
+    '.adr', 'adr', 'adrs', 'doc/adr', 'doc/adrs', 'docs/adr', 'docs/adrs',
+    'docs/decisions', 'docs/architecture/decisions', 'architecture/decisions',
+    'architecture', 'decisions', 'design/adr', 'design/adrs', 'design/decisions',
+    'wiki/adr', 'wiki/adrs', 'demo-repo/docs/adrs', 'demo-repo/docs/adr'
   ];
+
   const found = [];
-  for (const pattern of patterns) {
-    const matches = await glob(pattern, { cwd: repoRoot, absolute: true });
-    found.push(...matches);
+  for (const relDir of candidateDirs) {
+    const absDir = path.resolve(repoRoot, relDir);
+    try {
+      if (fs.existsSync(absDir) && fs.statSync(absDir).isDirectory()) {
+        found.push(...findMarkdownFilesSync(absDir));
+      }
+    } catch {}
   }
+
+  // Also discover any root or docs/ ADR-*.md files
+  const rootCandidates = ['.', 'docs'];
+  for (const relDir of rootCandidates) {
+    const absDir = path.resolve(repoRoot, relDir);
+    try {
+      if (fs.existsSync(absDir) && fs.statSync(absDir).isDirectory()) {
+        const entries = fs.readdirSync(absDir);
+        for (const file of entries) {
+          if (/^adr-.*\.md$/i.test(file)) {
+            found.push(path.join(absDir, file));
+          }
+        }
+      }
+    } catch {}
+  }
+
   // TEMPLATE.md documents the format; ingesting it would create a bogus "TEMPLATE" Source.
   return [...new Set(found)].filter((f) => !/^template/i.test(path.basename(f)));
 }
