@@ -952,6 +952,20 @@ export default function App() {
           const g = await graphRes.json();
           if (g && g.nodes && g.nodes.length > 0) {
             setGraphData(g);
+            // Sync currentAct with whatever state the server graph is actually in,
+            // so the act indicator never lies after a reload.
+            const hasD103 = g.nodes.some(n => n.id === 'DEC-103');
+            const hasSupersedesEdge = g.edges && g.edges.some(e => e.type === 'SUPERSEDES');
+            const hasDec102Archived = g.nodes.some(n => n.id === 'DEC-102' && (n.status === 'REPLACED_ARCHIVED' || n.status === 'ARCHIVED'));
+            const hasBlockedAction = g.nodes.some(n => n.label === 'AgentAction' && n.status && n.status.includes('BLOCKED'));
+            if (hasD103 || hasDec102Archived) {
+              setCurrentAct(4);
+            } else if (hasBlockedAction) {
+              setCurrentAct(3);
+            } else if (hasSupersedesEdge) {
+              setCurrentAct(2);
+            }
+            // else: stays at 1 (default)
           }
         }
       } catch (err) {
@@ -1098,11 +1112,17 @@ export default function App() {
   function _simulateAct4Approve(oauthCode) {
     setGraphData(prev => {
       const nodes = prev.nodes.map(n => n.id === 'DEC-102' ? { ...n, status: 'REPLACED_ARCHIVED' } : n);
-      const newNodes = [...nodes,
-        { id: 'DEC-103', label: 'Decision', title: 'Scaffold Payment Gateway with OAuth2 (JWT/RS256)', status: 'VALID' },
-        { id: `act-${Date.now()}`, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }
-      ];
-      const newEdges = [...prev.edges,
+      // Idempotency: only add DEC-103 and the EXECUTED action node if not already present
+      const hasD103 = nodes.some(n => n.id === 'DEC-103');
+      const hasExecutedAction = nodes.some(n => n.label === 'AgentAction' && n.status === 'EXECUTED' && n.target_file === 'demo-repo/src/services/payment.js');
+      const newNodes = hasD103
+        ? (hasExecutedAction ? nodes : [...nodes, { id: `act-${Date.now()}`, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }])
+        : [...nodes,
+            { id: 'DEC-103', label: 'Decision', title: 'Scaffold Payment Gateway with OAuth2 (JWT/RS256)', status: 'VALID' },
+            ...(hasExecutedAction ? [] : [{ id: `act-${Date.now()}`, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }])
+          ];
+      const hasD103Edge = prev.edges.some(e => e.source === 'DEC-103' && e.target === 'F-OAuth2' && e.type === 'DEPENDS_ON');
+      const newEdges = hasD103Edge ? prev.edges : [...prev.edges,
         { source: 'DEC-103', target: 'F-OAuth2', type: 'DEPENDS_ON' },
         { source: 'DEC-103', target: 'DEC-102', type: 'REPLACES' }
       ];
@@ -1264,6 +1284,13 @@ export default function App() {
 
   async function handleSelectAct(actNumber) {
     playClick();
+
+    // Idempotency guard: Act 4 is the terminal act — re-running it appends duplicate
+    // AgentAction nodes to the graph. Once Act 4 is complete, clicking it again is a no-op.
+    // The user must Reset (Act 1) to replay the full sequence.
+    if (actNumber === 4 && currentAct === 4 && loadingAct === null) {
+      return;
+    }
 
     // Skip-guard: if the user clicks Act 3 or 4 directly without running prior acts,
     // silently run the prerequisite acts so the graph is in the correct state.
