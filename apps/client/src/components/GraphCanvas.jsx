@@ -4,6 +4,7 @@ import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activ
 import { playClick } from '../utils/soundFx';
 import NodeInspector from './NodeInspector';
 import CommandPalette from './CommandPalette';
+import Tooltip from './Tooltip';
 
 // Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
 function usePillTracker(activeKey, extraDep = null) {
@@ -901,20 +902,25 @@ export default function GraphCanvas({
               const active = driftFilter === tab.id;
               const Icon = tab.icon;
               return (
-                <button
+                <Tooltip
                   key={tab.id}
-                  ref={(el) => { if (el) driftPill.refs.current[tab.id] = el; }}
-                  onClick={() => { playClick(); setDriftFilter(tab.id); }}
-                  title={canvasWidth < 900 ? tab.label : undefined}
-                  className={`relative px-2 py-0.5 rounded-md transition-colors cursor-pointer z-10 flex items-center gap-1.5 ${
-                    active
-                      ? 'text-slate-950 dark:text-white font-bold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-                  }`}
+                  content={tab.label}
+                  position="bottom"
+                  disabled={canvasWidth >= 900}
                 >
-                  <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
-                  {canvasWidth >= 900 && <span>{tab.label}</span>}
-                </button>
+                  <button
+                    ref={(el) => { if (el) driftPill.refs.current[tab.id] = el; }}
+                    onClick={() => { playClick(); setDriftFilter(tab.id); }}
+                    className={`relative px-2 py-0.5 rounded-md transition-colors cursor-pointer z-10 flex items-center gap-1.5 ${
+                      active
+                        ? 'text-slate-950 dark:text-white font-bold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
+                    {canvasWidth >= 900 && <span>{tab.label}</span>}
+                  </button>
+                </Tooltip>
               );
             })}
           </div>
