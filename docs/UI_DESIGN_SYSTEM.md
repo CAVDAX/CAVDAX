@@ -3512,6 +3512,11 @@ export function usePillTracker(activeKey) {
 ```
 Animate `x`, `y`, `width`, and `height` explicitly with spring physics (`stiffness: 500, damping: 35`), ensuring zero flying pills or cross-route visual collisions.
 
+### 58.3 Inviolable CSS Coordinate Anchoring Rule (Anti-Downward Offset)
+When rendering the sliding `<motion.div>` tracker backed by `usePillTracker`:
+- **Always anchor with `className="absolute top-0 left-0 ..."`**.
+- **Never add arbitrary vertical offset classes (`top-0.5`, `top-1`, `mt-0.5`)** to the animated pill. Because `usePillTracker` calculates exact parent-relative coordinates from `targetElement.offsetTop` and `targetElement.offsetLeft`, any manual offset class compounds on top of the calculated coordinate, causing a visible downward sag across segmented pill tabs.
+
 ---
 
 ## 59. Modal Portal Hoisting & Lenis Smooth-Scroll Event Isolation Standard

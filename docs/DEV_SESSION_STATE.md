@@ -9,6 +9,40 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.02 Divergence Alert Trigger Restoration & Monochromatic Compliance (November 6, 2026)
+- **Removed Fake Static 'Ready' Badge**: Eradicated the unsemantic green badge in PreferencesModal.jsx that violated the minimal color palette rules in docs/UI_DESIGN_SYSTEM.md.
+- **Restored Clear Action Typography**: Replaced the obscure 'Test Route & Alert' and 'Route & Alert Pulse' labels with the industry-standard 'Test Invalidation Alert' and 'Dispatch Test Alert'.
+- **Monochromatic SVG Alignment**: Replaced the cyan <Route /> glyph with a monochromatic, neutral <Mail /> line icon (	ext-slate-500 dark:text-slate-400), accurately communicating the email delivery channel without arbitrary color pollution.
+- **Empirical Visual Audit**: Captured puppeteer_verified_pref_modal_restored.png confirming clean layout and zero AI ornamentation.
+
+## 1.1.01 Latest Session Achievements (November 6, 2026 - Canvas Ribbon Deep-Linking, Localhost Auth Parity, Zero-Jitter Theme Memoization & Audit Pill Centering)
+
+- **Audit Page Sliding Pill Centering & Architectural Invariant Rule (`AuditPage.jsx`, `docs/UI_DESIGN_SYSTEM.md`)**:
+  - Fixed 4px downward overhang on the verdict filter sliding pill (`ALL`, `BLOCKED`, `APPROVED`).
+  - Identified root cause: `top-0.5` combined with `usePillTracker` measuring container padding resulted in a double offset. Replaced with `className="absolute top-0 left-0 ..."`.
+  - Codified Section 1.8 in `docs/UI_DESIGN_SYSTEM.md`: Mandatory `top-0 left-0` coordinate anchoring on all Framer Motion sliding pill trackers across the monorepo.
+- **Console Mid-Divider Instant Dragging Response Restored (`App.jsx`)**:
+  - Restored raw, 0ms mouse-tracking responsiveness during splitter resizing by dynamically applying `transition-none` when `isDraggingDemoSplitter === true`.
+  - Retained luxurious 500ms ease-in-out easing exclusively for discrete collapse/expand toggle clicks.
+- **Theme Switcher Zero-Jitter Physics & Math Layout Memoization (`SpotlightDataRain.jsx`, `GraphCanvas.jsx`)**:
+  - **Simulation Decoupling (`SpotlightDataRain.jsx`)**: Replaced `[isDarkTheme]` in `useEffect` with a mutable `isDarkThemeRef = useRef(isDarkTheme)`. Eliminated continuous tear-down and re-randomization of the 95-node canvas simulation. Nodes, edges, and firefly trajectories now maintain uninterrupted physical coordinates across dark/light mode toggles with zero paint lag.
+  - **Topological Layout Memoization (`GraphCanvas.jsx`)**: Wrapped columnar layout, blast-radius reachability, and edge projection calculations in `useMemo`. Toggling themes now only re-evaluates presentation CSS styles (`fill`, `stroke`) rather than re-allocating SVG object matrices.
+- **Localhost GitHub OAuth Deprecation & Dual Dev PAT Support (`apps/server/index.js`, `.env.example`, `DevPatLoginModal.jsx`, `ConnectRepoModal.jsx`)**:
+  - Deprecated and hid production GitHub OAuth triggers on `localhost` / `127.0.0.1` (which previously failed due to production callback domain restrictions).
+  - Implemented dual Dev PAT authentication:
+    1. Direct reading and detection of `GITHUB_DEV_PAT` from `.env` in non-production environments with a 1-click `Authenticate with .env Token` action (`KeyRound` SVG, unbracketed `GITHUB_DEV_PAT` badge).
+    2. Manual token input with reveal toggle and GitHub token creation link.
+  - Updated `.env.example` with complete `GITHUB_DEV_PAT=` documentation and scope requirements (`repo`).
+- **Linear/Figma-Style Canvas Ribbon & Share Deep-Linking (`GraphCanvas.jsx`)**:
+  - Segmented Zoom Pill: `[ - ] [ 100% ⌄ ] [ + ]` with popover presets (50%, 75%, 100%, 125%, 150%, 200%, Fit to Screen), click-outside dismissal, and Escape listener.
+  - Node Permalink & Share Action: 1-click clipboard permalink copy (`?node=<ID>`), tactile emerald `<Check />` swap, and auto-centering on mount when deep-linked.
+  - Preferences Route & Channel Pulse: Monoline `<Route />` glyph with unbracketed `Ready` badge.
+- **Multi-Branch Causal Invalidation & GraphRAG Architectural Drift Investigator (`docs/FUTURE_ROADMAP.md`)**:
+  - Added Section 10 formalizing multi-branch git push watchers, FalkorDB causal DAG invalidation, and hybrid GraphRAG drift attribution co-led by Geetika Chugh and Suneet Chugh.
+- **Strict Anti-Slop Enforcement**:
+  - Verified 100% zero-emoji compliance (`Found emojis: []`) across all touched code, UI, and documentation.
+  - Vite client production build passed cleanly in 19.12s. All services healthy.
+
 ## 1.1.00 Latest Session Achievements (November 6, 2026 - Balanced 500ms Kinetic Easing & Zero-Reflow Sidebar Curtain Architecture)
 
 - **Root-Cause Analysis of Jerky / Overly Fast Sidebar Collapse**:
