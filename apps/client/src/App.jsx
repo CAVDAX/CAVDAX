@@ -1658,25 +1658,31 @@ export default function App() {
                 {/* Left: Terminal HUD (Resizable width on desktop, 1-click collapsible) */}
                 <div
                   data-tour="terminal-view"
-                  className={`w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,min-width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
-                    isDemoLeftCollapsed ? 'lg:!w-0 lg:!min-w-0 border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
+                  style={{
+                    width: isDemoLeftCollapsed ? '0px' : `${demoLeftWidthPercent}%`,
+                    flexBasis: isDemoLeftCollapsed ? '0px' : `${demoLeftWidthPercent}%`
+                  }}
+                  className={`h-full min-w-0 overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis] ${
+                    isDemoLeftCollapsed ? 'border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
                   }`}
                 >
-                  <TerminalView
-                    terminalLogs={terminalLogs}
-                    activeVerdict={activeVerdict}
-                    latestAction={latestAction}
-                    currentAct={currentAct}
-                    agentState={agentState}
-                    onCollapseSidebar={() => setIsDemoLeftCollapsed(true)}
-                  />
+                  <div className="w-full h-full min-w-[360px]">
+                    <TerminalView
+                      terminalLogs={terminalLogs}
+                      activeVerdict={activeVerdict}
+                      latestAction={latestAction}
+                      currentAct={currentAct}
+                      agentState={agentState}
+                      onCollapseSidebar={() => setIsDemoLeftCollapsed(true)}
+                    />
+                  </div>
                 </div>
 
                 {/* Draggable Mid-Section Divider Holder Button with Smooth Kinetic Transition */}
                 <div
                   onMouseDown={handleDemoSplitterMouseDown}
                   onDoubleClick={() => setIsDemoLeftCollapsed(prev => !prev)}
-                  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] group ${
+                  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group ${
                     isDemoLeftCollapsed
                       ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
                       : `w-2.5 -mx-1 opacity-100 ${isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`
