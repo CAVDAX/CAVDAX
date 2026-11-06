@@ -1464,7 +1464,7 @@ export default function ProfilePage({
                 <button
                   onClick={() => {
                     playClick();
-                    window.location.href = '/api/auth/github?returnTo=/profile';
+                    setIsDevPatModalOpen(true);
                   }}
                   className="h-7 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-[10px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 tactile-btn shadow-xs"
                 >
@@ -1547,6 +1547,16 @@ export default function ProfilePage({
             <span>{toastMsg}</span>
           </div>
         )}
+
+        {/* Unified GitHub Authentication Modal */}
+        <DevPatLoginModal
+          isOpen={isDevPatModalOpen}
+          onClose={() => setIsDevPatModalOpen(false)}
+          onSuccess={(userData) => {
+            setIsDevPatModalOpen(false);
+            showToast(`Signed in as ${userData.name || userData.login || 'Local Contributor'} via Dev PAT`);
+          }}
+        />
       </div>
     );
   }
@@ -2388,7 +2398,7 @@ export default function ProfilePage({
               <button
                 onClick={() => {
                   playClick();
-                  window.location.href = '/api/auth/github?returnTo=/profile';
+                  setIsDevPatModalOpen(true);
                 }}
                 className="h-7 px-3 rounded-lg bg-slate-950 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-[10px] font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer shrink-0 tactile-btn shadow-xs"
               >
@@ -2475,10 +2485,9 @@ export default function ProfilePage({
       <DevPatLoginModal
         isOpen={isDevPatModalOpen}
         onClose={() => setIsDevPatModalOpen(false)}
-        onLoginSuccess={(userData) => {
-          setUser(userData);
+        onSuccess={(userData) => {
           setIsDevPatModalOpen(false);
-          showToast(`Signed in as ${userData.login || 'Local Contributor'} via Dev PAT`);
+          showToast(`Signed in as ${userData.name || userData.login || 'Local Contributor'} via Dev PAT`);
         }}
       />
     </div>
