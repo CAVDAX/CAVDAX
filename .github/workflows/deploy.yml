@@ -44,9 +44,13 @@ jobs:
             eval APP_DIR_EXP="$APP_DIR"
             echo "==> Navigating to $APP_DIR_EXP..."
             cd "$APP_DIR_EXP"
+            echo "==> Configuring authenticated origin for resilient private/public pulls..."
+            git remote set-url origin "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git"
+            trap 'git remote set-url origin "https://github.com/${{ github.repository }}.git"' EXIT
             echo "==> Pulling latest changes from origin/main..."
             git fetch origin main
             git reset --hard origin/main
+            git remote set-url origin "https://github.com/${{ github.repository }}.git" 
             echo "==> Synchronizing production environment secrets..."
             touch .env
             update_env_var() {
