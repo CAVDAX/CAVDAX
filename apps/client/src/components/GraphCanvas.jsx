@@ -813,7 +813,7 @@ export default function GraphCanvas({
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
           <span 
             className="font-mono font-semibold text-slate-900 dark:text-white truncate" 
-            style={{ maxWidth: canvasWidth < 640 ? "80px" : canvasWidth < 840 ? "130px" : "220px" }}
+            style={{ maxWidth: canvasWidth < 720 ? "120px" : "220px" }}
             title={title}
           >
             {title}
@@ -822,7 +822,7 @@ export default function GraphCanvas({
         </div>
 
         {/* Zone 2: Centered Command Omnibar (Fluid Width, Center-Anchored) */}
-        {canvasWidth < 680 ? (
+        {canvasWidth < 720 ? (
           <button
             type="button"
             onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
@@ -888,17 +888,17 @@ export default function GraphCanvas({
                   }`}
                 >
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
-                  {canvasWidth >= 880 && <span>{tab.label}</span>}
+                  {canvasWidth >= 900 && <span>{tab.label}</span>}
                 </button>
               );
             })}
           </div>
 
           {/* Functional Divider */}
-          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
+          {canvasWidth >= 540 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Action Tools Cluster: Direct SVG Download & Node Permalink Sharing */}
-          {canvasWidth >= 520 && (
+          {canvasWidth >= 540 && (
             <div className="flex items-center gap-0.5">
             <button
               type="button"
@@ -937,7 +937,7 @@ export default function GraphCanvas({
           )}
 
           {/* Functional Divider */}
-          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
+          {canvasWidth >= 540 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Segmented Zoom Readout Pill with Linear/Figma Preset Dropdown */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-300/80 dark:border-white/10 shadow-xs">

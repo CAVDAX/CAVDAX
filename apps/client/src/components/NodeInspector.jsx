@@ -341,11 +341,7 @@ export default function NodeInspector({
               <span className="text-[10px] text-slate-500 uppercase tracking-wider">
                 {affectedCodeFiles.length > 1 ? `Impacted Code Files (${affectedCodeFiles.length})` : 'Target Code File'}
               </span>
-              {affectedCodeFiles.length > 1 && (
-                <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 font-bold">
-                  Multi-File Impact
-                </span>
-              )}
+
             </div>
             {affectedCodeFiles.length === 1 ? (
               repo?.full_name ? (
