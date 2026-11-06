@@ -9,6 +9,23 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.04 Decision Diamond Geometry, Workspace Screen Freeze Resolution & Container-Aware Ribbon (November 6, 2026)
+- **Decision Diamond Shape Invariant (`GraphCanvas.jsx`)**:
+  - Implemented bespoke SVG diamond polygon (`0,-31 40,0 0,31 -40,0`) specifically for `:Decision` nodes, providing visual semantic differentiation from standard rounded rectangles while retaining identical edge-docking math.
+  - Calibrated typography offsets: ID at dy="-3", status badge at dy="11", and type subtitle at dy="42".
+  - Vector SVG export parity: updated `handleDownloadGraph` to render polygons for `:Decision` with matching warm amber fill and stroke.
+  - Calibrated the bottom-left `TOPOLOGY` HUD legend diamond to an exact 7px optical footprint (`w-[7px] h-[7px] rotate-45 rounded-[0.5px]`), matching the 8px visual mass of adjacent circular dots.
+- **Workspace Dropdown Freeze Bug Resolution (`App.jsx`)**:
+  - Eradicated an unkeyed `<>` fragment inside `<AnimatePresence>` containing an invisible `<div className="fixed inset-0 z-40" />` that lingered after selection and blocked all viewport pointer events.
+  - Replaced with standard document `mousedown` and `Escape` listeners anchored to `workspaceRef`. Viewport remains 100% interactive at all times.
+- **Container-Aware Responsive Ribbon Toolbar via `ResizeObserver` (`GraphCanvas.jsx`)**:
+  - Replaced faulty window-level `@media` queries (`xl:`, `md:`) with dynamic container tracking using `ResizeObserver` on `containerRef`.
+  - Tiered responsive compression: collapses Drift Filter labels into icons at `< 880px`, collapses Search Omnibar into a 28px icon button at `< 680px`, and conditionally hides secondary dividers at `< 520px`.
+  - Empirically verified via Puppeteer: Zero clipping across all zones (`isClipped: false`, `lastBtnVisible: true`), guaranteeing Zoom, Reset, and Fullscreen buttons remain fully visible even during extreme 80/20 split divider dragging.
+- **Git Integration & Verification**:
+  - Full branch merge: `exp/decision-diamond-shape` -> `frontend` -> `main` -> `backend` -> `docs`. All branches synchronized.
+  - Production build passed in 13.38s. All services healthy.
+
 ## 1.1.03 Workspace Modals Universal Spring Physics Parity (November 6, 2026)
 - **Universal Spring Physics Applied to Workspace Modals**: Upgraded all 5 modal dialogs in ConnectedRepoWorkspace.jsx (Agent Setup, CI Gate Generator, Propose ADR, Interactive Custom Action Simulator, and Init Starter PR Confirmation) to the standard PreferencesModal transition architecture.
 - **Backdrop & Card Staging**: Enclosed inside <AnimatePresence> with an independent backdrop fade (duration: 0.2s) and spring-damped card entry/exit (damping: 28, stiffness: 360, y: 12, scale: 0.95).
