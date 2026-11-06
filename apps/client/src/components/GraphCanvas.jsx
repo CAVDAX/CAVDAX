@@ -682,43 +682,44 @@ export default function GraphCanvas({
             <button
               type="button"
               onClick={onToggleSidebar}
-              className="p-1 rounded-md text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer flex items-center gap-1.5 font-mono text-[11px] mr-1 shrink-0"
+              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
               title="Expand Sidebar (Restore Split View)"
               aria-label="Expand Sidebar"
             >
               <PanelLeftOpen className="w-3.5 h-3.5 stroke-[1.75]" />
-              <span className="hidden sm:inline font-semibold">Sidebar</span>
             </button>
           )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
           <span className="font-mono font-semibold text-slate-900 dark:text-white truncate" title={title}>
             {title}
           </span>
-
+          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />
         </div>
 
         {/* Feature Controls: Search (Cmd+K / Ctrl+K), Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
         <div className="flex items-center gap-2 shrink-0 font-mono">
-          {/* Command Palette Trigger (Search primary action - precedes filters) */}
+          {/* Command Palette Trigger (Linear/Supabase-Style Pseudo-Input Bar) */}
           <button
             type="button"
             onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+            className="flex items-center justify-between w-36 sm:w-44 md:w-52 h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer shadow-2xs"
             title={`Search DAG Nodes (${searchKbd})`}
             aria-label={`Search DAG Nodes (${searchKbd})`}
           >
-            <Search className="w-3.5 h-3.5 text-current shrink-0" />
-            <span className="text-[10px] font-mono opacity-80 hidden sm:inline">Search</span>
-            <kbd className="text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/80 dark:bg-black/40 border border-slate-300 dark:border-white/10 opacity-70">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+              <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>
+            </div>
+            <kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400 shrink-0">
               {searchKbd}
             </kbd>
           </button>
 
-          {/* Monochromatic Architectural Drift Filter (Container-Relative Slider Tracking — Anti-Flying Standard) */}
+          {/* Monochromatic Architectural Drift Filter (Container-Relative Slider Tracking — Perfectly Centered) */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] select-none">
             {driftPill.position.ready && (
               <motion.div
-                className="absolute top-0.5 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                className="absolute top-0 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
                 initial={false}
                 animate={{
                   x: driftPill.position.x,
@@ -753,6 +754,9 @@ export default function GraphCanvas({
               );
             })}
           </div>
+
+          {/* Functional Divider */}
+          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
 
           {/* Direct Graph SVG Download */}
           <button
@@ -790,6 +794,7 @@ export default function GraphCanvas({
             >
               <ZoomIn className="w-3.5 h-3.5 text-current transition-colors" />
             </button>
+            <div className="w-px h-3 bg-slate-300 dark:bg-white/15 mx-0.5" />
             <button
               onClick={() => {
                 playClick();

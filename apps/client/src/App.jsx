@@ -1658,8 +1658,8 @@ export default function App() {
                 {/* Left: Terminal HUD (Resizable width on desktop, 1-click collapsible) */}
                 <div
                   data-tour="terminal-view"
-                  className={`w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                    isDemoLeftCollapsed ? 'lg:!w-0 border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
+                  className={`w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,min-width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+                    isDemoLeftCollapsed ? 'lg:!w-0 lg:!min-w-0 border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
                   }`}
                 >
                   <TerminalView
@@ -1672,12 +1672,14 @@ export default function App() {
                   />
                 </div>
 
-                {/* Draggable Mid-Section Divider Holder Button */}
+                {/* Draggable Mid-Section Divider Holder Button with Smooth Kinetic Transition */}
                 <div
                   onMouseDown={handleDemoSplitterMouseDown}
                   onDoubleClick={() => setIsDemoLeftCollapsed(prev => !prev)}
-                  className={`hidden ${isDemoLeftCollapsed ? 'hidden' : 'lg:flex'} w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
-                    isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
+                  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] group ${
+                    isDemoLeftCollapsed
+                      ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
+                      : `w-2.5 -mx-1 opacity-100 ${isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`
                   }`}
                   title="Drag to adjust width or double-click to collapse"
                 >

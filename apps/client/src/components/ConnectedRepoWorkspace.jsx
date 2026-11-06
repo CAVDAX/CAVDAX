@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
   CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
@@ -1024,7 +1024,7 @@ export default function ConnectedRepoWorkspace({
       {hasAdrs && (
         <div ref={splitContainerRef} className={`flex-1 min-h-0 flex flex-col lg:flex-row rounded-2xl overflow-hidden border border-slate-300 dark:border-white/15 shadow-sm ${isDraggingSplitter ? "select-none cursor-col-resize" : ""}`}>
           {/* Left: ADR files and activity — Adaptive theme styling for complete visual harmony */}
-          <div data-tour="repo-adrs" style={{ flex: isLeftCollapsed ? '0 0 0px' : `0 0 ${leftWidthPercent}%` }} className={`h-full overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 transition-[flex-basis,width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isLeftCollapsed ? 'lg:!min-w-0 lg:!w-0 opacity-0 pointer-events-none' : 'min-w-[280px] max-w-full lg:max-w-[70%] opacity-100'}`}>
+          <div data-tour="repo-adrs" style={{ flex: isLeftCollapsed ? '0 0 0px' : `0 0 ${leftWidthPercent}%` }} className={`h-full overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 transition-[flex-basis,min-width,width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${isLeftCollapsed ? 'lg:!min-w-0 lg:!w-0 opacity-0 pointer-events-none' : 'min-w-[280px] max-w-full lg:max-w-[70%] opacity-100'}`}>
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs font-mono bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />

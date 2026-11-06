@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   KeyRound,
   Eye,
@@ -63,8 +64,6 @@ export default function DevPatLoginModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -139,17 +138,32 @@ export default function DevPatLoginModal({
   };
 
   const modalContent = (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md animate-in fade-in duration-150"
-      onClick={() => {
-        playClick();
-        onClose();
-      }}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl overflow-hidden flex flex-col font-mono select-none"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <AnimatePresence>
+      {isOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 select-none font-mono"
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => {
+              playClick();
+              onClose();
+            }}
+            className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-md"
+          />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+            className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl overflow-hidden flex flex-col font-mono"
+            onClick={(e) => e.stopPropagation()}
+          >
         {/* Header */}
         <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-white/15 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -297,8 +311,10 @@ export default function DevPatLoginModal({
             </div>
           </form>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 
   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
