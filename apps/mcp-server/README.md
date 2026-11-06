@@ -123,4 +123,4 @@ npx cavdax ingest --repo .     # ADRs may declare decision_id / decision_title i
 
 ## License
 
-GPL-3.0 — © CAVDAX Team
+Apache-2.0 — © CAVDAX Authors & Contributors
