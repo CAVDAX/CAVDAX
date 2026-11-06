@@ -1254,3 +1254,45 @@ To maintain transparent attribution between human developers and AI pair program
 - **The Parity Principle**: Never implement guest checkout on financial sponsorship surfaces that promise in-app identity perks (such as Backer Wall avatar listing, profile halos, or Discord roles) without full auth parity with SaaS account tiers.
 - **The Unauthenticated State**: If a user is not signed in (`!user`), the primary CTA must clearly indicate `Sign In to Sponsor` with `<Lock />` affordance, redirecting safely via `/api/auth/github?returnTo=<current_route>`.
 - **Ephemeral Evaluation Segregation**: Hackathon evaluation passes and developer test bypasses must remain separate from public anonymous checkouts, using dedicated ephemeral tags (`is_evaluation: true`) that evaporate on mode disengagement without polluting canonical seed records.
+
+---
+
+## 19. Visual Verification & Automated UI Audit Invariants (Anti-Hallucination & Overlay Suppression)
+
+To ensure that automated visual testing, screenshot captures, and UI audit proofs represent reality and are never obscured or falsely claimed, all AI coding agents must follow these strict operational invariants:
+
+### 19.1 Mandatory Modal, Tour Guide & Scrim Suppression Protocol
+- **The Problem & Failure Scenario**:
+  During automated browser audits, onboarding walkthroughs, guided tours (e.g. `TourGuide`), announcement banners, feedback toasts, or auth popovers frequently trigger in the background due to empty session states or route switches.
+  When an agent captures a screenshot while a modal overlay or backdrop scrim is open, the target feature is completely obscured, rendering the audit screenshot useless, confusing developers, and leading to false claims of implementation.
+- **The Pre-Capture Cleanliness Invariant**:
+  Before calling `page.screenshot()` on any view:
+  1. **Purge Pending Triggers**: Explicitly clear pending tour/modal session states before navigation:
+     ```javascript
+     sessionStorage.removeItem('cavdax.tour.pending');
+     localStorage.setItem('cavdax.tour.seen', 'true');
+     localStorage.setItem('cavdax.tour.dismissed', 'true');
+     ```
+  2. **Active Dismissal & Escape Fallback**: Dispatch an explicit Escape keypress or dismiss active dialogs:
+     ```javascript
+     const activeDialog = document.querySelector('[role="dialog"], .tour-guide-overlay, [data-tour-step]');
+     if (activeDialog) {
+       await page.keyboard.press('Escape');
+     }
+     ```
+  3. **Assert Zero Scrims Before Snapshot**: Never capture a proof screenshot until verifying via DOM assertion that no obscuring overlay or backdrop scrim exists (`document.querySelectorAll('[role="dialog"]').length === 0`).
+
+### 19.2 Dual-Surface & Interactive Canvas vs. Exporter Invariant
+- **The Problem & Failure Scenario**:
+  Many complex components have dual visual representations:
+  - An **interactive runtime canvas** (e.g. live React JSX SVG nodes in `GraphCanvas.jsx`).
+  - A **static export/rasterization engine** (e.g. vector download in `handleDownloadGraph` or CLI rasterizer).
+  Agents frequently update the export helper or static generator and falsely assume the live canvas was also updated—or suffer a failed string replacement in the interactive JSX loop—claiming success while users see no change in the running application.
+- **The Invariant**:
+  1. **Dual-Surface Parity**: When changing geometry, typography, node styling, or colors, both the interactive render loop AND the export engine MUST be updated simultaneously.
+  2. **Live DOM Node Assertion**: Never declare a visual feature complete or claim it works based on a successful file write or clean build. The agent MUST run a live browser DOM assertion verifying that the expected HTML/SVG tags and attributes exist in the live running DOM (e.g., verifying `document.querySelectorAll('polygon').length > 0` for custom polygon nodes vs `rect`).
+
+### 19.3 Windows CRLF Multi-Line String Replacement Safety
+- **The Protocol**: On Windows systems where files may use CRLF line endings (`\r\n`), multi-line regex replacements in Node.js or Python can fail silently if newlines are mismatched.
+- **The Verification Rule**: Immediately after applying any programmatic file modification, the agent MUST run `git diff <file>` to inspect the unstaged diff and verify that the intended target block was actually modified as expected.
+
