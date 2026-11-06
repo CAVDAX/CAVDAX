@@ -668,10 +668,10 @@ export default function PreferencesModal({
               </div>
 
               {/* Live Invalidation Simulation Trigger */}
-              <div className="pt-2 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-between gap-2">
+              <div className="pt-2.5 border-t border-slate-200/60 dark:border-white/10 flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <div className="text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200">
-                    Pitch Showcase Trigger
+                    Test Invalidation Alert
                   </div>
                   <div className="text-[9px] text-slate-500 dark:text-slate-400 truncate">
                     Send real test invalidation email to your inbox
@@ -691,9 +691,9 @@ export default function PreferencesModal({
                   }
                 >
                   {isSimulatingAlert ? (
-                    <Loader2 size={11} className="animate-spin text-slate-500 dark:text-slate-400 shrink-0" />
+                    <Loader2 size={12} className="animate-spin text-slate-500 dark:text-slate-400 shrink-0" />
                   ) : (
-                    <Mail size={11} className="text-slate-500 dark:text-slate-400 shrink-0" />
+                    <Mail size={12} className="text-slate-500 dark:text-slate-400 shrink-0" />
                   )}
                   <span>{isSimulatingAlert ? 'Dispatching...' : 'Dispatch Test Alert'}</span>
                 </button>

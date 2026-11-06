@@ -575,7 +575,7 @@ export default function AuditPage() {
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] font-mono select-none">
             {verdictPill.position.ready && (
               <motion.div
-                className="absolute top-0.5 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
+                className="absolute top-0 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs border border-slate-300/60 dark:border-white/10 pointer-events-none"
                 initial={false}
                 animate={{
                   x: verdictPill.position.x,

@@ -26,6 +26,11 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
   const containerRef = useRef(null);
   const canvasRef = useRef(null);
   const [isVisible, setIsVisible] = useState(true);
+  const isDarkThemeRef = useRef(isDarkTheme);
+
+  useEffect(() => {
+    isDarkThemeRef.current = isDarkTheme;
+  }, [isDarkTheme]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -262,7 +267,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
 
     // ─── Theme Colors ────────────────────────────────────────────────────────
     const getColors = () => {
-      if (isDarkTheme) {
+      if (isDarkThemeRef.current) {
         return {
           source: '#ffffff',
           fact: '#cbd5e1',           // Slate-300
@@ -563,7 +568,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
             }
             const dist = Math.sqrt(distSq);
             // Crisp visibility in Dark Mode (up to 0.48 alpha) and Light Mode (0.36 alpha)
-            const edgeAlpha = (1 - dist / MAX_EDGE_DIST) * (isDarkTheme ? 0.48 : 0.36);
+            const edgeAlpha = (1 - dist / MAX_EDGE_DIST) * (isDarkThemeRef.current ? 0.48 : 0.36);
 
             ctx.strokeStyle = `${colors.edge}${edgeAlpha.toFixed(3)})`;
             ctx.beginPath();
@@ -602,7 +607,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
           const distSq = dx * dx + dy * dy;
           if (distSq < 140 * 140) {
             const dist = Math.sqrt(distSq);
-            const probeAlpha = (1 - dist / 140) * (isDarkTheme ? 0.48 : 0.38);
+            const probeAlpha = (1 - dist / 140) * (isDarkThemeRef.current ? 0.48 : 0.38);
             ctx.strokeStyle = `${colors.edge}${probeAlpha.toFixed(3)})`;
             ctx.setLineDash([2, 3]);
             ctx.beginPath();
@@ -625,7 +630,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
         const px = nA.x + (nB.x - nA.x) * pulse.progress;
         const py = nA.y + (nB.y - nA.y) * pulse.progress;
 
-        const pulseAlpha = Math.sin(pulse.progress * Math.PI) * (isDarkTheme ? 0.85 : 0.75);
+        const pulseAlpha = Math.sin(pulse.progress * Math.PI) * (isDarkThemeRef.current ? 0.85 : 0.75);
         ctx.fillStyle = colors.pulse;
         ctx.globalAlpha = pulseAlpha;
 
@@ -637,7 +642,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
         // Subtle soft glow
         ctx.beginPath();
         ctx.arc(px, py, 2.8, 0, Math.PI * 2);
-        ctx.fillStyle = isDarkTheme ? 'rgba(217, 163, 83, 0.20)' : 'rgba(180, 83, 9, 0.15)';
+        ctx.fillStyle = isDarkThemeRef.current ? 'rgba(217, 163, 83, 0.20)' : 'rgba(180, 83, 9, 0.15)';
         ctx.fill();
 
         ctx.globalAlpha = 1;
@@ -655,7 +660,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
         const fireflyBreath = 0.55 + 0.45 * Math.sin(n.pulse);
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.radius * 2.3, 0, Math.PI * 2);
-        ctx.fillStyle = isDarkTheme
+        ctx.fillStyle = isDarkThemeRef.current
           ? (n.type === 'decision' 
               ? `rgba(217, 163, 83, ${(0.18 * fireflyBreath).toFixed(3)})` 
               : `rgba(255, 255, 255, ${(0.10 * fireflyBreath).toFixed(3)})`)
@@ -667,8 +672,8 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
         // Delicate pulsing ring for decision nodes
         if (n.type === 'decision' || n.type === 'gate') {
           ctx.strokeStyle = n.type === 'decision' 
-            ? (isDarkTheme ? 'rgba(217, 163, 83, 0.24)' : 'rgba(180, 83, 9, 0.22)') 
-            : (isDarkTheme ? 'rgba(244, 63, 94, 0.24)' : 'rgba(225, 29, 72, 0.22)');
+            ? (isDarkThemeRef.current ? 'rgba(217, 163, 83, 0.24)' : 'rgba(180, 83, 9, 0.22)') 
+            : (isDarkThemeRef.current ? 'rgba(244, 63, 94, 0.24)' : 'rgba(225, 29, 72, 0.22)');
           ctx.lineWidth = 0.6;
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.radius + 2, 0, Math.PI * 2);
@@ -683,7 +688,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
 
         // White core center anchor for Source nodes
         if (n.type === 'source') {
-          ctx.fillStyle = isDarkTheme ? '#0B0D0E' : '#FFFFFF';
+          ctx.fillStyle = isDarkThemeRef.current ? '#0B0D0E' : '#FFFFFF';
           ctx.beginPath();
           ctx.arc(n.x, n.y, 0.9, 0, Math.PI * 2);
           ctx.fill();
@@ -692,7 +697,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
         // Delicate micro typography labels
         if (n.label) {
           ctx.font = '7.5px monospace';
-          ctx.fillStyle = isDarkTheme ? 'rgba(226, 232, 240, 0.32)' : 'rgba(71, 85, 105, 0.40)';
+          ctx.fillStyle = isDarkThemeRef.current ? 'rgba(226, 232, 240, 0.32)' : 'rgba(71, 85, 105, 0.40)';
           ctx.fillText(n.label, n.x + n.radius + 3, n.y + 2.5);
         }
       }
@@ -777,7 +782,7 @@ export default function SpotlightDataRain({ isDarkTheme = true, opacity = 1 }) {
       ro.disconnect();
       io.disconnect();
     };
-  }, [isDarkTheme]);
+  }, []);
 
   return (
     <div 

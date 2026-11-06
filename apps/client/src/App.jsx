@@ -1662,7 +1662,11 @@ export default function App() {
                     width: isDemoLeftCollapsed ? '0px' : `${demoLeftWidthPercent}%`,
                     flexBasis: isDemoLeftCollapsed ? '0px' : `${demoLeftWidthPercent}%`
                   }}
-                  className={`h-full min-w-0 overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis] ${
+                  className={`h-full min-w-0 overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 ${
+                    isDraggingDemoSplitter
+                      ? 'transition-none pointer-events-none select-none'
+                      : 'transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis]'
+                  } ${
                     isDemoLeftCollapsed ? 'border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
                   }`}
                 >
@@ -1682,7 +1686,7 @@ export default function App() {
                 <div
                   onMouseDown={handleDemoSplitterMouseDown}
                   onDoubleClick={() => setIsDemoLeftCollapsed(prev => !prev)}
-                  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group ${
+                  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
                     isDemoLeftCollapsed
                       ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
                       : `w-2.5 -mx-1 opacity-100 ${isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`

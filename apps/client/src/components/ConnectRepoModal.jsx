@@ -34,6 +34,12 @@ export default function ConnectRepoModal({
   const [customRepoUrl, setCustomRepoUrl] = useState('');
   const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
 
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '::1'
+  );
+
   // Architectural Scroll Cue & Rail Scrubber (Enclosed MCP Terminal Parity)
   const listContainerRef = useRef(null);
   const trackRef = useRef(null);
@@ -541,13 +547,15 @@ export default function ConnectRepoModal({
                           Your backend session was reset during deployment. Reconnect GitHub to load your repositories.
                         </p>
                         <div className="flex flex-wrap items-center justify-center gap-2">
-                          <a
-                            href={githubAuthUrl}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold hover:opacity-90 transition-opacity"
-                          >
-                            <Github className="w-3 h-3" />
-                            <span>Reconnect GitHub</span>
-                          </a>
+                          {!isLocalhost && (
+                            <a
+                              href={githubAuthUrl}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold hover:opacity-90 transition-opacity"
+                            >
+                              <Github className="w-3 h-3" />
+                              <span>Reconnect GitHub</span>
+                            </a>
+                          )}
                           <button
                             type="button"
                             onClick={() => {
@@ -557,7 +565,7 @@ export default function ConnectRepoModal({
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-mono text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
                           >
                             <KeyRound className="w-3 h-3" />
-                            <span>Use Token</span>
+                            <span>{isLocalhost ? 'Authenticate via PAT / .env' : 'Use Token'}</span>
                           </button>
                         </div>
                       </div>
@@ -590,27 +598,45 @@ export default function ConnectRepoModal({
             /* Unauthenticated Prompt */
             <div className="p-5 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/50 dark:bg-white/[0.02] text-center space-y-3">
               <p className="text-xs text-slate-600 dark:text-slate-400 font-sans">
-                Sign in with GitHub or use a personal token to view and connect your private and public repositories.
+                {isLocalhost
+                  ? 'Authenticate via Personal Access Token or local environment token to load your repositories.'
+                  : 'Sign in with GitHub or use a personal token to view and connect your private and public repositories.'}
               </p>
               <div className="flex flex-wrap items-center justify-center gap-2">
-                <a
-                  href={githubAuthUrl}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold hover:opacity-90 transition-opacity"
-                >
-                  <Github className="w-3.5 h-3.5" />
-                  <span>Connect with GitHub</span>
-                </a>
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setIsDevPatModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
-                >
-                  <KeyRound className="w-3.5 h-3.5" />
-                  <span>Use Personal Access Token</span>
-                </button>
+                {isLocalhost ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setIsDevPatModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold hover:opacity-90 transition-opacity cursor-pointer shadow-xs"
+                  >
+                    <KeyRound className="w-3.5 h-3.5" />
+                    <span>Authenticate Token / .env</span>
+                  </button>
+                ) : (
+                  <>
+                    <a
+                      href={githubAuthUrl}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      <Github className="w-3.5 h-3.5" />
+                      <span>Connect with GitHub</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setIsDevPatModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <KeyRound className="w-3.5 h-3.5" />
+                      <span>Use Personal Access Token</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           )}
