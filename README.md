@@ -7,9 +7,9 @@
   <h1>CAVDAX: Contextual Action &amp; Verified Decision Autonomous eXecution</h1>
   <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
   <p>
-    Built for the <strong>WeMakeDevs &times; FalkorDB Graph Hacks Hackathon (October 2026)</strong><br />
-    <span style="white-space: nowrap"><strong>Primary Track:</strong> Track 1 — Agents That Act on Connected Data</span><br />
-    <span style="white-space: nowrap"><strong>Coordination &amp; Memory Layer:</strong> Track 2 — Agent Memory and Coordination</span>
+    <strong>Deterministic Causal Verification Firewall for Autonomous Coding Agents</strong><br />
+    <span style="white-space: nowrap"><strong>Execution Gate:</strong> Model Context Protocol (MCP) Inline Verification</span> &bull; 
+    <span style="white-space: nowrap"><strong>Graph Engine:</strong> FalkorDB GraphBLAS Matrix Multiplication</span>
   </p>
 
   <p>
@@ -25,7 +25,7 @@
 <div align="center">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/CAVDAX/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/CAVDAX/CAVDAX/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.2.6)
+[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.2.7)
 [![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
@@ -39,17 +39,17 @@
 
 ---
 
-### Hackathon Track Alignment & Systemic Synthesis
+### Core Architecture: The Two-Plane Protection Model
 
-CAVDAX was engineered specifically for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**, strategically synthesizing **Track 1** and **Track 2**:
+CAVDAX synthesizes real-time pre-flight gating with multi-agent architectural memory:
 
-- 🕵️ **Track 1 — Agents That Act on Connected Data (Execution Core):**
+- 🛡️ **Execution Plane — Real-Time Causal Gating (MCP Core):**
   - **Multi-Hop Reasoning**: Evaluates complex, variable-length architectural dependency paths (`[:DEPENDS_ON*1..4]`) across decisions, facts, and source documents.
   - **Graph Queries as Agent Tools**: Exposes real-time Cypher verification directly to agents through the Model Context Protocol (MCP) (`verifyActionGate`, `get_architectural_blast_radius`).
   - **Actions Based on Graph Topology**: Coding agents cannot execute file writes without graph clearance; actions are approved or blocked based on live topological invariant clearance.
   - **Explainable Results & Provenance**: Returns complete mathematical proof paths (`violation_paths`) with line-level ADR citations, eliminating opaque agent hallucinations.
 
-- 🤖 **Track 2 — Agent Memory and Coordination (State & Memory Layer):**
+- 🤖 **State Plane — Multi-Agent Coordination & Memory Layer:**
   - **Procedural & Episodic Memory**: Stores persistent architectural rules, invariant constraints, and historical decision supersessions across sessions.
   - **Multi-Agent Coordination & Shared State**: Disparate agent runtimes (Cursor, Claude Code, Cline, Windsurf, and GitHub Actions CI) share the exact same FalkorDB graph state in real time.
   - **Multi-Tenant Graph Isolation**: Leverages FalkorDB's native multigraph topology to create completely isolated graphs per repository and branch (`cavdax_{repo}_{branch}`).
@@ -528,7 +528,7 @@ Alerts are dispatched **strictly to the registered owner or CODEOWNER of the aff
   * Delivers operating system-level desktop notifications even when browser tabs are closed.
 
 ### 3. Interactive Pitch & Demo Trigger (`/api/alerts/simulate-invalidation`)
-For live hackathon pitches and judging evaluations:
+For live team demonstrations and interactive architectural evaluation:
 * The HUD provides a **"Simulate Incompatible ADR Commit"** action in the Developer Console and Preferences.
 * Instantly triggers FalkorDB causal invalidation, broadcasts SSE to the live DAG canvas, and dispatches an authentic divergence alert to the evaluator's inbox with measured sub-second latency.
 
@@ -918,7 +918,7 @@ npx cavdax check --staged
 npx cavdax check --pr <number>
 
 # CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
-npx -y @cavdax/mcp-server@1.2.6 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
+npx -y @cavdax/mcp-server@1.2.7 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---
@@ -963,7 +963,7 @@ CAVDAX/
 ├── action.yml                   # Reusable composite GitHub Action (CAVDAX causal invalidation gate)
 ├── .github/workflows/           # CI pipeline + cavdax-gate.yml (PR blocking workflow)
 ├── docker-compose.yml           # Multi-container orchestration (FalkorDB, server, client)
-├── LICENSE                      # GNU General Public License v3.0
+├── LICENSE                      # Apache 2.0 (Client/MCP) / BSL 1.1 (Platform)
 └── package.json                 # Monorepo root scripts
 ```
 
@@ -971,7 +971,7 @@ CAVDAX/
 
 ## Team & Attribution
 
-Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**:
+Architected with passion by the **CAVDAX Core Team**:
 
 * **Suneet Chugh** ([@suneetchugh-dev](https://github.com/suneetchugh-dev)) — Lead Architect & Systems Engineer: FalkorDB GraphBLAS Causal Core, Enclosed MCP Gate, Visual Operational Console (9 Views), Cloudflare Edge Mesh & Empirical Benchmarks.
 * **Geetika Chugh** ([@GeetikaChughIBM](https://github.com/GeetikaChughIBM)) — Co-Creator & Systems Engineer: Official 10-Minute Demo Video Walkthrough, `@cavdax/mcp-server` NPM Distribution (Sigstore Provenance), GitHub Repo AST Scanner & Ingestion Engine, and Razorpay Sponsor Architecture.
