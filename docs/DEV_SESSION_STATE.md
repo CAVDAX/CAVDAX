@@ -9,6 +9,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.05 Decision Geometry Polish, Right-Corridor Intra-Column Arc Routing & FalkorDB Revalidation Idempotency (November 6, 2026)
+- **Zero-Collision Intra-Column Replacement Arcs (`GraphCanvas.jsx`)**:
+  - Re-routed bezier curves for `:Decision` replacements (`REPLACES`, `SUPERSEDES`) to arc to the right (`arcDir = +1`, $x + 40 + 45$) through the clear corridor between `:Decision` and `:AgentAction`.
+  - Eliminates line traffic and optical collision with incoming `DEPENDS_ON` edges from `:Fact` nodes, regardless of how many intermediate nodes are sandwiched vertically.
+  - Docked intra-column replacement curves cleanly to the diamond right vertex ($x+40, y$) while keeping the left vertex ($x-40, y$) exclusively reserved for incoming dependency edges.
+- **Accurate Diamond Vertex Docking for Straight Edges (`GraphCanvas.jsx`)**:
+  - Calibrated marker refX from 44 to 75 (`#arrow-decision`, `#dl-arrow-decision`).
+  - With marker scaling ($6/10 = 0.6$), $(75 - 8) \times 0.6 = 40.2\text{px}$ perfectly aligns the marker tip with the 40px horizontal vertex of the diamond, eliminating arrowhead slicing into the node interior.
+- **Bottom Canvas Buffer & Subtitle Clipping Elimination (`GraphCanvas.jsx`)**:
+  - Increased `bottomPadding` from 55px to 75px and minimum `computedHeight` from 440px to 480px.
+  - Set SVG `overflow: visible` to prevent browser viewBox boundaries from clipping the bottom `:Decision` label.
+- **FalkorDB Revalidation Idempotency Guard (`queries.js`, `App.jsx`)**:
+  - Upgraded Cypher `revalidateDecision` query from `CREATE (newDecision:Decision ...)` to idempotent `MERGE (newDecision:Decision {id: $newDecisionId})` with `SET` and `coalesce(newDecision.created_at, timestamp())`.
+  - Added edge deduplication guard in `App.jsx` offline fallback. Prevents phantom duplicated `DEC-103` nodes when Act IV is clicked repeatedly.
+  - Added defensive node deduplication Map in `GraphCanvas.jsx` to guarantee single-instance node rendering across live and simulated streams.
+- **Verification & Git Parity**:
+  - Production build passed (`npm run build` in 12.07s).
+  - Headless Puppeteer verification confirmed clean SVG viewBox (`0 0 880 480`), visible overflow, exactly 2 decisions, and smooth rightward intra-paths.
+
 ## 1.1.04 Decision Diamond Geometry, Workspace Screen Freeze Resolution & Container-Aware Ribbon (November 6, 2026)
 - **Decision Diamond Shape Invariant (`GraphCanvas.jsx`)**:
   - Implemented bespoke SVG diamond polygon (`0,-31 40,0 0,31 -40,0`) specifically for `:Decision` nodes, providing visual semantic differentiation from standard rounded rectangles while retaining identical edge-docking math.
