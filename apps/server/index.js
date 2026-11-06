@@ -2754,7 +2754,11 @@ app.get('/api/auth/github/callback', async (req, res) => {
  */
 app.get('/api/auth/me', (req, res) => {
   if (!req.session?.user) {
-    return res.status(200).json({ authenticated: false });
+    const hasEnvPat = !isProduction && Boolean(
+      (process.env.GITHUB_DEV_PAT && process.env.GITHUB_DEV_PAT.trim().length >= 10) ||
+      (process.env.GITHUB_TOKEN && process.env.GITHUB_TOKEN.trim().length >= 10)
+    );
+    return res.status(200).json({ authenticated: false, hasEnvPat });
   }
   const { githubId, login, name, avatarUrl } = req.session.user;
   res.json({ authenticated: true, user: { githubId, login, name, avatarUrl } });
@@ -2812,12 +2816,19 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
     });
   }
 
-  const { token } = req.body || {};
+  let { token, useEnv } = req.body || {};
+  if (useEnv || (!token && !isProduction)) {
+    const envCandidate = (process.env.GITHUB_DEV_PAT || process.env.GITHUB_TOKEN || '').trim();
+    if (envCandidate && envCandidate.length >= 10) {
+      token = envCandidate;
+    }
+  }
+
   if (!token || typeof token !== 'string') {
     return res.status(400).json({
       success: false,
       error: 'TOKEN_REQUIRED',
-      message: 'GitHub Personal Access Token is required.'
+      message: 'GitHub Personal Access Token is required (or set GITHUB_DEV_PAT in .env).'
     });
   }
 
