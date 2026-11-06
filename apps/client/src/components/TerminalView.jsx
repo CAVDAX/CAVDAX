@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp, PanelLeftClose } from 'lucide-react';
 import CavdaxAgentStateIndicator from './CavdaxAgentStateIndicator';
 
-export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle' }) {
+export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle', onCollapseSidebar }) {
   const logContainerRef = useRef(null);
   const trackRef = useRef(null);
   const thumbRef = useRef(null);
@@ -11,6 +11,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
   const [isFocused, setIsFocused] = useState(false);
   const isHoldingRef = useRef(false);
   const [isCodeCollapsed, setIsCodeCollapsed] = useState(false);
+  const [isLogsCollapsed, setIsLogsCollapsed] = useState(false);
   const rafIdRef = useRef(null);
 
   const updateScrollProgress = () => {
@@ -170,6 +171,18 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
               )}
             </div>
           )}
+
+          {onCollapseSidebar && (
+            <button
+              type="button"
+              onClick={onCollapseSidebar}
+              className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-1 hidden lg:flex items-center justify-center"
+              title="Collapse Terminal Sidebar"
+              aria-label="Collapse Terminal Sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -254,7 +267,9 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
 
       {/* Code Payload Inspector (Diff View - Collapsible) */}
       {latestAction && (
-        <div className="p-3 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 text-xs font-mono">
+        <div className={`p-3 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 text-xs font-mono transition-all duration-250 ${
+          isLogsCollapsed && !isCodeCollapsed ? 'flex-1 flex flex-col min-h-0' : ''
+        }`}>
           <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 mb-1.5">
             <div className="flex items-center gap-2 min-w-0">
               <button
@@ -265,11 +280,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
                 aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
                 aria-expanded={!isCodeCollapsed}
               >
-                {isCodeCollapsed ? (
-                  <ChevronDown className="w-3.5 h-3.5" />
-                ) : (
-                  <ChevronUp className="w-3.5 h-3.5" />
-                )}
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isCodeCollapsed ? '-rotate-90' : 'rotate-0'}`} />
               </button>
               <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate">
                 <FileCode className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
@@ -281,16 +292,51 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
             </span>
           </div>
 
-          {!isCodeCollapsed && (
-            <div data-lenis-prevent tabIndex={0} className="p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 hover-scrollbar text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed max-h-36 focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/15 animate-in fade-in duration-150">
-              <pre><code>{latestAction.codeSnippet}</code></pre>
+          <div className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isCodeCollapsed ? 'grid-rows-[0fr] opacity-0 pointer-events-none' : 'grid-rows-[1fr] opacity-100' + (isLogsCollapsed ? ' flex-1 min-h-0' : '')
+          }`}>
+            <div className={`overflow-hidden ${isLogsCollapsed ? 'h-full flex flex-col' : ''}`}>
+              <div
+                data-lenis-prevent
+                tabIndex={0}
+                className={`p-2.5 rounded-lg bg-white dark:bg-[#060709] border border-slate-300 dark:border-white/10 hover-scrollbar text-[11px] text-slate-900 dark:text-slate-200 leading-relaxed focus:outline-none focus:ring-1 focus:ring-slate-300 dark:focus:ring-white/15 ${
+                  isLogsCollapsed ? 'flex-1 overflow-y-auto' : 'max-h-36 overflow-y-auto'
+                }`}
+              >
+                <pre><code>{latestAction.codeSnippet}</code></pre>
+              </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 
+      {/* Terminal Logs Header (Collapsible) */}
+      <div className="px-3 py-1.5 bg-slate-100/90 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400 select-none shrink-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => setIsLogsCollapsed(prev => !prev)}
+            className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+            title={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"}
+            aria-label={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"}
+            aria-expanded={!isLogsCollapsed}
+          >
+            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isLogsCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+          </button>
+          <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate font-semibold">
+            <Terminal className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
+            Live Provenance Stream
+          </span>
+        </div>
+        <span className="text-[10px] px-1.5 py-0.5 rounded bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 font-mono shrink-0">
+          {terminalLogs.length} events
+        </span>
+      </div>
+
       {/* Terminal Log Console with Activated Architectural Scroll Cue */}
-      <div className="relative flex-1 min-h-0 flex flex-col overflow-hidden group/term">
+      <div className={`relative flex-col overflow-hidden group/term transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        isLogsCollapsed ? 'h-0 opacity-0 pointer-events-none' : 'flex-1 min-h-0 flex opacity-100'
+      }`}>
         <style>{`
           /* Pure Mini Scroll Cue Only: Browser scrollbars completely suppressed */
           .terminal-cue-only-scroll {

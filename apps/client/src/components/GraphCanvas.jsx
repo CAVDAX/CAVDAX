@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search } from 'lucide-react';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search, PanelLeftOpen } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import NodeInspector from './NodeInspector';
 import CommandPalette from './CommandPalette';
@@ -109,7 +109,9 @@ export default function GraphCanvas({
   onOpenSyncPr,
   isDemo = false,
   onTestDecision,
-  isVerifyingAction = false
+  isVerifyingAction = false,
+  isSidebarCollapsed = false,
+  onToggleSidebar
 }) {
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -676,6 +678,18 @@ export default function GraphCanvas({
       {/* Canvas Top Bar */}
       <div className="h-10 px-3 sm:px-4 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/15 flex items-center justify-between text-xs text-slate-800 dark:text-slate-300 gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
+          {isSidebarCollapsed && onToggleSidebar && (
+            <button
+              type="button"
+              onClick={onToggleSidebar}
+              className="p-1 rounded-md text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer flex items-center gap-1.5 font-mono text-[11px] mr-1 shrink-0"
+              title="Expand Sidebar (Restore Split View)"
+              aria-label="Expand Sidebar"
+            >
+              <PanelLeftOpen className="w-3.5 h-3.5 stroke-[1.75]" />
+              <span className="hidden sm:inline font-semibold">Sidebar</span>
+            </button>
+          )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
           <span className="font-mono font-semibold text-slate-900 dark:text-white truncate" title={title}>
             {title}
@@ -1143,8 +1157,10 @@ export default function GraphCanvas({
 
         {/* Unified Canvas HUD: Telemetry Counter + Monospace Topology Legend */}
         <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#0B0D11]/90 border border-slate-300 dark:border-white/15 rounded-lg px-3 py-1.5 text-[9px] sm:text-[10px] font-mono backdrop-blur-md shadow-md dark:shadow-xl pointer-events-none z-10 hidden sm:flex items-center gap-2.5">
-          <span className="text-slate-950 dark:text-white font-bold tracking-tight">
-            {nodes.length} Nodes • {edges.length} Edges
+          <span className="text-slate-950 dark:text-white font-bold tracking-tight flex items-center gap-2">
+            <span>{nodes.length} Nodes</span>
+            <span className="w-px h-2.5 bg-slate-300 dark:bg-white/20 shrink-0" aria-hidden="true" />
+            <span>{edges.length} Edges</span>
           </span>
           <span className="w-px h-3 bg-slate-300 dark:bg-white/20 shrink-0" aria-hidden="true" />
           <span className="text-slate-500 dark:text-slate-400 font-semibold">TOPOLOGY:</span>

@@ -1372,7 +1372,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 Verified Backers Directory
               </h2>
               <p className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5 [text-wrap:balance]">
-                Community patrons funding open causal verification and MCP tools.
+                Honoring the community champions and builders powering independent innovation.
               </p>
             </div>
           </div>
