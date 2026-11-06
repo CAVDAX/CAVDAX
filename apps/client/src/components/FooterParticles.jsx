@@ -669,7 +669,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
             <ul className="space-y-2.5 text-slate-600 dark:text-slate-400">
               <li>
                 <a
-                  href="https://github.com/suneetchugh-dev/CAVDAX"
+                  href="https://github.com/CAVDAX/CAVDAX"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => playClick()}
@@ -702,7 +702,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
               </li>
               <li>
                 <a
-                  href="https://github.com/suneetchugh-dev/CAVDAX/blob/main/LICENSE"
+                  href="https://github.com/CAVDAX/CAVDAX/blob/main/LICENSE"
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => playClick()}
