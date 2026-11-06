@@ -302,6 +302,18 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
        MUST be synchronized to the newly published release tag (`vX.Y.Z`).
      - **Release Verification Triple-Check**: Confirm that `gh release view vX.Y.Z` and `npm view @cavdax/mcp-server version` return matching release tags before closing the release loop.
 
+0aa. **Modal Viewport Parity & Hover-Revealed Code Editor Scrollbars (Clean Code Viewport Invariant)**:
+   - **The Viewport Asymmetry Anti-Pattern**:
+     - Having sibling integration modals or drawer dialogs (e.g. *Connect Autonomous AI Agent* vs *GitHub Actions CI/CD Invariant Gate* vs *Webhook Ingestion* vs *API Key Configuration*) with arbitrary, uneven heights (e.g. one `h-60` / 240px and another `max-h-96` / 384px).
+     - This creates jarring vertical jumps and layout disruption when switching between integration surfaces, disorienting developers and breaking visual cadence.
+     - **The Strict Invariant**: All sibling modal panels, integration drawers, and configuration viewers MUST maintain identical outer dimensions (`max-w-3xl w-full`) and identical code block container heights (`h-80` / 320px).
+   - **The Distracting Scrollbar Rail Anti-Pattern**:
+     - Default browser/OS scrollbar tracks (especially on Windows) draw clumsy grey vertical and horizontal rails across dark-mode terminal/code blocks (`bg-slate-950`), cluttering the interface even when the user is simply reading the code.
+     - **The Strict Invariant**: Every code block, terminal snippet, diff viewer, or YAML/JSON container MUST use `.hover-scrollbar` (or `[scrollbar-width:none] [&::-webkit-scrollbar]:hidden hover:[scrollbar-width:thin] hover:[&::-webkit-scrollbar]:block`):
+       1. **Idle State**: Scrollbar tracks and thumbs are 100% hidden. Pristine, uncluttered dark terminal typography.
+       2. **Continuous Scrolling**: Mousewheel and touchpad scrolling work smoothly and immediately at all times.
+       3. **Hover State**: An ultra-thin (5px), translucent, rounded thumb fades in smoothly to provide visual position feedback and draggable scrubbing for mouse-pointer users.
+
 
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
