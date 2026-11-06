@@ -1441,7 +1441,7 @@ export default function GraphCanvas({
             <span className="text-slate-700 dark:text-slate-300">:Fact</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rotate-45 rounded-[1px] bg-amber-500 dark:bg-amber-400" />
+            <span className="w-[7px] h-[7px] rotate-45 rounded-[0.5px] bg-amber-500 dark:bg-amber-400 shrink-0" />
             <span className="text-slate-700 dark:text-slate-300">:Decision</span>
           </div>
           <div className="flex items-center gap-1.5">
