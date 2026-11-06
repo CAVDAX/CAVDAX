@@ -58,5 +58,5 @@ export const SYSTEM_CREDITS = [
   { label: 'Graph Engine', value: 'FalkorDB GraphBLAS', detail: 'Linear algebraic sparse matrix operations in RAM' },
   { label: 'Agent Protocol', value: 'Model Context Protocol (MCP)', detail: 'Anthropic open standard (2024-11-05)' },
   { label: 'Gate SLA', value: '< 15ms Latency', detail: 'Zero perceptible delay during code generation' },
-  { label: 'License', value: 'GNU GPL v3.0', detail: '100% Open Source and community auditable' }
+  { label: 'License', value: 'Apache 2.0 / BSL 1.1', detail: 'Permissive Client/MCP Tools & Open Core Platform' }
 ];

@@ -646,7 +646,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
           </div>
         </div>
 
-        {/* Open Source GNU GPL 3.0 & Repo Information */}
+        {/* Open Core Dual-License (Apache 2.0 & BSL 1.1) & Repo Information */}
         <div id="project-license" className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
           {/* Box 1: Open Source License Guarantee */}
           <div className="neo-glass-card p-6 sm:p-7 flex flex-col justify-between">
@@ -654,11 +654,11 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
               <div className="flex items-center gap-2 mb-3">
                 <FileCode2 size={18} className="text-slate-800 dark:text-slate-200" />
                 <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-slate-950 dark:text-white">
-                  GNU General Public License v3.0
+                  Dual-Licensed: Apache 2.0 & BSL 1.1
                 </h3>
               </div>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans mb-3">
-                100% free and open-source software under GPL-3.0. Complete freedom to audit, run, self-host, and inspect the codebase.
+                Open-core architecture: Permissive Apache 2.0 for client packages (@cavdax/mcp-server) with zero copyleft risk; Business Source License 1.1 for multi-tenant cloud mesh.
               </p>
 
               {/* Key Guarantees (Simple point style matching Team Page Key Contributions) */}
@@ -682,9 +682,9 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
             </div>
 
             <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-xs font-mono">
-              <span className="text-slate-500">License: GPL-3.0</span>
+              <span className="text-slate-500">License: Apache 2.0 / BSL 1.1</span>
               <a 
-                href="https://www.gnu.org/licenses/gpl-3.0.html" 
+                href="https://github.com/CAVDAX/CAVDAX/blob/main/LICENSE" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-slate-800 dark:text-white hover:underline inline-flex items-center gap-1"

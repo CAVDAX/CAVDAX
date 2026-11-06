@@ -708,7 +708,7 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
                   onClick={() => playClick()}
                   className="hover:text-slate-950 dark:hover:text-white transition-colors block"
                 >
-                  GNU GPL-3.0 License
+                  Apache 2.0 / BSL 1.1 License
                 </a>
               </li>
             </ul>
