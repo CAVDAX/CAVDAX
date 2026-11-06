@@ -706,6 +706,39 @@ export default function PreferencesModal({
             </div>
           </div>
 
+          {/* 5. Keyboard Navigation & Tactical Shortcuts */}
+          <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-slate-50/90 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/15 transition-all">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center space-x-2.5 sm:space-x-3 flex-1 min-w-0">
+                <KeyboardIcon size={16} className="shrink-0 text-slate-900 dark:text-white" />
+                <div className="min-w-0">
+                  <div className="text-[11px] sm:text-xs font-semibold text-slate-950 dark:text-white leading-snug flex items-center gap-1.5">
+                    <span>Keyboard Navigation</span>
+                    <kbd className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-300 font-bold">
+                      ?
+                    </kbd>
+                  </div>
+                  <div className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                    Universal HUD, view switching & tactical keybindings
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  spinGear();
+                  playClick();
+                  if (onOpenShortcuts) onOpenShortcuts();
+                }}
+                className="h-7 px-3 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white text-[10px] font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-xs"
+                title="Open Keyboard Shortcuts Panel (?)"
+              >
+                <span>View Shortcuts</span>
+              </button>
+            </div>
+          </div>
+
 
         </div>
 
