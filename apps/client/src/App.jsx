@@ -200,7 +200,7 @@ export default function App() {
   // Draggable Mid-Section Divider state for Demo Sandbox (Terminal vs GraphCanvas)
   const demoSplitContainerRef = useRef(null);
   const [demoLeftWidthPercent, setDemoLeftWidthPercent] = useState(() => {
-    if (typeof window === 'undefined') return 41.66;
+    if (typeof window === 'undefined') return 39.6;
     try {
       const saved = localStorage.getItem('cavdax.demo.splitter.width');
       if (saved) {
@@ -208,7 +208,7 @@ export default function App() {
         if (!isNaN(val) && val >= 25 && val <= 65) return val;
       }
     } catch {}
-    return 42;
+    return 39.6;
   });
   const [isDraggingDemoSplitter, setIsDraggingDemoSplitter] = useState(false);
   const [isDemoLeftCollapsed, setIsDemoLeftCollapsed] = useState(false);

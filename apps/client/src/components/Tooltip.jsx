@@ -106,7 +106,16 @@ export default function Tooltip({
     setIsVisible(false);
   };
 
+  const handleClick = () => {
+    // Dismiss tooltip immediately when trigger is clicked (e.g. opens a popover, modal, or action)
+    setIsVisible(false);
+  };
+
   useLayoutEffect(() => {
+    if (disabled && isVisible) {
+      setIsVisible(false);
+      return;
+    }
     if (!disabled && isVisible && !isTouchDevice()) {
       calculatePosition();
     }
@@ -121,6 +130,7 @@ export default function Tooltip({
         onMouseLeave={handleMouseLeave}
         onFocus={handleMouseEnter}
         onBlur={handleMouseLeave}
+        onClick={handleClick}
       >
         {children}
       </div>
