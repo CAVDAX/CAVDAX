@@ -27,7 +27,7 @@
     "causal-dag"
   ],
   "author": "Suneet Chugh & Geetika Chugh",
-  "license": "GPL-3.0",
+  "license": "Apache-2.0",
   "devDependencies": {
     "puppeteer-core": "^25.15.0"
   },
