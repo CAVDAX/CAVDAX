@@ -1386,52 +1386,88 @@ export default function ConnectedRepoWorkspace({
         </div>
       )}
 
-      {/* Confirmation modal before opening starter PR on external repo (Hoisted via createPortal) */}
-      {showInitConfirmModal && typeof document !== 'undefined' && createPortal(
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowInitConfirmModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs font-mono animate-in fade-in">
-          <div data-lenis-prevent className="max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
-              <GitPullRequest className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
-              <h3 className="font-bold text-sm">Confirm Starter Pull Request</h3>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              CAVDAX will create branch <code className="font-mono px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200">cavdax/init-adr</code> and open a starter Pull Request on repository <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong>.
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-sans leading-relaxed">
-              Detected ecosystem manifests will be parsed to draft your initial Architecture Decision Record (ADR-001). Nothing is committed to <strong className="font-mono text-slate-800 dark:text-slate-200">{scan?.branch || repo.default_branch || 'main'}</strong> until you review and merge on GitHub.
-            </p>
-            <div className="pt-2 flex items-center justify-end gap-2 text-xs">
-              <button
-                onClick={() => {
-                  playClick();
-                  setShowInitConfirmModal(false);
-                }}
-                className={btnSecondary}
+      {/* Confirmation modal before opening starter PR on external repo (Hoisted via createPortal with smooth spring physics) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showInitConfirmModal && (
+            <div data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto font-mono">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { playClick(); setShowInitConfirmModal(false); }}
+                className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                data-lenis-prevent
+                className="relative max-w-md w-full bg-white dark:bg-[#0c0d11] border border-slate-300 dark:border-white/15 rounded-2xl p-6 shadow-2xl space-y-4 z-10"
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  setShowInitConfirmModal(false);
-                  openPullRequest();
-                }}
-                disabled={isOpeningPr}
-                className={btnPrimary}
-              >
-                <GitPullRequest className="w-4 h-4 shrink-0" />
-                <span>Confirm & Open PR</span>
-              </button>
+                <div className="flex items-center gap-2.5 text-slate-900 dark:text-white">
+                  <GitPullRequest className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
+                  <h3 className="font-bold text-sm">Confirm Starter Pull Request</h3>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+                  CAVDAX will create branch <code className="font-mono px-1 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-slate-200">cavdax/init-adr</code> and open a starter Pull Request on repository <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong>.
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-sans leading-relaxed">
+                  Detected ecosystem manifests will be parsed to draft your initial Architecture Decision Record (ADR-001). Nothing is committed to <strong className="font-mono text-slate-800 dark:text-slate-200">{scan?.branch || repo.default_branch || 'main'}</strong> until you review and merge on GitHub.
+                </p>
+                <div className="pt-2 flex items-center justify-end gap-2 text-xs">
+                  <button
+                    onClick={() => {
+                      playClick();
+                      setShowInitConfirmModal(false);
+                    }}
+                    className={btnSecondary}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowInitConfirmModal(false);
+                      openPullRequest();
+                    }}
+                    disabled={isOpeningPr}
+                    className={btnPrimary}
+                  >
+                    <GitPullRequest className="w-4 h-4 shrink-0" />
+                    <span>Confirm & Open PR</span>
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </div>
-        </div>,
+          )}
+        </AnimatePresence>,
         document.body
       )}
 
 
-      {/* 1. Contextual 1-Click Agent Setup Modal (Hoisted via createPortal) */}
-      {showAgentSetupModal && typeof document !== 'undefined' && createPortal(
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowAgentSetupModal(false); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
+      {/* 1. Contextual 1-Click Agent Setup Modal (Hoisted via createPortal with smooth spring physics) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showAgentSetupModal && (
+            <div data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { playClick(); setShowAgentSetupModal(false); }}
+                className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                data-lenis-prevent
+                className="relative max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto z-10"
+              >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <Terminal className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1585,15 +1621,34 @@ export default function ConnectedRepoWorkspace({
                 }, null, 2)}
               </pre>
             </div>
-          </div>
-        </div>,
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
 
-      {/* 2. 1-Click CI Gate Modal (Hoisted via createPortal) */}
-      {showCiGateModal && typeof document !== 'undefined' && createPortal(
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div data-lenis-prevent className="max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto">
+      {/* 2. 1-Click CI Gate Modal (Hoisted via createPortal with smooth spring physics) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showCiGateModal && (
+            <div data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { playClick(); setShowCiGateModal(false); setCiGatePrResult(null); }}
+                className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                data-lenis-prevent
+                className="relative max-w-3xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto z-10"
+              >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <GitBranch className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1728,15 +1783,34 @@ jobs:
                 </div>
               </>
             )}
-          </div>
-        </div>,
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
 
-      {/* 3. In-Console ADR Authoring & Supersession Modal (Hoisted via createPortal) */}
-      {showProposeAdrModal && typeof document !== 'undefined' && createPortal(
-        <div onClick={(e) => { if (e.target === e.currentTarget) { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); } }} data-lenis-prevent className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div data-lenis-prevent className="max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4">
+      {/* 3. In-Console ADR Authoring & Supersession Modal (Hoisted via createPortal with smooth spring physics) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showProposeAdrModal && (
+            <div data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { playClick(); setShowProposeAdrModal(false); setProposeAdrResult(null); }}
+                className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                data-lenis-prevent
+                className="relative max-w-xl w-full p-6 rounded-2xl bg-white dark:bg-[#0f1015] border border-slate-200 dark:border-white/10 shadow-2xl space-y-4 my-auto z-10"
+              >
             <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center gap-2.5">
                 <FileText className="w-5 h-5 text-slate-900 dark:text-white shrink-0" strokeWidth={2} />
@@ -1890,26 +1964,36 @@ jobs:
                 </div>
               </form>
             )}
-          </div>
-        </div>,
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
 
 
 
-            {/* 4. Interactive Custom MCP Action Simulator Modal (Hoisted via createPortal) */}
-      {showPlaygroundModal && typeof document !== 'undefined' && createPortal(
-        <div
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              playClick();
-              setShowPlaygroundModal(false);
-            }
-          }}
-          data-lenis-prevent
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto"
-        >
-          <div data-lenis-prevent className="max-w-2xl w-full my-auto">
+            {/* 4. Interactive Custom MCP Action Simulator Modal (Hoisted via createPortal with smooth spring physics) */}
+      {typeof document !== 'undefined' && createPortal(
+        <AnimatePresence>
+          {showPlaygroundModal && (
+            <div data-lenis-prevent className="fixed inset-0 z-[100] flex items-center justify-center p-4 overflow-y-auto">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => { playClick(); setShowPlaygroundModal(false); }}
+                className="fixed inset-0 bg-slate-950/70 backdrop-blur-md"
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 12 }}
+                transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                data-lenis-prevent
+                className="relative max-w-2xl w-full my-auto z-10"
+              >
             <McpActionPlayground
               repo={repo}
               decisions={decisions}
@@ -1926,8 +2010,10 @@ jobs:
                 );
               }}
             />
-          </div>
-        </div>,
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
         document.body
       )}
 
