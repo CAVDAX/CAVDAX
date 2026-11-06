@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search, PanelLeftOpen } from 'lucide-react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search, PanelLeftOpen, Share2, ChevronDown, Check } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import NodeInspector from './NodeInspector';
 import CommandPalette from './CommandPalette';
@@ -118,6 +118,9 @@ export default function GraphCanvas({
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState({ x: 0, y: 0 });
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isZoomMenuOpen, setIsZoomMenuOpen] = useState(false);
+  const [isCopiedPermalink, setIsCopiedPermalink] = useState(false);
+  const zoomMenuRef = useRef(null);
   const [simulatedBlastNode, setSimulatedBlastNode] = useState(null);
   const [driftFilter, setDriftFilter] = useState('ALL'); // 'ALL' | 'GROUNDED' | 'DRIFTED'
   const driftPill = usePillTracker(driftFilter);
@@ -172,6 +175,68 @@ export default function GraphCanvas({
     }
   };
 
+  // Dismiss zoom preset popover on outside click or Escape
+  useEffect(() => {
+    if (!isZoomMenuOpen) return;
+    const handleClickOutside = (e) => {
+      if (zoomMenuRef.current && !zoomMenuRef.current.contains(e.target)) {
+        setIsZoomMenuOpen(false);
+      }
+    };
+    const handleEsc = (e) => {
+      if (e.key === 'Escape') setIsZoomMenuOpen(false);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [isZoomMenuOpen]);
+
+  const handleFitToScreen = () => {
+    if (containerRef.current) {
+      const cw = containerRef.current.clientWidth;
+      const ch = containerRef.current.clientHeight;
+      const scaleX = (cw - 48) / 880;
+      const scaleY = (ch - 64) / Math.max(canvasHeight, 440);
+      const fitScale = Math.max(0.4, Math.min(1.4, Math.min(scaleX, scaleY)));
+      setZoom(Number(fitScale.toFixed(2)));
+      setPan({ x: 0, y: 0 });
+    } else {
+      setZoom(1);
+      setPan({ x: 0, y: 0 });
+    }
+  };
+
+  const handleSharePermalink = () => {
+    playClick();
+    let url = window.location.href;
+    try {
+      const parsed = new URL(window.location.href);
+      if (selectedNodeId) {
+        parsed.searchParams.set('node', selectedNodeId);
+      } else {
+        parsed.searchParams.delete('node');
+      }
+      url = parsed.toString();
+    } catch {
+      // fallback
+    }
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(url).then(() => {
+        setIsCopiedPermalink(true);
+        setTimeout(() => setIsCopiedPermalink(false), 2000);
+      }).catch(() => {
+        setIsCopiedPermalink(true);
+        setTimeout(() => setIsCopiedPermalink(false), 2000);
+      });
+    } else {
+      setIsCopiedPermalink(true);
+      setTimeout(() => setIsCopiedPermalink(false), 2000);
+    }
+  };
+
   const handleWheel = (e) => {
     e.preventDefault();
     const zoomFactor = -e.deltaY * 0.0012;
@@ -197,96 +262,118 @@ export default function GraphCanvas({
   const rawEdges = graphData?.edges || [];
 
   // Compute blast radius reachability when a node simulation is active
-  const { blastNodeIds, summary: blastSummary } = computeDownstreamBlast(rawNodes, rawEdges, simulatedBlastNode?.id);
+  const { blastNodeIds, summary: blastSummary } = useMemo(() => {
+    return computeDownstreamBlast(rawNodes, rawEdges, simulatedBlastNode?.id);
+  }, [rawNodes, rawEdges, simulatedBlastNode?.id]);
 
-  // Filter nodes based on architectural drift view
-  const filteredRawNodes = rawNodes.filter(node => {
-    if (driftFilter === 'GROUNDED') {
-      const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
-      const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
-      return !isStale && !isBlockedAction;
+  // Dynamic Hierarchical Columnar Layout Engine (Memoized across theme and state toggles)
+  const { nodes, edges, canvasHeight } = useMemo(() => {
+    const filteredRawNodes = rawNodes.filter(node => {
+      if (driftFilter === 'GROUNDED') {
+        const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
+        const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
+        return !isStale && !isBlockedAction;
+      }
+      if (driftFilter === 'DRIFTED') {
+        const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
+        const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
+        const hasDrift = unsyncedList.some(u => u.targetId === node.id);
+        return isStale || isBlockedAction || hasDrift || blastNodeIds.has(node.id);
+      }
+      return true;
+    });
+
+    const LAYER_X = {
+      Source: 95,
+      Fact: 295,
+      Decision: 495,
+      AgentAction: 715
+    };
+
+    const sources = filteredRawNodes
+      .filter(n => n.label === 'Source')
+      .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+
+    const facts = filteredRawNodes.filter(n => n.label === 'Fact');
+    const decisions = filteredRawNodes.filter(n => n.label === 'Decision');
+    const actions = filteredRawNodes.filter(n => n.label === 'AgentAction' || n.id?.startsWith('act-'));
+
+    const maxColumnItems = Math.max(sources.length, facts.length, decisions.length, actions.length, 1);
+    const computedHeight = Math.max(440, maxColumnItems * 95 + 40);
+
+    function getColumnYPositions(count, totalHeight) {
+      if (count <= 0) return [];
+      if (count === 1) return [totalHeight / 2];
+      if (count === 2) return [145, 295];
+      if (count === 3) return [95, 220, 345];
+      if (count === 4) return [60, 160, 260, 360];
+      const topPadding = 55;
+      const bottomPadding = 55;
+      const usable = totalHeight - topPadding - bottomPadding;
+      const step = usable / (count - 1);
+      return Array.from({ length: count }, (_, i) => Math.round(topPadding + i * step));
     }
-    if (driftFilter === 'DRIFTED') {
-      const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
-      const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
-      const hasDrift = unsyncedList.some(u => u.targetId === node.id);
-      return isStale || isBlockedAction || hasDrift || blastNodeIds.has(node.id);
+
+    const sourceYs = getColumnYPositions(sources.length, computedHeight);
+    const factYs = getColumnYPositions(facts.length, computedHeight);
+    const decYs = getColumnYPositions(decisions.length, computedHeight);
+
+    const calculatedPositions = new Map();
+
+    sources.forEach((s, idx) => {
+      calculatedPositions.set(s.id, { x: LAYER_X.Source, y: sourceYs[idx] });
+    });
+
+    facts.forEach((f, idx) => {
+      calculatedPositions.set(f.id, { x: LAYER_X.Fact, y: factYs[idx] });
+    });
+
+    decisions.forEach((d, idx) => {
+      calculatedPositions.set(d.id, { x: LAYER_X.Decision, y: decYs[idx] });
+    });
+
+    // Align AgentAction nodes with their target Decision whenever possible
+    const actionYs = getColumnYPositions(actions.length, computedHeight);
+    actions.forEach((act, idx) => {
+      const groundedEdge = rawEdges.find(e => (e.source === act.id && e.type === 'GROUNDED_IN') || (e.type === 'ACTION_ON' && e.source === act.id));
+      const targetDecId = groundedEdge?.target || act.decision_id;
+      const targetDecPos = targetDecId ? calculatedPositions.get(targetDecId) : null;
+      const posY = targetDecPos ? targetDecPos.y : actionYs[idx];
+      calculatedPositions.set(act.id, { x: LAYER_X.AgentAction, y: posY });
+    });
+
+    const computedNodes = filteredRawNodes.map((node) => {
+      const pos = calculatedPositions.get(node.id) || { x: LAYER_X[node.label] || 495, y: 220 };
+      return { ...node, ...pos };
+    });
+
+    const nodeMap = new Map(computedNodes.map(n => [n.id, n]));
+
+    const computedEdges = rawEdges.map(edge => {
+      const sourceNode = nodeMap.get(edge.source);
+      const targetNode = nodeMap.get(edge.target);
+      return { ...edge, sourceNode, targetNode };
+    }).filter(e => e.sourceNode && e.targetNode);
+
+    return { nodes: computedNodes, edges: computedEdges, canvasHeight: computedHeight };
+  }, [rawNodes, rawEdges, driftFilter, blastNodeIds, unsyncedList]);
+
+  // Auto-center on deep-linked node (?node=xyz) if provided
+  useEffect(() => {
+    if (typeof window === 'undefined' || !nodes || nodes.length === 0) return;
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const targetNodeId = params.get('node');
+      if (targetNodeId && (!selectedNodeId || selectedNodeId !== targetNodeId)) {
+        const found = nodes.find(n => n.id === targetNodeId);
+        if (found) {
+          handleNodeSelectAndCenter(found);
+        }
+      }
+    } catch {
+      // ignore
     }
-    return true;
-  });
-
-  // Dynamic Hierarchical Columnar Layout Engine
-  const LAYER_X = {
-    Source: 95,
-    Fact: 295,
-    Decision: 495,
-    AgentAction: 715
-  };
-
-  const sources = filteredRawNodes
-    .filter(n => n.label === 'Source')
-    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
-
-  const facts = filteredRawNodes.filter(n => n.label === 'Fact');
-  const decisions = filteredRawNodes.filter(n => n.label === 'Decision');
-  const actions = filteredRawNodes.filter(n => n.label === 'AgentAction' || n.id?.startsWith('act-'));
-
-  const maxColumnItems = Math.max(sources.length, facts.length, decisions.length, actions.length, 1);
-  const canvasHeight = Math.max(440, maxColumnItems * 95 + 40);
-
-  function getColumnYPositions(count, totalHeight) {
-    if (count <= 0) return [];
-    if (count === 1) return [totalHeight / 2];
-    if (count === 2) return [145, 295];
-    if (count === 3) return [95, 220, 345];
-    if (count === 4) return [60, 160, 260, 360];
-    const topPadding = 55;
-    const bottomPadding = 55;
-    const usable = totalHeight - topPadding - bottomPadding;
-    const step = usable / (count - 1);
-    return Array.from({ length: count }, (_, i) => Math.round(topPadding + i * step));
-  }
-
-  const sourceYs = getColumnYPositions(sources.length, canvasHeight);
-  const factYs = getColumnYPositions(facts.length, canvasHeight);
-  const decYs = getColumnYPositions(decisions.length, canvasHeight);
-
-  const calculatedPositions = new Map();
-
-  sources.forEach((s, idx) => {
-    calculatedPositions.set(s.id, { x: LAYER_X.Source, y: sourceYs[idx] });
-  });
-
-  facts.forEach((f, idx) => {
-    calculatedPositions.set(f.id, { x: LAYER_X.Fact, y: factYs[idx] });
-  });
-
-  decisions.forEach((d, idx) => {
-    calculatedPositions.set(d.id, { x: LAYER_X.Decision, y: decYs[idx] });
-  });
-
-  // Align AgentAction nodes with their target Decision whenever possible
-  const actionYs = getColumnYPositions(actions.length, canvasHeight);
-  actions.forEach((act, idx) => {
-    const groundedEdge = rawEdges.find(e => (e.source === act.id && e.type === 'GROUNDED_IN') || (e.type === 'ACTION_ON' && e.source === act.id));
-    const targetDecId = groundedEdge?.target || act.decision_id;
-    const targetDecPos = targetDecId ? calculatedPositions.get(targetDecId) : null;
-    const posY = targetDecPos ? targetDecPos.y : actionYs[idx];
-    calculatedPositions.set(act.id, { x: LAYER_X.AgentAction, y: posY });
-  });
-
-  const nodes = filteredRawNodes.map((node) => {
-    const pos = calculatedPositions.get(node.id) || { x: LAYER_X[node.label] || 495, y: 220 };
-    return { ...node, ...pos };
-  });
-
-  const nodeMap = new Map(nodes.map(n => [n.id, n]));
-
-  const edges = rawEdges.map(edge => {
-    const sourceNode = nodeMap.get(edge.source);
-    const targetNode = nodeMap.get(edge.target);
-    return { ...edge, sourceNode, targetNode };
-  }).filter(e => e.sourceNode && e.targetNode);
+  }, [graphData]);
 
   function getNodeColors(node) {
     const inBlast = blastNodeIds.has(node.id);
@@ -675,9 +762,10 @@ export default function GraphCanvas({
       ref={containerRef}
       className={`h-full flex flex-col bg-slate-50 dark:bg-[#060709] relative overflow-hidden select-none${isFullscreen && isDarkTheme ? ' dark' : ''}`}
     >
-      {/* Canvas Top Bar */}
-      <div className="h-10 px-3 sm:px-4 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/15 flex items-center justify-between text-xs text-slate-800 dark:text-slate-300 gap-2">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+      {/* Canvas Top Bar: Balanced 3-Zone Optical Layout */}
+      <div className="h-10 px-3 sm:px-4 bg-slate-100 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/15 flex items-center justify-between text-xs text-slate-800 dark:text-slate-300 gap-2 sm:gap-3">
+        {/* Zone 1: Identity & Context (Left Anchored) */}
+        <div className="flex items-center gap-2 min-w-0 shrink-0">
           {isSidebarCollapsed && onToggleSidebar && (
             <button
               type="button"
@@ -690,19 +778,18 @@ export default function GraphCanvas({
             </button>
           )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
-          <span className="font-mono font-semibold text-slate-900 dark:text-white truncate" title={title}>
+          <span className="font-mono font-semibold text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] md:max-w-none" title={title}>
             {title}
           </span>
           <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />
         </div>
 
-        {/* Feature Controls: Search (Cmd+K / Ctrl+K), Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
-        <div className="flex items-center gap-2 shrink-0 font-mono">
-          {/* Command Palette Trigger (Linear/Supabase-Style Pseudo-Input Bar) */}
+        {/* Zone 2: Centered Command Omnibar (Fluid Width, Center-Anchored) */}
+        <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
           <button
             type="button"
             onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center justify-between w-36 sm:w-44 md:w-52 h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors tactile-btn cursor-pointer shadow-2xs"
+            className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
             title={`Search DAG Nodes (${searchKbd})`}
             aria-label={`Search DAG Nodes (${searchKbd})`}
           >
@@ -714,7 +801,10 @@ export default function GraphCanvas({
               {searchKbd}
             </kbd>
           </button>
+        </div>
 
+        {/* Zone 3: Canvas Controls & Actions (Right Anchored) */}
+        <div className="flex items-center gap-2 shrink-0 font-mono">
           {/* Monochromatic Architectural Drift Filter (Container-Relative Slider Tracking — Perfectly Centered) */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/5 border border-slate-300/70 dark:border-white/10 rounded-lg p-0.5 text-[10px] select-none">
             {driftPill.position.ready && (
@@ -758,58 +848,159 @@ export default function GraphCanvas({
           {/* Functional Divider */}
           <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
 
-          {/* Direct Graph SVG Download */}
-          <button
-            type="button"
-            onClick={handleDownloadGraph}
-            className="p-1.5 rounded-lg hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer mr-1"
-            title="Download Vector Graph (SVG)"
-            aria-label="Download Vector Graph (SVG)"
-          >
-            <Download className="w-3.5 h-3.5 text-current transition-colors" />
-          </button>
+          {/* Action Tools Cluster: Direct SVG Download & Node Permalink Sharing */}
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={handleDownloadGraph}
+              className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+              title="Download Vector Graph (SVG)"
+              aria-label="Download Vector Graph (SVG)"
+            >
+              <Download className="w-3.5 h-3.5 text-current transition-colors" />
+            </button>
 
-          {/* Zoom & Fullscreen Controls */}
-          <div className="flex items-center gap-0.5 border-l border-slate-300 dark:border-white/15 pl-1.5">
             <button
+              type="button"
+              onClick={handleSharePermalink}
+              className={`p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors tactile-btn cursor-pointer ${
+                isCopiedPermalink
+                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                  : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+              }`}
+              title={
+                isCopiedPermalink
+                  ? "Permalink copied to clipboard!"
+                  : selectedNodeId
+                  ? `Copy Node Permalink (${selectedNodeId})`
+                  : "Copy Graph View Link"
+              }
+              aria-label="Copy Graph Permalink"
+            >
+              {isCopiedPermalink ? (
+                <Check className="w-3.5 h-3.5 text-emerald-500" />
+              ) : (
+                <Share2 className="w-3.5 h-3.5 text-current transition-colors" />
+              )}
+            </button>
+          </div>
+
+          {/* Functional Divider */}
+          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
+
+          {/* Segmented Zoom Readout Pill with Linear/Figma Preset Dropdown */}
+          <div className="relative flex items-center bg-slate-200/60 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-300/80 dark:border-white/10 shadow-xs">
+            <button
+              type="button"
               onClick={() => {
                 playClick();
-                setZoom(z => Math.max(0.6, z - 0.1));
+                setZoom(z => Math.max(0.4, Number((z - 0.1).toFixed(2))));
               }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn"
+              className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
               title="Zoom Out"
+              aria-label="Zoom Out"
             >
-              <ZoomOut className="w-3.5 h-3.5 text-current transition-colors" />
+              <ZoomOut className="w-3 h-3 text-current transition-colors" />
             </button>
-            <span className="text-[10px] font-mono text-slate-600 dark:text-slate-400 w-8 text-center font-semibold">
-              {Math.round(zoom * 100)}%
-            </span>
+
+            <div ref={zoomMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  setIsZoomMenuOpen(v => !v);
+                }}
+                className="px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-white dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
+                title="Zoom Presets & Framing"
+                aria-label="Zoom Presets & Framing"
+              >
+                <span className="text-[10px] font-mono font-semibold w-7 text-center">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <ChevronDown className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+              </button>
+
+              {isZoomMenuOpen && (
+                <div
+                  className="absolute right-0 top-full mt-1.5 w-32 py-1 bg-white dark:bg-[#12161f] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl z-50 backdrop-blur-md font-mono text-[11px]"
+                >
+                  {[
+                    { label: '50%', value: 0.5 },
+                    { label: '75%', value: 0.75 },
+                    { label: '100%', value: 1.0 },
+                    { label: '125%', value: 1.25 },
+                    { label: '150%', value: 1.5 },
+                    { label: '200%', value: 2.0 },
+                  ].map(preset => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => {
+                        playClick();
+                        setZoom(preset.value);
+                        setIsZoomMenuOpen(false);
+                      }}
+                      className={`w-full px-2.5 py-1 text-left flex items-center justify-between hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer ${
+                        Math.round(zoom * 100) === Math.round(preset.value * 100)
+                          ? 'text-cyan-600 dark:text-cyan-400 font-bold'
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{preset.label}</span>
+                      {Math.round(zoom * 100) === Math.round(preset.value * 100) && (
+                        <Check className="w-3 h-3 text-cyan-500" />
+                      )}
+                    </button>
+                  ))}
+                  <div className="h-px bg-slate-200 dark:bg-white/10 my-1" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      handleFitToScreen();
+                      setIsZoomMenuOpen(false);
+                    }}
+                    className="w-full px-2.5 py-1 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-sans"
+                  >
+                    Fit to Screen
+                  </button>
+                </div>
+              )}
+            </div>
+
             <button
+              type="button"
               onClick={() => {
                 playClick();
-                setZoom(z => Math.min(2.2, z + 0.1));
+                setZoom(z => Math.min(2.5, Number((z + 0.1).toFixed(2))));
               }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn"
+              className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
               title="Zoom In"
+              aria-label="Zoom In"
             >
-              <ZoomIn className="w-3.5 h-3.5 text-current transition-colors" />
+              <ZoomIn className="w-3 h-3 text-current transition-colors" />
             </button>
-            <div className="w-px h-3 bg-slate-300 dark:bg-white/15 mx-0.5" />
+          </div>
+
+          {/* Reset & Fullscreen Controls */}
+          <div className="flex items-center gap-0.5">
             <button
               onClick={() => {
                 playClick();
                 setZoom(1);
                 setPan({ x: 0, y: 0 });
               }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn"
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
               title="Reset View"
+              aria-label="Reset View"
             >
               <RotateCcw className="w-3.5 h-3.5 text-current transition-colors" />
             </button>
             <button
               onClick={toggleFullscreen}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn"
+              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
               title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"}
+              aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"}
             >
               {isFullscreen ? (
                 <Minimize2 className="w-3.5 h-3.5 text-current transition-colors" />

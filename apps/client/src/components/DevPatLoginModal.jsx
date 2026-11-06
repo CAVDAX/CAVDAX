@@ -35,14 +35,30 @@ export default function DevPatLoginModal({
   const [token, setToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isEnvLoggingIn, setIsEnvLoggingIn] = useState(false);
+  const [hasEnvPat, setHasEnvPat] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const inputRef = useRef(null);
+
+  const isLocalhost = typeof window !== 'undefined' && (
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1' ||
+    window.location.hostname === '::1'
+  );
 
   useEffect(() => {
     if (isOpen) {
       setErrorMessage('');
       setToken('');
       setShowToken(false);
+      fetch('/api/auth/me', { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => {
+          if (data?.hasEnvPat) {
+            setHasEnvPat(true);
+          }
+        })
+        .catch(() => {});
       const timer = setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus();
@@ -64,6 +80,64 @@ export default function DevPatLoginModal({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  const handleEnvLogin = async () => {
+    setIsEnvLoggingIn(true);
+    setErrorMessage('');
+    playClick();
+
+    try {
+      const res = await fetch('/api/auth/dev-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ useEnv: true })
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.message || data.error || 'Authentication with .env token failed.');
+        setIsEnvLoggingIn(false);
+        return;
+      }
+
+      playApprovalChime();
+
+      const user = data.user;
+      try {
+        localStorage.setItem(
+          'cavdax_user_session',
+          JSON.stringify({
+            username: user.login,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
+            connectedAt: new Date().toISOString()
+          })
+        );
+      } catch {}
+
+      window.dispatchEvent(
+        new CustomEvent('cavdax:user-changed', {
+          detail: {
+            login: user.login,
+            name: user.name || user.login,
+            avatarUrl: user.avatarUrl || '',
+            role: 'user'
+          }
+        })
+      );
+
+      if (onSuccess) {
+        onSuccess(user);
+      }
+      onClose();
+    } catch (err) {
+      setErrorMessage('Failed to connect to authentication server: ' + err.message);
+    } finally {
+      setIsEnvLoggingIn(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
@@ -194,29 +268,77 @@ export default function DevPatLoginModal({
 
         {/* Content Body */}
         <div className="p-4 sm:p-5 space-y-4">
-          {/* Method 1: Official GitHub OAuth */}
-          <div className="space-y-1.5">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                window.location.href = `/api/auth/github?returnTo=${encodeURIComponent(returnTo || '/profile')}`;
-              }}
-              className="w-full h-10 rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950 font-mono text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-xs cursor-pointer tactile-btn"
-            >
-              <Github className="w-4 h-4 shrink-0" />
-              <span>Continue with GitHub OAuth</span>
-            </button>
-            <p className="text-[10px] text-center text-slate-500 dark:text-slate-400 font-sans">
-              Recommended for hosted cloud & web users (1-click access)
-            </p>
-          </div>
+          {/* Method 1: Official GitHub OAuth (Cloud / Production) or Localhost Notice */}
+          {isLocalhost ? (
+            <div className="p-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/70 dark:bg-white/[0.02] flex items-center justify-between text-xs font-mono">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-500" />
+                <span className="font-semibold text-xs">Localhost Mode</span>
+              </div>
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans">OAuth domain restricted</span>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  window.location.href = `/api/auth/github?returnTo=${encodeURIComponent(returnTo || '/profile')}`;
+                }}
+                className="w-full h-10 rounded-xl bg-slate-950 text-white dark:bg-white dark:text-slate-950 font-mono text-xs font-semibold hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-xs cursor-pointer tactile-btn"
+              >
+                <Github className="w-4 h-4 shrink-0" />
+                <span>Continue with GitHub OAuth</span>
+              </button>
+              <p className="text-[10px] text-center text-slate-500 dark:text-slate-400 font-sans">
+                Recommended for hosted cloud & web users (1-click access)
+              </p>
+            </div>
+          )}
+
+          {/* Optional .env Token 1-Click Login */}
+          {hasEnvPat && (
+            <div className="p-3.5 rounded-xl border border-slate-300/80 dark:border-white/15 bg-slate-100/70 dark:bg-white/5 space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="w-3.5 h-3.5 text-slate-950 dark:text-white" />
+                  <span className="text-xs font-mono font-semibold text-slate-950 dark:text-white">
+                    Environment Token Detected
+                  </span>
+                </div>
+                <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-white/10 text-slate-800 dark:text-slate-200">
+                  GITHUB_DEV_PAT
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans leading-relaxed">
+                Token found in local environment. Authenticate in one click without copying.
+              </p>
+              <button
+                type="button"
+                onClick={handleEnvLogin}
+                disabled={isLoading || isEnvLoggingIn}
+                className="w-full h-8 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 font-mono text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2 cursor-pointer shadow-xs"
+              >
+                {isEnvLoggingIn ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <span>Validating .env Token...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-3 h-3" />
+                    <span>Authenticate with .env Token</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
 
           {/* Divider */}
-          <div className="relative flex items-center my-2">
+          <div className="relative flex items-center my-1.5">
             <div className="flex-grow border-t border-slate-200 dark:border-white/10" />
             <span className="flex-shrink mx-3 text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              or use personal access token
+              {hasEnvPat ? 'or enter token manually' : 'or use personal access token'}
             </span>
             <div className="flex-grow border-t border-slate-200 dark:border-white/10" />
           </div>

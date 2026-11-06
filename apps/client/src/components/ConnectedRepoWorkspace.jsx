@@ -1030,7 +1030,11 @@ export default function ConnectedRepoWorkspace({
               width: isLeftCollapsed ? '0px' : `${leftWidthPercent}%`,
               flexBasis: isLeftCollapsed ? '0px' : `${leftWidthPercent}%`
             }}
-            className={`h-full min-w-0 overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 shrink-0 transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis] ${
+            className={`h-full min-w-0 overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 shrink-0 ${
+              isDraggingSplitter
+                ? 'transition-none pointer-events-none select-none'
+                : 'transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis]'
+            } ${
               isLeftCollapsed ? 'border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
             }`}
           >
@@ -1340,7 +1344,7 @@ export default function ConnectedRepoWorkspace({
           <div
             onMouseDown={handleSplitterMouseDown}
             onDoubleClick={() => setIsLeftCollapsed(prev => !prev)}
-            className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group ${
+            className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
               isLeftCollapsed
                 ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
                 : `w-2.5 -mx-1 opacity-100 ${isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`

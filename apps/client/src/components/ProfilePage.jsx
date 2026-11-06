@@ -485,7 +485,16 @@ export default function ProfilePage({
     const activeUser = user || getActiveDevSession();
     if (!activeUser) {
       playClick();
-      window.location.href = '/api/auth/github?returnTo=/profile';
+      const isLocalhost = typeof window !== 'undefined' && (
+        window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname === '::1'
+      );
+      if (isLocalhost) {
+        setIsDevPatModalOpen(true);
+      } else {
+        window.location.href = '/api/auth/github?returnTo=/profile';
+      }
       return;
     }
 
