@@ -208,7 +208,7 @@ export default function App() {
         if (!isNaN(val) && val >= 25 && val <= 65) return val;
       }
     } catch {}
-    return 41.66;
+    return 35;
   });
   const [isDraggingDemoSplitter, setIsDraggingDemoSplitter] = useState(false);
   const [isDemoLeftCollapsed, setIsDemoLeftCollapsed] = useState(false);
