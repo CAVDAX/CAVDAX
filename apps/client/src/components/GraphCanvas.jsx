@@ -280,7 +280,16 @@ export default function GraphCanvas({
 
   // Dynamic Hierarchical Columnar Layout Engine (Memoized across theme and state toggles)
   const { nodes, edges, canvasHeight } = useMemo(() => {
-    const filteredRawNodes = rawNodes.filter(node => {
+    // Defensive deduplication: ensure unique node IDs across demo and live graph streams
+    const uniqueRawNodesMap = new Map();
+    for (const node of rawNodes) {
+      if (node?.id && !uniqueRawNodesMap.has(node.id)) {
+        uniqueRawNodesMap.set(node.id, node);
+      }
+    }
+    const deduplicatedRawNodes = Array.from(uniqueRawNodesMap.values());
+
+    const filteredRawNodes = deduplicatedRawNodes.filter(node => {
       if (driftFilter === 'GROUNDED') {
         const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
         const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
@@ -311,16 +320,16 @@ export default function GraphCanvas({
     const actions = filteredRawNodes.filter(n => n.label === 'AgentAction' || n.id?.startsWith('act-'));
 
     const maxColumnItems = Math.max(sources.length, facts.length, decisions.length, actions.length, 1);
-    const computedHeight = Math.max(440, maxColumnItems * 95 + 40);
+    const computedHeight = Math.max(480, maxColumnItems * 95 + 65);
 
     function getColumnYPositions(count, totalHeight) {
       if (count <= 0) return [];
       if (count === 1) return [totalHeight / 2];
-      if (count === 2) return [145, 295];
-      if (count === 3) return [95, 220, 345];
-      if (count === 4) return [60, 160, 260, 360];
+      if (count === 2) return [145, 305];
+      if (count === 3) return [95, 230, 365];
+      if (count === 4) return [65, 165, 265, 375];
       const topPadding = 55;
-      const bottomPadding = 55;
+      const bottomPadding = 75;
       const usable = totalHeight - topPadding - bottomPadding;
       const step = usable / (count - 1);
       return Array.from({ length: count }, (_, i) => Math.round(topPadding + i * step));
@@ -613,7 +622,7 @@ export default function GraphCanvas({
           <marker id="dl-arrow-blast" viewBox="0 0 10 10" refX="38" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
           </marker>
-          <marker id="dl-arrow-decision" viewBox="0 0 10 10" refX="44" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <marker id="dl-arrow-decision" viewBox="0 0 10 10" refX="75" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${isDarkTheme ? "#475569" : "#94A3B8"}" />
           </marker>
           <marker id="dl-arrow-intracolumn-default" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -665,13 +674,13 @@ export default function GraphCanvas({
         const ty = edge.targetNode.y + 45;
 
         if (isIntraColumn) {
-          const isSrcDecision = edge.sourceNode.label === "Decision";
-          const isTgtDecision = edge.targetNode.label === "Decision";
-          const srcX = isSrcDecision ? edge.sourceNode.x - 40 : edge.sourceNode.x - 32;
-          const tgtX = isTgtDecision ? edge.targetNode.x - 40 : edge.targetNode.x - 32;
+          const isDecisionCol = edge.sourceNode.label === "Decision" || edge.targetNode.label === "Decision";
           const arcOffset = 45;
-          const pathD = `M ${srcX} ${sy} C ${srcX - arcOffset} ${sy}, ${tgtX - arcOffset} ${ty}, ${tgtX} ${ty}`;
-          const midX = Math.min(srcX, tgtX) - arcOffset / 2;
+          const arcDir = isDecisionCol ? 1 : -1;
+          const srcX = edge.sourceNode.label === "Decision" ? edge.sourceNode.x + 40 : (edge.sourceNode.x + arcDir * 32);
+          const tgtX = edge.targetNode.label === "Decision" ? edge.targetNode.x + 40 : (edge.targetNode.x + arcDir * 32);
+          const pathD = `M ${srcX} ${sy} C ${srcX + arcDir * arcOffset} ${sy}, ${tgtX + arcDir * arcOffset} ${ty}, ${tgtX} ${ty}`;
+          const midX = isDecisionCol ? (Math.max(srcX, tgtX) + arcOffset / 2) : (Math.min(srcX, tgtX) - arcOffset / 2);
           const midY = (sy + ty) / 2;
           const dlIntraMarker = isBlast
             ? "url(#dl-arrow-intracolumn-blast)"
@@ -1162,6 +1171,7 @@ export default function GraphCanvas({
           className="w-full h-full"
           viewBox={`0 0 880 ${canvasHeight}`}
           style={{
+            overflow: 'visible',
             transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)`,
             transformOrigin: 'center center',
             transition: isPanning ? 'none' : 'transform 0.12s ease-out'
@@ -1210,7 +1220,7 @@ export default function GraphCanvas({
             <marker
               id="arrow-decision"
               viewBox="0 0 10 10"
-              refX="44"
+              refX="75"
               refY="5"
               markerWidth="6"
               markerHeight="6"
@@ -1310,14 +1320,16 @@ export default function GraphCanvas({
             const badgeH = 14;
 
             if (isIntraColumn) {
-              // Smooth bezier curve looping on the left to avoid crossing intermediate nodes
-              const isSrcDecision = edge.sourceNode.label === "Decision";
-              const isTgtDecision = edge.targetNode.label === "Decision";
-              const srcX = isSrcDecision ? edge.sourceNode.x - 40 : edge.sourceNode.x - 32;
-              const tgtX = isTgtDecision ? edge.targetNode.x - 40 : edge.targetNode.x - 32;
+              // Option A + D: Smooth bezier curve looping on the RIGHT for decisions, LEFT for sources
+              // Routes through the open corridor between :Decision and :AgentAction,
+              // eliminating line crossings with incoming DEPENDS_ON edges.
+              const isDecisionCol = edge.sourceNode.label === "Decision" || edge.targetNode.label === "Decision";
               const arcOffset = 45;
-              const pathD = `M ${srcX} ${edge.sourceNode.y} C ${srcX - arcOffset} ${edge.sourceNode.y}, ${tgtX - arcOffset} ${edge.targetNode.y}, ${tgtX} ${edge.targetNode.y}`;
-              const midX = Math.min(srcX, tgtX) - arcOffset / 2;
+              const arcDir = isDecisionCol ? 1 : -1;
+              const srcX = edge.sourceNode.label === "Decision" ? edge.sourceNode.x + 40 : (edge.sourceNode.x + arcDir * 32);
+              const tgtX = edge.targetNode.label === "Decision" ? edge.targetNode.x + 40 : (edge.targetNode.x + arcDir * 32);
+              const pathD = `M ${srcX} ${edge.sourceNode.y} C ${srcX + arcDir * arcOffset} ${edge.sourceNode.y}, ${tgtX + arcDir * arcOffset} ${edge.targetNode.y}, ${tgtX} ${edge.targetNode.y}`;
+              const midX = isDecisionCol ? (Math.max(srcX, tgtX) + arcOffset / 2) : (Math.min(srcX, tgtX) - arcOffset / 2);
               const midY = (edge.sourceNode.y + edge.targetNode.y) / 2;
 
               const liveIntraMarker = isBlast
