@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp, PanelLeftClose } from 'lucide-react';
 import CavdaxAgentStateIndicator from './CavdaxAgentStateIndicator';
+import Tooltip from './Tooltip.jsx';
 
 export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle', onCollapseSidebar }) {
   const logContainerRef = useRef(null);
@@ -173,15 +174,16 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
           )}
 
           {onCollapseSidebar && (
-            <button
-              type="button"
-              onClick={onCollapseSidebar}
-              className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-1 hidden lg:flex items-center justify-center"
-              title="Collapse Terminal Sidebar"
-              aria-label="Collapse Terminal Sidebar"
-            >
-              <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
-            </button>
+            <Tooltip content="Collapse Terminal Sidebar" position="bottom">
+              <button
+                type="button"
+                onClick={onCollapseSidebar}
+                className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-1 hidden lg:flex items-center justify-center"
+                aria-label="Collapse Terminal Sidebar"
+              >
+                <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -272,16 +274,17 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
         }`}>
           <div className="flex items-center justify-between text-slate-600 dark:text-slate-400 mb-1.5">
             <div className="flex items-center gap-2 min-w-0">
-              <button
-                type="button"
-                onClick={() => setIsCodeCollapsed(prev => !prev)}
-                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
-                title={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
-                aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
-                aria-expanded={!isCodeCollapsed}
-              >
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isCodeCollapsed ? '-rotate-90' : 'rotate-0'}`} />
-              </button>
+              <Tooltip content={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"} position="bottom">
+                <button
+                  type="button"
+                  onClick={() => setIsCodeCollapsed(prev => !prev)}
+                  className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                  aria-label={isCodeCollapsed ? "Expand code diff preview" : "Collapse code diff preview"}
+                  aria-expanded={!isCodeCollapsed}
+                >
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isCodeCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+                </button>
+              </Tooltip>
               <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate">
                 <FileCode className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
                 Target: <span className="text-slate-950 dark:text-white font-bold truncate">{latestAction.filePath}</span>
@@ -313,16 +316,17 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
       {/* Terminal Logs Header (Collapsible) */}
       <div className="px-3 py-1.5 bg-slate-100/90 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400 select-none shrink-0">
         <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={() => setIsLogsCollapsed(prev => !prev)}
-            className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
-            title={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"}
-            aria-label={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"}
-            aria-expanded={!isLogsCollapsed}
-          >
-            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isLogsCollapsed ? '-rotate-90' : 'rotate-0'}`} />
-          </button>
+          <Tooltip content={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"} position="bottom">
+            <button
+              type="button"
+              onClick={() => setIsLogsCollapsed(prev => !prev)}
+              className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+              aria-label={isLogsCollapsed ? "Expand live terminal logs" : "Collapse live terminal logs"}
+              aria-expanded={!isLogsCollapsed}
+            >
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isLogsCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+            </button>
+          </Tooltip>
           <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate font-semibold">
             <Terminal className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
             Live Provenance Stream
@@ -359,7 +363,7 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
               ? 'opacity-100'
               : 'opacity-0 group-hover/term:opacity-100'
           }`}
-          title="Click or drag to scrub terminal output (Arrow keys enabled on click)"
+          
           aria-label="Terminal scroll cue and rail scrubber"
         >
           {/* Architectural Rail Line: subtle glow on panel focus/hover, solid on drag */}

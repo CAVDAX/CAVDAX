@@ -1551,10 +1551,10 @@ export default function App() {
             <div className="flex items-center gap-2 flex-wrap">
               {/* Dual-Mode Workspace Dropdown (Roadmap §5.3) */}
               <div className="relative" ref={workspaceRef}>
+                <Tooltip content="Switch Workspace Mode" position="bottom">
                 <button
                   onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
                   className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none"
-                  title="Switch between the canonical 4-Act demo and live connected repositories"
                 >
                   {activeWorkspace === "demo" ? (
                     <SlidersHorizontal className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -1568,6 +1568,7 @@ export default function App() {
                   </span>
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isWorkspaceDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
+                </Tooltip>
 
                 <AnimatePresence>
                   {isWorkspaceDropdownOpen && (
@@ -1642,6 +1643,7 @@ export default function App() {
                               </button>
                               <div className="flex items-center gap-1 shrink-0 ml-2">
                                 {activeWorkspace === repo.id && <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white shrink-0" />}
+                                <Tooltip content="Disconnect from workspace" position="left">
                                 <button
                                   type="button"
                                   onClick={(e) => {
@@ -1649,11 +1651,12 @@ export default function App() {
                                     playClick();
                                     handleDisconnectRepo(repo.id);
                                   }}
-                                  title="Disconnect repository from workspace"
                                   className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                  aria-label="Disconnect repository from workspace"
                                 >
                                   <Unlink className="w-3 h-3" />
                                 </button>
+                                </Tooltip>
                               </div>
                             </div>
                           ))}
@@ -1666,29 +1669,33 @@ export default function App() {
               </div>
 
               {/* Upfront Connect Repo Action (Eliminating Mystery Meat Navigation) */}
-              <button
-                onClick={() => {
-                  playClick();
-                  setIsConnectRepoModalOpen(true);
-                }}
-                className="h-7 px-2.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs tactile-btn"
-                title="Connect a live GitHub repository"
-              >
-                <Plus className="w-3.5 h-3.5 text-white dark:text-slate-950 shrink-0" />
-                <span>Connect Repo</span>
-              </button>
+              <Tooltip content="Connect a live GitHub repository" position="bottom">
+                <button
+                  onClick={() => {
+                    playClick();
+                    setIsConnectRepoModalOpen(true);
+                  }}
+                  className="h-7 px-2.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs tactile-btn"
+                  aria-label="Connect a live GitHub repository"
+                >
+                  <Plus className="w-3.5 h-3.5 text-white dark:text-slate-950 shrink-0" />
+                  <span>Connect Repo</span>
+                </button>
+              </Tooltip>
               {/* Tour Guide Action */}
-              <button
-                onClick={() => {
-                  playClick();
-                  handleOpenTour(activeWorkspace === "demo" || !selectedConnectedRepo ? "console" : "repo");
-                }}
-                className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs group"
-                title="Start interactive guided tour (Press T)"
-              >
-                <Compass className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 group-hover:rotate-45 transition-transform duration-300" />
-                <span>Tour</span>
-              </button>
+              <Tooltip content="Start interactive guided tour" shortcut="T" position="bottom">
+                <button
+                  onClick={() => {
+                    playClick();
+                    handleOpenTour(activeWorkspace === "demo" || !selectedConnectedRepo ? "console" : "repo");
+                  }}
+                  className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-800 dark:text-slate-200 text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs group"
+                  aria-label="Start interactive guided tour (Press T)"
+                >
+                  <Compass className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 group-hover:rotate-45 transition-transform duration-300" />
+                  <span>Tour</span>
+                </button>
+              </Tooltip>
             </div>
           </div>
 
