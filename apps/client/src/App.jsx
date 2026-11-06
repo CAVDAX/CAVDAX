@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Lenis from 'lenis';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, SlidersHorizontal, Unlink, Zap, AlertTriangle, X } from 'lucide-react';
 import Header from './components/Header.jsx';
 import SplashLoader from './components/SplashLoader.jsx';
@@ -1517,13 +1518,20 @@ export default function App() {
                   <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isWorkspaceDropdownOpen ? "rotate-180" : ""}`} />
                 </button>
 
-                {isWorkspaceDropdownOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40"
-                      onClick={() => setIsWorkspaceDropdownOpen(false)}
-                    />
-                    <div className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 font-mono text-xs">
+                <AnimatePresence>
+                  {isWorkspaceDropdownOpen && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setIsWorkspaceDropdownOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 z-50 font-mono text-xs"
+                      >
                       <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-white/10 mb-1">
                         <span>Workspace Mode</span>
                       </div>
@@ -1605,9 +1613,10 @@ export default function App() {
                         </div>
                       )}
 
-                    </div>
+                    </motion.div>
                   </>
                 )}
+              </AnimatePresence>
               </div>
 
               {/* Upfront Connect Repo Action (Eliminating Mystery Meat Navigation) */}

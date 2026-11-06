@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check, Search } from 'lucide-react';
 import { playClick } from '../utils/soundFx.js';
 
@@ -107,12 +108,17 @@ export default function Combobox({
       </button>
 
       {/* Popover Dropdown Menu */}
-      {isOpen && (
-        <div
-          role="listbox"
-          tabIndex={-1}
-          className={`absolute z-50 mt-1 min-w-[200px] w-full sm:min-w-[240px] max-w-[340px] p-1.5 rounded-xl border border-slate-200 dark:border-white/15 bg-white/95 dark:bg-[#0d0d10]/95 backdrop-blur-xl shadow-2xl flex flex-col gap-1 right-0 sm:left-0 sm:right-auto animate-in fade-in-0 zoom-in-95 duration-100 ${dropdownClassName}`}
-        >
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            role="listbox"
+            tabIndex={-1}
+            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -4 }}
+            transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+            className={`absolute z-50 mt-1 min-w-[200px] w-full sm:min-w-[240px] max-w-[340px] p-1.5 rounded-xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#0d0d10] shadow-2xl flex flex-col gap-1 right-0 sm:left-0 sm:right-auto ${dropdownClassName}`}
+          >
           {/* Search box if enabled or more than 4 items */}
           {searchable && (
             <div className="p-1 border-b border-slate-100 dark:border-white/10 mb-1">
@@ -168,8 +174,9 @@ export default function Combobox({
               })
             )}
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -767,8 +767,15 @@ export default function ConnectedRepoWorkspace({
                   <ChevronDown className="w-3 h-3 text-slate-400 shrink-0 ml-0.5" />
                 </button>
 
+                <AnimatePresence>
                 {isBranchDropdownOpen && (
-                  <div className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 max-w-[90vw] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0c0e] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute left-0 top-full mt-1.5 w-72 sm:w-80 max-w-[90vw] rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c0c0e] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans"
+                  >
                     <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-white/[0.02]">
                       <div className="flex items-center justify-between gap-1 text-[11px] font-bold text-slate-900 dark:text-slate-100 mb-1.5 px-1 font-mono">
                         <span>Switch branch</span>
@@ -867,8 +874,9 @@ export default function ConnectedRepoWorkspace({
                         </div>
                       )}
                     </div>
-                  </div>
+                    </motion.div>
                 )}
+              </AnimatePresence>
               </div>
 
               {/* Immediate header-level "Rescan Branch" button */}

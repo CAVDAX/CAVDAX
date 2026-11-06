@@ -416,8 +416,15 @@ export default function NodeInspector({
                   <ChevronDown className={`w-3 h-3 text-slate-400 shrink-0 transition-transform duration-150 ${isFilesComboboxOpen ? 'rotate-180' : ''}`} />
                 </button>
 
+                <AnimatePresence>
                 {isFilesComboboxOpen && (
-                  <div className="absolute left-0 top-full mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111318] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans">
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                    transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                    className="absolute left-0 top-full mt-1 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#111318] shadow-xl z-50 overflow-hidden text-left flex flex-col font-sans"
+                  >
                     <div className="p-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-white/[0.02]">
                       <div className="relative">
                         <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -473,8 +480,9 @@ export default function NodeInspector({
                         </div>
                       )}
                     </div>
-                  </div>
+                  </motion.div>
                 )}
+                </AnimatePresence>
               </div>
             )}
           </div>
