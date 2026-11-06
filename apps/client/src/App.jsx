@@ -186,6 +186,7 @@ export default function App() {
     return 41.66;
   });
   const [isDraggingDemoSplitter, setIsDraggingDemoSplitter] = useState(false);
+  const [isDemoLeftCollapsed, setIsDemoLeftCollapsed] = useState(false);
 
   const handleDemoSplitterMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -1654,10 +1655,12 @@ export default function App() {
                 style={{ '--demo-left-width': `${demoLeftWidthPercent}%` }}
                 className="flex-1 min-h-0 flex flex-col lg:flex-row rounded-2xl overflow-hidden console-split-container select-none"
               >
-                {/* Left: Terminal HUD (Resizable width on desktop) */}
+                {/* Left: Terminal HUD (Resizable width on desktop, 1-click collapsible) */}
                 <div
                   data-tour="terminal-view"
-                  className="w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0"
+                  className={`w-full lg:w-[var(--demo-left-width)] h-full overflow-hidden border-b lg:border-b-0 border-slate-300 dark:border-white/10 shrink-0 transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                    isDemoLeftCollapsed ? 'lg:!w-0 border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
+                  }`}
                 >
                   <TerminalView
                     terminalLogs={terminalLogs}
@@ -1665,16 +1668,18 @@ export default function App() {
                     latestAction={latestAction}
                     currentAct={currentAct}
                     agentState={agentState}
+                    onCollapseSidebar={() => setIsDemoLeftCollapsed(true)}
                   />
                 </div>
 
                 {/* Draggable Mid-Section Divider Holder Button */}
                 <div
                   onMouseDown={handleDemoSplitterMouseDown}
-                  className={`hidden lg:flex w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
+                  onDoubleClick={() => setIsDemoLeftCollapsed(prev => !prev)}
+                  className={`hidden ${isDemoLeftCollapsed ? 'hidden' : 'lg:flex'} w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
                     isDraggingDemoSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
                   }`}
-                  title="Drag to adjust Terminal and Graph width"
+                  title="Drag to adjust width or double-click to collapse"
                 >
                   <div
                     className={`w-1 h-10 rounded-full transition-colors ${
@@ -1696,6 +1701,8 @@ export default function App() {
                       onCloseNode={() => setSelectedNode(null)}
                       isDarkTheme={isDarkTheme}
                       isDemo={true}
+                      isSidebarCollapsed={isDemoLeftCollapsed}
+                      onToggleSidebar={() => setIsDemoLeftCollapsed(prev => !prev)}
                     />
                   </SubsystemErrorBoundary>
                 </div>

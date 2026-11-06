@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
-  CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu } from 'lucide-react';
+  CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
@@ -161,6 +161,7 @@ export default function ConnectedRepoWorkspace({
     }
   });
   const [isDraggingSplitter, setIsDraggingSplitter] = useState(false);
+  const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
   const splitContainerRef = useRef(null);
 
   // Load repository branches for the branch selector
@@ -1023,26 +1024,37 @@ export default function ConnectedRepoWorkspace({
       {hasAdrs && (
         <div ref={splitContainerRef} className={`flex-1 min-h-0 flex flex-col lg:flex-row rounded-2xl overflow-hidden border border-slate-300 dark:border-white/15 shadow-sm ${isDraggingSplitter ? "select-none cursor-col-resize" : ""}`}>
           {/* Left: ADR files and activity — Adaptive theme styling for complete visual harmony */}
-          <div data-tour="repo-adrs" style={{ flex: `0 0 ${leftWidthPercent}%` }} className="h-full overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 min-w-[280px] max-w-full lg:max-w-[70%]">
+          <div data-tour="repo-adrs" style={{ flex: isLeftCollapsed ? '0 0 0px' : `0 0 ${leftWidthPercent}%` }} className={`h-full overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 transition-[flex-basis,width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${isLeftCollapsed ? 'lg:!min-w-0 lg:!w-0 opacity-0 pointer-events-none' : 'min-w-[280px] max-w-full lg:max-w-[70%] opacity-100'}`}>
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs font-mono bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span className="font-bold text-slate-950 dark:text-white">ADRs in this repository</span>
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">({scan.count} files)</span>
               </div>
-              <button
-                type="button"
-                onClick={() => {
-                  playClick();
-                  setProposeAdrResult(null);
-                  setShowProposeAdrModal(true);
-                }}
-                className="px-2 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer shadow-xs"
-                title="Draft a new Architecture Decision Record (ADR) and open a pull request"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Propose ADR</span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setProposeAdrResult(null);
+                    setShowProposeAdrModal(true);
+                  }}
+                  className="px-2 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                  title="Draft a new Architecture Decision Record (ADR) and open a pull request"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Propose ADR</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsLeftCollapsed(true)}
+                  className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 hidden lg:flex items-center justify-center"
+                  title="Collapse ADR Panel"
+                  aria-label="Collapse ADR Panel"
+                >
+                  <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
+                </button>
+              </div>
             </div>
 
             <div className="relative border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent">
@@ -1316,17 +1328,18 @@ export default function ConnectedRepoWorkspace({
           {/* Draggable Splitter Handle */}
           <div
             onMouseDown={handleSplitterMouseDown}
-            className={`hidden lg:flex w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
+            onDoubleClick={() => setIsLeftCollapsed(prev => !prev)}
+            className={`hidden ${isLeftCollapsed ? 'hidden' : 'lg:flex'} w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
               isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
             }`}
-            title="Drag to adjust ADR Panel and Graph width"
+            title="Drag to adjust ADR Panel and Graph width, or double-click to collapse"
           >
             <div className={`w-1 h-10 rounded-full transition-colors ${
               isDraggingSplitter ? 'bg-slate-900 dark:bg-white' : 'bg-slate-300 dark:bg-white/20 group-hover:bg-slate-400 dark:group-hover:bg-white/40'
             }`} />
           </div>
 
-          <div data-tour="repo-canvas" style={{ flex: '1 1 0%' }} className="h-full relative overflow-hidden bg-slate-50 dark:bg-slate-950 min-w-[320px]">
+          <div data-tour="repo-canvas" style={{ flex: '1 1 0%' }} className="h-full relative overflow-hidden bg-slate-50 dark:bg-slate-950 min-w-0">
             <SubsystemErrorBoundary name="Repository Knowledge Graph Canvas">
               <GraphCanvas
                 title="Repository Decision Graph"
@@ -1348,6 +1361,8 @@ export default function ConnectedRepoWorkspace({
                 }}
                 onTestDecision={testDecision}
                 isVerifyingAction={Boolean(verifyingDecisionId)}
+                isSidebarCollapsed={isLeftCollapsed}
+                onToggleSidebar={() => setIsLeftCollapsed(prev => !prev)}
               />
             </SubsystemErrorBoundary>
           </div>

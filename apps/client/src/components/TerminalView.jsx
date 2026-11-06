@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp } from 'lucide-react';
+import { Terminal, AlertTriangle, CheckCircle2, Clock, FileCode, Cpu, ChevronDown, ChevronUp, PanelLeftClose } from 'lucide-react';
 import CavdaxAgentStateIndicator from './CavdaxAgentStateIndicator';
 
-export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle' }) {
+export default function TerminalView({ terminalLogs, activeVerdict, latestAction, currentAct, agentState = 'idle', onCollapseSidebar }) {
   const logContainerRef = useRef(null);
   const trackRef = useRef(null);
   const thumbRef = useRef(null);
@@ -170,6 +170,18 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
                 </span>
               )}
             </div>
+          )}
+
+          {onCollapseSidebar && (
+            <button
+              type="button"
+              onClick={onCollapseSidebar}
+              className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 ml-1 hidden lg:flex items-center justify-center"
+              title="Collapse Terminal Sidebar"
+              aria-label="Collapse Terminal Sidebar"
+            >
+              <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
+            </button>
           )}
         </div>
       </div>
