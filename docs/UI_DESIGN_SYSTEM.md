@@ -3710,3 +3710,92 @@ Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches
 ### 65.5 Canvas Viewport HUD vs. Top Action Ribbon Separation
 * **Top Ribbon**: Strictly reserved for primary interactive controls (Title, Search `Ctrl+K`, Filter Presets, SVG Export, Zoom, Fullscreen).
 * **Viewport HUD**: Passive canvas telemetry (node/edge counts, scale factors) belongs inside floating HUD overlays anchored within the canvas viewport alongside legends, eliminating top toolbar horizontal crowding on compact displays.
+
+---
+
+## 66. Kinetic Non-Jerky Split-Pane Collapse & Persistent Draggable Sizing
+
+### 66.1 The Splitter Collapse Jerk Invariant
+* **The Failure Mode**: In traditional flexbox/grid split views, collapsing a left/right panel while toggling the divider handle with `display: none` (`hidden`) causes an instantaneous layout snap at $t = 0$. The sibling pane (e.g. the DAG canvas) suddenly expands by the divider's width (10px) before the CSS width transition of the collapsible pane even begins, creating an unsightly visual jerk.
+* **The Fluid Invariant**: Never unmount or set `display: none` on draggable splitter handles during collapse. Instead, retain the divider element in the flex layout while animating its layout metrics smoothly:
+  ```tsx
+  className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] group ${
+    isLeftCollapsed
+      ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
+      : `w-2.5 -mx-1 opacity-100 ${isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`
+  }`}
+  ```
+* **Collapsible Pane Minimum Width Overrides**: Flex children often enforce implicit minimum widths. When collapsing, enforce `lg:!min-w-0 lg:!w-0 border-r-0 opacity-0 pointer-events-none` with `transition-[width,min-width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)]` (or `transition-[flex-basis,min-width,width,opacity]`).
+
+### 66.2 Paired Collapse Controls & Solitary Icon Standard
+* **Panel-Embedded Close**: Embed a subtle `<PanelLeftClose />` icon button inside the collapsible sidebar's header.
+* **Canvas Top Bar Restore Button**: Embed a solitary `<PanelLeftOpen />` icon button in the canvas top bar that only renders when the sidebar is collapsed.
+* **Zero Text Clutter**: NEVER append redundant text labels (e.g. banned: `[ |> Sidebar ]` or `<PanelLeftOpen /> Sidebar`). Modern professional interfaces (Figma, VS Code, Linear) use solitary, high-craft icon buttons with explicit accessible `title` and `aria-label` attributes (`"Expand Sidebar (Restore Split View)"`).
+* **Divider Double-Click Invariant**: Preserve `onDoubleClick` directly on the mid-section splitter handle to toggle between the user's custom persisted split ratio and the collapsed full-canvas view without requiring manual dragging.
+
+---
+
+## 67. Ribbon Ergonomics: Command Pseudo-Inputs, Hairline Dividers & Centered Pill Tracking
+
+### 67.1 Command Palette Pseudo-Input Bar vs. Micro-Trigger Buttons
+* **The Empty Negative Space Problem**: A tiny 60px–70px icon button for Search placed in a wide desktop top bar (1200px+) leaves an expansive, awkward void of dead space between identity tokens and filter presets.
+* **The Linear/Supabase Standard**: Upgrade the search trigger to a command pseudo-input bar (`w-36 sm:w-44 md:w-52 h-7 px-2.5`) with:
+  - Search icon (`<Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />`)
+  - Subtle placeholder text: `<span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>`
+  - Keyboard shortcut badge: `<kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400">{searchKbd}</kbd>`
+* This preserves the tactile instant-open behavior (`Cmd+K` / `Ctrl+K`) while providing visual equilibrium and communicating immediate searchability.
+
+### 67.2 Functional 1px Hairline Dividers
+* In multi-tool ribbons, group related controls and cleanly delineate boundaries using 1px vertical hairline dividers (`<div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />`).
+* Demarcate:
+  1. Identity Cluster (Sidebar Toggle + Title) $\rightarrow$ Divider
+  2. Query & Filter Cluster (Command Search + Segmented Drift Tabs) $\rightarrow$ Divider
+  3. Action Cluster (SVG Export) $\rightarrow$ Divider
+  4. Viewport Cluster (Zoom In/Out + Viewport Reset + Fullscreen)
+
+### 67.3 The Double-Padding Trap on Container-Relative Sliding Pills
+* **The Glitch**: When a container has padding (e.g. `p-0.5` / 2px), any child button's `el.offsetTop` is calculated relative to the container's inner padding box (i.e. `2px`).
+* If the sliding `<motion.div>` is anchored with `className="absolute top-0.5 left-0..."`, Framer Motion applies `y: el.offsetTop` (2px) on top of the CSS `top: 2px`, producing a total offset of 4px. This creates a visible 2px downward sag that ruins pixel alignment.
+* **The Invariant**: ALWAYS anchor the sliding background pill at `top-0 left-0`. Let the measured `offsetTop` and `offsetLeft` from `getBoundingClientRect()` or `offsetTop` handle the exact positioning within the track.
+
+---
+
+## 68. Universal Spring-Loaded Dialog Physics (`<AnimatePresence>`) & Dual-Layout Portal Parity
+
+### 68.1 Symmetrical Spring Kinetics Across All Modals
+* **The Anti-Pattern**: Mixing flat CSS fade-in animations on some modals while using fluid spring curves on others creates an inconsistent, disjointed user experience.
+* **The Universal Spring Formula**: All modals, drawers, and floating panels must share identical spring physics matching the system preferences dialog:
+  ```tsx
+  <AnimatePresence>
+    {isOpen && (
+      <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        {/* Backdrop with 200ms opacity fade */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+          className="fixed inset-0 bg-black/60 dark:bg-black/75 backdrop-blur-md"
+        />
+        {/* Modal Window with High-Damped Spring */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 12 }}
+          transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+          className="relative z-10 w-full max-w-xl rounded-2xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl overflow-hidden flex flex-col"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Modal Header & Content */}
+        </motion.div>
+      </div>
+    )}
+  </AnimatePresence>
+  ```
+
+### 68.2 The Dual-Layout Modal Portal Trap
+* **The Architecture Trap**: In applications that utilize distinct desktop vs. laptop return layouts (e.g., `if (isLargeDisplay) return <LargeLayout />; return <CompactLayout />;`), mounting a modal component only at the bottom of the compact layout causes buttons in the large desktop layout to update state in memory (`isOpen = true`) with ZERO modal nodes mounted in the DOM.
+* **The Dual-Layout Invariant**:
+  1. Always hoist modals to `document.body` via `createPortal(modalContent, document.body)` with explicit top-level stacking (`z-[100]`).
+  2. Guarantee that modal mounting points exist in ALL responsive layout return paths, or lift modal rendering to the top-level page root outside responsive conditionals.
