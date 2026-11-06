@@ -152,6 +152,20 @@ export default function GraphCanvas({
 
 
   const containerRef = useRef(null);
+  const [canvasWidth, setCanvasWidth] = useState(1000);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect && entry.contentRect.width) {
+          setCanvasWidth(entry.contentRect.width);
+        }
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -797,30 +811,46 @@ export default function GraphCanvas({
             </button>
           )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
-          <span className="font-mono font-semibold text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] md:max-w-none" title={title}>
+          <span 
+            className="font-mono font-semibold text-slate-900 dark:text-white truncate" 
+            style={{ maxWidth: canvasWidth < 640 ? "80px" : canvasWidth < 840 ? "130px" : "220px" }}
+            title={title}
+          >
             {title}
           </span>
           <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />
         </div>
 
         {/* Zone 2: Centered Command Omnibar (Fluid Width, Center-Anchored) */}
-        <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
+        {canvasWidth < 680 ? (
           <button
             type="button"
             onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
+            className="p-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono shrink-0"
             title={`Search DAG Nodes (${searchKbd})`}
             aria-label={`Search DAG Nodes (${searchKbd})`}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>
-            </div>
-            <kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400 shrink-0">
-              {searchKbd}
-            </kbd>
+            <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           </button>
-        </div>
+        ) : (
+          <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+              className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
+              title={`Search DAG Nodes (${searchKbd})`}
+              aria-label={`Search DAG Nodes (${searchKbd})`}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>
+              </div>
+              <kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400 shrink-0">
+                {searchKbd}
+              </kbd>
+            </button>
+          </div>
+        )}
 
         {/* Zone 3: Canvas Controls & Actions (Right Anchored) */}
         <div className="flex items-center gap-2 shrink-0 font-mono">
@@ -858,17 +888,18 @@ export default function GraphCanvas({
                   }`}
                 >
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
-                  <span className="hidden xl:inline">{tab.label}</span>
+                  {canvasWidth >= 880 && <span>{tab.label}</span>}
                 </button>
               );
             })}
           </div>
 
           {/* Functional Divider */}
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
+          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Action Tools Cluster: Direct SVG Download & Node Permalink Sharing */}
-          <div className="flex items-center gap-0.5">
+          {canvasWidth >= 520 && (
+            <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={handleDownloadGraph}
@@ -903,9 +934,10 @@ export default function GraphCanvas({
               )}
             </button>
           </div>
+          )}
 
           {/* Functional Divider */}
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
+          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Segmented Zoom Readout Pill with Linear/Figma Preset Dropdown */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-300/80 dark:border-white/10 shadow-xs">
