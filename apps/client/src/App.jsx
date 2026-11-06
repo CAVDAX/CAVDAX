@@ -1098,10 +1098,19 @@ export default function App() {
 
   function _simulateAct3Block() {
     const actionId = `act-${Date.now()}`;
-    setGraphData(prev => ({
-      nodes: [...prev.nodes, { id: actionId, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'BLOCKED_SUPERSEDED_SOURCE', timestamp: Date.now() }],
-      edges: [...prev.edges, { source: actionId, target: 'DEC-102', type: 'GROUNDED_IN' }]
-    }));
+    setGraphData(prev => {
+      // Clean up DEC-103 and prior actions so Act 3 is cleanly focused on the blocked DEC-102 attempt
+      const cleanNodes = prev.nodes
+        .filter(n => n.id !== 'DEC-103' && !n.id.startsWith('act-'))
+        .map(n => n.id === 'DEC-102' ? { ...n, status: 'INVALIDATED_NEEDS_REVALIDATION' } : n);
+      const cleanEdges = prev.edges.filter(e =>
+        e.source !== 'DEC-103' && e.target !== 'DEC-103' && !e.source.startsWith('act-')
+      );
+      return {
+        nodes: [...cleanNodes, { id: actionId, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'BLOCKED_SUPERSEDED_SOURCE', timestamp: Date.now() }],
+        edges: [...cleanEdges, { source: actionId, target: 'DEC-102', type: 'GROUNDED_IN' }]
+      };
+    });
     return {
       gate_verdict: 'BLOCKED_SUPERSEDED_SOURCE',
       simulated: true,
@@ -1111,20 +1120,25 @@ export default function App() {
 
   function _simulateAct4Approve(oauthCode) {
     setGraphData(prev => {
-      const nodes = prev.nodes.map(n => n.id === 'DEC-102' ? { ...n, status: 'REPLACED_ARCHIVED' } : n);
-      // Idempotency: only add DEC-103 and the EXECUTED action node if not already present
+      const nodesWithoutPrevExec = prev.nodes.filter(n => !(n.label === 'AgentAction' && (n.decision_id === 'DEC-103' || n.status === 'EXECUTED')));
+      const nodes = nodesWithoutPrevExec.map(n => n.id === 'DEC-102' ? { ...n, status: 'REPLACED_ARCHIVED' } : n);
       const hasD103 = nodes.some(n => n.id === 'DEC-103');
-      const hasExecutedAction = nodes.some(n => n.label === 'AgentAction' && n.status === 'EXECUTED' && n.target_file === 'demo-repo/src/services/payment.js');
+      const actionId = `act-${Date.now()}`;
       const newNodes = hasD103
-        ? (hasExecutedAction ? nodes : [...nodes, { id: `act-${Date.now()}`, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }])
-        : [...nodes,
+        ? [...nodes, { id: actionId, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }]
+        : [
+            ...nodes,
             { id: 'DEC-103', label: 'Decision', title: 'Scaffold Payment Gateway with OAuth2 (JWT/RS256)', status: 'VALID' },
-            ...(hasExecutedAction ? [] : [{ id: `act-${Date.now()}`, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }])
+            { id: actionId, label: 'AgentAction', target_file: 'demo-repo/src/services/payment.js', status: 'EXECUTED', timestamp: Date.now() }
           ];
       const hasD103Edge = prev.edges.some(e => e.source === 'DEC-103' && e.target === 'F-OAuth2' && e.type === 'DEPENDS_ON');
-      const newEdges = hasD103Edge ? prev.edges : [...prev.edges,
-        { source: 'DEC-103', target: 'F-OAuth2', type: 'DEPENDS_ON' },
-        { source: 'DEC-103', target: 'DEC-102', type: 'REPLACES' }
+      const newEdges = [
+        ...prev.edges.filter(e => !(e.source.startsWith('act-') && e.target === 'DEC-103')),
+        ...(hasD103Edge ? [] : [
+          { source: 'DEC-103', target: 'F-OAuth2', type: 'DEPENDS_ON' },
+          { source: 'DEC-103', target: 'DEC-102', type: 'REPLACES' }
+        ]),
+        { source: actionId, target: 'DEC-103', type: 'GROUNDED_IN' }
       ];
       return { nodes: newNodes, edges: newEdges };
     });
@@ -1177,6 +1191,17 @@ export default function App() {
       setAgentState('idle');
     } else if (actNumber === 3) {
       // ACT III: Agent Enclosed MCP Gate Execution Call — blocked on stale DEC-102
+      // When switching back to Act 3 from Act 4, clean up DEC-103 so the state cleanly reflects the blocked DEC-102 attempt
+      setGraphData(prev => {
+        const hasD103 = prev.nodes.some(n => n.id === 'DEC-103');
+        if (!hasD103) return prev;
+        return {
+          nodes: prev.nodes
+            .filter(n => n.id !== 'DEC-103' && !(n.label === 'AgentAction' && n.status === 'EXECUTED'))
+            .map(n => n.id === 'DEC-102' ? { ...n, status: 'INVALIDATED_NEEDS_REVALIDATION' } : n),
+          edges: prev.edges.filter(e => e.source !== 'DEC-103' && e.target !== 'DEC-103' && !(e.source.startsWith('act-') && e.target === 'DEC-103'))
+        };
+      });
       setAgentState('executing');
       addLog('AGENT', 'Autonomous Coding Agent requests tool execution: `apply_code_change` with DEC-102...', 'INFO');
       setLatestAction({

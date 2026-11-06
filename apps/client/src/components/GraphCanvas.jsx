@@ -289,7 +289,30 @@ export default function GraphCanvas({
     }
     const deduplicatedRawNodes = Array.from(uniqueRawNodesMap.values());
 
+    // Deduplicate AgentAction nodes per target decision:
+    // In the active DAG column, only plot the latest action per target decision.
+    // This prevents stacked invisible nodes from inflating maxColumnItems and zooming out the viewBox.
+    const latestActionByDecision = new Map();
+    for (const node of deduplicatedRawNodes) {
+      if (node.label === 'AgentAction' || node.id?.startsWith('act-')) {
+        const groundedEdge = rawEdges.find(e => (e.source === node.id && (e.type === 'GROUNDED_IN' || e.type === 'ACTION_ON')));
+        const targetDecId = groundedEdge?.target || node.decision_id || 'default';
+        const existing = latestActionByDecision.get(targetDecId);
+        if (!existing || (node.timestamp || 0) >= (existing.timestamp || 0)) {
+          latestActionByDecision.set(targetDecId, node);
+        }
+      }
+    }
+
     const filteredRawNodes = deduplicatedRawNodes.filter(node => {
+      const isAction = node.label === 'AgentAction' || node.id?.startsWith('act-');
+      if (isAction) {
+        const groundedEdge = rawEdges.find(e => (e.source === node.id && (e.type === 'GROUNDED_IN' || e.type === 'ACTION_ON')));
+        const targetDecId = groundedEdge?.target || node.decision_id || 'default';
+        if (latestActionByDecision.get(targetDecId)?.id !== node.id) {
+          return false; // Skip older redundant action for the same decision
+        }
+      }
       if (driftFilter === 'GROUNDED') {
         const isStale = node.status === 'SUPERSEDED' || node.status === 'INVALIDATED_NEEDS_REVALIDATION' || node.is_stale;
         const isBlockedAction = (node.label === 'AgentAction' || node.id?.startsWith('act-')) && (node.status === 'BLOCKED' || node.status === 'BLOCKED_SUPERSEDED_SOURCE');
