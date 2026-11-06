@@ -20,7 +20,7 @@
 - **Act 1 Baseline Reset Invariant (`App.jsx`)**:
   - Added `BASELINE_ACT1_GRAPH` fallback to `handleReset()`, guaranteeing that clicking Act 1 or Reset snaps the client canvas back to the Act 1 baseline even if the server is offline or returns an authentication rejection.
 - **NPM Package Release & Provenance Alignment (`README.md`)**:
-  - Updated `@cavdax/mcp-server` CLI daemon reference in `README.md` from `v1.2.6` to `v1.2.7`, establishing version parity across all documentation and release artifacts.
+  - Updated `@cavdax/mcp-server` CLI daemon reference in `README.md` from `v1.2.6` to `v1.2.8`, establishing version parity across all documentation and release artifacts.
 
 ## 1.1.05 Decision Geometry Polish, Right-Corridor Intra-Column Arc Routing & FalkorDB Revalidation Idempotency (November 6, 2026)
 - **Zero-Collision Intra-Column Replacement Arcs (`GraphCanvas.jsx`)**:

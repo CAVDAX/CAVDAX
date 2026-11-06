@@ -25,7 +25,7 @@
 <div align="center">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/CAVDAX/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/CAVDAX/CAVDAX/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.2.7)
+[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.2.8)
 [![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
@@ -918,7 +918,7 @@ npx cavdax check --staged
 npx cavdax check --pr <number>
 
 # CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
-npx -y @cavdax/mcp-server@1.2.7 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
+npx -y @cavdax/mcp-server@1.2.8 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---
