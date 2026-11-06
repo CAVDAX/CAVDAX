@@ -10,12 +10,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/suneetchugh-dev/CAVDAX.git",
+    "url": "git+https://github.com/CAVDAX/CAVDAX.git",
     "directory": "apps/mcp-server"
   },
   "homepage": "https://cavdax.sahnirmaan.live",
   "bugs": {
-    "url": "https://github.com/suneetchugh-dev/CAVDAX/issues"
+    "url": "https://github.com/CAVDAX/CAVDAX/issues"
   },
   "files": [
     "bin",
@@ -40,7 +40,7 @@
     "architecture-decision-records"
   ],
   "author": "CAVDAX Team <valorise078gramming@gmail.com>",
-  "license": "GPL-3.0-only",
+  "license": "Apache-2.0",
   "dependencies": {
     "commander": "^12.1.0",
     "falkordb": "^6.9.1",
