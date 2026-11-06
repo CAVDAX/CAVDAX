@@ -453,14 +453,14 @@ sequenceDiagram
 Captured directly from our live production deployment at [https://cavdax.sahnirmaan.live/](https://cavdax.sahnirmaan.live/):
 
 ### 1. Causal Graph & Temporal DAG Canvas (`/overview`)
-> Visualizes live FalkorDB Directed Acyclic Graph (DAG) state, active vs. superseded architectural sources, and real-time graph invalidation.
+> Visualizes live FalkorDB Directed Acyclic Graph (DAG) state, active vs. superseded architectural sources, real-time graph invalidation, Linear-style command search pseudo-input ribbon (`Cmd+K` / `Ctrl+K`), and 1-click kinetic sidebar collapse for 100% full-viewport graph exploration.
 
 <div align="center">
   <img src="./assets/screenshots/01_causal_graph_overview.png" alt="CAVDAX Causal Graph Overview" width="950" />
 </div>
 
 ### 2. Connected Repository Developer Workspace (`/console`)
-> Real-time developer workspace with connected repository lifecycle controls, branch tracking, and instant architecture baseline initialization (`ADR-001`).
+> Real-time developer workspace with connected repository lifecycle controls, branch tracking, instant architecture baseline initialization (`ADR-001`), persistent draggable split-pane handles with double-click toggle, and universal spring-loaded modal physics.
 
 <div align="center">
   <img src="./assets/screenshots/02_developer_console.png" alt="CAVDAX Developer Console" width="950" />
@@ -684,8 +684,8 @@ CAVDAX is deployed and running live in production:
 
 The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain operational interface spanning 9 specialized views:
 
-1. **Architectural Overview (`/overview` or `/`)**: Value proposition, Causal Invalidation Radar, and interactive Cytoscape.js Directed Acyclic Graph canvas.
-2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, tracking active branch mutations, and managing architecture baselines.
+1. **Architectural Overview (`/overview` or `/`)**: Value proposition, Causal Invalidation Radar, interactive Cytoscape.js Directed Acyclic Graph canvas with Linear-grade command search ribbon (`Cmd+K` / `Ctrl+K`), and 1-click kinetic sidebar collapse for 100% full-viewport exploration.
+2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, tracking active branch mutations, persistent draggable split-pane handles with double-click toggle, and universal spring-loaded dialog physics.
 3. **MCP Action Playground (`/mcp`)**: Interactive pre-flight verification console with dynamic traversal depth sliders (`1..4` hops), live Cypher inspection, and sub-millisecond execution timing metrics.
 4. **4-Act Storyline Stepper (`/walkthrough`)**: Interactive demonstration stepper guiding evaluators through baseline validity, upstream commit mutation, enclosed MCP gate rejection, and Act IV revalidation.
 5. **Immutable Compliance Audit Ledger (`/audit`)**: Tamper-evident ledger providing full provenance and execution verification history across all agent actions.
