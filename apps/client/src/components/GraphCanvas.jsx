@@ -825,45 +825,47 @@ export default function GraphCanvas({
         {/* Zone 1: Identity & Context (Left Anchored) */}
         <div className="flex items-center gap-2 min-w-0 shrink-0">
           {isSidebarCollapsed && onToggleSidebar && (
-            <button
-              type="button"
-              onClick={onToggleSidebar}
-              className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-              title="Expand Sidebar (Restore Split View)"
-              aria-label="Expand Sidebar"
-            >
-              <PanelLeftOpen className="w-3.5 h-3.5 stroke-[1.75]" />
-            </button>
+            <Tooltip content="Expand Sidebar (Restore Split View)" position="bottom">
+              <button
+                type="button"
+                onClick={onToggleSidebar}
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                aria-label="Expand Sidebar"
+              >
+                <PanelLeftOpen className="w-3.5 h-3.5 stroke-[1.75]" />
+              </button>
+            </Tooltip>
           )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
-          <span 
-            className="font-mono font-semibold text-slate-900 dark:text-white truncate" 
-            style={{ maxWidth: canvasWidth < 720 ? "120px" : "220px" }}
-            title={title}
-          >
-            {title}
-          </span>
+          <Tooltip content={title} position="bottom" disabled={canvasWidth >= 720}>
+            <span 
+              className="font-mono font-semibold text-slate-900 dark:text-white truncate cursor-default" 
+              style={{ maxWidth: canvasWidth < 720 ? "120px" : "220px" }}
+            >
+              {title}
+            </span>
+          </Tooltip>
           <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />
         </div>
 
         {/* Zone 2: Centered Command Omnibar (Fluid Width, Center-Anchored) */}
         {canvasWidth < 720 ? (
-          <button
-            type="button"
-            onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="p-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono shrink-0"
-            title={`Search DAG Nodes (${searchKbd})`}
-            aria-label={`Search DAG Nodes (${searchKbd})`}
-          >
-            <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-          </button>
+          <Tooltip content="Search DAG Nodes" shortcut={searchKbd} position="bottom">
+            <button
+              type="button"
+              onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+              className="p-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono shrink-0"
+              aria-label={`Search DAG Nodes (${searchKbd})`}
+            >
+              <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+            </button>
+          </Tooltip>
         ) : (
           <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
             <button
               type="button"
               onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
               className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
-              title={`Search DAG Nodes (${searchKbd})`}
               aria-label={`Search DAG Nodes (${searchKbd})`}
             >
               <div className="flex items-center gap-1.5 min-w-0">
@@ -931,39 +933,44 @@ export default function GraphCanvas({
           {/* Action Tools Cluster: Direct SVG Download & Node Permalink Sharing */}
           {canvasWidth >= 540 && (
             <div className="flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={handleDownloadGraph}
-              className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
-              title="Download Vector Graph (SVG)"
-              aria-label="Download Vector Graph (SVG)"
-            >
-              <Download className="w-3.5 h-3.5 text-current transition-colors" />
-            </button>
+            <Tooltip content="Download Vector Graph (SVG)" position="bottom">
+              <button
+                type="button"
+                onClick={handleDownloadGraph}
+                className="p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+                aria-label="Download Vector Graph (SVG)"
+              >
+                <Download className="w-3.5 h-3.5 text-current transition-colors" />
+              </button>
+            </Tooltip>
 
-            <button
-              type="button"
-              onClick={handleSharePermalink}
-              className={`p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors tactile-btn cursor-pointer ${
-                isCopiedPermalink
-                  ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
-                  : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
-              }`}
-              title={
+            <Tooltip
+              content={
                 isCopiedPermalink
                   ? "Permalink copied to clipboard!"
                   : selectedNodeId
                   ? `Copy Node Permalink (${selectedNodeId})`
                   : "Copy Graph View Link"
               }
-              aria-label="Copy Graph Permalink"
+              position="bottom"
             >
-              {isCopiedPermalink ? (
-                <Check className="w-3.5 h-3.5 text-emerald-500" />
-              ) : (
-                <Share2 className="w-3.5 h-3.5 text-current transition-colors" />
-              )}
-            </button>
+              <button
+                type="button"
+                onClick={handleSharePermalink}
+                className={`p-1.5 rounded-md hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors tactile-btn cursor-pointer ${
+                  isCopiedPermalink
+                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10'
+                    : 'text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
+                }`}
+                aria-label="Copy Graph Permalink"
+              >
+                {isCopiedPermalink ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Share2 className="w-3.5 h-3.5 text-current transition-colors" />
+                )}
+              </button>
+            </Tooltip>
           </div>
           )}
 
@@ -972,35 +979,37 @@ export default function GraphCanvas({
 
           {/* Segmented Zoom Readout Pill with Linear/Figma Preset Dropdown */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-300/80 dark:border-white/10 shadow-xs">
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setZoom(z => Math.max(0.4, Number((z - 0.1).toFixed(2))));
-              }}
-              className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
-              title="Zoom Out"
-              aria-label="Zoom Out"
-            >
-              <ZoomOut className="w-3 h-3 text-current transition-colors" />
-            </button>
-
-            <div ref={zoomMenuRef} className="relative">
+            <Tooltip content="Zoom Out" position="bottom">
               <button
                 type="button"
                 onClick={() => {
                   playClick();
-                  setIsZoomMenuOpen(v => !v);
+                  setZoom(z => Math.max(0.4, Number((z - 0.1).toFixed(2))));
                 }}
-                className="px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-white dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
-                title="Zoom Presets & Framing"
-                aria-label="Zoom Presets & Framing"
+                className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+                aria-label="Zoom Out"
               >
-                <span className="text-[10px] font-mono font-semibold w-7 text-center">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <ChevronDown className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                <ZoomOut className="w-3 h-3 text-current transition-colors" />
               </button>
+            </Tooltip>
+
+            <div ref={zoomMenuRef} className="relative">
+              <Tooltip content="Zoom Presets & Framing" position="bottom" disabled={isZoomMenuOpen}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsZoomMenuOpen(v => !v);
+                  }}
+                  className="px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-white dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer"
+                  aria-label="Zoom Presets & Framing"
+                >
+                  <span className="text-[10px] font-mono font-semibold w-7 text-center">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <ChevronDown className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
+                </button>
+              </Tooltip>
 
               <AnimatePresence>
               {isZoomMenuOpen && (
@@ -1056,46 +1065,49 @@ export default function GraphCanvas({
             </AnimatePresence>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              playClick();
-              setZoom(z => Math.min(2.5, Number((z + 0.1).toFixed(2))));
-              }}
-              className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
-              title="Zoom In"
-              aria-label="Zoom In"
-            >
-              <ZoomIn className="w-3 h-3 text-current transition-colors" />
-            </button>
+          <Tooltip content="Zoom In" position="bottom">
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setZoom(z => Math.min(2.5, Number((z + 0.1).toFixed(2))));
+                }}
+                className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+                aria-label="Zoom In"
+              >
+                <ZoomIn className="w-3 h-3 text-current transition-colors" />
+              </button>
+            </Tooltip>
           </div>
 
           {/* Reset & Fullscreen Controls */}
           <div className="flex items-center gap-0.5">
-            <button
-              onClick={() => {
-                playClick();
-                setZoom(1);
-                setPan({ x: 0, y: 0 });
-              }}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
-              title="Reset View"
-              aria-label="Reset View"
-            >
-              <RotateCcw className="w-3.5 h-3.5 text-current transition-colors" />
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
-              title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"}
-              aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"}
-            >
-              {isFullscreen ? (
-                <Minimize2 className="w-3.5 h-3.5 text-current transition-colors" />
-              ) : (
-                <Maximize2 className="w-3.5 h-3.5 text-current transition-colors" />
-              )}
-            </button>
+            <Tooltip content="Reset View" position="bottom">
+              <button
+                onClick={() => {
+                  playClick();
+                  setZoom(1);
+                  setPan({ x: 0, y: 0 });
+                }}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+                aria-label="Reset View"
+              >
+                <RotateCcw className="w-3.5 h-3.5 text-current transition-colors" />
+              </button>
+            </Tooltip>
+            <Tooltip content={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"} position="bottom">
+              <button
+                onClick={toggleFullscreen}
+                className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
+                aria-label={isFullscreen ? "Exit Fullscreen" : "Fullscreen Graph"}
+              >
+                {isFullscreen ? (
+                  <Minimize2 className="w-3.5 h-3.5 text-current transition-colors" />
+                ) : (
+                  <Maximize2 className="w-3.5 h-3.5 text-current transition-colors" />
+                )}
+              </button>
+            </Tooltip>
           </div>
         </div>
       </div>

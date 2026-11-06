@@ -195,18 +195,20 @@ export default function Header({
           }}
           className="flex items-center justify-start min-w-0"
         >
-          <div
-            className="flex items-center cursor-pointer flex-shrink-0 select-none group text-slate-900 dark:text-white hover:text-black dark:hover:text-slate-100 transition-colors"
-            onClick={() => {
-              playClick();
-              if (onSelectTab) onSelectTab('landing', { target: 'wordmark' });
-            }}
-            title="CAVDAX Home"
-          >
-            <div className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
-              <CavdaxBrandLoader size={34} strokeWidth={7.4} animateOnHover={true} />
+          <Tooltip content="CAVDAX Home" position="bottom">
+            <div
+              className="flex items-center cursor-pointer flex-shrink-0 select-none group text-slate-900 dark:text-white hover:text-black dark:hover:text-slate-100 transition-colors"
+              onClick={() => {
+                playClick();
+                if (onSelectTab) onSelectTab('landing', { target: 'wordmark' });
+              }}
+              aria-label="CAVDAX Home"
+            >
+              <div className="h-9 w-9 sm:h-10 sm:w-10 flex items-center justify-center flex-shrink-0">
+                <CavdaxBrandLoader size={34} strokeWidth={7.4} animateOnHover={true} />
+              </div>
             </div>
-          </div>
+          </Tooltip>
         </div>
 
         {/* Left-to-Center Vertical Divider Line (Desktop only) */}

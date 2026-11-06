@@ -5,6 +5,7 @@ import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
   CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
+import Tooltip from './Tooltip.jsx';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
@@ -880,40 +881,46 @@ export default function ConnectedRepoWorkspace({
               </div>
 
               {/* Immediate header-level "Rescan Branch" button */}
-              <button
-                type="button"
-                onClick={() => { playClick(); runScan(); }}
-                disabled={phase === 'scanning'}
-                className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors cursor-pointer disabled:opacity-50"
-                title={`Rescan branch "${selectedBranch}"`}
-              >
-                <RefreshCw className={`w-3 h-3 ${phase === 'scanning' ? 'animate-spin' : ''}`} />
-              </button>
+              <Tooltip content={`Rescan branch "${selectedBranch}"`} position="bottom">
+                <button
+                  type="button"
+                  onClick={() => { playClick(); runScan(); }}
+                  disabled={phase === 'scanning'}
+                  className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors cursor-pointer disabled:opacity-50"
+                  aria-label={`Rescan branch "${selectedBranch}"`}
+                >
+                  <RefreshCw className={`w-3 h-3 ${phase === 'scanning' ? 'animate-spin' : ''}`} />
+                </button>
+              </Tooltip>
 
               {/* Quick Jump "View Branch on GitHub" link button */}
-              <a
-                href={`https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/tree/${encodeURIComponent(selectedBranch)}`}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors"
-                title={`View branch "${selectedBranch}" on GitHub`}
-              >
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              <Tooltip content={`View branch "${selectedBranch}" on GitHub`} position="bottom">
+                <a
+                  href={`https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/tree/${encodeURIComponent(selectedBranch)}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="inline-flex items-center justify-center h-[22px] w-[22px] rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-white/15 transition-colors"
+                  aria-label={`View branch "${selectedBranch}" on GitHub`}
+                >
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </Tooltip>
 
               {/* Open Pull Request Association badge */}
               {pr && pr.branch === selectedBranch && (
-                <a
-                  href={pr.url || `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pull/${pr.number}`}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium border border-slate-300 dark:border-white/15 bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 transition-colors"
-                  title={`View Pull Request #${pr.number} on GitHub`}
-                >
-                  <GitPullRequest className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>PR #{pr.number}</span>
-                  <ExternalLink className="w-2.5 h-2.5 opacity-60 ml-0.5" />
-                </a>
+                <Tooltip content={`View Pull Request #${pr.number} on GitHub`} position="bottom">
+                  <a
+                    href={pr.url || `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/pull/${pr.number}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-mono font-medium border border-slate-300 dark:border-white/15 bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-800 dark:text-slate-200 transition-colors"
+                    aria-label={`View Pull Request #${pr.number} on GitHub`}
+                  >
+                    <GitPullRequest className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+                    <span>PR #{pr.number}</span>
+                    <ExternalLink className="w-2.5 h-2.5 opacity-60 ml-0.5" />
+                  </a>
+                </Tooltip>
               )}
 
               {/* Causal Divergence / Decision Count Indicator */}
@@ -931,41 +938,47 @@ export default function ConnectedRepoWorkspace({
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => {
-              playClick();
-              setShowAgentSetupModal(true);
-            }}
-            className={btnSecondary}
-            title="Configure Cursor, Claude Code, Cline, or Windsurf for this repository"
-          >
-            <Terminal className="w-4 h-4 text-slate-700 dark:text-slate-300" strokeWidth={2} />
-            <span>Agent Setup</span>
-          </button>
-          <button
-            onClick={() => {
-              playClick();
-              setShowCiGateModal(true);
-            }}
-            className={btnSecondary}
-            title="1-click GitHub Actions CI/CD architectural verification gate"
-          >
-            <GitBranch className="w-4 h-4 text-slate-700 dark:text-slate-300" strokeWidth={2} />
-            <span>CI Gate</span>
-          </button>
+          <Tooltip content="Configure Cursor, Claude Code, Cline, or Windsurf" position="bottom">
+            <button
+              onClick={() => {
+                playClick();
+                setShowAgentSetupModal(true);
+              }}
+              className={btnSecondary}
+              aria-label="Configure AI Agents for this repository"
+            >
+              <Terminal className="w-4 h-4 text-slate-700 dark:text-slate-300" strokeWidth={2} />
+              <span>Agent Setup</span>
+            </button>
+          </Tooltip>
+          <Tooltip content="1-click GitHub Actions CI/CD verification gate" position="bottom">
+            <button
+              onClick={() => {
+                playClick();
+                setShowCiGateModal(true);
+              }}
+              className={btnSecondary}
+              aria-label="GitHub Actions CI/CD architectural verification gate"
+            >
+              <GitBranch className="w-4 h-4 text-slate-700 dark:text-slate-300" strokeWidth={2} />
+              <span>CI Gate</span>
+            </button>
+          </Tooltip>
           <button onClick={() => { playClick(); runScan(); }} disabled={phase === 'scanning'} className={btnSecondary}>
             <RefreshCw className={`w-4 h-4 ${phase === 'scanning' ? 'animate-spin' : ''}`} strokeWidth={2} />
             <span>Rescan</span>
           </button>
           {onDisconnectRepo && (
-            <button
-              onClick={() => { playClick(); onDisconnectRepo(repo.id); }}
-              className={`${btnSecondary} hover:bg-rose-500/10 hover:border-rose-500/30`}
-              title="Disconnect repository from workspace"
-            >
-              <Unlink className="w-4 h-4" strokeWidth={2} />
-              <span>Disconnect</span>
-            </button>
+            <Tooltip content="Disconnect repository from workspace" position="bottom">
+              <button
+                onClick={() => { playClick(); onDisconnectRepo(repo.id); }}
+                className={`${btnSecondary} hover:bg-rose-500/10 hover:border-rose-500/30`}
+                aria-label="Disconnect repository from workspace"
+              >
+                <Unlink className="w-4 h-4" strokeWidth={2} />
+                <span>Disconnect</span>
+              </button>
+            </Tooltip>
           )}
         </div>
       </div>
@@ -1054,28 +1067,31 @@ export default function ConnectedRepoWorkspace({
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">({scan.count} files)</span>
               </div>
               <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    playClick();
-                    setProposeAdrResult(null);
-                    setShowProposeAdrModal(true);
-                  }}
-                  className="px-2 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer shadow-xs"
-                  title="Draft a new Architecture Decision Record (ADR) and open a pull request"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Propose ADR</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsLeftCollapsed(true)}
-                  className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 hidden lg:flex items-center justify-center"
-                  title="Collapse ADR Panel"
-                  aria-label="Collapse ADR Panel"
-                >
-                  <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
-                </button>
+                <Tooltip content="Draft a new Architecture Decision Record (ADR)" position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      setProposeAdrResult(null);
+                      setShowProposeAdrModal(true);
+                    }}
+                    className="px-2 py-1 rounded-lg text-[10.5px] font-mono font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:opacity-90 flex items-center gap-1 transition-all cursor-pointer shadow-xs"
+                    aria-label="Draft a new Architecture Decision Record (ADR) and open a pull request"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Propose ADR</span>
+                  </button>
+                </Tooltip>
+                <Tooltip content="Collapse ADR Panel" position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => setIsLeftCollapsed(true)}
+                    className="p-1 rounded-md text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 hidden lg:flex items-center justify-center"
+                    aria-label="Collapse ADR Panel"
+                  >
+                    <PanelLeftClose className="w-3.5 h-3.5 stroke-[1.75]" />
+                  </button>
+                </Tooltip>
               </div>
             </div>
 
