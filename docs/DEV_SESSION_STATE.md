@@ -28,6 +28,10 @@
   - Appended Sections 69-72 to `docs/UI_DESIGN_SYSTEM.md`: Section 69 (Polymorphic Node Geometries & Scaled SVG Marker Docking Math), Section 70 (Planar Hierarchical DAG Layout & Intra-Column Corridor Arc Routing), Section 71 (Monochromatic Custom Micro-Tooltips vs Native Tooltip Prohibition), and Section 72 (High-Density Toolbar Combobox & Strict Monochromatic Palettes).
   - Updated `README.md` to provide architectural transparency on dual-mode execution (distinguishing the interactive pedagogical 4-act simulator from the live FalkorDB GraphBLAS socket execution engine).
   - Synchronized master prompt library at `C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts`: created `##Interactive-Hierarchical-DAG-Causal-Verification-Graph-Canvas.md`, created `##Hackathon-Submission-Adversarial-Auditing-And-Judge-Proofing-Protocol.md`, and updated `##Adversarial-Code-Auditing-And-Devils-Advocate-Master-Protocol.md` with Vectors 24 and 25.
+- **Headless Private Repository CI/CD Deployment Resiliency (`.github/workflows/deploy.yml`)**:
+  - Resolved fatal `could not read Username for 'https://github.com': No such device or address` (exit status 128) when repository visibility is toggled between Public and Private.
+  - Upgraded remote VM deploy script to inject ephemeral `${{ secrets.GITHUB_TOKEN }}` via `https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git` before `git fetch origin main`.
+  - Implemented bash `trap 'git remote set-url origin ...' EXIT` to automatically scrub credentials from `.git/config` post-deployment, ensuring zero permanent secrets persist on the VM disk while guaranteeing seamless zero-downtime rolling deploys regardless of repository privacy state.
 - **Verification & Git Parity**:
   - Production build passed (`npm run build` in 12.07s).
   - Headless Puppeteer verification confirmed clean SVG viewBox (`0 0 880 480`), visible overflow, exactly 2 decisions, and smooth rightward intra-paths.
