@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Github, Search, Plus, Check,
-  X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound
+  X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound, Unlink
 } from 'lucide-react';
 import { playClick, playApprovalChime } from '../utils/soundFx';
 import DevPatLoginModal from './DevPatLoginModal';
@@ -500,10 +500,11 @@ export default function ConnectRepoModal({
                                     playClick();
                                     onDisconnectRepo(repo.id);
                                   }}
-                                  className="px-2 py-1 rounded-md text-[11px] font-mono text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/80 dark:hover:bg-white/10 border border-slate-300/80 dark:border-white/15 transition-colors cursor-pointer"
-                                  title="Disconnect repository"
+                                  className="px-2 py-1 rounded-md text-[11px] font-mono text-slate-500 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/80 dark:hover:bg-white/10 border border-slate-300/80 dark:border-white/15 transition-colors cursor-pointer flex items-center gap-1.5"
+                                  title="Disconnect repository from workspace"
                                 >
-                                  Disconnect
+                                  <Unlink className="w-3 h-3 shrink-0" />
+                                  <span>Disconnect</span>
                                 </button>
                               )}
                             </div>

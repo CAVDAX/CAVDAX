@@ -1414,7 +1414,12 @@ export default function ConnectedRepoWorkspace({
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
-              Equip Cursor, Claude Code, Cline, or Windsurf with real-time architectural graph constraints for <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong> on branch <strong className="font-mono">{selectedBranch}</strong>.
+              <span className="block">
+                Equip Cursor, Claude Code, Cline, or Windsurf with real-time architectural graph constraints for
+              </span>
+              <span className="block mt-0.5 text-slate-700 dark:text-slate-300">
+                repository <strong className="font-mono text-slate-900 dark:text-white">{repo.full_name}</strong> on branch <strong className="font-mono text-slate-900 dark:text-white">{selectedBranch}</strong>.
+              </span>
             </p>
 
             {/* Platform Selector Tabs with Container-Relative Slider Tracker (Locked Y-Bounds, No Downward Shift) */}
