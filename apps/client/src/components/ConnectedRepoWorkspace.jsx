@@ -1024,7 +1024,17 @@ export default function ConnectedRepoWorkspace({
       {hasAdrs && (
         <div ref={splitContainerRef} className={`flex-1 min-h-0 flex flex-col lg:flex-row rounded-2xl overflow-hidden border border-slate-300 dark:border-white/15 shadow-sm ${isDraggingSplitter ? "select-none cursor-col-resize" : ""}`}>
           {/* Left: ADR files and activity — Adaptive theme styling for complete visual harmony */}
-          <div data-tour="repo-adrs" style={{ flex: isLeftCollapsed ? '0 0 0px' : `0 0 ${leftWidthPercent}%` }} className={`h-full overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 transition-[flex-basis,min-width,width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${isLeftCollapsed ? 'lg:!min-w-0 lg:!w-0 opacity-0 pointer-events-none' : 'min-w-[280px] max-w-full lg:max-w-[70%] opacity-100'}`}>
+          <div
+            data-tour="repo-adrs"
+            style={{
+              width: isLeftCollapsed ? '0px' : `${leftWidthPercent}%`,
+              flexBasis: isLeftCollapsed ? '0px' : `${leftWidthPercent}%`
+            }}
+            className={`h-full min-w-0 overflow-hidden flex flex-col bg-white dark:bg-[#0c0c0e] text-slate-800 dark:text-slate-200 border-b lg:border-b-0 border-slate-200 dark:border-slate-800 shrink-0 transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis] ${
+              isLeftCollapsed ? 'border-r-0 opacity-0 pointer-events-none' : 'opacity-100'
+            }`}
+          >
+            <div className="w-full h-full min-w-[320px] flex flex-col overflow-hidden">
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs font-mono bg-slate-50/80 dark:bg-white/[0.02]">
               <div className="flex items-center gap-2">
                 <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
@@ -1323,14 +1333,17 @@ export default function ConnectedRepoWorkspace({
               <div ref={logsEndRef} />
             </div>
           </div>
+        </div>
 
           {/* Right: graph built from this repository's ADRs */}
-          {/* Draggable Splitter Handle */}
+          {/* Draggable Splitter Handle with Smooth Kinetic Transition */}
           <div
             onMouseDown={handleSplitterMouseDown}
             onDoubleClick={() => setIsLeftCollapsed(prev => !prev)}
-            className={`hidden ${isLeftCollapsed ? 'hidden' : 'lg:flex'} w-2.5 -mx-1 shrink-0 z-20 cursor-col-resize items-center justify-center transition-colors group ${
-              isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'
+            className={`hidden lg:flex shrink-0 z-20 cursor-col-resize items-center justify-center transition-[width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group ${
+              isLeftCollapsed
+                ? 'w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden'
+                : `w-2.5 -mx-1 opacity-100 ${isDraggingSplitter ? 'bg-slate-400/20 dark:bg-white/10' : 'hover:bg-slate-300/40 dark:hover:bg-white/10'}`
             }`}
             title="Drag to adjust ADR Panel and Graph width, or double-click to collapse"
           >
