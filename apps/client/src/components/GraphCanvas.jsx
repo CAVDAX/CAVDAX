@@ -1014,11 +1014,12 @@ export default function GraphCanvas({
               <AnimatePresence>
               {isZoomMenuOpen && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                  initial={{ opacity: 0, scale: 0.96, y: -4, x: "-50%" }}
+                  animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }}
+                  exit={{ opacity: 0, scale: 0.96, y: -4, x: "-50%" }}
                   transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                  className="absolute right-0 top-full mt-1.5 w-32 py-1 bg-white dark:bg-[#12161f] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl z-50 font-mono text-[11px]"
+                  style={{ transformOrigin: 'top center' }}
+                  className="absolute left-1/2 top-full mt-1.5 w-32 py-1 bg-white dark:bg-[#0c0d10] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl z-50 font-mono text-[11px]"
                 >
                   {[
                     { label: '50%', value: 0.5 },
@@ -1027,27 +1028,30 @@ export default function GraphCanvas({
                     { label: '125%', value: 1.25 },
                     { label: '150%', value: 1.5 },
                     { label: '200%', value: 2.0 },
-                  ].map(preset => (
-                    <button
-                      key={preset.label}
-                      type="button"
-                      onClick={() => {
-                        playClick();
-                        setZoom(preset.value);
-                        setIsZoomMenuOpen(false);
-                      }}
-                      className={`w-full px-2.5 py-1 text-left flex items-center justify-between hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer ${
-                        Math.round(zoom * 100) === Math.round(preset.value * 100)
-                          ? 'text-cyan-600 dark:text-cyan-400 font-bold'
-                          : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      <span>{preset.label}</span>
-                      {Math.round(zoom * 100) === Math.round(preset.value * 100) && (
-                        <Check className="w-3 h-3 text-cyan-500" />
-                      )}
-                    </button>
-                  ))}
+                  ].map(preset => {
+                    const isSelected = Math.round(zoom * 100) === Math.round(preset.value * 100);
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        onClick={() => {
+                          playClick();
+                          setZoom(preset.value);
+                          setIsZoomMenuOpen(false);
+                        }}
+                        className={`w-full px-2.5 py-1 text-left flex items-center justify-between transition-colors cursor-pointer ${
+                          isSelected
+                            ? 'text-slate-950 dark:text-white font-bold bg-slate-100 dark:bg-white/10'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5'
+                        }`}
+                      >
+                        <span>{preset.label}</span>
+                        {isSelected && (
+                          <Check className="w-3 h-3 text-slate-950 dark:text-white stroke-[2.5]" />
+                        )}
+                      </button>
+                    );
+                  })}
                   <div className="h-px bg-slate-200 dark:bg-white/10 my-1" />
                   <button
                     type="button"
@@ -1056,7 +1060,7 @@ export default function GraphCanvas({
                       handleFitToScreen();
                       setIsZoomMenuOpen(false);
                     }}
-                    className="w-full px-2.5 py-1 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer font-sans"
+                    className="w-full px-2.5 py-1 text-left text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/5 cursor-pointer font-mono text-[11px] transition-colors"
                   >
                     Fit to Screen
                   </button>
