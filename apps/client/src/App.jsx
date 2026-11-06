@@ -155,6 +155,30 @@ export default function App() {
   const workspaceRef = useRef(null);
   const [activeWorkspace, setActiveWorkspace] = useState('demo');
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
+  // Dismiss workspace mode dropdown on outside click or Escape
+  useEffect(() => {
+    if (!isWorkspaceDropdownOpen) return;
+
+    function handleClickOutside(e) {
+      if (workspaceRef.current && !workspaceRef.current.contains(e.target)) {
+        setIsWorkspaceDropdownOpen(false);
+      }
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Escape') {
+        setIsWorkspaceDropdownOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isWorkspaceDropdownOpen]);
+
   const [isConnectRepoModalOpen, setIsConnectRepoModalOpen] = useState(() => {
     if (typeof window === "undefined") return false;
     const params = new URLSearchParams(window.location.search);
@@ -1499,7 +1523,7 @@ export default function App() {
 
             <div className="flex items-center gap-2 flex-wrap">
               {/* Dual-Mode Workspace Dropdown (Roadmap §5.3) */}
-              <div className="relative">
+              <div className="relative" ref={workspaceRef}>
                 <button
                   onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
                   className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none"
@@ -1520,18 +1544,14 @@ export default function App() {
 
                 <AnimatePresence>
                   {isWorkspaceDropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setIsWorkspaceDropdownOpen(false)}
-                      />
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.96, y: -4 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.96, y: -4 }}
-                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-                        className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 z-50 font-mono text-xs"
-                      >
+                    <motion.div
+                      key="workspace-dropdown-menu"
+                      initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      className="absolute right-0 top-full mt-1.5 w-80 rounded-xl bg-white dark:bg-[#111113] border border-slate-200 dark:border-white/15 shadow-2xl p-1.5 z-50 font-mono text-xs"
+                    >
                       <div className="px-2 py-1.5 text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-white/10 mb-1">
                         <span>Workspace Mode</span>
                       </div>
@@ -1614,7 +1634,6 @@ export default function App() {
                       )}
 
                     </motion.div>
-                  </>
                 )}
               </AnimatePresence>
               </div>
