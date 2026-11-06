@@ -9,6 +9,11 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.03 Workspace Modals Universal Spring Physics Parity (November 6, 2026)
+- **Universal Spring Physics Applied to Workspace Modals**: Upgraded all 5 modal dialogs in ConnectedRepoWorkspace.jsx (Agent Setup, CI Gate Generator, Propose ADR, Interactive Custom Action Simulator, and Init Starter PR Confirmation) to the standard PreferencesModal transition architecture.
+- **Backdrop & Card Staging**: Enclosed inside <AnimatePresence> with an independent backdrop fade (duration: 0.2s) and spring-damped card entry/exit (damping: 28, stiffness: 360, y: 12, scale: 0.95).
+- **Empirical Visual Audit**: Captured puppeteer_verified_agent_setup_modal_spring.png and puppeteer_verified_ci_gate_modal_spring.png confirming smooth kinetic opening and zero snapping.
+
 ## 1.1.02 Divergence Alert Trigger Restoration & Monochromatic Compliance (November 6, 2026)
 - **Removed Fake Static 'Ready' Badge**: Eradicated the unsemantic green badge in PreferencesModal.jsx that violated the minimal color palette rules in docs/UI_DESIGN_SYSTEM.md.
 - **Restored Clear Action Typography**: Replaced the obscure 'Test Route & Alert' and 'Route & Alert Pulse' labels with the industry-standard 'Test Invalidation Alert' and 'Dispatch Test Alert'.
