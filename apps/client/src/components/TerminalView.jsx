@@ -120,22 +120,22 @@ export default function TerminalView({ terminalLogs, activeVerdict, latestAction
   return (
     <div className="h-full flex flex-col bg-slate-50 dark:bg-[#0B0D11] border-r border-slate-300 dark:border-white/10 select-none">
       {/* Terminal Title Bar */}
-      <div className="h-10 px-4 bg-slate-100 dark:bg-[#060709] border-b border-slate-300 dark:border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="h-10 px-3 sm:px-4 bg-slate-100 dark:bg-[#060709] border-b border-slate-300 dark:border-white/10 flex items-center justify-between gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 min-w-0 shrink">
           {/* Monochromatic Window Dots */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <span className="w-2.5 h-2.5 rounded-full bg-slate-400 dark:bg-white/30" />
             <span className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-white/20" />
             <span className="w-2.5 h-2.5 rounded-full bg-slate-200 dark:bg-white/10" />
           </div>
-          <span className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-300 ml-2 flex items-center gap-1.5">
-            <Terminal className="w-3.5 h-3.5 text-slate-900 dark:text-white" />
-            CAVDAX Agent Enclosed MCP Terminal
+          <span className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-300 ml-1.5 flex items-center gap-1.5 min-w-0 truncate whitespace-nowrap">
+            <Terminal className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
+            <span className="truncate">CAVDAX Agent Enclosed MCP Terminal</span>
           </span>
         </div>
 
         {/* Live Agent HUD & Gate Verdict Badge */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-white dark:bg-[#0B0D11] border border-slate-300 dark:border-white/10 text-[10px] font-mono text-slate-800 dark:text-slate-300">
             <CavdaxAgentStateIndicator status={agentState} size={18} strokeWidth={4} />
             <span className="uppercase tracking-wider font-semibold text-slate-700 dark:text-slate-300 hidden sm:inline">
