@@ -680,9 +680,7 @@ export default function GraphCanvas({
           <span className="font-mono font-semibold text-slate-900 dark:text-white truncate" title={title}>
             {title}
           </span>
-          <span className="text-[10px] px-2 py-0.5 rounded bg-white dark:bg-white/5 border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-400 font-mono shrink-0 hidden sm:inline-block">
-            {nodes.length} Nodes • {edges.length} Edges
-          </span>
+
         </div>
 
         {/* Feature Controls: Search (Cmd+K / Ctrl+K), Drift Filter, Direct SVG Download, Zoom, Fullscreen */}
@@ -1143,9 +1141,13 @@ export default function GraphCanvas({
           })}
         </svg>
 
-        {/* Clean Monospace Legend - Sleek non-blocking bottom bar */}
-        <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#0B0D11]/90 border border-slate-300 dark:border-white/15 rounded-lg px-2.5 py-1.5 text-[9px] font-mono backdrop-blur-md shadow-md dark:shadow-xl pointer-events-none z-10 hidden sm:flex items-center gap-3">
-          <span className="text-slate-900 dark:text-white font-bold">TOPOLOGY:</span>
+        {/* Unified Canvas HUD: Telemetry Counter + Monospace Topology Legend */}
+        <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-[#0B0D11]/90 border border-slate-300 dark:border-white/15 rounded-lg px-3 py-1.5 text-[9px] sm:text-[10px] font-mono backdrop-blur-md shadow-md dark:shadow-xl pointer-events-none z-10 hidden sm:flex items-center gap-2.5">
+          <span className="text-slate-950 dark:text-white font-bold tracking-tight">
+            {nodes.length} Nodes • {edges.length} Edges
+          </span>
+          <span className="w-px h-3 bg-slate-300 dark:bg-white/20 shrink-0" aria-hidden="true" />
+          <span className="text-slate-500 dark:text-slate-400 font-semibold">TOPOLOGY:</span>
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded bg-slate-900 dark:bg-white" />
             <span className="text-slate-700 dark:text-slate-300">:Source</span>

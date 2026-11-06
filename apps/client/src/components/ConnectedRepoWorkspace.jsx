@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
-  CheckCircle2, AlertTriangle, ExternalLink, Trash2, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu } from 'lucide-react';
+  CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
@@ -952,9 +952,9 @@ export default function ConnectedRepoWorkspace({
             <button
               onClick={() => { playClick(); onDisconnectRepo(repo.id); }}
               className={`${btnSecondary} hover:bg-rose-500/10 hover:border-rose-500/30`}
-              title="Disconnect this repository"
+              title="Disconnect repository from workspace"
             >
-              <Trash2 className="w-4 h-4" strokeWidth={2} />
+              <Unlink className="w-4 h-4" strokeWidth={2} />
               <span>Disconnect</span>
             </button>
           )}
@@ -1505,7 +1505,7 @@ export default function ConnectedRepoWorkspace({
               <pre
                 tabIndex={0}
                 data-lenis-prevent
-                className="h-60 p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
+                className="h-80 p-4 text-slate-100 text-[11px] font-mono hover-scrollbar leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
               >
                 {agentSetupTab === 'cursor' && JSON.stringify({
                   mcpServers: {
@@ -1628,7 +1628,7 @@ export default function ConnectedRepoWorkspace({
                   </div>
                   <pre
                     tabIndex={0}
-                    className="p-4 text-slate-100 text-[11px] font-mono overflow-x-auto overflow-y-auto has-scrubbar max-h-80 sm:max-h-96 leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
+                    className="h-80 p-4 text-slate-100 text-[11px] font-mono hover-scrollbar leading-relaxed select-text focus:outline-none focus:ring-1 focus:ring-white/20"
                   >
 {`name: CAVDAX Architectural Gate
 

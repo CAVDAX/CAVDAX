@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Lenis from 'lenis';
-import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, SlidersHorizontal, Trash2, Zap, AlertTriangle, X } from 'lucide-react';
+import { Compass, RotateCcw, Cable, GitBranch, ChevronDown, Plus, Check, SlidersHorizontal, Unlink, Zap, AlertTriangle, X } from 'lucide-react';
 import Header from './components/Header.jsx';
 import SplashLoader from './components/SplashLoader.jsx';
 import CavdaxBrandLoader from './components/CavdaxBrandLoader.jsx';
@@ -1593,10 +1593,10 @@ export default function App() {
                                     playClick();
                                     handleDisconnectRepo(repo.id);
                                   }}
-                                  title="Disconnect repository"
+                                  title="Disconnect repository from workspace"
                                   className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
                                 >
-                                  <Trash2 className="w-3 h-3" />
+                                  <Unlink className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>

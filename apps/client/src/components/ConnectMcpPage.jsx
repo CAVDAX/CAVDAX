@@ -1733,10 +1733,13 @@ EXECUTION WORKFLOW:
 
           </div>
 
-          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans [text-wrap:balance]">
-
-            Standard agents write unverified code directly to disk. CAVDAX routes all tool executions through an enclosed stdio proxy or Cloud SSE gate.
-
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed font-sans">
+            <span className="block text-slate-700 dark:text-slate-300 font-medium">
+              Standard agents write unverified code directly to disk.
+            </span>
+            <span className="block text-slate-500 dark:text-slate-400">
+              CAVDAX routes all tool executions through an enclosed stdio proxy or Cloud SSE gate.
+            </span>
           </p>
 
         </div>
@@ -1763,20 +1766,11 @@ EXECUTION WORKFLOW:
 
             <div>
 
-              <div className="flex items-center justify-between gap-3 mb-5">
-
-                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 text-slate-950 dark:text-white group-hover:border-slate-900/30 dark:group-hover:border-white/30 transition-colors shadow-xs">
-
-                  <Terminal className="w-4.5 h-4.5" />
-
-                </div>
-
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <Terminal className="w-5 h-5 text-slate-950 dark:text-white shrink-0 stroke-[1.75]" />
                 <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-[10px] font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase">
-
                   01 · Intercept
-
                 </span>
-
               </div>
 
 
@@ -1789,10 +1783,8 @@ EXECUTION WORKFLOW:
 
 
 
-              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4">
-
-                When Claude Code or Cursor initiates <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 font-mono text-[11px]">apply_code_change</code>, the payload is captured over stdio or SSE before any disk modification occurs.
-
+              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4 [text-wrap:balance]">
+                Intercepts <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 font-mono text-[11px]">apply_code_change</code> over stdio or SSE before any file write reaches disk.
               </p>
 
 
@@ -1837,20 +1829,11 @@ EXECUTION WORKFLOW:
 
             <div>
 
-              <div className="flex items-center justify-between gap-3 mb-5">
-
-                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 text-slate-950 dark:text-white group-hover:border-slate-900/30 dark:group-hover:border-white/30 transition-colors shadow-xs">
-
-                  <GitBranch className="w-4.5 h-4.5" />
-
-                </div>
-
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <GitBranch className="w-5 h-5 text-slate-950 dark:text-white shrink-0 stroke-[1.75]" />
                 <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-[10px] font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase">
-
                   02 · GraphBLAS BFS
-
                 </span>
-
               </div>
 
 
@@ -1863,10 +1846,8 @@ EXECUTION WORKFLOW:
 
 
 
-              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4">
-
-                FalkorDB traces the change back to underlying ADRs and facts. If any fact links to a superseded ADR via <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-slate-200 font-mono text-[11px]">[:SUPERSEDES]</code>, the dependency is marked STALE.
-
+              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4 [text-wrap:balance]">
+                GraphBLAS BFS traverses active ADRs in RAM to verify every grounding decision.
               </p>
 
 
@@ -1911,20 +1892,11 @@ EXECUTION WORKFLOW:
 
             <div>
 
-              <div className="flex items-center justify-between gap-3 mb-5">
-
-                <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 text-slate-950 dark:text-white group-hover:border-slate-900/30 dark:group-hover:border-white/30 transition-colors shadow-xs">
-
-                  <Lock className="w-4.5 h-4.5" />
-
-                </div>
-
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <Lock className="w-5 h-5 text-slate-950 dark:text-white shrink-0 stroke-[1.75]" />
                 <span className="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 font-mono text-[10px] font-bold tracking-wider text-slate-600 dark:text-slate-400 uppercase">
-
                   03 · Execution Gate
-
                 </span>
-
               </div>
 
 
@@ -1937,10 +1909,8 @@ EXECUTION WORKFLOW:
 
 
 
-              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4">
-
-                Intact dependencies return 200 OK and commit to disk. Stale dependencies trigger an immediate 403 Forbidden with the exact invalidation path, forcing the agent to re-read the latest ADR.
-
+              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4 [text-wrap:balance]">
+                Valid decisions commit instantly; superseded dependencies trigger an immediate 403 block.
               </p>
 
 
