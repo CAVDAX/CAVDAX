@@ -1,6 +1,6 @@
 {
   "name": "@cavdax/mcp-server",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "CAVDAX Enclosed Model Context Protocol (MCP) Server backed by FalkorDB GraphBLAS",
   "main": "src/stdioServer.js",
   "type": "module",
@@ -39,7 +39,7 @@
     "causal-graph",
     "architecture-decision-records"
   ],
-  "author": "CAVDAX Team <valorise078gramming@gmail.com>",
+  "author": "CAVDAX Core Team <cavdax.dev@gmail.com>",
   "license": "Apache-2.0",
   "dependencies": {
     "commander": "^12.1.0",
