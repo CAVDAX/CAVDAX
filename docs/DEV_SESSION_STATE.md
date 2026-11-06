@@ -9,6 +9,26 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.97 Latest Session Achievements (November 6, 2026 - 1-Click Sidebar Collapse Suite, Full-Width Graph Canvas & Inspiring Sponsor Directory Copy)
+
+- **1-Click Sidebar Collapse Suite & Full-Width Graph Canvas (`App.jsx`, `TerminalView.jsx`, `ConnectedRepoWorkspace.jsx`, `GraphCanvas.jsx`)**:
+  - Implemented 1-click collapse/expand sidebar controls allowing users to expand the FalkorDB causal graph to 100% viewport width with zero manual dragging.
+  - **Paired Controls Architecture**:
+    - Embedded subtle `<PanelLeftClose />` icon button inside the Terminal top bar (`TerminalView.jsx`) and ADR repository panel header (`ConnectedRepoWorkspace.jsx`).
+    - Embedded dynamic `<PanelLeftOpen /> Sidebar` button inside the `GraphCanvas.jsx` top toolbar, seamlessly rendering when the sidebar is collapsed and restoring the split view upon click.
+  - **Draggable Handle & Double-Click Invariant Preservation**:
+    - Preserved existing draggable divider handle (`onMouseDown` with `localStorage` split width persistence: `cavdax.demo.splitter.width` and `cavdax.repo.splitter.width`).
+    - Added `onDoubleClick` toggle directly on the divider handle to rapidly toggle between custom split width and collapsed view.
+    - Smooth CSS transitions (`transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`) for silky, hardware-accelerated collapse/expansion without layout shift.
+- **Support Page Backer Copy Polish (`SupportPage.jsx`)**:
+  - Replaced cold, transactional, awkwardly wrapped copy (`"Community patrons funding open / causal verification and MCP tools."`) with an inspiring, prestigious phrase:
+    `"Honoring the community champions and builders powering independent innovation."`
+  - Harmonized with `[text-wrap:balance]` to ensure natural 2-line cadence without awkward mid-clause line breaks.
+- **End-to-End Verification**:
+  - Verified with 114 automated unit, integration, and security tests passing (`node --test apps/server/test/*.test.mjs apps/mcp-server/test/locks.test.mjs`).
+  - Production Vite client build passed cleanly in 17.67s.
+  - Puppeteer headless visual verification captured 5 artifacts confirming initial split view, full-width collapsed graph, restored split view, and scrolled sponsor page directory copy.
+
 ## 1.0.96 Latest Session Achievements (November 6, 2026 - Master Prompts Synchronization, Vector 23 Adversarial Protocol, Symmetrical Modal Playbook & Full Documentation Audit)
 
 - **Collapsible Provenance Logs Panel & Smooth Grid Transitions (`TerminalView.jsx`)**:
