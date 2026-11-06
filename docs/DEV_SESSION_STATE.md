@@ -9,6 +9,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.99 Latest Session Achievements (November 6, 2026 - Kinetic Sidebar Transitions, Executive Search Ribbon & Universal Modal Spring Physics)
+
+- **Kinetic Sidebar Transition Polish (`App.jsx`, `ConnectedRepoWorkspace.jsx`)**:
+  - Eliminated the initial 10px layout shift caused by toggling `display: none` (`hidden`) on draggable splitter dividers during collapse.
+  - Divider handles remain in layout using fluid transition properties: `transition-[width,opacity,margin] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)]` (`w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden` when collapsed).
+  - Left panels animate smoothly via `transition-[width,min-width,opacity] duration-350 ease-[cubic-bezier(0.2,0.8,0.2,1)]` with explicit `lg:!min-w-0` overrides preventing flexbox minimum sizing stalls.
+- **GraphCanvas Ribbon Refinements (`GraphCanvas.jsx`)**:
+  - **Solitary Sidebar Expand Icon**: Removed redundant `"Sidebar"` text label next to `<PanelLeftOpen />`, retaining an executive, solitary high-craft icon button with explicit tooltips.
+  - **Drift Filter Sliding Pill Centering**: Corrected vertical pill positioning on `All` / `Grounded` / `Drifted` segmented tabs by changing `top-0.5` to `top-0`, eliminating double-offset misalignment.
+  - **Executive Search Ribbon Pseudo-Input**: Upgraded the narrow search button to a Linear/Supabase-style command pseudo-input (`w-36 sm:w-44 md:w-52 h-7 px-2.5`) with `"Search nodes..."` placeholder and dynamic `<kbd>{searchKbd}</kbd>` shortcut badge, eliminating awkward negative space in the toolbar.
+  - **Functional Hairline Dividers**: Introduced 1px vertical hairline dividers (`bg-slate-300 dark:bg-white/15`) cleanly demarcating Identity, Query/Filter, SVG Export, and Viewport Reset clusters.
+- **Universal Spring-Loaded Physics Across All Modals**:
+  - Unified all workspace dialogs (`Agent Setup`, `CI Gate`, `Propose ADR`, `Init Confirm`, `Playground`, `Connect Repo`, and `Dev PAT`) with `<AnimatePresence>` and spring physics matching `PreferencesModal.jsx`.
+  - Spring profile: `type: 'spring', damping: 28, stiffness: 360` with smooth `opacity: 0, scale: 0.95, y: 12` exit animations and `duration: 0.2` backdrop blurs.
+- **Automated Verification & Zero Regressions**:
+  - Vite client production build passed cleanly in 17.03s.
+  - All 114 backend/MCP unit, integration, and security tests passed.
+  - Headless Puppeteer visual verification confirmed centered drift pill, pseudo-input search bar, vertical dividers, solitary collapse icon, and spring modal transitions.
+
 ## 1.0.98 Latest Session Achievements (November 6, 2026 - Profile Modal Portal Remediation & Dual-Layout Authentication Parity)
 
 - **Root-Cause Analysis of Unresponsive Profile "Connect GitHub" Button**:
