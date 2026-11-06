@@ -1231,9 +1231,15 @@ export default function App() {
         setGraphData(prev => {
           const nodes = prev.nodes.map(n => n.id === 'DEC-102' ? { ...n, status: 'REPLACED_ARCHIVED' } : n);
           const hasD103 = nodes.some(n => n.id === 'DEC-103');
+          const hasD103Edge = prev.edges.some(e => e.source === 'DEC-103' && e.target === 'F-OAuth2' && e.type === 'DEPENDS_ON');
+          const newEdges = hasD103Edge ? prev.edges : [
+            ...prev.edges,
+            { source: 'DEC-103', target: 'F-OAuth2', type: 'DEPENDS_ON' },
+            { source: 'DEC-103', target: 'DEC-102', type: 'REPLACES' }
+          ];
           return {
             nodes: hasD103 ? nodes : [...nodes, { id: 'DEC-103', label: 'Decision', title: 'Scaffold Payment Gateway with OAuth2 (JWT/RS256)', status: 'VALID' }],
-            edges: [...prev.edges, { source: 'DEC-103', target: 'F-OAuth2', type: 'DEPENDS_ON' }, { source: 'DEC-103', target: 'DEC-102', type: 'REPLACES' }]
+            edges: newEdges
           };
         });
         addLog('SYSTEM', 'Notice: Backend offline — simulating revalidation in-browser.', 'INFO');
