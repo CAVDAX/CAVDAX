@@ -9,6 +9,20 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.00 Latest Session Achievements (November 6, 2026 - Balanced 500ms Kinetic Easing & Zero-Reflow Sidebar Curtain Architecture)
+
+- **Root-Cause Analysis of Jerky / Overly Fast Sidebar Collapse**:
+  - The previous `cubic-bezier(0.16, 1, 0.3, 1)` curve had extreme front-loaded initial velocity: at $t = 250\text{ms}$ (halfway through a 500ms animation), the panel was already at $95\%$ collapse ($27\text{px}$ remaining of $579\text{px}$), causing human eyes to perceive an instantaneous snap followed by an imperceptible trailing tail.
+  - Furthermore, `min-w-[280px]` was conditionally toggled on the outer flexbox container. Because CSS flex items default to `min-width: auto`, the container clamped against its inner content minimums, causing sudden layout pops during early animation frames.
+  - In `ConnectedRepoWorkspace.jsx`, the divider splitter handle was still toggling `hidden`, instantly removing 10px of flex layout at $t = 0$.
+- **Architectural Calibration & Engineering Remediation**:
+  - **Balanced Sigmoid Curve (`cubic-bezier(0.4, 0, 0.2, 1)`)**: Switched to a calibrated, symmetrical ease-in-out curve with a luxurious 500ms duration (`transition-[width,flex-basis,opacity] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width,flex-basis]`). Frame-by-frame 50ms sampling confirms a completely progressive, linear-decelerated glide ($579\text{px} \rightarrow 564\text{px} \rightarrow 530\text{px} \rightarrow 315\text{px} \rightarrow 224\text{px} \rightarrow 88\text{px} \rightarrow 46\text{px} \rightarrow 20\text{px} \rightarrow 6\text{px} \rightarrow 0\text{px}$).
+  - **Zero-Reflow Curtain Mask Wrapper**: Wrapped the inner sidebar content inside a statically sized container (`min-w-[360px]` in `App.jsx`, `min-w-[320px]` in `ConnectedRepoWorkspace.jsx`) masked under `overflow-hidden`. Internal buttons, badges, code blocks, and logs maintain fixed layout dimensions and never squish, wrap, or reflow violently as the outer panel smoothly glides closed like an executive pocket door.
+  - **Universal Kinetic Divider Handle**: Aligned the mid-section splitter handle in `ConnectedRepoWorkspace.jsx` to use `transition-[width,opacity,margin] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]` (`w-0 -mx-0 opacity-0 pointer-events-none overflow-hidden` when collapsed), completely eliminating the 10px layout snap across both workspaces.
+- **Empirical Attestation**:
+  - Puppeteer 50ms interval sampling verified continuous, non-clumping width reduction during collapse and expansion.
+  - Vite client production build passed cleanly in 10.63s; all 114 backend/MCP unit, integration, and security tests passed.
+
 ## 1.0.99 Latest Session Achievements (November 6, 2026 - Kinetic Sidebar Transitions, Executive Search Ribbon & Universal Modal Spring Physics)
 
 - **Kinetic Sidebar Transition Polish (`App.jsx`, `ConnectedRepoWorkspace.jsx`)**:
