@@ -2457,7 +2457,7 @@ export const SYSTEM_CREDITS = [
 
     label: "LICENSE & GOVERNANCE",
 
-    value: "GNU GPL 3.0",
+    value: "Apache 2.0 / BSL 1.1",
 
     detail: "Verifiable open-source societal innovation collaboration portal"
 

@@ -235,7 +235,7 @@ graph TD
 
 2. **Supply Chain Trust & Enterprise Licensing (GPL vs. Permissive)**:
    * *Risk*: Enterprise legal teams frequently restrict developers from installing npm packages governed by copyleft licenses like GPL-3.0 due to concerns regarding commercial software incorporation.
-   * *Remediation*: The MCP server (`@cavdax/mcp-server`) should adopt a dual-licensing model or transition to **Apache-2.0** (the standard for Kubernetes and Anthropic MCP SDKs), while retaining GPL for the core server if desired.
+   * *Remediation*: The MCP server (`@cavdax/mcp-server`) and client packages have transitioned to **Apache-2.0** (the standard for Kubernetes and Anthropic MCP SDKs), with the cloud multi-tenant infrastructure licensed under **Business Source License 1.1 (BSL 1.1)**.
 
 ---
 
