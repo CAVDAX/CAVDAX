@@ -11,6 +11,14 @@
 
 ## 1.0.96 Latest Session Achievements (November 6, 2026 - Master Prompts Synchronization, Vector 23 Adversarial Protocol, Symmetrical Modal Playbook & Full Documentation Audit)
 
+- **Collapsible Provenance Logs Panel & Smooth Grid Transitions (`TerminalView.jsx`)**:
+  - Implemented collapsible `Live Provenance Stream ({terminalLogs.length} events)` section with rotating `<ChevronDown />` (smooth cubic-bezier rotation).
+  - Replaced abrupt DOM mounting with pure modern CSS `grid-template-rows: 0fr -> 1fr` height interpolation, eliminating visual jumpiness.
+  - Implemented adaptive flexbox expansion: when logs are collapsed, the code diff inspector expands to `flex-1` for full code preview.
+- **Deterministic 2-Line Subtitle in Agent Setup Modal (`ConnectedRepoWorkspace.jsx`)**:
+  - Enforced semantic block spans on modal subtitle, preventing arbitrary word-wrapping across the repository slug (`{repo.full_name}`) and branch name.
+- **Semantic Broken-Chain `Unlink` in Connect Repository Modal (`ConnectRepoModal.jsx`)**:
+  - Upgraded text-only `Disconnect` button to paired `<Unlink className="w-3 h-3 shrink-0" /> Disconnect` button, establishing design system parity across workspaces.
 - **Clean Workspace Title & HUD Telemetry Divider (`ConnectedRepoWorkspace.jsx` & `GraphCanvas.jsx`)**:
   - Removed the AI-interpunct trope and redundant repository name (`· ${repo.full_name}`) from the workspace graph canvas title, standardizing to crisp, authoritative **`Repository Decision Graph`** and eliminating title truncation on compact viewports.
   - Replaced the unicode bullet (`•`) in the canvas bottom HUD telemetry pill with a subtle 1px vertical hairline divider (`w-px h-2.5 bg-slate-300 dark:bg-white/20`), creating architectural telemetry cells (`{nodes.length} Nodes │ {edges.length} Edges`).
