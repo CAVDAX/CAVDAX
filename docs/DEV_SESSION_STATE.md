@@ -11,6 +11,9 @@
 
 ## 1.0.96 Latest Session Achievements (November 6, 2026 - Master Prompts Synchronization, Vector 23 Adversarial Protocol, Symmetrical Modal Playbook & Full Documentation Audit)
 
+- **Clean Workspace Title & HUD Telemetry Divider (`ConnectedRepoWorkspace.jsx` & `GraphCanvas.jsx`)**:
+  - Removed the AI-interpunct trope and redundant repository name (`· ${repo.full_name}`) from the workspace graph canvas title, standardizing to crisp, authoritative **`Repository Decision Graph`** and eliminating title truncation on compact viewports.
+  - Replaced the unicode bullet (`•`) in the canvas bottom HUD telemetry pill with a subtle 1px vertical hairline divider (`w-px h-2.5 bg-slate-300 dark:bg-white/20`), creating architectural telemetry cells (`{nodes.length} Nodes │ {edges.length} Edges`).
 - **External Master Prompts Synchronization (`C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
   - **`#General-Main\#AGENTS.md File.md`**: Appended **Rule 43** (*Version Synchronization & Stale Release Number Elimination Standard*) and **Rule 44** (*Modal Viewport Parity & Hover-Revealed Code Editor Scrollbars*), ensuring future agent scaffolding inherits zero stale version tags and symmetrical modal viewports.
   - **`#General-Main\#UI_DESIGN_SYSTEM.md file.md`**: Appended **Section 65** (*High-Craft Architectural Ergonomics: Unboxed Glyphs, Bento Cadence, and Semantic Git Disconnect*) covering unboxed vector glyphs, symmetrical bento subtext cadence, semantic broken-chain unlink iconography, code block viewport parity (`h-80` / 320px), and canvas viewport HUD separation.
