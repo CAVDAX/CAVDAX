@@ -905,6 +905,7 @@ export default function GraphCanvas({
                   key={tab.id}
                   ref={(el) => { if (el) driftPill.refs.current[tab.id] = el; }}
                   onClick={() => { playClick(); setDriftFilter(tab.id); }}
+                  title={canvasWidth < 900 ? tab.label : undefined}
                   className={`relative px-2 py-0.5 rounded-md transition-colors cursor-pointer z-10 flex items-center gap-1.5 ${
                     active
                       ? 'text-slate-950 dark:text-white font-bold'

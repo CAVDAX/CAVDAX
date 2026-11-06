@@ -155,9 +155,9 @@ export default function ConnectedRepoWorkspace({
   const [leftWidthPercent, setLeftWidthPercent] = useState(() => {
     try {
       const saved = localStorage.getItem('cavdax.repo.splitter.width');
-      return saved ? Math.min(65, Math.max(25, parseFloat(saved))) : 35;
+      return saved ? Math.min(65, Math.max(25, parseFloat(saved))) : 42;
     } catch {
-      return 35;
+      return 42;
     }
   });
   const [isDraggingSplitter, setIsDraggingSplitter] = useState(false);
