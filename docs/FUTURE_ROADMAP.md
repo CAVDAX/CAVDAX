@@ -609,7 +609,7 @@ Phase 3.5 — Backend & CLI Resilience
 
 ```
 Phase 1 — Already Done
-  ✅ NPM package (@cavdax/mcp-server@1.0.0)
+  ✅ NPM package (@cavdax/mcp-server@1.2.6)
   ✅ Hosted SSE transport
   ✅ Auth middleware + rate limiting
   ✅ Audit endpoint + Audit UI tab
