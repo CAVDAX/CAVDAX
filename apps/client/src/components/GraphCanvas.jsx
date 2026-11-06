@@ -152,6 +152,20 @@ export default function GraphCanvas({
 
 
   const containerRef = useRef(null);
+  const [canvasWidth, setCanvasWidth] = useState(1000);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect && entry.contentRect.width) {
+          setCanvasWidth(entry.contentRect.width);
+        }
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -683,6 +697,25 @@ export default function GraphCanvas({
         const displayLabel = node.label || (node.id?.startsWith('act-') ? 'AgentAction' : 'Node');
         const shortId = node.id.length > 12 ? node.id.slice(0, 11) + '…' : node.id;
 
+        const isDecision = node.label === 'Decision';
+        if (isDecision) {
+          return `
+            <g transform="translate(${node.x}, ${ny})">
+              <!-- Outer Glow Halo (Diamond) -->
+              <polygon points="0,-36 46,0 0,36 -46,0" fill="none" stroke="${colors.stroke}" stroke-width="${inBlast || isSimRoot ? 2.5 : 1.2}" opacity="${inBlast || isSimRoot ? 0.95 : 0.3}" />
+              <!-- Node Double-Bezel Body (Diamond) -->
+              <polygon points="0,-31 40,0 0,31 -40,0" fill="${colors.fill}" stroke="${isSimRoot ? '#38BDF8' : colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" stroke-linejoin="round" />
+              <!-- Core Node ID -->
+              <text x="0" y="-3" text-anchor="middle" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="bold">${shortId}</text>
+              <!-- High-Contrast Status Badge -->
+              <rect x="-22" y="4" width="44" height="12" rx="3" ry="3" fill="${badgeBg}" />
+              <text x="0" y="13" text-anchor="middle" fill="${badgeFg}" font-size="6.5" font-family="monospace" font-weight="bold">${badgeText}</text>
+              <!-- Label Indicator -->
+              <text x="0" y="40" text-anchor="middle" fill="${textMuted}" font-size="8" font-family="monospace">:${displayLabel}</text>
+            </g>
+          `;
+        }
+
         return `
           <g transform="translate(${node.x}, ${ny})">
             <!-- Outer Glow Halo -->
@@ -778,30 +811,46 @@ export default function GraphCanvas({
             </button>
           )}
           <Database className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
-          <span className="font-mono font-semibold text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[180px] md:max-w-none" title={title}>
+          <span 
+            className="font-mono font-semibold text-slate-900 dark:text-white truncate" 
+            style={{ maxWidth: canvasWidth < 640 ? "80px" : canvasWidth < 840 ? "130px" : "220px" }}
+            title={title}
+          >
             {title}
           </span>
           <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-1 hidden sm:block shrink-0" />
         </div>
 
         {/* Zone 2: Centered Command Omnibar (Fluid Width, Center-Anchored) */}
-        <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
+        {canvasWidth < 680 ? (
           <button
             type="button"
             onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
-            className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
+            className="p-1.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono shrink-0"
             title={`Search DAG Nodes (${searchKbd})`}
             aria-label={`Search DAG Nodes (${searchKbd})`}
           >
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>
-            </div>
-            <kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400 shrink-0">
-              {searchKbd}
-            </kbd>
+            <Search className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
           </button>
-        </div>
+        ) : (
+          <div className="flex-1 flex justify-center max-w-[180px] sm:max-w-xs md:max-w-sm lg:max-w-md mx-auto">
+            <button
+              type="button"
+              onClick={() => { playClick(); setIsCommandPaletteOpen(true); }}
+              className="flex items-center justify-between w-full h-7 px-2.5 rounded-lg border border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-white/5 hover:bg-slate-200/80 dark:hover:bg-white/10 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all duration-200 tactile-btn cursor-pointer shadow-2xs font-mono"
+              title={`Search DAG Nodes (${searchKbd})`}
+              aria-label={`Search DAG Nodes (${searchKbd})`}
+            >
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
+                <span className="text-[11px] font-sans text-slate-500 dark:text-slate-400 truncate">Search nodes...</span>
+              </div>
+              <kbd className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-200/80 dark:bg-white/10 border border-slate-300 dark:border-white/10 text-slate-500 dark:text-slate-400 shrink-0">
+                {searchKbd}
+              </kbd>
+            </button>
+          </div>
+        )}
 
         {/* Zone 3: Canvas Controls & Actions (Right Anchored) */}
         <div className="flex items-center gap-2 shrink-0 font-mono">
@@ -839,17 +888,18 @@ export default function GraphCanvas({
                   }`}
                 >
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
-                  <span className="hidden xl:inline">{tab.label}</span>
+                  {canvasWidth >= 880 && <span>{tab.label}</span>}
                 </button>
               );
             })}
           </div>
 
           {/* Functional Divider */}
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
+          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Action Tools Cluster: Direct SVG Download & Node Permalink Sharing */}
-          <div className="flex items-center gap-0.5">
+          {canvasWidth >= 520 && (
+            <div className="flex items-center gap-0.5">
             <button
               type="button"
               onClick={handleDownloadGraph}
@@ -884,9 +934,10 @@ export default function GraphCanvas({
               )}
             </button>
           </div>
+          )}
 
           {/* Functional Divider */}
-          <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 hidden md:block shrink-0" />
+          {canvasWidth >= 520 && <div className="w-px h-3.5 bg-slate-300 dark:bg-white/15 mx-0.5 shrink-0" />}
 
           {/* Segmented Zoom Readout Pill with Linear/Figma Preset Dropdown */}
           <div className="relative flex items-center bg-slate-200/60 dark:bg-white/[0.04] p-0.5 rounded-lg border border-slate-300/80 dark:border-white/10 shadow-xs">
@@ -1245,6 +1296,7 @@ export default function GraphCanvas({
             const isSelected = selectedNodeId === node.id;
             const inBlast = blastNodeIds.has(node.id);
             const isSimRoot = simulatedBlastNode?.id === node.id;
+            const isDecision = node.label === 'Decision';
 
             return (
               <g
@@ -1256,54 +1308,117 @@ export default function GraphCanvas({
                 }}
                 className="cursor-pointer group graph-node"
               >
-                {/* Transparent Hit Area for 100% Reliable Pointer Events */}
-                <rect
-                  x="-38"
-                  y="-28"
-                  width="76"
-                  height="56"
-                  rx="12"
-                  ry="12"
-                  fill="transparent"
-                  className="cursor-pointer"
-                />
+                {isDecision ? (
+                  <>
+                    {/* Diamond Transparent Hit Area */}
+                    <polygon
+                      points="0,-38 48,0 0,38 -48,0"
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
 
-                {/* Outer Glow Halo */}
-                <rect
-                  x="-36"
-                  y="-26"
-                  width="72"
-                  height="52"
-                  rx="10"
-                  ry="10"
-                  fill="none"
-                  stroke={colors.stroke}
-                  strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
-                  opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
-                  className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
-                  style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
-                />
+                    {/* Diamond Outer Glow Halo */}
+                    <polygon
+                      points="0,-36 46,0 0,36 -46,0"
+                      fill="none"
+                      stroke={colors.stroke}
+                      strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
+                      opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
+                      className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
+                      style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                    />
 
-                {/* Node Double-Bezel Body */}
-                <rect
-                  x="-32"
-                  y="-22"
-                  width="64"
-                  height="44"
-                  rx="8"
-                  ry="8"
-                  fill={colors.fill}
-                  stroke={isSimRoot ? '#38BDF8' : colors.stroke}
-                  strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
-                  className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
-                />
+                    {/* Diamond Double-Bezel Body */}
+                    <polygon
+                      points="0,-31 40,0 0,31 -40,0"
+                      fill={colors.fill}
+                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
+                      strokeLinejoin="round"
+                      className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
+                    />
+
+                    {/* Diamond Luminous Pulse Feedback Ring */}
+                    {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
+                      <polygon
+                        points="0,-38 48,0 0,38 -48,0"
+                        fill="none"
+                        stroke={colors.stroke}
+                        strokeWidth="2.5"
+                        className="animate-pulse"
+                        style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Rect Transparent Hit Area */}
+                    <rect
+                      x="-38"
+                      y="-28"
+                      width="76"
+                      height="56"
+                      rx="12"
+                      ry="12"
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
+
+                    {/* Rect Outer Glow Halo */}
+                    <rect
+                      x="-36"
+                      y="-26"
+                      width="72"
+                      height="52"
+                      rx="10"
+                      ry="10"
+                      fill="none"
+                      stroke={colors.stroke}
+                      strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
+                      opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
+                      className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
+                      style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                    />
+
+                    {/* Rect Double-Bezel Body */}
+                    <rect
+                      x="-32"
+                      y="-22"
+                      width="64"
+                      height="44"
+                      rx="8"
+                      ry="8"
+                      fill={colors.fill}
+                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
+                      className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
+                    />
+
+                    {/* Rect Luminous Pulse Feedback Ring */}
+                    {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
+                      <rect
+                        x="-38"
+                        y="-28"
+                        width="76"
+                        height="56"
+                        rx="12"
+                        ry="12"
+                        fill="none"
+                        stroke={colors.stroke}
+                        strokeWidth="2.5"
+                        className="animate-pulse"
+                        style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                      />
+                    )}
+                  </>
+                )}
 
                 {/* Node ID Label */}
                 <text
                   textAnchor="middle"
                   dy="-3"
                   fill={colors.text}
-                  fontSize="9.5"
+                  fontSize={isDecision ? "9" : "9.5"}
                   fontFamily="monospace"
                   fontWeight="bold"
                   className="select-none pointer-events-none"
@@ -1312,23 +1427,6 @@ export default function GraphCanvas({
                 </text>
 
                 {/* Status Subtitle Badge */}
-                {/* Luminous Pulse Feedback Ring on fresh execution */}
-                {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
-                  <rect
-                    x="-38"
-                    y="-28"
-                    width="76"
-                    height="56"
-                    rx="12"
-                    ry="12"
-                    fill="none"
-                    stroke={colors.stroke}
-                    strokeWidth="2.5"
-                    className="animate-pulse"
-                    style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
-                  />
-                )}
-
                 <text
                   textAnchor="middle"
                   dy="11"
@@ -1344,7 +1442,7 @@ export default function GraphCanvas({
                 {/* Node Type Label */}
                 <text
                   textAnchor="middle"
-                  dy="36"
+                  dy={isDecision ? "42" : "36"}
                   fill={isDarkTheme ? '#94A3B8' : '#64748B'}
                   fontSize="8.5"
                   fontFamily="monospace"
@@ -1375,7 +1473,7 @@ export default function GraphCanvas({
             <span className="text-slate-700 dark:text-slate-300">:Fact</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-amber-500 dark:bg-amber-400" />
+            <span className="w-[7px] h-[7px] rotate-45 rounded-[0.5px] bg-amber-500 dark:bg-amber-400 shrink-0" />
             <span className="text-slate-700 dark:text-slate-300">:Decision</span>
           </div>
           <div className="flex items-center gap-1.5">
