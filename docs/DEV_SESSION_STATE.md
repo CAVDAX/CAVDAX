@@ -2782,3 +2782,25 @@ A complete visual and architectural transformation has been executed across the 
 
   - Pre-publish integrity check passes with zero memory leak patterns and zero markup text leaks.
 
+### 7.2 Open-Core Commercial Rebranding & Dual-Licensing Transition
+
+- **Organization & Provenance Alignment**:
+  - Transferred official repository from personal space to public GitHub organization: `https://github.com/CAVDAX/CAVDAX`.
+  - Configured Git tracking remote to `https://github.com/CAVDAX/CAVDAX.git`.
+  - Re-licensed `@cavdax/mcp-server` to **Apache-2.0** with GitHub Actions Sigstore build provenance for frictionless enterprise adoption.
+  - Hardened `.github/workflows/deploy.yml` with headless token-based checkout (`x-access-token:${{ secrets.GITHUB_TOKEN }}`) and `EXIT` trap cleanup to eliminate git auth failures.
+
+- **Open Core Dual-Licensing Enforcement**:
+  - Root `LICENSE` transitioned from pure GPLv3 to **Open Core Dual-License**:
+    - **Apache 2.0**: Covers `@cavdax/mcp-server`, client CLI, and AST parsers, enabling seamless integration into developer IDEs (Cursor, Claude Code, Cline, Windsurf).
+    - **Business Source License (BSL 1.1)**: Covers `apps/server`, `infra/`, and multi-tenant cloud orchestration, prohibiting competitors from hosting CAVDAX as a competing managed SaaS while keeping source code fully readable and auditable.
+
+- **Commercial Messaging & Hackathon Scrubbing**:
+  - Replaced hackathon submission claims across all client surfaces and documentation with enterprise commercial messaging:
+    - `apps/client/src/components/TeamPage.jsx`: Updated tagline from hackathon partnership to *"An engineering collective architecting deterministic causal verification for autonomous coding agents"*.
+    - `apps/client/src/components/FooterParticles.jsx`: Updated attribution line from *"FalkorDB Graph Hacks 2026"* to *"Powered by FalkorDB GraphBLAS • Apache 2.0 / BSL 1.1"*.
+    - `apps/client/src/data/teamData.js`: Replaced hackathon tracks with technical engine specifications (`FalkorDB GraphBLAS & MCP` and `Causal Graph Invalidation & Multi-Agent Deterministic Execution`).
+    - `README.md`: Modernized hero header, converted "Hackathon Track Alignment" to "Core Architecture: The Two-Plane Protection Model" (Execution Plane vs State Plane), and updated license/attribution sections.
+
+- **Deployment Continuity**:
+  - Production platform active and intact at `https://cavdax.sahnirmaan.live`.
