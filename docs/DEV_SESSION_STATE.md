@@ -9,6 +9,19 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.06 Team Headline 2-Line Polish, Profile Auth Reactivity & Baseline Act-1 Invariant (November 6, 2026)
+- **TeamPage Copy Tightened to Strictly 2 Lines (`TeamPage.jsx`)**:
+  - Removed 24 characters of redundant introductory filler (*"An engineering collective"*).
+  - Configured paragraph with `sm:whitespace-nowrap` on Line 2 (*"Architecting deterministic causal verification for autonomous coding agents."*) and `max-w-3xl`, guaranteeing that the copy renders strictly on at most 2 lines on screens $\ge 640\text{px}$.
+- **Profile Page Auth Reactivity & Zero-Latency Key Resolution (`ProfilePage.jsx`)**:
+  - Resolved stale quota bug by appending `user?.login` to the `fetchQuota` dependency array, ensuring personal user quotas refresh immediately when background OAuth resolves.
+  - Hardened `fetchApiKey` to leverage cached session identity (`effectiveUser = user || getStoredUser() || getActiveDevSession()`), eliminating eager key-field wipeouts during initial mount.
+  - Attached `cavdax:user-changed` event listener to trigger immediate key and quota re-fetching across modal login/logout transitions.
+- **Act 1 Baseline Reset Invariant (`App.jsx`)**:
+  - Added `BASELINE_ACT1_GRAPH` fallback to `handleReset()`, guaranteeing that clicking Act 1 or Reset snaps the client canvas back to the Act 1 baseline even if the server is offline or returns an authentication rejection.
+- **NPM Package Release & Provenance Alignment (`README.md`)**:
+  - Updated `@cavdax/mcp-server` CLI daemon reference in `README.md` from `v1.2.6` to `v1.2.7`, establishing version parity across all documentation and release artifacts.
+
 ## 1.1.05 Decision Geometry Polish, Right-Corridor Intra-Column Arc Routing & FalkorDB Revalidation Idempotency (November 6, 2026)
 - **Zero-Collision Intra-Column Replacement Arcs (`GraphCanvas.jsx`)**:
   - Re-routed bezier curves for `:Decision` replacements (`REPLACES`, `SUPERSEDES`) to arc to the right (`arcDir = +1`, $x + 40 + 45$) through the clear corridor between `:Decision` and `:AgentAction`.
