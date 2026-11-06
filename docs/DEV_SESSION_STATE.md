@@ -32,6 +32,13 @@
   - Resolved fatal `could not read Username for 'https://github.com': No such device or address` (exit status 128) when repository visibility is toggled between Public and Private.
   - Upgraded remote VM deploy script to inject ephemeral `${{ secrets.GITHUB_TOKEN }}` via `https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git` before `git fetch origin main`.
   - Implemented bash `trap 'git remote set-url origin ...' EXIT` to automatically scrub credentials from `.git/config` post-deployment, ensuring zero permanent secrets persist on the VM disk while guaranteeing seamless zero-downtime rolling deploys regardless of repository privacy state.
+- **GitHub Organization Migration & Open Core Dual-Licensing (`LICENSE`, `apps/mcp-server/package.json`)**:
+  - Transferred official repository ownership to public GitHub organization [`https://github.com/CAVDAX/CAVDAX`](https://github.com/CAVDAX/CAVDAX) with seamless HTTP and git redirect parity.
+  - Successfully resolved the npm cryptographic Sigstore build provenance warning on `@cavdax/mcp-server` by aligning public commit access with organization endpoints.
+  - Formally adopted an **Open Core Dual-License Structure**:
+    - **Client & MCP Packages (`@cavdax/mcp-server`, CLI)**: Re-licensed under **Apache License 2.0**, granting enterprise engineering teams zero-friction, copyleft-free installation in Cursor, Claude Code, and CI workflows.
+    - **Cloud Platform & Multi-Tenant Engine (`apps/server`, `infra/`)**: Re-licensed under **Business Source License 1.1 (BSL 1.1)**, prohibiting cloud providers and competitors from reselling the multi-tenant FalkorDB mesh while keeping source code free for internal and developmental use.
+  - Synchronized repository links across `README.md`, `FooterParticles.jsx`, `ProjectVideoPage.jsx`, and `teamData.js`.
 - **Verification & Git Parity**:
   - Production build passed (`npm run build` in 12.07s).
   - Headless Puppeteer verification confirmed clean SVG viewBox (`0 0 880 480`), visible overflow, exactly 2 decisions, and smooth rightward intra-paths.

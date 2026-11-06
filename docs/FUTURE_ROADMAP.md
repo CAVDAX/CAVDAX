@@ -679,7 +679,7 @@ Phase 4 — Enterprise (Remaining)
 ### 9.1 The Architectural Decision
 Currently, `apps/mcp-server/package.json` configures:
 ```json
-"homepage": "https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme"
+"homepage": "https://github.com/CAVDAX/CAVDAX/tree/main/apps/mcp-server#readme"
 ```
 
 ### 9.2 Industry Benchmark Comparison
@@ -695,7 +695,7 @@ Currently, `apps/mcp-server/package.json` configures:
 
 ### 9.3 Options for Evaluation
 1. **Option A (Current — Monorepo Subtree)**:
-   - Retain `https://github.com/suneetchugh-dev/CAVDAX/tree/main/apps/mcp-server#readme`.
+   - Retain `https://github.com/CAVDAX/CAVDAX/tree/main/apps/mcp-server#readme`.
    - *Pros*: Completely hermetic to the open-source GitHub monorepo subfolder.
    - *Cons*: NPM already displays the README directly on the page, and the "Repository" button already links to GitHub. Clicking Homepage provides a redundant duplicate view.
 2. **Option B (Recommended SaaS Product Standard)**:
