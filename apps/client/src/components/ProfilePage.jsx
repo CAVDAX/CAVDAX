@@ -181,7 +181,8 @@ export default function ProfilePage({
   useEffect(() => {
     let isMounted = true;
     async function fetchApiKey() {
-      if (!user) {
+      const effectiveUser = user || getStoredUser() || getActiveDevSession();
+      if (!effectiveUser) {
         if (isMounted) {
           setApiKey('');
           setIsRevokedNotice(false);
@@ -225,11 +226,17 @@ export default function ProfilePage({
     };
     window.addEventListener('cavdax:keys-revoked', handleKeysRevoked);
 
+    const handleUserChanged = () => {
+      fetchApiKey();
+    };
+    window.addEventListener('cavdax:user-changed', handleUserChanged);
+
     return () => {
       isMounted = false;
       window.removeEventListener('cavdax:keys-revoked', handleKeysRevoked);
+      window.removeEventListener('cavdax:user-changed', handleUserChanged);
     };
-  }, [user]);
+  }, [user, currentTier]);
 
 
   const handleRazorpayUpgrade = async () => {
@@ -370,7 +377,7 @@ export default function ProfilePage({
     };
 
     fetchQuota();
-  }, [currentTier]);
+  }, [currentTier, user?.login]);
 
   const [isSponsor, setIsSponsor] = useState(() => {
     try {

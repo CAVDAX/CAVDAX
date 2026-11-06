@@ -130,6 +130,21 @@ const TAB_TO_PATH = {
   '404': '/404',
 };
 
+const BASELINE_ACT1_GRAPH = {
+  nodes: [
+    { id: 'ADR-001', label: 'Source', title: 'Adopt TokenAuth v1 for Payment Gateway', status: 'ACTIVE', type: 'ADR' },
+    { id: 'F-Auth-v1', label: 'Fact', claim: 'Payment services require TokenAuth v1', is_stale: false, verified: true },
+    { id: 'DEC-102', label: 'Decision', title: 'Generate Checkout Service with TokenAuth v1', status: 'VALID' },
+    { id: 'ADR-002', label: 'Source', title: 'Mandatory Migration to OAuth2; TokenAuth v1 Decommissioned', status: 'ACTIVE', type: 'ADR' },
+    { id: 'F-OAuth2', label: 'Fact', claim: 'OAuth2 is strictly enforced; TokenAuth v1 prohibited', is_stale: false, verified: true }
+  ],
+  edges: [
+    { source: 'F-Auth-v1', target: 'ADR-001', type: 'EXTRACTED_FROM' },
+    { source: 'DEC-102', target: 'F-Auth-v1', type: 'DEPENDS_ON' },
+    { source: 'F-OAuth2', target: 'ADR-002', type: 'EXTRACTED_FROM' }
+  ]
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState(() => resolveTabFromUrl());
   const [landingTarget, setLandingTarget] = useState(() => (typeof window !== 'undefined' && window.location.pathname === '/' ? 'wordmark' : 'overview'));
@@ -1359,8 +1374,12 @@ export default function App() {
     setAgentState('idle');
     try {
       const res = await fetch('/api/reset', { method: 'POST', credentials: 'include' });
-      const data = await res.json();
-      if (data.graph) setGraphData(data.graph);
+      const data = await res.json().catch(() => ({}));
+      if (data && data.graph) {
+        setGraphData(data.graph);
+      } else {
+        setGraphData(BASELINE_ACT1_GRAPH);
+      }
 
       setCurrentAct(1);
       setActiveVerdict(null);
@@ -1386,6 +1405,7 @@ export default function App() {
       });
     } catch (err) {
       console.error('Reset error:', err);
+      setGraphData(BASELINE_ACT1_GRAPH);
     } finally {
       setIsResetting(false);
     }
