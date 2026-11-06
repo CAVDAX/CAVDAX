@@ -9,8 +9,39 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.97 Latest Session Achievements (November 6, 2026 - 1-Click Sidebar Collapse Suite, Full-Width Graph Canvas & Inspiring Sponsor Directory Copy)
+
+- **1-Click Sidebar Collapse Suite & Full-Width Graph Canvas (`App.jsx`, `TerminalView.jsx`, `ConnectedRepoWorkspace.jsx`, `GraphCanvas.jsx`)**:
+  - Implemented 1-click collapse/expand sidebar controls allowing users to expand the FalkorDB causal graph to 100% viewport width with zero manual dragging.
+  - **Paired Controls Architecture**:
+    - Embedded subtle `<PanelLeftClose />` icon button inside the Terminal top bar (`TerminalView.jsx`) and ADR repository panel header (`ConnectedRepoWorkspace.jsx`).
+    - Embedded dynamic `<PanelLeftOpen /> Sidebar` button inside the `GraphCanvas.jsx` top toolbar, seamlessly rendering when the sidebar is collapsed and restoring the split view upon click.
+  - **Draggable Handle & Double-Click Invariant Preservation**:
+    - Preserved existing draggable divider handle (`onMouseDown` with `localStorage` split width persistence: `cavdax.demo.splitter.width` and `cavdax.repo.splitter.width`).
+    - Added `onDoubleClick` toggle directly on the divider handle to rapidly toggle between custom split width and collapsed view.
+    - Smooth CSS transitions (`transition-[width,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]`) for silky, hardware-accelerated collapse/expansion without layout shift.
+- **Support Page Backer Copy Polish (`SupportPage.jsx`)**:
+  - Replaced cold, transactional, awkwardly wrapped copy (`"Community patrons funding open / causal verification and MCP tools."`) with an inspiring, prestigious phrase:
+    `"Honoring the community champions and builders powering independent innovation."`
+  - Harmonized with `[text-wrap:balance]` to ensure natural 2-line cadence without awkward mid-clause line breaks.
+- **End-to-End Verification**:
+  - Verified with 114 automated unit, integration, and security tests passing (`node --test apps/server/test/*.test.mjs apps/mcp-server/test/locks.test.mjs`).
+  - Production Vite client build passed cleanly in 17.67s.
+  - Puppeteer headless visual verification captured 5 artifacts confirming initial split view, full-width collapsed graph, restored split view, and scrolled sponsor page directory copy.
+
 ## 1.0.96 Latest Session Achievements (November 6, 2026 - Master Prompts Synchronization, Vector 23 Adversarial Protocol, Symmetrical Modal Playbook & Full Documentation Audit)
 
+- **Collapsible Provenance Logs Panel & Smooth Grid Transitions (`TerminalView.jsx`)**:
+  - Implemented collapsible `Live Provenance Stream ({terminalLogs.length} events)` section with rotating `<ChevronDown />` (smooth cubic-bezier rotation).
+  - Replaced abrupt DOM mounting with pure modern CSS `grid-template-rows: 0fr -> 1fr` height interpolation, eliminating visual jumpiness.
+  - Implemented adaptive flexbox expansion: when logs are collapsed, the code diff inspector expands to `flex-1` for full code preview.
+- **Deterministic 2-Line Subtitle in Agent Setup Modal (`ConnectedRepoWorkspace.jsx`)**:
+  - Enforced semantic block spans on modal subtitle, preventing arbitrary word-wrapping across the repository slug (`{repo.full_name}`) and branch name.
+- **Semantic Broken-Chain `Unlink` in Connect Repository Modal (`ConnectRepoModal.jsx`)**:
+  - Upgraded text-only `Disconnect` button to paired `<Unlink className="w-3 h-3 shrink-0" /> Disconnect` button, establishing design system parity across workspaces.
+- **Clean Workspace Title & HUD Telemetry Divider (`ConnectedRepoWorkspace.jsx` & `GraphCanvas.jsx`)**:
+  - Removed the AI-interpunct trope and redundant repository name (`· ${repo.full_name}`) from the workspace graph canvas title, standardizing to crisp, authoritative **`Repository Decision Graph`** and eliminating title truncation on compact viewports.
+  - Replaced the unicode bullet (`•`) in the canvas bottom HUD telemetry pill with a subtle 1px vertical hairline divider (`w-px h-2.5 bg-slate-300 dark:bg-white/20`), creating architectural telemetry cells (`{nodes.length} Nodes │ {edges.length} Edges`).
 - **External Master Prompts Synchronization (`C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\`)**:
   - **`#General-Main\#AGENTS.md File.md`**: Appended **Rule 43** (*Version Synchronization & Stale Release Number Elimination Standard*) and **Rule 44** (*Modal Viewport Parity & Hover-Revealed Code Editor Scrollbars*), ensuring future agent scaffolding inherits zero stale version tags and symmetrical modal viewports.
   - **`#General-Main\#UI_DESIGN_SYSTEM.md file.md`**: Appended **Section 65** (*High-Craft Architectural Ergonomics: Unboxed Glyphs, Bento Cadence, and Semantic Git Disconnect*) covering unboxed vector glyphs, symmetrical bento subtext cadence, semantic broken-chain unlink iconography, code block viewport parity (`h-80` / 320px), and canvas viewport HUD separation.
