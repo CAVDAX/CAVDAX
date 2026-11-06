@@ -1950,8 +1950,20 @@ app.post('/api/act-iv-revalidate', requireAuth, async (req, res) => {
   }
 });
 
-// 8. Reset Demo Repository & Graph (Protected by requireDevAuth)
-app.post('/api/reset', requireDevAuth, async (req, res) => {
+// 8. Reset Demo Repository & Graph (Interactive Walkthrough Reset with Mutex & Rate Limiting)
+let isResettingDemo = false;
+let lastResetTimestamp = 0;
+
+app.post('/api/reset', async (req, res) => {
+  const now = Date.now();
+  if (isResettingDemo) {
+    return res.status(429).json({ success: false, error: 'Demo reset already in progress. Please wait a moment.' });
+  }
+  if (now - lastResetTimestamp < 1000) {
+    return res.status(429).json({ success: false, error: 'Demo reset requested too rapidly. Please retry in 1 second.' });
+  }
+  isResettingDemo = true;
+  lastResetTimestamp = now;
   try {
     const paymentServicePath = path.join(REPO_ROOT, 'demo-repo/src/services/payment.js');
     const initialStub = `/**
@@ -2000,6 +2012,8 @@ export default app;
   } catch (err) {
     console.error('Reset Error:', err);
     res.status(500).json({ success: false, error: err.message });
+  } finally {
+    isResettingDemo = false;
   }
 });
 
