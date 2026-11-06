@@ -460,7 +460,7 @@ Captured directly from our live production deployment at [https://cavdax.sahnirm
 </div>
 
 ### 2. Connected Repository Developer Workspace (`/console`)
-> Real-time developer workspace with connected repository lifecycle controls, branch tracking, instant architecture baseline initialization (`ADR-001`), persistent draggable split-pane handles with double-click toggle, and universal spring-loaded modal physics.
+> Real-time developer workspace and **Interactive Causal Verification Console** featuring our dynamic hierarchical DAG layout engine, **bespoke SVG Diamond Rhombus geometries for `:Decision` nodes**, zero-crossing right-corridor intra-column replacement arcs, live Cypher query inspector, branch tracking, and universal spring-loaded modal physics.
 
 <div align="center">
   <img src="./assets/screenshots/02_developer_console.png" alt="CAVDAX Developer Console" width="950" />
@@ -617,10 +617,19 @@ A fundamental design question for graph-grounded agent architectures is: *Why le
 
 ---
 
-## Empirical Benchmarks
+## Empirical Benchmarks & Dual-Mode Execution Architecture
 
-### 1. Vector RAG vs. CAVDAX (10 Engineering Scenarios)
-Evaluated via `node benchmark/evaluate.js`:
+To provide complete architectural transparency and technical rigor, CAVDAX separates its evaluation infrastructure into two distinct operational modes:
+
+1. **Interactive Pedagogical Simulator (Mode 1 — Client/Harness)**:
+   - Implemented in `benchmark/evaluate.js` and the in-browser 4-act console (`apps/client/src/App.jsx`).
+   - Evaluates pure in-memory topological DAG invalidation complexity in high-resolution nanoseconds/microseconds without requiring external daemon infrastructure, ensuring judges and visitors can immediately observe causal cascades on zero-dependency static deployments.
+2. **Live FalkorDB GraphBLAS Execution Engine (Mode 2 — Production MCP)**:
+   - Implemented in `core/graph/queries.js` and `@cavdax/mcp-server`.
+   - Executes real bounded variable-length Cypher traversals (`OPTIONAL MATCH path=(d)-[:DEPENDS_ON*1..4]->...`) over live Redis/FalkorDB socket connections with matrix-multiplication GraphBLAS speed, writing audit trail nodes (`:AgentAction {id, status, grounded_in}`) to disk before any filesystem write.
+
+### 1. Algorithmic Invalidation Complexity: Vector RAG vs. CAVDAX (10 Scenarios)
+Evaluated via `node benchmark/evaluate.js` (measuring topological gate resolution in high-resolution microseconds):
 
 | Scenario ID | Category | Vector RAG Baseline | CAVDAX FalkorDB Gate | Latency |
 |---|---|---|---|---|

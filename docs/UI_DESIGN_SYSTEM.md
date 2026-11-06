@@ -3804,3 +3804,149 @@ Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches
 * **The Dual-Layout Invariant**:
   1. Always hoist modals to `document.body` via `createPortal(modalContent, document.body)` with explicit top-level stacking (`z-[100]`).
   2. Guarantee that modal mounting points exist in ALL responsive layout return paths, or lift modal rendering to the top-level page root outside responsive conditionals.
+
+
+---
+
+## 69. Polymorphic Graph Node Geometries & Scaled SVG Marker Docking Math
+
+### 69.1 The Decision Diamond Rhombus Invariant
+* **Semantic Polymorphism**: In causal and dependency graphs, rendering all entities as uniform rounded rectangles creates cognitive fatigue and obscures ontological differences. Decisions represent discrete architectural choices (e.g., ADR adoptions, algorithmic commitments) that stand between static external facts and dynamic agent execution actions.
+* **SVG Diamond Geometry Specification**:
+  - The node is drawn as a centered diamond polygon with a 40px horizontal half-span and a 31px vertical half-span:
+    ```svg
+    <polygon
+      points="0,-31 40,0 0,31 -40,0"
+      className="transition-all duration-200"
+      style={{
+        fill: isDarkTheme ? "rgba(245, 158, 11, 0.08)" : "rgba(217, 119, 6, 0.08)",
+        stroke: isDarkTheme ? "#D97706" : "#B45309",
+        strokeWidth: 2
+      }}
+    />
+    ```
+  - Outer focus/hover halo: rendered as a concentric scaled polygon `points="0,-36 46,0 0,36 -46,0"` with subtle opacity (`0.15`) and 1.5px stroke.
+* **Calibrated Diamond Typography Offsets**:
+  - Due to the diamond's diagonal taper, vertical space inside the center is constrained while horizontal space peaks at y = 0:
+    1. **Node Identifier (Primary Text)**: Positioned at `dy="-3"` with `text-anchor="middle" font-bold text-[10px]`.
+    2. **Status Badge (Secondary Text)**: Positioned at `dy="11"` with `text-anchor="middle" font-semibold text-[8px] tracking-wider uppercase`.
+    3. **Ontology Subtitle (External Type Label)**: Positioned *outside* the bottom vertex at `dy="42"` with `text-anchor="middle" font-mono text-[9px] text-slate-400 dark:text-slate-500`.
+* **HUD Legend Optical Calibration**:
+  - In bottom-bar HUD topology legends (`:Source ●`, `:Fact ●`, `:Decision ◆`, `:Action ●`), placing a standard 8px square rotated 45° produces a bounding box of ≈ 11.3px, visually overpowering adjacent 8px circular dots.
+  - **The Optical Footprint Rule**: The diamond indicator in HUD legends MUST be sized to exactly `w-[7px] h-[7px] rotate-45 rounded-[0.5px]`. This yields an optical diagonal footprint of 9.8px that perfectly balances the visual mass of adjacent 8px circles.
+
+### 69.2 SVG Marker Scaling & Vertex Docking Math
+* **The Marker Arrowhead Clipping Trap**:
+  - SVG `<marker>` elements do NOT interpret `refX` in raw screen pixels. The marker coordinate space scales according to the ratio of `markerWidth` to `viewBox` width:
+    Scale Factor S = markerWidth / viewBoxWidth = 6 / 10 = 0.6
+  - The effective distance from the line endpoint to the arrowhead tip is:
+    Effective Tip Offset = (refX - arrowPathWidth) * S
+  - In a standard arrowhead path `M 0 1.5 L 8 5 L 0 8.5 z`, the tip is at x = 8.
+  - When engineers configure `refX="44"`, they assume the tip will dock at 44px. In reality:
+    Effective Offset = (44 - 8) * 0.6 = 21.6px
+  - Since the diamond vertex extends 40px from center, an effective offset of 21.6px places the arrow 18.4px *inside* the node body, slicing directly across text!
+* **The Calibrated RefX Invariant**:
+  - To dock an arrowhead flush with a 40px diamond vertex:
+    refX = (40 / 0.6) + 8 = 66.67 + 8 ≈ 75
+  - Setting `refX="75"` produces:
+    Effective Offset = (75 - 8) * 0.6 = 40.2px
+  - The arrow tip docks with sub-pixel precision (0.2px) exactly at the outer boundary of the diamond vertex.
+
+---
+
+## 70. Planar Hierarchical DAG Layout & Intra-Column Corridor Arc Routing
+
+### 70.1 The Sandwich Collision Problem in Intra-Column Edges
+* **The Architecture Defect**:
+  - In columnar directed acyclic graphs (e.g., Sources -> Facts -> Decisions -> Actions), nodes in the same column frequently have replacement, superseding, or versioning relationships (e.g., `DEC-103 REPLACES DEC-102`).
+  - When intra-column curves bow to the left (toward the incoming column) with x - 45px, they intersect the incoming straight dependency edges (`DEPENDS_ON`) of any intermediate node sandwiched vertically between the source and target.
+  - In a 3-node stack where `DEC-103` replaces `DEC-102` with `DEC-002` in between, a left-bowing curve slices through `DEC-002`'s incoming `DEPENDS_ON` edge and label, creating optical entanglement.
+
+### 70.2 The Zero-Traffic Right-Corridor Solution
+```
+        [ :Fact ]
+           │
+           │  DEPENDS_ON (Incoming Straight Line)
+           ▼
+      ◇ DEC-103 (x=535, y=145) ──┐
+        [ Left Tip: x-40 ]        │
+                                  │  REPLACES
+        [ :Fact ]                 │  Smooth Cubic Bezier Arc
+           │                      │  Through Open East Corridor
+           ▼                      │  (arcDir = +1, x+40+45 = 620)
+      ◇ DEC-002 (x=535, y=225)    │
+        [ Clean Straight Path ]   │
+                                  │
+                                  ▼
+      ◇ DEC-102 (x=535, y=305) ◄──┘
+```
+* **Routing Rules**:
+  1. **Corridor Separation**: All intra-column edges in the `:Decision` column MUST arc to the **RIGHT** (`arcDir = +1`, x + 40 + 45) through the clear, unpopulated corridor between `:Decision` and `:AgentAction`. All intra-column edges in the `:Source` column MUST arc to the **LEFT** (`arcDir = -1`, x - 32 - 45).
+  2. **Dedicated Vertex Docking**:
+     - **Incoming Cross-Column Edges** dock exclusively to the **Left Vertex** (x - 40, y).
+     - **Intra-Column Replacement Curves** dock exclusively to the **Right Vertex** (x + 40, y).
+     - This guarantees that incoming dependency traffic and replacement curves NEVER share a coordinate or cross paths, regardless of how many intermediate nodes are sandwiched vertically.
+
+### 70.3 ViewBox Dynamic Buffer & Text Truncation Prevention
+* **The ViewBox Boundary Defect**: When stacking N nodes vertically with subtitles positioned outside the bottom vertex (`dy="42"`), fixed canvas heights or standard 55px bottom padding push the bottom subtitle within 5px of the SVG viewport boundary. Browser sub-pixel rasterization clips the bottom glyphs (e.g. `:Decision`).
+* **The Canvas Buffer Invariant**:
+  - `bottomPadding` MUST be a minimum of **75px** whenever node labels use external subtitles.
+  - Minimum `computedHeight` MUST be configured to **480px** (up from 440px).
+  - The SVG canvas MUST have `overflow: visible` explicitly declared in its inline style:
+    ```jsx
+    <svg
+      viewBox={`0 0 ${canvasWidth} ${canvasHeight}`}
+      style={{ overflow: "visible" }}
+      className="w-full h-full"
+    >
+    ```
+
+---
+
+## 71. Monochromatic Custom Micro-Tooltips vs Native Tooltip Prohibition
+
+### 71.1 The Complete Prohibition of Native HTML `title="..."` Attributes
+* **Why Native Tooltips Are Banned in Tier-1 Interfaces**:
+  1. **Unacceptable 1.5s Delay**: Native browser tooltips have an unconfigurable 1,000ms–2,000ms hover lag that breaks rapid interface scanning.
+  2. **Zero Styling Control**: Rendered as yellow or white OS-level boxes with arbitrary system fonts, clashing aggressively with dark and monochromatic palettes.
+  3. **No Dynamic Reactive State**: Native tooltips cannot render live shortcuts, status tags, or animated transitions.
+  4. **Z-Index & Stacking Faults**: Render outside the browser DOM context, preventing consistent design system cohesion.
+
+### 71.2 Custom Micro-Tooltip Engineering Standard
+* **Structure & Ergonomics**:
+  - Micro-tooltips MUST be rendered via lightweight state hooks or Framer Motion micro-transitions with **sub-150ms** hover delay and instant fade-out.
+  - Tooltips must be completely pointer-events-free (`pointer-events-none`) so they never block subsequent clicks or drag gestures.
+* **Monochromatic Visual Tokens**:
+  ```jsx
+  <AnimatePresence>
+    {isHovered && (
+      <motion.div
+        initial={{ opacity: 0, y: 4, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 2, scale: 0.98 }}
+        transition={{ duration: 0.12, ease: "easeOut" }}
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 pointer-events-none whitespace-nowrap px-2 py-1 rounded bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-slate-200 border border-slate-700/60 shadow-xl text-[10px] font-mono tracking-tight"
+      >
+        <span>{tooltipText}</span>
+        {shortcut && <kbd className="ml-1.5 px-1 py-0.5 rounded bg-slate-800 dark:bg-slate-700 text-slate-400 text-[9px]">{shortcut}</kbd>}
+      </motion.div>
+    )}
+  </AnimatePresence>
+  ```
+
+---
+
+## 72. High-Density Toolbar Combobox & Strict Monochromatic Palettes
+
+### 72.1 The Option Panel Misalignment Defect
+* **The Root Cause**: Combobox dropdown panels frequently use percentage-based translations or asymmetric absolute positioning (`left-2`, `translate-x-[-10%]`) that drift from the trigger button depending on zoom level or container width.
+* **The Alignment Invariant**:
+  - The dropdown container MUST be anchored to the trigger button's parent wrapper with `relative` positioning.
+  - The menu MUST be pinned to `absolute top-full left-0 mt-1.5` with matching border radius, ensuring flawless pixel alignment regardless of viewport scaling.
+
+### 72.2 Monochromatic Palette Discipline
+* **The Rule of Neutral Substrates**:
+  - In technical consoles and graph dashboards, dropdown menus MUST NEVER introduce foreign accent colors (e.g., sky-blue, cyan, purple) unless communicating an active system error or warning.
+  - Backgrounds must strictly draw from neutral slate/zinc scales (`bg-white dark:bg-[#111113] border-slate-200 dark:border-white/10`).
+  - Active item highlights must use subtle lightness shifts (`hover:bg-slate-100 dark:hover:bg-white/5`).
+  - Active selection checkmarks must use neutral slate or semantic emerald/amber, never decorative blue.
