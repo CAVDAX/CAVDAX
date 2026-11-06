@@ -683,6 +683,25 @@ export default function GraphCanvas({
         const displayLabel = node.label || (node.id?.startsWith('act-') ? 'AgentAction' : 'Node');
         const shortId = node.id.length > 12 ? node.id.slice(0, 11) + '…' : node.id;
 
+        const isDecision = node.label === 'Decision';
+        if (isDecision) {
+          return `
+            <g transform="translate(${node.x}, ${ny})">
+              <!-- Outer Glow Halo (Diamond) -->
+              <polygon points="0,-36 46,0 0,36 -46,0" fill="none" stroke="${colors.stroke}" stroke-width="${inBlast || isSimRoot ? 2.5 : 1.2}" opacity="${inBlast || isSimRoot ? 0.95 : 0.3}" />
+              <!-- Node Double-Bezel Body (Diamond) -->
+              <polygon points="0,-31 40,0 0,31 -40,0" fill="${colors.fill}" stroke="${isSimRoot ? '#38BDF8' : colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" stroke-linejoin="round" />
+              <!-- Core Node ID -->
+              <text x="0" y="-3" text-anchor="middle" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="bold">${shortId}</text>
+              <!-- High-Contrast Status Badge -->
+              <rect x="-22" y="4" width="44" height="12" rx="3" ry="3" fill="${badgeBg}" />
+              <text x="0" y="13" text-anchor="middle" fill="${badgeFg}" font-size="6.5" font-family="monospace" font-weight="bold">${badgeText}</text>
+              <!-- Label Indicator -->
+              <text x="0" y="40" text-anchor="middle" fill="${textMuted}" font-size="8" font-family="monospace">:${displayLabel}</text>
+            </g>
+          `;
+        }
+
         return `
           <g transform="translate(${node.x}, ${ny})">
             <!-- Outer Glow Halo -->
@@ -1375,7 +1394,7 @@ export default function GraphCanvas({
             <span className="text-slate-700 dark:text-slate-300">:Fact</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-amber-500 dark:bg-amber-400" />
+            <span className="w-2.5 h-2.5 rotate-45 rounded-[1px] bg-amber-500 dark:bg-amber-400" />
             <span className="text-slate-700 dark:text-slate-300">:Decision</span>
           </div>
           <div className="flex items-center gap-1.5">
