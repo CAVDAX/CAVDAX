@@ -1329,7 +1329,7 @@ export default function ConnectedRepoWorkspace({
           <div data-tour="repo-canvas" style={{ flex: '1 1 0%' }} className="h-full relative overflow-hidden bg-slate-50 dark:bg-slate-950 min-w-[320px]">
             <SubsystemErrorBoundary name="Repository Knowledge Graph Canvas">
               <GraphCanvas
-                title={`Repository Decision Graph · ${repo.full_name || 'Connected Repository'}`}
+                title="Repository Decision Graph"
                 graphData={scan.graph}
                 onSelectNode={setSelectedNode}
                 selectedNodeId={selectedNode?.id}
