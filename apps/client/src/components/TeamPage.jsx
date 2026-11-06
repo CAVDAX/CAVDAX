@@ -128,7 +128,7 @@ export default function TeamPage({ onLaunchConsole }) {
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-normal text-balance max-w-2xl mx-auto relative">
             <span>{TEAM_DETAILS.tagline}.</span>
-            <span className="block mt-1">An engineering partnership built for the WeMakeDevs × FalkorDB Graph Hacks Hackathon.</span>
+            <span className="block mt-1">An engineering collective architecting deterministic causal verification for autonomous coding agents.</span>
           </p>
         </div>
 

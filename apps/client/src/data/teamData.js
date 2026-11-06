@@ -1,14 +1,14 @@
 /**
  * Team Contrarians Data Specification
- * WeMakeDevs x FalkorDB Graph Hacks Hackathon
+ * CAVDAX Core Architecture & Systems Engineering
  */
 
 export const TEAM_DETAILS = {
   name: 'Contrarians',
   tagline: 'Defying Vector RAG Blindness with Causal Graph Intelligence',
   logo: '/team/contrarians-logo.png',
-  hackathon: 'WeMakeDevs × FalkorDB Graph Hacks (October 2026)',
-  track: 'Track 01: Agents That Act on Connected Data (Primary) & Track 02: Knowledge Graphs & Long-Term Memory',
+  engine: 'Powered by FalkorDB GraphBLAS & Model Context Protocol (MCP)',
+  focus: 'Causal Graph Invalidation & Multi-Agent Deterministic Execution',
   license: 'Dual-Licensed: Apache 2.0 (Client/MCP) & BSL 1.1 (Cloud Platform)',
   githubRepo: 'https://github.com/CAVDAX/CAVDAX',
 };

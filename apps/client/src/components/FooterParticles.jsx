@@ -731,9 +731,9 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
           <span>Contextual Action &amp; Verified Decision Autonomous eXecution</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span>FalkorDB Graph Hacks 2026</span>
+          <span>Powered by FalkorDB GraphBLAS</span>
           <span className="text-slate-400 dark:text-zinc-600">•</span>
-          <span>GNU General Public License v3.0</span>
+          <span>Apache 2.0 / BSL 1.1</span>
         </div>
       </div>
     </footer>
