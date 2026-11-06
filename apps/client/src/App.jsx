@@ -966,21 +966,30 @@ export default function App() {
         if (graphRes.ok) {
           const g = await graphRes.json();
           if (g && g.nodes && g.nodes.length > 0) {
-            setGraphData(g);
-            // Sync currentAct with whatever state the server graph is actually in,
-            // so the act indicator never lies after a reload.
-            const hasD103 = g.nodes.some(n => n.id === 'DEC-103');
-            const hasSupersedesEdge = g.edges && g.edges.some(e => e.type === 'SUPERSEDES');
-            const hasDec102Archived = g.nodes.some(n => n.id === 'DEC-102' && (n.status === 'REPLACED_ARCHIVED' || n.status === 'ARCHIVED'));
-            const hasBlockedAction = g.nodes.some(n => n.label === 'AgentAction' && n.status && n.status.includes('BLOCKED'));
-            if (hasD103 || hasDec102Archived) {
-              setCurrentAct(4);
-            } else if (hasBlockedAction) {
-              setCurrentAct(3);
-            } else if (hasSupersedesEdge) {
-              setCurrentAct(2);
+            // Check if URL explicitly requested a specific act (e.g. ?act=2, ?act=3, ?act=4)
+            let requestedAct = null;
+            if (typeof window !== 'undefined' && window.location.search) {
+              const urlParams = new URLSearchParams(window.location.search);
+              const paramAct = parseInt(urlParams.get('act'), 10);
+              if (paramAct >= 1 && paramAct <= 4) requestedAct = paramAct;
             }
-            // else: stays at 1 (default)
+
+            if (requestedAct) {
+              setCurrentAct(requestedAct);
+              setGraphData(g);
+            } else {
+              // Always start fresh page loads / reloads at Act 1 baseline.
+              // If the server graph contains un-reset historical action nodes or post-Act-1 mutations,
+              // sanitize canvas to pristine Act 1 baseline so reload never traps the user in Act 3 or Act 4.
+              const hasHistoricalActions = g.nodes.some(n => n.label === 'AgentAction');
+              const hasD103 = g.nodes.some(n => n.id === 'DEC-103');
+              if (hasHistoricalActions || hasD103) {
+                setGraphData(BASELINE_ACT1_GRAPH);
+              } else {
+                setGraphData(g);
+              }
+              setCurrentAct(1);
+            }
           }
         }
       } catch (err) {
