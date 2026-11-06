@@ -9,6 +9,33 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.95 Latest Session Achievements (November 6, 2026 - Unified GitHub Auth Modal, Unboxed Vector Glyphs, Symmetrical Bento Cadence, and Semantic Git Disconnect)
+
+- **Unified GitHub Authentication Modal (`apps/client/src/components/DevPatLoginModal.jsx` & `ProfilePage.jsx`)**:
+  - Eliminated the 3-button visual crowding in the unauthenticated profile header, restoring a pristine 2-button cluster (`Support Us` + `Connect GitHub`).
+  - Clicking `Connect GitHub` triggers a unified modal dialog offering:
+    1. **1-Click Official GitHub OAuth** (for hosted web/cloud users).
+    2. **Personal Access Token (PAT)** entry with repo-scope generation link (for localhost development, offline testing, or restricted proxies).
+- **Bespoke Unboxed Glyph Standard (`apps/client/src/components/ConnectMcpPage.jsx`)**:
+  - Removed overused SaaS-template squircle bounding boxes (`w-10 h-10 rounded-xl bg-slate-100... border...`) from the 3-step execution loop cards.
+  - Rendered vector icons directly as crisp, unboxed glyphs (`Terminal`, `GitBranch`, `Lock`) beside step badges, eliminating visual noise and elevating aesthetic craft to Linear/Stripe standards.
+- **Symmetrical 2-Line Bento Cadence & Subtitle Balancing (`apps/client/src/components/ConnectMcpPage.jsx`)**:
+  - Replaced bloated paragraph chunks with strictly balanced 2-line descriptions across all 3 bento cards (word parity ±1 word, zero trailing orphan words).
+  - Enforced semantic block spans on the section header subtitle, guaranteeing strictly 2 lines with zero awkward wrapping across viewports.
+- **Canvas Viewport HUD Telemetry Separation (`apps/client/src/components/GraphCanvas.jsx`)**:
+  - Removed passive node/edge count badges from the top toolbar, keeping the top bar 100% actionable (Title, Search `Ctrl+K`, Drift Filter tabs, SVG Export, Zoom, Fullscreen).
+  - Merged telemetry counts directly into the floating bottom HUD pill alongside the `TOPOLOGY` legend (`{nodes.length} Nodes • {edges.length} Edges | TOPOLOGY: ...`).
+- **Keyboard Navigation Discovery in System Preferences (`apps/client/src/components/PreferencesModal.jsx`)**:
+  - Wired the previously orphaned `onOpenShortcuts` prop by adding Section 5: **Keyboard Navigation** to System Preferences with a `?` badge and direct action button opening `KeyboardShortcutsModal`.
+- **Semantic Git Action Iconography: Unlink vs. Delete (`App.jsx` & `ConnectedRepoWorkspace.jsx`)**:
+  - Replaced destructive `Trash2` trash-bin icons with semantic `Unlink` broken-chain icons in the repository dropdown and workspace header.
+  - Updated tooltips to **"Disconnect repository from workspace"**, eliminating false panic that remote GitHub repositories or branches would be deleted.
+- **Modal Viewport Parity & Hover-Revealed Code Editor Scrollbars (`ConnectedRepoWorkspace.jsx`)**:
+  - Standardized both the **Connect Autonomous AI Agent** and **GitHub Actions CI/CD Invariant Gate** code blocks to an identical `h-80` (320px) height.
+  - Replaced static scrollbar tracks with `.hover-scrollbar`, keeping terminal snippets track-free while idle, revealing subtle translucent thumbs on hover, and allowing continuous mousewheel/trackpad scrolling.
+- **Design System Codification (`docs/UI_DESIGN_SYSTEM.md`)**:
+  - Codified **Section 65: High-Craft Architectural Ergonomics: Unboxed Glyphs, Bento Cadence, and Semantic Git Disconnect**.
+
 ## 1.0.94 Latest Session Achievements (November 6, 2026 - Official GitHub Release v1.2.6, Automated Sigstore NPM Distribution, Dynamic Version Interpolation & Guard 0z Codification)
 
 - **Official GitHub Release v1.2.6 Published**:
