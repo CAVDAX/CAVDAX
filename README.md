@@ -24,15 +24,15 @@
 
 <div align="center">
 
-[![CI](https://img.shields.io/github/actions/workflow/status/suneetchugh-dev/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/suneetchugh-dev/CAVDAX/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/suneetchugh-dev/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/suneetchugh-dev/CAVDAX/releases/tag/v1.2.6)
+[![CI](https://img.shields.io/github/actions/workflow/status/CAVDAX/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/CAVDAX/CAVDAX/actions)
+[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.2.6)
 [![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-GraphBLAS-FF2D55?style=for-the-badge&logo=redis&logoColor=white)](https://falkordb.com/)
 [![MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-06B6D4?style=for-the-badge)](https://modelcontextprotocol.io/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./docker-compose.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](./LICENSE)
+[![License: Apache 2.0 / BSL 1.1](https://img.shields.io/badge/License-Apache_2.0_%2F_BSL_1.1-blue.svg?style=for-the-badge)](./LICENSE)
 [![Latency](https://img.shields.io/badge/Gate%20Latency-%3C%202.5ms-8B5CF6?style=for-the-badge)](#empirical-benchmarks)
 
 </div>
@@ -978,4 +978,4 @@ Built with passion for the **WeMakeDevs &times; FalkorDB Graph Hacks Hackathon**
 * **Official Community & Maintainer Inquiries**: Follow [@cavdax_dev](https://x.com/cavdax_dev) on X • Official Contact: [`cavdax.dev@gmail.com`](mailto:cavdax.dev@gmail.com)
 
 ---
-*License: GNU GPL 3.0 &bull; Powered by FalkorDB GraphBLAS & Model Context Protocol (MCP)*
+*License: Dual-Licensed (Apache 2.0 Client / BSL 1.1 Cloud Platform) &bull; Powered by FalkorDB GraphBLAS & Model Context Protocol (MCP)*
