@@ -1264,6 +1264,7 @@ export default function GraphCanvas({
             const isSelected = selectedNodeId === node.id;
             const inBlast = blastNodeIds.has(node.id);
             const isSimRoot = simulatedBlastNode?.id === node.id;
+            const isDecision = node.label === 'Decision';
 
             return (
               <g
@@ -1275,54 +1276,117 @@ export default function GraphCanvas({
                 }}
                 className="cursor-pointer group graph-node"
               >
-                {/* Transparent Hit Area for 100% Reliable Pointer Events */}
-                <rect
-                  x="-38"
-                  y="-28"
-                  width="76"
-                  height="56"
-                  rx="12"
-                  ry="12"
-                  fill="transparent"
-                  className="cursor-pointer"
-                />
+                {isDecision ? (
+                  <>
+                    {/* Diamond Transparent Hit Area */}
+                    <polygon
+                      points="0,-38 48,0 0,38 -48,0"
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
 
-                {/* Outer Glow Halo */}
-                <rect
-                  x="-36"
-                  y="-26"
-                  width="72"
-                  height="52"
-                  rx="10"
-                  ry="10"
-                  fill="none"
-                  stroke={colors.stroke}
-                  strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
-                  opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
-                  className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
-                  style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
-                />
+                    {/* Diamond Outer Glow Halo */}
+                    <polygon
+                      points="0,-36 46,0 0,36 -46,0"
+                      fill="none"
+                      stroke={colors.stroke}
+                      strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
+                      opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
+                      className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
+                      style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                    />
 
-                {/* Node Double-Bezel Body */}
-                <rect
-                  x="-32"
-                  y="-22"
-                  width="64"
-                  height="44"
-                  rx="8"
-                  ry="8"
-                  fill={colors.fill}
-                  stroke={isSimRoot ? '#38BDF8' : colors.stroke}
-                  strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
-                  className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
-                />
+                    {/* Diamond Double-Bezel Body */}
+                    <polygon
+                      points="0,-31 40,0 0,31 -40,0"
+                      fill={colors.fill}
+                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
+                      strokeLinejoin="round"
+                      className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
+                    />
+
+                    {/* Diamond Luminous Pulse Feedback Ring */}
+                    {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
+                      <polygon
+                        points="0,-38 48,0 0,38 -48,0"
+                        fill="none"
+                        stroke={colors.stroke}
+                        strokeWidth="2.5"
+                        className="animate-pulse"
+                        style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {/* Rect Transparent Hit Area */}
+                    <rect
+                      x="-38"
+                      y="-28"
+                      width="76"
+                      height="56"
+                      rx="12"
+                      ry="12"
+                      fill="transparent"
+                      className="cursor-pointer"
+                    />
+
+                    {/* Rect Outer Glow Halo */}
+                    <rect
+                      x="-36"
+                      y="-26"
+                      width="72"
+                      height="52"
+                      rx="10"
+                      ry="10"
+                      fill="none"
+                      stroke={colors.stroke}
+                      strokeWidth={isSelected || inBlast || isSimRoot ? 2.5 : 1.2}
+                      opacity={isSelected || inBlast || isSimRoot ? 0.95 : 0.25}
+                      className={`transition-all duration-150 group-hover:opacity-95 ${inBlast ? 'animate-pulse' : ''}`}
+                      style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                    />
+
+                    {/* Rect Double-Bezel Body */}
+                    <rect
+                      x="-32"
+                      y="-22"
+                      width="64"
+                      height="44"
+                      rx="8"
+                      ry="8"
+                      fill={colors.fill}
+                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
+                      className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
+                    />
+
+                    {/* Rect Luminous Pulse Feedback Ring */}
+                    {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
+                      <rect
+                        x="-38"
+                        y="-28"
+                        width="76"
+                        height="56"
+                        rx="12"
+                        ry="12"
+                        fill="none"
+                        stroke={colors.stroke}
+                        strokeWidth="2.5"
+                        className="animate-pulse"
+                        style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
+                      />
+                    )}
+                  </>
+                )}
 
                 {/* Node ID Label */}
                 <text
                   textAnchor="middle"
                   dy="-3"
                   fill={colors.text}
-                  fontSize="9.5"
+                  fontSize={isDecision ? "9" : "9.5"}
                   fontFamily="monospace"
                   fontWeight="bold"
                   className="select-none pointer-events-none"
@@ -1331,23 +1395,6 @@ export default function GraphCanvas({
                 </text>
 
                 {/* Status Subtitle Badge */}
-                {/* Luminous Pulse Feedback Ring on fresh execution */}
-                {node.last_probed_at && (Date.now() - node.last_probed_at < 2500) && (
-                  <rect
-                    x="-38"
-                    y="-28"
-                    width="76"
-                    height="56"
-                    rx="12"
-                    ry="12"
-                    fill="none"
-                    stroke={colors.stroke}
-                    strokeWidth="2.5"
-                    className="animate-pulse"
-                    style={{ filter: `drop-shadow(0 0 10px ${colors.glow})` }}
-                  />
-                )}
-
                 <text
                   textAnchor="middle"
                   dy="11"
@@ -1363,7 +1410,7 @@ export default function GraphCanvas({
                 {/* Node Type Label */}
                 <text
                   textAnchor="middle"
-                  dy="36"
+                  dy={isDecision ? "42" : "36"}
                   fill={isDarkTheme ? '#94A3B8' : '#64748B'}
                   fontSize="8.5"
                   fontFamily="monospace"
