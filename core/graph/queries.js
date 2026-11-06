@@ -136,15 +136,13 @@ export async function revalidateDecision(graph, { newSourceId, oldDecisionId, ne
   const cypher = `
     MATCH (newSource:Source {id: $newSourceId})<-[:EXTRACTED_FROM]-(newFact:Fact {id: $newFactId})
     MATCH (oldDecision:Decision {id: $oldDecisionId})
-    CREATE (newDecision:Decision {
-      id: $newDecisionId,
-      title: $title,
-      status: 'VALID',
-      is_demo: $isDemo,
-      created_at: timestamp()
-    })
-    CREATE (newDecision)-[:DEPENDS_ON]->(newFact)
-    CREATE (newDecision)-[:REPLACES]->(oldDecision)
+    MERGE (newDecision:Decision {id: $newDecisionId})
+    SET newDecision.title = $title,
+        newDecision.status = 'VALID',
+        newDecision.is_demo = $isDemo,
+        newDecision.created_at = coalesce(newDecision.created_at, timestamp())
+    MERGE (newDecision)-[:DEPENDS_ON]->(newFact)
+    MERGE (newDecision)-[:REPLACES]->(oldDecision)
     SET oldDecision.status = 'REPLACED_ARCHIVED'
     RETURN newDecision.id AS active_decision_id, oldDecision.id AS archived_decision_id
   `;
