@@ -9,6 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.0.98 Latest Session Achievements (November 6, 2026 - Profile Modal Portal Remediation & Dual-Layout Authentication Parity)
+
+- **Root-Cause Analysis of Unresponsive Profile "Connect GitHub" Button**:
+  - `ProfilePage.jsx` utilizes dual-layout rendering (`isLargeDisplay` for desktop/monitors >= 1537px wide or >= 875px tall vs compact laptop mode).
+  - While `setIsDevPatModalOpen(true)` was wired to the button click in both layouts, `<DevPatLoginModal />` was only rendered at the bottom of the compact layout (line 2475) and was completely missing from the `isLargeDisplay` return block (lines 616–1551).
+  - Users on standard desktop displays saw state toggle in memory while zero modal DOM nodes existed.
+  - Additionally, the compact layout call passed an incorrect prop name (`onLoginSuccess` instead of `onSuccess`) and referenced nonexistent `setUser`.
+- **Architectural Remediation**:
+  - **Portal Stacking Injection (`DevPatLoginModal.jsx`)**: Wrapped modal tree with `createPortal(modalContent, document.body)` and explicit `z-[100]`, ensuring modal unmounts from any parent stacking contexts and renders reliably across all viewports.
+  - **Dual-Layout Modal Parity (`ProfilePage.jsx`)**: Rendered `<DevPatLoginModal />` with consistent `onSuccess` callbacks in both the `isLargeDisplay` and compact return blocks.
+  - **Secondary Action Unified Dialog (`ProfilePage.jsx`)**: Routed the API Key card's "Connect GitHub" action through `setIsDevPatModalOpen(true)` instead of hardcoding OAuth redirects, giving developers the full choice of OAuth and local Dev PAT.
+- **Automated Verification**:
+  - Headless Puppeteer verification on 1920x1080 display confirmed modal instantly opens, is clickable, renders both authentication methods, and closes cleanly on cancel.
+  - All 114 automated tests passed without regressions.
+
 ## 1.0.97 Latest Session Achievements (November 6, 2026 - 1-Click Sidebar Collapse Suite, Full-Width Graph Canvas & Inspiring Sponsor Directory Copy)
 
 - **1-Click Sidebar Collapse Suite & Full-Width Graph Canvas (`App.jsx`, `TerminalView.jsx`, `ConnectedRepoWorkspace.jsx`, `GraphCanvas.jsx`)**:
