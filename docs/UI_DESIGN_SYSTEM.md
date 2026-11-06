@@ -3685,3 +3685,28 @@ Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches
 1. Hoist primary environment switches (Theme, Account Identity, Global Audio) exclusively in the universal top navbar or command palette.
 2. Reserve subordinate modals (e.g. `PreferencesModal`) strictly for granular, non-shell settings: Notification Thresholds, Webhook Ingestion Secrets, Resend/Email Target Recipients, and Web Push Subscriptions.
 3. If an inner modal requires access to global parameters, display a read-only badge linked directly to the primary shell toggle with a tooltip (*"Configured in application header"*).
+
+
+---
+
+## 65. High-Craft Architectural Ergonomics: Unboxed Glyphs, Bento Cadence, and Semantic Git Disconnect
+
+### 65.1 Bespoke Unboxed Glyphs vs. Generic Squircle Boxes
+* **The Template Trope**: Wrapping 16px/20px icons in `<div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 ...">` squircle bounding boxes is an overused SaaS template default that adds clutter without meaning.
+* **The High-Craft Standard**: Render SVG icons directly into the typographic layout grid as raw, high-contrast, uncluttered vector glyphs (`stroke-[1.75]`), letting the step badge and text breathe cleanly.
+
+### 65.2 Symmetrical Bento Subtext Cadence & Anti-Orphan Rule
+* **The Invariant**: Across any horizontal bento row (e.g. 3-card pipeline steps), all descriptive paragraphs must maintain strict word parity (±2 words) and strictly identical line counts (maximum 2 lines on desktop).
+* **Zero Lonely Children**: Use `[text-wrap:balance]` or controlled block wrappers to prevent single trailing words from dropping onto a line by themselves.
+
+### 65.3 Semantic Action Iconography: Unlink vs. Delete in Third-Party Integrations
+* **The Misconception**: Using a trash can (`Trash2`) when disconnecting a repository falsely signals destructive deletion of the remote Git repository or branches.
+* **The Invariant**: When unlinking or disconnecting external services, connected repositories, or OAuth integrations from application workspace state, ALWAYS use the broken chain link (`Unlink` / `Link2Off`) with an unambiguous tooltip: `"Disconnect repository from workspace"`. Reserve `Trash2` strictly for unrecoverable data deletion.
+
+### 65.4 Code Block Viewport Parity & Hover-Revealed Architectural Scrollbars
+* **Viewport Parity**: Modal dialogs displaying configuration snippets (e.g. Agent JSON setup vs. CI/CD YAML gate) must maintain identical outer widths (`max-w-3xl`) and identical code block container heights (`h-80` / 320px) to prevent layout jumping.
+* **Hover-Revealed Scrollbars (`.hover-scrollbar`)**: Thick browser scrollbar rails must remain hidden while idle to preserve a pristine dark terminal aesthetic. Mousewheel and touchpad scrolling remain 100% active at all times, with an ultra-thin translucent scrollbar fading in smoothly only when the cursor enters the container.
+
+### 65.5 Canvas Viewport HUD vs. Top Action Ribbon Separation
+* **Top Ribbon**: Strictly reserved for primary interactive controls (Title, Search `Ctrl+K`, Filter Presets, SVG Export, Zoom, Fullscreen).
+* **Viewport HUD**: Passive canvas telemetry (node/edge counts, scale factors) belongs inside floating HUD overlays anchored within the canvas viewport alongside legends, eliminating top toolbar horizontal crowding on compact displays.
