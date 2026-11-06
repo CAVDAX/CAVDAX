@@ -9,8 +9,8 @@ export const TEAM_DETAILS = {
   logo: '/team/contrarians-logo.png',
   hackathon: 'WeMakeDevs × FalkorDB Graph Hacks (October 2026)',
   track: 'Track 01: Agents That Act on Connected Data (Primary) & Track 02: Knowledge Graphs & Long-Term Memory',
-  license: 'GNU General Public License v3.0 (GPL-3.0)',
-  githubRepo: 'https://github.com/suneetchugh-dev/CAVDAX',
+  license: 'Dual-Licensed: Apache 2.0 (Client/MCP) & BSL 1.1 (Cloud Platform)',
+  githubRepo: 'https://github.com/CAVDAX/CAVDAX',
 };
 
 export const TEAM_MEMBERS = [

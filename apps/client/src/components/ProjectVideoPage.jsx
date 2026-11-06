@@ -713,7 +713,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                 <div className="flex items-center justify-between text-[10px] font-mono text-slate-500 mb-1">
                   <span>Clone Repository:</span>
                   <button 
-                    onClick={() => handleCopy('git clone https://github.com/suneetchugh-dev/CAVDAX.git', 'clone')}
+                    onClick={() => handleCopy('git clone https://github.com/CAVDAX/CAVDAX.git', 'clone')}
                     className="hover:text-slate-900 dark:hover:text-white inline-flex items-center gap-1 cursor-pointer"
                   >
                     {copiedCmd === 'clone' ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
@@ -721,7 +721,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                   </button>
                 </div>
                 <div className="p-2.5 rounded-lg bg-slate-950 text-slate-200 font-mono text-xs overflow-x-auto border border-slate-800">
-                  <code>git clone https://github.com/suneetchugh-dev/CAVDAX.git</code>
+                  <code>git clone https://github.com/CAVDAX/CAVDAX.git</code>
                 </div>
               </div>
 
@@ -746,7 +746,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
             <div className="pt-4 mt-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-between text-xs font-mono">
               <span className="text-slate-500">Port: 5173 (HUD) • 6379 (FalkorDB)</span>
               <a 
-                href="https://github.com/suneetchugh-dev/CAVDAX" 
+                href="https://github.com/CAVDAX/CAVDAX" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-slate-800 dark:text-white hover:underline inline-flex items-center gap-1 font-bold"
