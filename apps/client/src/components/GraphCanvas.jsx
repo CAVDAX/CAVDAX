@@ -121,13 +121,27 @@ export default function GraphCanvas({
   const [isZoomMenuOpen, setIsZoomMenuOpen] = useState(false);
   const [isCopiedPermalink, setIsCopiedPermalink] = useState(false);
   const zoomMenuRef = useRef(null);
+  const containerRef = useRef(null);
+  const [canvasWidth, setCanvasWidth] = useState(1000);
   const [simulatedBlastNode, setSimulatedBlastNode] = useState(null);
   const [driftFilter, setDriftFilter] = useState('ALL'); // 'ALL' | 'GROUNDED' | 'DRIFTED'
-  const driftPill = usePillTracker(driftFilter);
+  const driftPill = usePillTracker(driftFilter, canvasWidth);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const isMac = typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.userAgent);
   const searchKbd = isMac ? '⌘K' : 'Ctrl+K';
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect && entry.contentRect.width) {
+          setCanvasWidth(entry.contentRect.width);
+        }
+      }
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -149,23 +163,6 @@ export default function GraphCanvas({
       setPan({ x: cw / 2 - node.x * zoom, y: ch / 2 - node.y * zoom });
     }
   };
-
-
-  const containerRef = useRef(null);
-  const [canvasWidth, setCanvasWidth] = useState(1000);
-
-  useEffect(() => {
-    if (!containerRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect && entry.contentRect.width) {
-          setCanvasWidth(entry.contentRect.width);
-        }
-      }
-    });
-    ro.observe(containerRef.current);
-    return () => ro.disconnect();
-  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -615,6 +612,21 @@ export default function GraphCanvas({
           <marker id="dl-arrow-blast" viewBox="0 0 10 10" refX="38" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
             <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
           </marker>
+          <marker id="dl-arrow-decision" viewBox="0 0 10 10" refX="44" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${isDarkTheme ? "#475569" : "#94A3B8"}" />
+          </marker>
+          <marker id="dl-arrow-intracolumn-default" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${isDarkTheme ? "#475569" : "#94A3B8"}" />
+          </marker>
+          <marker id="dl-arrow-intracolumn-supersedes" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#FB7185" />
+          </marker>
+          <marker id="dl-arrow-intracolumn-replaces" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="${isDarkTheme ? "#FFFFFF" : "#0F172A"}" />
+          </marker>
+          <marker id="dl-arrow-intracolumn-blast" viewBox="0 0 10 10" refX="7.5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
+          </marker>
         </defs>
       `;
 
@@ -652,13 +664,25 @@ export default function GraphCanvas({
         const ty = edge.targetNode.y + 45;
 
         if (isIntraColumn) {
+          const isSrcDecision = edge.sourceNode.label === "Decision";
+          const isTgtDecision = edge.targetNode.label === "Decision";
+          const srcX = isSrcDecision ? edge.sourceNode.x - 40 : edge.sourceNode.x - 32;
+          const tgtX = isTgtDecision ? edge.targetNode.x - 40 : edge.targetNode.x - 32;
           const arcOffset = 45;
-          const pathD = `M ${edge.sourceNode.x - 32} ${sy} C ${edge.sourceNode.x - arcOffset - 25} ${sy}, ${edge.targetNode.x - arcOffset - 25} ${ty}, ${edge.targetNode.x - 32} ${ty}`;
-          const midX = edge.sourceNode.x - arcOffset - 20;
+          const pathD = `M ${srcX} ${sy} C ${srcX - arcOffset} ${sy}, ${tgtX - arcOffset} ${ty}, ${tgtX} ${ty}`;
+          const midX = Math.min(srcX, tgtX) - arcOffset / 2;
           const midY = (sy + ty) / 2;
+          const dlIntraMarker = isBlast
+            ? "url(#dl-arrow-intracolumn-blast)"
+            : isSupersedes
+            ? "url(#dl-arrow-intracolumn-supersedes)"
+            : isReplaces
+            ? "url(#dl-arrow-intracolumn-replaces)"
+            : "url(#dl-arrow-intracolumn-default)";
+
           return `
             <g>
-              <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="${isBlast ? 2.4 : 1.8}" ${dashAttr} marker-end="${marker}" />
+              <path d="${pathD}" fill="none" stroke="${strokeColor}" stroke-width="${isBlast ? 2.4 : 1.8}" ${dashAttr} marker-end="${dlIntraMarker}" />
               <rect x="${midX - badgeW / 2}" y="${midY - badgeH / 2}" width="${badgeW}" height="${badgeH}" rx="3.5" ry="3.5" fill="${badgeBg}" stroke="${badgeBorder}" stroke-width="1" />
               <text x="${midX}" y="${midY + 3.5}" text-anchor="middle" fill="${labelColor}" font-size="7" font-family="monospace" font-weight="bold">${edge.type}</text>
             </g>
@@ -1159,6 +1183,72 @@ export default function GraphCanvas({
             >
               <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
             </marker>
+
+            <marker
+              id="arrow-decision"
+              viewBox="0 0 10 10"
+              refX="44"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 1.5 L 8 5 L 0 8.5 z"
+                fill={isDarkTheme ? "#475569" : "#94A3B8"}
+              />
+            </marker>
+
+            <marker
+              id="arrow-intracolumn-default"
+              viewBox="0 0 10 10"
+              refX="7.5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path
+                d="M 0 1.5 L 8 5 L 0 8.5 z"
+                fill={isDarkTheme ? "#475569" : "#94A3B8"}
+              />
+            </marker>
+
+            <marker
+              id="arrow-intracolumn-supersedes"
+              viewBox="0 0 10 10"
+              refX="7.5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#FB7185" />
+            </marker>
+
+            <marker
+              id="arrow-intracolumn-replaces"
+              viewBox="0 0 10 10"
+              refX="7.5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill={isDarkTheme ? "#FFFFFF" : "#0F172A"} />
+            </marker>
+
+            <marker
+              id="arrow-intracolumn-blast"
+              viewBox="0 0 10 10"
+              refX="7.5"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#F43F5E" />
+            </marker>
           </defs>
 
           {/* Render Edges */}
@@ -1198,10 +1288,22 @@ export default function GraphCanvas({
 
             if (isIntraColumn) {
               // Smooth bezier curve looping on the left to avoid crossing intermediate nodes
+              const isSrcDecision = edge.sourceNode.label === "Decision";
+              const isTgtDecision = edge.targetNode.label === "Decision";
+              const srcX = isSrcDecision ? edge.sourceNode.x - 40 : edge.sourceNode.x - 32;
+              const tgtX = isTgtDecision ? edge.targetNode.x - 40 : edge.targetNode.x - 32;
               const arcOffset = 45;
-              const pathD = `M ${edge.sourceNode.x - 32} ${edge.sourceNode.y} C ${edge.sourceNode.x - arcOffset - 25} ${edge.sourceNode.y}, ${edge.targetNode.x - arcOffset - 25} ${edge.targetNode.y}, ${edge.targetNode.x - 32} ${edge.targetNode.y}`;
-              const midX = edge.sourceNode.x - arcOffset - 20;
+              const pathD = `M ${srcX} ${edge.sourceNode.y} C ${srcX - arcOffset} ${edge.sourceNode.y}, ${tgtX - arcOffset} ${edge.targetNode.y}, ${tgtX} ${edge.targetNode.y}`;
+              const midX = Math.min(srcX, tgtX) - arcOffset / 2;
               const midY = (edge.sourceNode.y + edge.targetNode.y) / 2;
+
+              const liveIntraMarker = isBlast
+                ? "url(#arrow-intracolumn-blast)"
+                : isSupersedes
+                ? "url(#arrow-intracolumn-supersedes)"
+                : isReplaces
+                ? "url(#arrow-intracolumn-replaces)"
+                : "url(#arrow-intracolumn-default)";
 
               return (
                 <g key={`edge-${idx}`}>
@@ -1211,7 +1313,7 @@ export default function GraphCanvas({
                     stroke={strokeColor}
                     strokeWidth={isBlast ? 2.4 : 1.8}
                     strokeDasharray={dash}
-                    markerEnd={marker}
+                    markerEnd={liveIntraMarker}
                     className="transition-all duration-300"
                   />
                   {/* Opaque pill badge shields text from path line overlap / strikethrough */}
@@ -1247,6 +1349,11 @@ export default function GraphCanvas({
             const midX = (edge.sourceNode.x + edge.targetNode.x) / 2;
             const midY = (edge.sourceNode.y + edge.targetNode.y) / 2;
 
+            const isTargetDecision = edge.targetNode.label === "Decision";
+            const lineMarker = (isTargetDecision && !isBlast && !isSupersedes && !isReplaces)
+              ? "url(#arrow-decision)"
+              : marker;
+
             return (
               <g key={`edge-${idx}`}>
                 <line
@@ -1257,7 +1364,7 @@ export default function GraphCanvas({
                   stroke={strokeColor}
                   strokeWidth={isBlast ? 2.4 : (isSupersedes || isReplaces ? 1.8 : 1.2)}
                   strokeDasharray={dash}
-                  markerEnd={marker}
+                  markerEnd={lineMarker}
                   className="transition-all duration-300"
                 />
                 {/* Opaque pill badge shields text from arrow line overlap / strikethrough */}
