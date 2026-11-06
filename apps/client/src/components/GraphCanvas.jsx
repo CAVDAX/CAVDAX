@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, Minimize2, RotateCcw, Database, Scan, Activity, Download, Layers, CheckCheck, AlertTriangle, Search, PanelLeftOpen, Share2, ChevronDown, Check } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
@@ -446,10 +446,10 @@ export default function GraphCanvas({
           };
         }
         return {
-          fill: '#11141B',
-          stroke: '#FFFFFF',
-          glow: 'rgba(255, 255, 255, 0.25)',
-          text: '#FFFFFF',
+          fill: '#18130B',
+          stroke: '#F59E0B',
+          glow: 'rgba(245, 158, 11, 0.3)',
+          text: '#FEF3C7',
           badge: 'VALID'
         };
       }
@@ -539,10 +539,10 @@ export default function GraphCanvas({
           };
         }
         return {
-          fill: '#FFFFFF',
-          stroke: '#0F172A',
-          glow: 'rgba(15, 23, 42, 0.15)',
-          text: '#0F172A',
+          fill: '#FFFDF5',
+          stroke: '#D97706',
+          glow: 'rgba(217, 119, 6, 0.2)',
+          text: '#78350F',
           badge: 'VALID'
         };
       }
@@ -839,7 +839,7 @@ export default function GraphCanvas({
                   }`}
                 >
                   <Icon className={`w-3 h-3 shrink-0 ${tab.iconClass || 'text-current'}`} />
-                  <span>{tab.label}</span>
+                  <span className="hidden xl:inline">{tab.label}</span>
                 </button>
               );
             })}
@@ -920,9 +920,14 @@ export default function GraphCanvas({
                 <ChevronDown className="w-2.5 h-2.5 text-slate-400 dark:text-slate-500" />
               </button>
 
+              <AnimatePresence>
               {isZoomMenuOpen && (
-                <div
-                  className="absolute right-0 top-full mt-1.5 w-32 py-1 bg-white dark:bg-[#12161f] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl z-50 backdrop-blur-md font-mono text-[11px]"
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.96, y: -4 }}
+                  transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute right-0 top-full mt-1.5 w-32 py-1 bg-white dark:bg-[#12161f] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl z-50 font-mono text-[11px]"
                 >
                   {[
                     { label: '50%', value: 0.5 },
@@ -964,15 +969,16 @@ export default function GraphCanvas({
                   >
                     Fit to Screen
                   </button>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
+          </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                setZoom(z => Math.min(2.5, Number((z + 0.1).toFixed(2))));
+          <button
+            type="button"
+            onClick={() => {
+              playClick();
+              setZoom(z => Math.min(2.5, Number((z + 0.1).toFixed(2))));
               }}
               className="p-1 rounded hover:bg-white dark:hover:bg-white/10 text-slate-600 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white transition-colors tactile-btn cursor-pointer"
               title="Zoom In"
@@ -1369,7 +1375,7 @@ export default function GraphCanvas({
             <span className="text-slate-700 dark:text-slate-300">:Fact</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-slate-900 dark:bg-white border border-slate-400" />
+            <span className="w-2 h-2 rounded bg-amber-500 dark:bg-amber-400" />
             <span className="text-slate-700 dark:text-slate-300">:Decision</span>
           </div>
           <div className="flex items-center gap-1.5">

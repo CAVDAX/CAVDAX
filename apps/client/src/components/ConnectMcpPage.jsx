@@ -1917,7 +1917,7 @@ EXECUTION WORKFLOW:
 
 
               <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mb-4 [text-wrap:balance]">
-                Valid decisions commit instantly; superseded dependencies trigger an immediate 403 block.
+                Valid decisions commit; superseded logic triggers an immediate 403 block.
               </p>
 
 
