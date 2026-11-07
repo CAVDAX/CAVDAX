@@ -3968,6 +3968,18 @@ app.post('/api/billing/create-order', async (req, res) => {
  * Returns 400 if signature is missing or invalid — NEVER mark as paid in this case.
  */
 app.post('/api/billing/verify-payment', (req, res) => {
+  // Hard Localhost Confinement: Block live payment verification on loopback hosts
+  const originHost = (req.headers.origin || req.headers.host || '').toLowerCase();
+  if (originHost.includes('localhost') || originHost.includes('127.0.0.1')) {
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: 'LOCALHOST_PAYMENTS_FORBIDDEN',
+        message: 'Live Razorpay payment verification cannot be processed on localhost to prevent reconciliation desync.'
+      }
+    });
+  }
+
   if (!razorpayClient) {
     return res.status(503).json({
       success: false,
