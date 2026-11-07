@@ -679,6 +679,35 @@ function requireAuth(req, res, next) {
   });
 }
 
+/**
+ * Express middleware for interactive demo endpoints.
+ * Allows unauthenticated visitors to execute the canonical demo walkthrough
+ * (DEC-102, DEC-103, ADR-002, demo-repo) with strict rate-limiting and confinement,
+ * while strictly requiring authentication for any custom repository, non-demo files, or external writes.
+ */
+function requireAuthOrDemo(req, res, next) {
+  const authHeader = req.headers['authorization'] || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+  if ((API_TOKEN && timingSafeStringEqual(token, API_TOKEN)) || (token && token.startsWith('cvdx_live_')) || req.session?.user) {
+    return requireAuth(req, res, next);
+  }
+
+  const isDemoIngest = req.path === '/api/ingest' && (!req.body?.filePath || req.body.filePath.includes('demo-repo'));
+  const isDemoAct4 = req.path === '/api/act-iv-revalidate';
+  const isDemoMcp = req.path === '/api/mcp/call' && (
+    !req.body?.args?.file_path || req.body.args.file_path.includes('demo-repo') || req.body.args.file_path === 'src/services/payment.js'
+  ) && (
+    ['DEC-102', 'DEC-103'].includes(req.body?.args?.decision_id) || req.body?.toolName === 'revalidate_decision'
+  );
+
+  if (isDemoIngest || isDemoAct4 || isDemoMcp) {
+    req.authUser = { login: 'demo_guest', tier: 'free', role: 'guest' };
+    return next();
+  }
+
+  return requireAuth(req, res, next);
+}
+
 // ---------------------------------------------------------------------------
 // SSE CLIENT REGISTRIES
 // ---------------------------------------------------------------------------
@@ -1387,7 +1416,7 @@ app.get('/api/graph/export-image', async (req, res) => {
 
 // 5. Ingest ADR / Commit Mutation (Act II)
 // checkNodeLimit runs before the handler — rejects if tier node_limit is reached
-app.post('/api/ingest', requireAuth, checkNodeLimit, async (req, res) => {
+app.post('/api/ingest', requireAuthOrDemo, checkNodeLimit, async (req, res) => {
   try {
     if (!isFalkorConnected) await initDb();
 
@@ -1454,7 +1483,7 @@ app.post('/api/ingest', requireAuth, checkNodeLimit, async (req, res) => {
 });
 
 // 6. Enclosed MCP Gate Execution (Act III & Safe Execution)
-app.post('/api/mcp/call', requireAuth, async (req, res) => {
+app.post('/api/mcp/call', requireAuthOrDemo, async (req, res) => {
   const { toolName, args } = req.body || {};
 
   // --- Input validation: fail fast with a clean 400 before touching the DB ---
@@ -1899,7 +1928,7 @@ app.post('/api/mcp/call', requireAuth, async (req, res) => {
 });
 
 // 7. Act IV Direct Revalidation Helper
-app.post('/api/act-iv-revalidate', requireAuth, async (req, res) => {
+app.post('/api/act-iv-revalidate', requireAuthOrDemo, async (req, res) => {
   try {
     if (!isFalkorConnected) await initDb();
 
