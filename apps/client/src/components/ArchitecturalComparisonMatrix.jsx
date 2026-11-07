@@ -48,12 +48,30 @@ const COMPARISON_DATA = [
     cavdaxHighlight: true
   },
   {
+    capability: 'Three-Tier Hermetic Gate',
+    description: 'Multi-layer defense: MCP socket, git pre-commit, and CI gate',
+    staticAdrs: 'None (Passive Docs)',
+    vectorRag: 'None (Advisory Prompt)',
+    astLinters: 'CI Only (Post-Facto)',
+    cavdax: 'Tier 1 (MCP) + Tier 2 (Git Hook) + Tier 3 (CI Gate)',
+    cavdaxHighlight: true
+  },
+  {
     capability: 'Verification Invariant',
     description: 'Grounding guarantee for written code',
     staticAdrs: 'Manual Peer Review',
     vectorRag: 'Probabilistic Token Guessing',
     astLinters: 'Syntactic Pattern Match',
     cavdax: 'Deterministic Graph Provenance',
+    cavdaxHighlight: true
+  },
+  {
+    capability: 'Open Source License & Provenance',
+    description: 'Enterprise software distribution and cryptographic build verification',
+    staticAdrs: 'MIT / GPL (Varies)',
+    vectorRag: 'Proprietary Closed SaaS',
+    astLinters: 'Apache-2.0 / LGPL',
+    cavdax: 'Apache-2.0 / BSL-1.1 + Sigstore SLSA-3',
     cavdaxHighlight: true
   }
 ];
@@ -90,11 +108,11 @@ export default function ArchitecturalComparisonMatrix() {
                 </th>
                 <th className="py-4 px-4 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 w-1/5">
                   Vector RAG
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal">LangChain / Pinecone</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal">Cursor @codebase / Mneme / LangChain</span>
                 </th>
                 <th className="py-4 px-4 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 w-1/5">
                   Static Linters
-                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal">ArchUnit / Semgrep</span>
+                  <span className="block text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal">ArchUnit / Semgrep / CodeRabbit</span>
                 </th>
                 <th className="py-4 px-5 text-xs font-mono font-bold text-amber-600 dark:text-amber-400 bg-amber-500/[0.06] dark:bg-amber-400/[0.04] border-l border-r border-amber-500/20 dark:border-amber-400/20 w-1/4">
                   <div className="flex items-center gap-1.5">

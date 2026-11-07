@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+# CAVDAX Tier 2: Developer Workstation Pre-Commit Invariant Guard
+# Validates all staged source files against the causal decision graph in FalkorDB.
+# To activate: git config core.hooksPath .githooks
+
+echo "[CAVDAX] Running Tier 2 Pre-Commit Causal Invariant Guard..."
+
+if command -v npx >/dev/null 2>&1; then
+  node apps/mcp-server/bin/cavdax.js check --staged
+  EXIT_CODE=$?
+  if [ $EXIT_CODE -ne 0 ]; then
+    echo "[CAVDAX] Commit aborted: Staged modifications violate active Architecture Decision Records."
+    echo "         Run 'npx @cavdax/mcp-server doctor' or verify decisions in the CAVDAX Console."
+    exit 1
+  fi
+fi
+
+exit 0
