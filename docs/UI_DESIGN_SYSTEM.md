@@ -8635,3 +8635,36 @@ Add proportional top padding buffers to downstream landmark sections:
 </section>
 ```
 This pushes the downstream heading strictly $> 100	ext{px}$ below the viewport fold across all desktop viewports (1920×874, 1920×1080, 2560×1440), guaranteeing 100% visual isolation.
+
+---
+
+## 82. Payment Gateway Verification & Local Loopback Confinement HUD Architecture
+
+When engineering administrative developer panels (`/devteam`) or billing diagnostic consoles that interface with live payment gateways (Razorpay, Stripe, Cashfree):
+
+### 82.1 The Local Loopback Confinement Invariant
+- **The Failure Mode**: Payment gateways dispatch server-to-server webhook receipts (`order.paid`, `payment.captured`) over the public internet to confirm transactions asynchronously. Gateways cannot reach private loopback addresses (`localhost`, `127.0.0.1`).
+- **The Confinement Rule**: Any live real-money payment test (even a ₹1.00 gateway handshake) must be physically and logically disabled on local developer machines.
+- **Client UI Shield**:
+  ```jsx
+  const isLocalhost = Boolean(
+    typeof window !== "undefined" && (
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1" ||
+      window.location.protocol === "file:"
+    )
+  );
+  ```
+  When `isLocalhost` is true:
+  1. The action button is hard-disabled with the label `DISABLED ON LOCALHOST`.
+  2. A prominent amber warning banner informs the developer of the webhook routing restriction.
+  3. A direct external link to the production TLS panel (`https://cavdax.sahnirmaan.live/devteam`) is provided.
+
+### 82.2 Minimum Gateway Sizing: The ₹1.00 Floor (100 Paise)
+- Razorpay requires a minimum transaction amount of **100 paise** (`₹1.00`). Any order with `amount < 100` is rejected with HTTP 400.
+- For developer verification, execute an exact ₹1.00 test under the `supporter` tier. This verifies order creation, SDK modal rendering, and cryptographic HMAC-SHA256 signature verification with zero financial overhead.
+
+### 82.3 Monochromatic Dev Panel Verification Ledger
+- Display verified transactions in a high-density, monochromatic event ledger.
+- Each record must display the Razorpay Payment ID, Order ID, masked HMAC signature, formatted amount (`₹1.00`), and timestamp.
+- Persist verified test runs in `localStorage` so developers have an audit trail across page refreshes without cluttering production databases.

@@ -1,20 +1,21 @@
 <div align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/cavdax-logo-dark.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="assets/cavdax-logo-light.svg" />
-    <img src="assets/cavdax-logo-dark.svg" width="100" height="100" alt="CAVDAX Logo" />
-  </picture>
-  <h1>CAVDAX: Contextual Action &amp; Verified Decision Autonomous eXecution</h1>
-  <p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
-  <p>
-    <strong>Deterministic Causal Verification Firewall for Autonomous Coding Agents</strong><br />
-    <span style="white-space: nowrap"><strong>Execution Gate:</strong> Model Context Protocol (MCP) Inline Verification</span> &bull; 
-    <span style="white-space: nowrap"><strong>Graph Engine:</strong> FalkorDB GraphBLAS Matrix Multiplication</span>
-  </p>
-  <p>
-    <a href="https://youtu.be/Nhdd7spj1RA"><img src="https://img.shields.io/badge/YouTube-10--Minute%20Demo%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Demo Walkthrough" /></a>
-    <a href="https://cavdax.sahnirmaan.live/"><img src="https://img.shields.io/badge/Live%20Production%20Demo-cavdax.sahnirmaan.live-10B981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
-  </p>
+<picture>
+<source media="(prefers-color-scheme: dark)" srcset="assets/cavdax-logo-dark.svg" />
+<source media="(prefers-color-scheme: light)" srcset="assets/cavdax-logo-light.svg" />
+<img src="assets/cavdax-logo-dark.svg" width="100" height="100" alt="CAVDAX Logo" />
+</picture>
+
+<h1>CAVDAX: Contextual Action &amp; Verified Decision Autonomous eXecution</h1>
+<p><strong>Graph-Grounded Decision Execution for Coding Agents</strong></p>
+<p>
+<strong>Deterministic Causal Verification Firewall for Autonomous Coding Agents</strong><br />
+<strong>Execution Gate:</strong> Model Context Protocol (MCP) Inline Verification &bull; 
+<strong>Graph Engine:</strong> FalkorDB GraphBLAS Matrix Multiplication
+</p>
+<p>
+<a href="https://youtu.be/Nhdd7spj1RA"><img src="https://img.shields.io/badge/YouTube-10--Minute%20Demo%20Walkthrough-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube Demo Walkthrough" /></a>
+<a href="https://cavdax.sahnirmaan.live/"><img src="https://img.shields.io/badge/Live%20Production%20Demo-cavdax.sahnirmaan.live-10B981?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo" /></a>
+</p>
 </div>
 
 <div align="center">
