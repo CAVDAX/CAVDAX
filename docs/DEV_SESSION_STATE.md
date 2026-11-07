@@ -36,6 +36,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.11 Interactive ADR-to-Graph Selection Toggle, Modal Header Cleanliness & Tactile CTA Styling (November 7, 2026)
+
+- **Bi-Directional Interactive ADR Selection on Decision Graph (ConnectedRepoWorkspace.jsx)**:
+  - **Interaction Design**: In the "ADRs in this repository" sidebar list, clicking an individual ADR card now dynamically highlights and focuses the corresponding `Decision` diamond/rhombus node (or fallback `Source` ADR node) in the "Repository Decision Graph" canvas (`GraphCanvas`).
+  - **Toggle De-Selection**: Clicking an already-selected ADR deselects it (`setSelectedNode(null)`), returning the canvas to its neutral, unselected state.
+  - **Visual Active Cue**: Selected ADR cards render with a high-contrast active state (`border-l-amber-500 bg-amber-500/10 dark:bg-amber-500/15`), prominent amber title typography, and an animated pulsing amber indicator dot (`w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse`).
+  - **Event Propagation Protection**: Nested action buttons (the `{targetFiles.length} files` dropdown toggle and the external GitHub link `<a>`) include `e.stopPropagation()`, ensuring secondary interactions never inadvertently trigger or toggle graph node selection.
+
+- **Modal Header De-Slop & Two-Line Quota Notice (ConnectRepoModal.jsx, UI_DESIGN_SYSTEM.md § 1.1 & § 74.1)**:
+  - **Removed AI Pattern Pill Badge**: Stripped the bracketed `1 / 1 (Community)` badge from the modal header row, adhering strictly to § 1.1 (ban on AI bracketed/parenthetical metadata tags) and § 74.1 (ban on floating eyebrow/badge clutter next to titles).
+  - **Two-Line Scan-Friendly Notice**: Refactored the plan limit warning message into two distinct, high-clarity lines:
+    - Line 1: `Your Community plan allows up to 1 connected repository.`
+    - Line 2: `Disconnect an existing repository below or upgrade to connect additional repositories.`
+  - **Tactile Upgrade Button**: Upgraded the "Upgrade to Pro" banner action to a tactile button with an `ArrowUpRight` SVG icon featuring subtle micro-motion hover translation (`group-hover:translate-x-0.5 group-hover:-translate-y-0.5`). Omitted fluid wavefill effects inside the modal callout in accordance with § 62 to preserve executive restraint and reserve fluid canvas shaders strictly for primary hero authentication gates.
+
 ## 1.1.10 Multi-Display 27" Monitor Calibration & FAQ Viewport Isolation (November 7, 2026)
 
 - **27" Monitor Windowed Breakpoint Trigger Defect Resolved (tailwind.config.js)**:
