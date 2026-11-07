@@ -5,6 +5,15 @@
 
 echo "[CAVDAX] Running Tier 2 Pre-Commit Causal Invariant Guard..."
 
+if [ -f "scripts/lint-markdown.mjs" ]; then
+  node scripts/lint-markdown.mjs --staged
+  MD_EXIT=$?
+  if [ $MD_EXIT -ne 0 ]; then
+    echo "[CAVDAX] Commit aborted: Staged Markdown files contain GFM indented code block traps or CRCRLF corruption."
+    exit 1
+  fi
+fi
+
 if command -v npx >/dev/null 2>&1; then
   node apps/mcp-server/bin/cavdax.js check --staged
   EXIT_CODE=$?
