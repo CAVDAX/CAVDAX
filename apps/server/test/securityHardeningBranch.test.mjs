@@ -180,7 +180,7 @@ test('apply_code_change refuses to write through a symlink that points outside t
   const sandbox = makeSandbox();
   const outside = fs.mkdtempSync(path.join(os.tmpdir(), 'cavdax-outside-'));
   try {
-    fs.symlinkSync(outside, path.join(sandbox.dir, 'linked'), 'dir');
+    fs.symlinkSync(outside, path.join(sandbox.dir, 'linked'), process.platform === 'win32' ? 'junction' : 'dir');
     const mcp = new CavdaxMcpServer(fakeGraph(), { repoRoot: sandbox.dir });
     const res = await mcp.handleToolCall('apply_code_change', {
       decision_id: 'DEC-1', file_path: 'linked/escape.js', code_payload: 'pwned'
