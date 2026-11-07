@@ -91,11 +91,18 @@ test('/adrs handler: unauthenticated request in production returns 401', async (
   assert.equal(body.code, 'AUTH_REQUIRED');
 });
 
-test('/adrs handler: session user without write access is not added to connectedRepos', async () => {
+test('/adrs handler: session user scanning a public repo (read-only) is tracked in connectedRepos for quota enforcement', async () => {
   const session = { user: { login: 'u', accessToken: 'tok' } };
   const { status } = await callAdrs({ session, access: false });
   assert.equal(status, 200);
-  assert.ok(!session.connectedRepos || session.connectedRepos.length === 0, 'read-only visibility must not grant tenancy');
+  assert.deepEqual(session.connectedRepos, ['octo/hello'], 'connected workspace repos must be metered in session.connectedRepos regardless of write access');
+});
+
+test('/adrs handler: free tier rejects second connected repo even if public / read-only', async () => {
+  const session = { user: { login: 'u', accessToken: 'tok' }, connectedRepos: ['other/public-repo'] };
+  const { status, body } = await callAdrs({ session, tier: 'free', access: false });
+  assert.equal(status, 403);
+  assert.equal(body.code, 'TIER_REPO_LIMIT_EXCEEDED');
 });
 
 test('/adrs handler: API-key caller without repo access gets 403 and never reaches the server GITHUB_TOKEN', async () => {
