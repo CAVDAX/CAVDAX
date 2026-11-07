@@ -60,6 +60,7 @@ import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import CausalEnclaveHub from './CausalEnclaveHub';
 
 import SpotlightDataRain from './SpotlightDataRain';
+import ArchitecturalComparisonMatrix from './ArchitecturalComparisonMatrix';
 
 import { playClick } from '../utils/soundFx';
 
@@ -1349,6 +1350,13 @@ export default function LandingPage({
 
         <CausalSolutionScroller />
 
+      </SubsystemErrorBoundary>
+
+      {/* ══════════════════════════════════════════════════════════════════════
+          3b. SPECIFICATION COMPARISON MATRIX (Institutional Differentiation)
+          ══════════════════════════════════════════════════════════════════════ */}
+      <SubsystemErrorBoundary name="Architectural Comparison Matrix">
+        <ArchitecturalComparisonMatrix />
       </SubsystemErrorBoundary>
 
 
