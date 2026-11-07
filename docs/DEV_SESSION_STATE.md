@@ -34,7 +34,24 @@
 
 
 
-## 1. Executive Summary of Complete Theme & Scroller Makeover
+## 1. Executive Summary of Complete Theme & Scroller Makeover
+
+## 1.1.09 Decoupled Workspace Quota Tracking & Universal Repository Metering (November 7, 2026)
+
+- **Decoupled Quota Tracking & Write Permissions (apps/server/index.js)**:
+  - Eliminated the architectural conflation between workspace tenancy tracking (`req.session.connectedRepos`) and GitHub write authorization (`verifyUserRepoAccess`).
+  - Added optional `options = { requireWrite = false }` parameter to `verifyUserRepoAccess`. Mutative routes (`/propose-adr`, `/init-adr`, `/ci-gate-pr`, `/sync-adr-status`) require authentic push/admin permissions on GitHub, while workspace read/inspection operations (`/api/graph`, `/api/audit`, `/verify-action`) are granted to active workspace members.
+  - Metered all connected repositories (both owned and public open-source) under `req.session.connectedRepos`, guaranteeing that free/Community tier accounts are strictly capped at 1 connected repository regardless of whether the source repo is public or private.
+  - Automated test coverage in `apps/server/test/adrsRoute.test.mjs` (113 passing tests) proving that public read-only repos are tracked and second connections on free tier reject with HTTP 403 `TIER_REPO_LIMIT_EXCEEDED`.
+
+- **Proactive Plan Limit Enforcement & Quota UI in Connect Modal (ConnectRepoModal.jsx, App.jsx)**:
+  - Updated `ConnectRepoModal` to accept `connectedRepoCount`, `repoLimit`, and `tier`.
+  - Displayed live quota indicator pill in modal header (`{count} / {limit} Repos (Tier)`).
+  - Added warning banner when plan limit is reached, explaining the limit with direct "Upgrade to Pro" CTA and the option to disconnect existing repositories to free a slot.
+  - Converted unlinked repository "Connect" buttons into "Upgrade" triggers with lock icons when at capacity.
+  - Disabled manual public URL linking when quota is exhausted to prevent phantom additions.
+  - Enforced quota ceiling in `App.jsx` `handleConnectRepo`, redirecting to Profile tab if an over-quota addition is attempted.
+
 
 
 
