@@ -204,19 +204,19 @@ export default function ArchitecturalComparisonMatrix() {
 
   return (
 
-    <section id="comparison-matrix" className="w-full min-h-screen flex flex-col justify-center py-4 sm:py-6 pro-27:py-10 px-3 sm:px-6 pro-27:px-8 max-w-[1380px] mx-auto border-t border-slate-300 dark:border-white/10">
+    <section id="comparison-matrix" className="w-full min-h-screen flex flex-col justify-center py-4 sm:py-6 pro-27:py-8 px-3 sm:px-6 pro-27:px-8 max-w-[1380px] mx-auto border-t border-slate-300 dark:border-white/10">
 
       {/* Header: Pure Typography, Zero Generic Eyebrow Pills */}
 
-      <div className="text-center mb-2.5 sm:mb-4 pro-27:mb-10">
+      <div className="text-center mb-2.5 sm:mb-4 pro-27:mb-6">
 
-        <h2 className="text-xl sm:text-2xl lg:text-3xl pro-27:text-4xl font-extrabold text-slate-950 dark:text-white tracking-tight">
+        <h2 className="text-xl sm:text-2xl lg:text-3xl pro-27:text-[34px] font-extrabold text-slate-950 dark:text-white tracking-tight">
 
           How CAVDAX Outclasses Static Docs &amp; Vector RAG
 
         </h2>
 
-        <p className="text-[10.5px] sm:text-xs pro-27:text-sm text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mt-1 pro-27:mt-2 font-sans leading-snug pro-27:leading-relaxed">
+        <p className="text-[10.5px] sm:text-xs pro-27:text-[13px] text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mt-1 pro-27:mt-1.5 font-sans leading-snug pro-27:leading-relaxed">
 
           A side-by-side technical evaluation across runtime interception, causal blast radius computation, and deterministic multi-agent concurrency.
 
@@ -238,39 +238,39 @@ export default function ArchitecturalComparisonMatrix() {
 
               <tr className="border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-white/[0.02]">
 
-                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11px] font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[24%] whitespace-nowrap">
+                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11.5px] font-mono font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 w-[24%] whitespace-nowrap">
 
                   Architectural Metric
 
                 </th>
 
-                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[15%] whitespace-nowrap">
+                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11.5px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[15%] whitespace-nowrap">
 
                   Static ADRs
 
-                  <span className="block text-[8.5px] pro-27:text-[9.5px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">adr-tools / Log4brains</span>
+                  <span className="block text-[8.5px] pro-27:text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">adr-tools / Log4brains</span>
 
                 </th>
 
-                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[17%] whitespace-nowrap">
+                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11.5px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[17%] whitespace-nowrap">
 
                   Vector RAG
 
-                  <span className="block text-[8.5px] pro-27:text-[9.5px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">Cursor @codebase / LangChain</span>
+                  <span className="block text-[8.5px] pro-27:text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">Cursor @codebase / LangChain</span>
 
                 </th>
 
-                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[16%] whitespace-nowrap">
+                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10px] sm:text-[10.5px] pro-27:text-[11.5px] font-mono font-medium text-slate-600 dark:text-slate-400 w-[16%] whitespace-nowrap">
 
                   Static Linters
 
-                  <span className="block text-[8.5px] pro-27:text-[9.5px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">ArchUnit / Semgrep / CodeRabbit</span>
+                  <span className="block text-[8.5px] pro-27:text-[10px] text-slate-400 dark:text-slate-500 font-sans font-normal mt-0.5 whitespace-nowrap">ArchUnit / Semgrep / CodeRabbit</span>
 
                 </th>
 
                 {/* Elevated Solitary CAVDAX Column Header */}
 
-                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10.5px] sm:text-[11px] pro-27:text-[11.5px] font-mono font-bold text-slate-950 dark:text-white bg-slate-100/90 dark:bg-[#161B22]/90 border-l border-r border-slate-300 dark:border-white/20 border-t-2 border-t-[#d9a353] shadow-md z-10 w-[28%] whitespace-nowrap">
+                <th className="py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 text-[10.5px] sm:text-[11px] pro-27:text-[12px] font-mono font-bold text-slate-950 dark:text-white bg-slate-100/90 dark:bg-[#161B22]/90 border-l border-r border-slate-300 dark:border-white/20 border-t-2 border-t-[#d9a353] shadow-md z-10 w-[28%] whitespace-nowrap">
 
                   <div className="flex items-start gap-1.5">
 
@@ -280,7 +280,7 @@ export default function ArchitecturalComparisonMatrix() {
 
                       <div className="leading-tight">CAVDAX Causal Gate</div>
 
-                      <div className="text-[8.5px] pro-27:text-[9.5px] text-slate-500 dark:text-slate-400 font-sans font-normal mt-0.5 whitespace-nowrap leading-tight">
+                      <div className="text-[8.5px] pro-27:text-[10px] text-slate-500 dark:text-slate-400 font-sans font-normal mt-0.5 whitespace-nowrap leading-tight">
 
                         FalkorDB GraphBLAS + MCP
 
@@ -310,7 +310,7 @@ export default function ArchitecturalComparisonMatrix() {
 
                   <td className="py-1.5 sm:py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 whitespace-nowrap">
 
-                    <div className="font-semibold text-slate-900 dark:text-white font-mono text-[11px] sm:text-[11.5px] pro-27:text-[12px] whitespace-nowrap">
+                    <div className="font-semibold text-slate-900 dark:text-white font-mono text-[11px] sm:text-[11.5px] pro-27:text-[12.5px] whitespace-nowrap">
 
                       {row.capability}
 
@@ -362,7 +362,7 @@ export default function ArchitecturalComparisonMatrix() {
 
                   {/* Elevated Solitary CAVDAX Cell */}
 
-                  <td className="py-1.5 sm:py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 font-mono text-[11px] sm:text-[11.5px] pro-27:text-[12px] font-bold text-slate-950 dark:text-white bg-slate-100/90 dark:bg-[#161B22]/90 border-l border-r border-slate-300 dark:border-white/20 shadow-md z-10 whitespace-nowrap">
+                  <td className="py-1.5 sm:py-2 pro-27:py-3.5 px-3 sm:px-4 pro-27:px-5 font-mono text-[11px] sm:text-[11.5px] pro-27:text-[12.5px] font-bold text-slate-950 dark:text-white bg-slate-100/90 dark:bg-[#161B22]/90 border-l border-r border-slate-300 dark:border-white/20 shadow-md z-10 whitespace-nowrap">
 
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
 
@@ -388,7 +388,7 @@ export default function ArchitecturalComparisonMatrix() {
 
         {/* Clean, Non-AI Understated Bottom Bar */}
 
-        <div className="py-1.5 sm:py-2 pro-27:p-3 px-3 sm:px-4 pro-27:px-5 border-t border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] flex items-center justify-between text-[10px] sm:text-[10.5px] pro-27:text-[11px] text-slate-500 dark:text-slate-400 font-sans">
+        <div className="py-1.5 sm:py-2 pro-27:py-2.5 px-3 sm:px-4 pro-27:px-5 border-t border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.01] flex items-center justify-between text-[10px] sm:text-[10.5px] pro-27:text-[11px] text-slate-500 dark:text-slate-400 font-sans">
 
           <span>Evaluated deterministically via Boolean Semiring adjacency reachability.</span>
 

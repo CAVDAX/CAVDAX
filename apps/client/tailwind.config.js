@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       screens: {
-        'pro-27': { 'raw': '(min-width: 1440px) and (min-height: 960px)' },
+        'pro-27': { 'raw': '(min-width: 1400px) and (min-height: 820px)' },
       },
       colors: {
         obsidian: {

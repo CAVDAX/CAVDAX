@@ -1367,7 +1367,7 @@ export default function LandingPage({
 
           ══════════════════════════════════════════════════════════════════════ */}
 
-      <section id="faq-section" className="w-full py-16 px-6 max-w-4xl mx-auto border-t border-slate-300 dark:border-white/10">
+      <section id="faq-section" className="w-full py-16 pro-27:pt-28 pro-27:pb-20 px-6 max-w-4xl mx-auto border-t border-slate-300 dark:border-white/10">
 
         <div className="text-center mb-10">
 
