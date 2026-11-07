@@ -36,6 +36,19 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.12 Pull-Cord Radial Physics Clamping & Viewport-Aware Graph Canvas Auto-Centering (November 7, 2026)
+
+- **Wordmark Lamp Pull-Cord Bounding & Radial Clamp Defect Resolved (PullCordLampToggle.jsx)**:
+  - **Mechanical Root Cause**: In `PullCordLampToggle.jsx`, while user dragging was clamped to `maxDist = 240px`, the `requestAnimationFrame` physics loop lacked any radial or physical cord distance constraint. Furthermore, `onPointerUp` injected an artificial kinetic impulse (`p.vx = -stretchX * 0.38`) which double-counted Hooke's restoring force, catapulting the unconstrained 1D spring across the screen ($x \approx -1500\text{px}$). Because the SVG element had `overflow: visible`, the beaded cord rendered as an elongated horizontal line spanning the entire viewport ($100\text{vw}$).
+  - **Resolution**:
+    1. Eliminated artificial kinetic impulse injection in `onPointerUp` (`p.vx = 0, p.vy = 0`), allowing Hooke's restoring spring to naturally and smoothly return the bob to rest.
+    2. Enforced a strict radial distance clamp in the physics loop (`MAX_PHYSICAL_DIST = 240px`), guaranteeing that the bob and cubic Bézier cord physically cannot exceed the lamp's local quadrant under any velocity spike, frame drop, or mouse fling.
+
+- **Viewport-Aware Graph Canvas Auto-Centering (GraphCanvas.jsx)**:
+  - **Centering Coordinate Matrix Correction**: Resolved mathematical bug in `handleNodeSelectAndCenter` by incorporating zoom scaling:
+    $\text{pan.x} = \frac{\text{cw}}{2 \times \text{zoom}} - \text{node.x}, \quad \text{pan.y} = \frac{\text{ch}}{2 \times \text{zoom}} - \text{node.y}$
+  - **Non-Disruptive Viewport Detection**: Implemented reactive auto-centering on `selectedNodeId` with spatial guards. If the target node is already comfortably visible within safe viewport bounds ($80\text{px}$ margin from all container edges), the camera position is left completely undisturbed. Only when a selected node is clipped or completely off-screen does the canvas smoothly pan to center it, preserving user spatial focus.
+
 ## 1.1.11 Interactive ADR-to-Graph Selection Toggle, Modal Header Cleanliness & Tactile CTA Styling (November 7, 2026)
 
 - **Bi-Directional Interactive ADR Selection on Decision Graph (ConnectedRepoWorkspace.jsx)**:
