@@ -11550,5 +11550,8 @@ A complete visual and architectural transformation has been executed across the 
 
   - Production platform active and intact at `https://cavdax.sahnirmaan.live`.
 
-
-
+- **Markdown & GFM CommonMark Parser Rule Invariant (`0ab`)**:
+  - Formalized Section `0ab` in `AGENTS.md` and updated `#AGENTS.md File.md` in prompt master library:
+    - Banning 4-space indentation for child HTML blocks in Markdown (`<picture>`, `<source>`, `<a>`, `<p>`).
+    - Enforcing clean single-LF line endings (`\n`) and banning double-carriage returns (`\r\r\n`) to permanently prevent GitHub from parsing HTML tags into raw `<pre><code>` code blocks.
+    - Updated Section 4 to mandate pre-commit scanning for `\r\r` and 4-space indented HTML tags in markdown files.
