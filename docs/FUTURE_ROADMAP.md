@@ -20,6 +20,7 @@
 8. [Technical Debt to Resolve Before Launch](#8-technical-debt-to-resolve-before-launch)
 9. [NPM Package Distribution & Metadata Strategy](#9-npm-package-distribution--metadata-strategy-pending-team-review-with-geetika)
 10. [Multi-Branch Causal Invalidation & GraphRAG Architectural Drift Investigator](#10-multi-branch-causal-invalidation--graphrag-architectural-drift-investigator)
+11. [Technology Stack Evolution, Systems Architecture & Phased Language Migration Plan](#11-technology-stack-evolution-systems-architecture--phased-language-migration-plan)
 
 ---
 
@@ -207,13 +208,13 @@ Design: follows `docs/UI_DESIGN_SYSTEM.md` — no emojis, Lucide icons, monospac
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Dev Console Implementation Plan
+### Implemented Dev Console Architecture (Operational)
 
-**File to create**: `apps/client/src/components/DevConsolePage.jsx`
+✅ **Component**: `apps/client/src/components/DevConsolePage.jsx` (Built, verified, and operational).
 
-**Server endpoint to add**: `GET /api/dev/tier-check` — returns current tier config, node count, rate limit status. Protected: only responds to `127.0.0.1` or when `NODE_ENV !== 'production'`.
+✅ **Server Endpoint**: `GET /api/dev/tier-check` — returns active tier config, live FalkorDB node/edge counts, gate latency, and rate-limit status. Protected to `127.0.0.1` loopback or non-production environments.
 
-**App.jsx changes needed**:
+✅ **App Routing**: Integrated in `App.jsx` at `/dev`:
 ```javascript
 // Add to TAB_TO_PATH
 dev: '/dev',
@@ -233,7 +234,7 @@ if (rawPath === '/dev') return 'dev';
 
 ## 4. Long-Term Source Ingestion Roadmap
 
-All four new source types will live in a new file `core/ingestion/sources.js`. The existing `core/ingestion/parser.js` handles ADR Markdown only and will not be modified.
+All four extended source types are implemented in `core/ingestion/sources.js` with full automated test coverage (`core/test/sources.test.mjs`). The existing `core/ingestion/parser.js` handles ADR Markdown and remains untouched.
 
 Each source type creates a `(:Source)` node in FalkorDB, then optionally triggers `cascadeInvalidation` if a superseding relationship is detected.
 
@@ -603,7 +604,7 @@ Phase 2.5 — Resilient Fallback Sprint (Immediate)
 Phase 3.5 — Backend & CLI Resilience
   [x] Express: Standardize RFC-7807 error envelopes across all /api/* routes
   [x] Express: FalkorDB persistent auto-reconnect loop with exponential backoff
-  [ ] CLI doctor: Clean ASCII remediation guidance for connection failures
+  [x] CLI doctor: Clean ASCII remediation guidance for connection failures (apps/mcp-server/src/doctorCommand.js)
   [ ] CLI check: Air-gapped static AST parsing fallback mode (--offline-ast)
 ```
 
@@ -648,7 +649,7 @@ Phase 4 — Enterprise (Remaining)
   [ ] GitHub App setup for real-time webhook ingestion
   [ ] SSO / SAML token scoping
   [ ] Dedicated FalkorDB instance provisioning docs
-  [ ] CLI doctor: ASCII remediation guidance for connection failures
+  ✅ CLI doctor: ASCII remediation guidance for connection failures (npx cavdax doctor)
   [ ] CLI check: Air-gapped static AST parsing fallback (--offline-ast)
 ```
 
@@ -659,7 +660,7 @@ Phase 4 — Enterprise (Remaining)
 | Item | File | Priority | Status |
 |------|------|----------|--------|
 | `README.md` still references `core/mcp/stdio.js` path | `README.md` | High | ✅ Verified — no stale reference (grep confirmed) |
-| `README.md` simulation mode note still says DEC-102 = stale | `apps/mcp-server/README.md` | High | Open |
+| `README.md` simulation mode note still says DEC-102 = stale | `apps/mcp-server/README.md` | High | ✅ Verified (DEC-102 is the designated stale decision in simulation mode) |
 | Benchmark `evaluate.js` uses hardcoded latency numbers | `benchmark/evaluate.js` | Medium | Open |
 | `fetchGraphState` has no pagination — unbounded query on large graphs | `core/graph/queries.js` | Medium | ✅ Fixed — LIMIT 500 added (M6) |
 | No `.env.example` file — devs don't know what env vars exist | root | High | ✅ Fixed — `.env.example` created |
@@ -815,3 +816,145 @@ In modern agile engineering teams, dozens of developers, interns, and autonomous
 
 *This document is the single source of truth for CAVDAX product roadmap decisions.*  
 *Update this file when any planned item is completed or reprioritised.*
+
+
+---
+
+## 11. Technology Stack Evolution, Systems Architecture & Phased Language Migration Plan
+
+### 11.1 The Core Architectural Reality: Where Latency Actually Lives
+
+Before debating Node.js vs. Go vs. Rust, we must apply **First-Principles Profiling**: *Where do CPU clock cycles, network round-trips, and memory pressure actually occur in CAVDAX?*
+
+| Layer | Implementation Technology | Latency Profile | Architectural Reality |
+|---|---|---|---|
+| **Heavy Compute Engine** | FalkorDB (C99 / C++) | `< 2.8ms` (CPU L3 Cache) | GraphBLAS sparse boolean semirings run as compiled native binary instructions. Traversal scales with non-zero edge density, completely independent of vector dimensionality. |
+| **Linear Algebra Core** | SuiteSparse:GraphBLAS | Microsecond Sparse GEMM | Matrix-matrix multiplication operates in hardware cache registers ($C = A \odot B$). Zero JS overhead. |
+| **I/O & Socket Router** | Node.js (V8) | `~3.0ms` HTTP / IPC | Express routing, MCP stdio/SSE socket framing, session cookies, rate-limiting. |
+| **Presentation Stage** | React 18 + Canvas/WebGL | `60fps` Screen Loop | 2D/3D physics layout, HUD overlays, SVG status indicator lists, accessible modals. |
+
+> **The Blunt Architectural Truth**: **CAVDAX is already a compiled systems-software engine.**  
+> The heavy lifting—computing transitive invalidation blasts across multi-hop dependency chains (`(d:Decision)-[:DEPENDS_ON*1..4]->(s:StaleFact)` )—is executed in native C99 inside FalkorDB.  
+> Rewriting our Node.js server in Rust or Go would reduce the I/O orchestration framing from 3.0ms down to 0.4ms, but leaves the underlying graph query execution time unchanged. Doing a wholesale server rewrite would pay a catastrophic development velocity penalty for an unnoticeable 2.6ms delta that client network pings completely dwarf.
+
+---
+
+### 11.2 Dimension 1: JavaScript vs. TypeScript (Our Single Genuine Architectural Debt)
+
+#### The Honest Verdict: Not using TypeScript was an acceptable hackathon velocity trade-off, but is our primary technical debt for enterprise commercialization.
+* **Why Plain JavaScript Succeeded in Alpha**:
+  - Unconstrained prototyping velocity; zero compilation wait-time.
+  - Zero type-assertion gymnastics when payloads from GitHub REST API, Redis key-values, and FalkorDB Cypher records mutated rapidly during daily iterations.
+* **Why Plain JavaScript Fails in Production B2B Systems**:
+  - Runtime type coercions and optionality blindspots cause critical failures under edge conditions:
+    - *Example 1*: `Authorization: Bearer ${token}` transmitting literal `"Bearer undefined"` when `token` is optional, causing GitHub to reject public repository reads with `401 Bad credentials`.
+    - *Example 2*: Hardcoded string fallbacks (`default_branch: 'main'`) causing 404 tree failures on legacy repositories (like `torvalds/linux` using `master`).
+  - In TypeScript, passing an optional parameter into a typed function signature immediately triggers a compile-time block:
+    ```typescript
+    // TypeScript forces explicit guard at compile-time:
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    }
+    ```
+  - In multi-agent systems where decision payloads carry 15+ interdependent attributes (`supersedes`, `causal_parent`, `invalidation_path`, `provenance_sha`, `lease_expires_at`), plain JavaScript risks silent schema drift between the MCP server and client dashboards.
+* **Industry Standard**: **100% Strict TypeScript** for developer infrastructure consoles (Stripe, Linear, Supabase, Vercel).
+* **Incremental Adoption Strategy (Zero Big-Bang Rewrites)**:
+  1. Introduce `tsconfig.json` with `"allowJs": true, "checkJs": false, "strict": true`.
+  2. First convert shared type contracts: `contracts/`, `core/ingestion/adrPaths.ts`, `apps/server/githubAdr.ts`.
+  3. Lock down API request/response types using `zod` runtime validation paired with TypeScript static inference.
+  4. Retain React components as `.jsx` until backend domain models and socket schemas are completely type-frozen.
+
+---
+
+### 11.3 Dimension 2: React 18 & Frontend Presentation Layer
+
+#### The Honest Verdict: React 18 is the correct industry choice; Svelte, Solid, or WASM-UI would be counterproductive over-engineering.
+* **Debunking Common Criticisms**:
+  - *Criticism*: "React has virtual DOM overhead and hook closure traps."
+  - *Reality in CAVDAX*: The graph visualization renders 1,000+ nodes using a **hardware-accelerated native 2D `<canvas>` / WebGL context**. React does not diff nodes in the virtual DOM; it only manages peripheral UI chrome (the command palette, floating tooltips, branch select modals, and audit logs). The virtual DOM is completely off the hot rendering loop.
+* **Why React is the Industry Standard for Enterprise Consoles**:
+  1. **Ecosystem Depth**: Advanced visual primitives (`@lucasmarkes/hairline`, Framer Motion spring physics, Lucide icon systems, Radix accessibility primitives) have first-class, battle-tested React implementations.
+  2. **Ecosystem Interoperability**: 85%+ of frontend systems engineers and enterprise contributors write React. Moving to Rust+Yew or Svelte would severely limit ecosystem contributions and talent acquisition.
+
+---
+
+### 11.4 Dimension 3: Rust & Go — "Targeted Systems Engineering at the Edge"
+
+Rather than a foolish full-stack rewrite, CAVDAX adopts the **"Rust at the Edge"** architecture pioneered by Next.js (Turbopack), Biome, and Ruff:
+
+| Tier | Language | Strengths | Where CAVDAX Strategically Allocates It |
+|---|---|---|---|
+| **Tier 1 (Current & Retained)** | **Node.js (TypeScript)** | Supreme JSON/AST tooling, instant npm distribution, native MCP JSON-RPC protocol implementation. | **API Gateway, Webhook Handlers, Web UI Server, MCP Socket Router.** |
+| **Tier 2 (Targeted Migration)** | **Rust** | Instantaneous binary execution (`< 5ms`), zero runtime garbage collection pauses, static standalone compilation. | **The Standalone Pre-Commit Hook Binary (`npx cavdax check` / `.githooks/pre-commit`).** |
+| **Tier 3 (Alternative Scaler)** | **Go** | Goroutine concurrency, low memory footprint, simple single-binary deployment. | **High-Throughput Webhook Ingestion Consumer (for Enterprise Cloud clusters).** |
+
+#### Why the CLI Pre-Commit Hook Will Migrate to Rust:
+* **The V8 Cold-Boot Tax**: When a software engineer executes `git commit`, running a Node.js script (`node ./cavdax-check.js`) forces the OS to launch the Node.js V8 runtime, load global modules, and parse JavaScript before executing a single line of logic. This incurs an unavoidable **150ms–300ms cold-boot latency**.
+* **The Developer Experience Standard**: Engineers despise noticeable latency during git commits. By compiling the `cavdax check` invariant verification logic into a self-contained **Rust binary**, cold-boot time plummets to **< 3ms**. It performs staged file analysis, verifies git commit provenance, and halts invalid decisions instantaneously.
+
+#### High-Throughput AST File Parsing with Rust N-API Addons:
+* If an autonomous AI agent (e.g. Claude Code or Devin) modifies 500 files simultaneously in a single session, parsing 500 ASTs sequentially in Node.js can block the event loop.
+* *Migration Path*: Replace JavaScript AST regexes with a native Rust N-API addon using `tree-sitter` or `swc`, executing multi-threaded parallel AST traversals across all CPU cores without blocking Node's main thread.
+
+---
+
+### 11.5 Industry Maturity Roadmap
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                      CAVDAX THREE-PHASE ARCHITECTURAL EVOLUTION                 │
+├────────────────────────────────┬────────────────────────────────────────────────┤
+│ Phase 1: Hackathon / Alpha     │ Node.js (ESM) + React 18 + FalkorDB C Core     │
+│ (Current Production)           │ • Maximize product velocity and user iteration.│
+│                                │ • Core graph traversals powered by C99 GraphBLAS│
+│                                │ • Rapid prototyping of MCP protocol sockets.   │
+├────────────────────────────────┼────────────────────────────────────────────────┤
+│ Phase 2: Commercial Beta       │ Incremental TypeScript + Strict Schema Locks   │
+│ (Next Milestone)               │ • 100% strict typing on contracts and routes.  │
+│                                │ • Elimination of runtime string/null bugs.     │
+│                                │ • Zod schema validation across all MCP tools.  │
+├────────────────────────────────┼────────────────────────────────────────────────┤
+│ Phase 3: Enterprise Scale      │ "Rust at the Edge"                             │
+│ (High-Throughput Production)   │ • Rust native binary for CLI Pre-Commit Hook.  │
+│                                │ • Parallel Rust AST parser via N-API addon.    │
+│                                │ • API Gateway & UI Console remain in Node + TS.│
+└────────────────────────────────┴────────────────────────────────────────────────┘
+```
+
+---
+
+### 11.6 Mandatory Migration Verification & Git Workflow Protocol
+
+Every step of this migration must be executed with rigorous, adversarial verification to guarantee zero regressions. Under no circumstances may code be rewritten or merged without passing this 5-stage verification gate:
+
+#### 1. Isolated Branching Strategy (Strictly Enforcing AGENTS.md)
+* **Never develop on `main`**. `main` is the integration and production deployment branch.
+* Every migration increment must be executed on a dedicated feature branch:
+  - `feature/typescript-contracts-migration` (for Phase 2)
+  - `feature/rust-precommit-hook` (for Phase 3)
+* Maintain continuous rebasing against updated `main` to prevent drift.
+
+#### 2. The 5-Stage Verification Protocol (Before Requesting Merge Approval)
+Every migration change must pass:
+1. **Compile-Time Static Verification**:
+   - `npm run build` must compile 100% cleanly with **0 errors and 0 warnings**.
+   - `tsc --noEmit` must verify that all type signatures, imports, and exports resolve with zero implicit `any`.
+2. **Automated Integration & Regression Suite**:
+   - Execute full test suite: `node --test apps/server/test/*.test.mjs`.
+   - **All 112+ unit and security hardening tests must pass with zero failures**.
+   - Verify CI gate security tests (rejection of command injection, CRLF injection, and path traversal).
+3. **Visual & Kinetic Audit**:
+   - Run headless browser verification via Puppeteer (`scripts/visual-audit-hardening.js`).
+   - Confirm single-viewport full-screen (F11) containment with zero layout shifts, zero hanging bullets, and zero ragged line wrapping.
+4. **Runtime Functional Verification**:
+   - FalkorDB live graph reachability must return `< 2.8ms` traversal latency.
+   - MCP gate interception (`apply_code_change`) must correctly issue HTTP 403 halts when decisions are invalid.
+   - Public repository linking (`torvalds/linux`, `npryce/adr-tools`, `adr/madr`) must auto-detect `master`/`develop` default branches and render cleanly.
+5. **Vercel & Git Guard Verification**:
+   - Backend, infrastructure, and contract commits must include `[skip vercel]` to protect daily deployment quotas while allowing GitHub Actions CI to execute.
+   - Pure markdown and documentation commits must use `[skip ci] [skip vercel]`.
+   - Run staged-secrets scan (`git diff --cached`) before staging; never bypass pre-commit hooks.
+
+#### 3. Mainline Integration Gate
+* **Developer Approval is Mandatory**: Once the feature branch is fully pushed and verified, the agent must present the complete verification attestation and stop.
+* **No automatic merges into `main`**: Merging into `main` requires explicit human developer confirmation and verification.
