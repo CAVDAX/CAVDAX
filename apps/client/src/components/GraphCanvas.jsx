@@ -782,7 +782,7 @@ export default function GraphCanvas({
               <!-- Outer Glow Halo (Diamond) -->
               <polygon points="0,-36 46,0 0,36 -46,0" fill="none" stroke="${colors.stroke}" stroke-width="${inBlast || isSimRoot ? 2.5 : 1.2}" opacity="${inBlast || isSimRoot ? 0.95 : 0.3}" />
               <!-- Node Double-Bezel Body (Diamond) -->
-              <polygon points="0,-31 40,0 0,31 -40,0" fill="${colors.fill}" stroke="${isSimRoot ? '#38BDF8' : colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" stroke-linejoin="round" />
+              <polygon points="0,-31 40,0 0,31 -40,0" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" stroke-linejoin="round" />
               <!-- Core Node ID -->
               <text x="0" y="-3" text-anchor="middle" fill="${colors.text}" font-size="9" font-family="monospace" font-weight="bold">${shortId}</text>
               <!-- High-Contrast Status Badge -->
@@ -799,7 +799,7 @@ export default function GraphCanvas({
             <!-- Outer Glow Halo -->
             <rect x="-36" y="-26" width="72" height="52" rx="10" ry="10" fill="none" stroke="${colors.stroke}" stroke-width="${inBlast || isSimRoot ? 2.5 : 1.2}" opacity="${inBlast || isSimRoot ? 0.95 : 0.3}" />
             <!-- Node Double-Bezel Body -->
-            <rect x="-32" y="-22" width="64" height="44" rx="8" ry="8" fill="${colors.fill}" stroke="${isSimRoot ? '#38BDF8' : colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" />
+            <rect x="-32" y="-22" width="64" height="44" rx="8" ry="8" fill="${colors.fill}" stroke="${colors.stroke}" stroke-width="${isSimRoot ? 2.5 : 1.6}" />
             <!-- Core Node ID -->
             <text x="0" y="-3" text-anchor="middle" fill="${colors.text}" font-size="9.5" font-family="monospace" font-weight="bold">${shortId}</text>
             <!-- High-Contrast Status Badge -->
@@ -1518,7 +1518,7 @@ export default function GraphCanvas({
                     <polygon
                       points="0,-31 40,0 0,31 -40,0"
                       fill={colors.fill}
-                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      stroke={colors.stroke}
                       strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
                       strokeLinejoin="round"
                       className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
@@ -1575,7 +1575,7 @@ export default function GraphCanvas({
                       rx="8"
                       ry="8"
                       fill={colors.fill}
-                      stroke={isSimRoot ? '#38BDF8' : colors.stroke}
+                      stroke={colors.stroke}
                       strokeWidth={isSelected || isSimRoot ? "2.5" : "1.6"}
                       className="transition-all duration-150 group-hover:brightness-95 dark:group-hover:brightness-110"
                     />

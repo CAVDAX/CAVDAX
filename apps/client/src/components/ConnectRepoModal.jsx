@@ -319,12 +319,12 @@ export default function ConnectRepoModal({
     const fullName = `${owner}/${repoName}`;
 
     onConnectRepo({
-      id: `custom-${Date.now()}`,
+      id: `custom-${owner.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}-${repoName.toLowerCase().replace(/[^a-z0-9_-]/g, '_')}`,
       name: repoName,
       full_name: fullName,
       owner: owner,
       private: false,
-      default_branch: 'main',
+      default_branch: null,
       description: 'Custom linked git workspace',
       connectedAt: Date.now(),
       hasAdrs: false

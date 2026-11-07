@@ -186,10 +186,10 @@ export default function App() {
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('pointerdown', handleClickOutside, true);
     document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('pointerdown', handleClickOutside, true);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [isWorkspaceDropdownOpen]);
@@ -199,11 +199,30 @@ export default function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get("openConnectRepo") === "1" || params.get("connectRepo") === "1";
   });
+  const dedupeRepos = (list) => {
+    if (!Array.isArray(list)) return [];
+    const seen = new Set();
+    const clean = [];
+    for (const r of list) {
+      if (!r) continue;
+      const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
+      if (!key || seen.has(key)) continue;
+      seen.add(key);
+      clean.push(r);
+    }
+    return clean;
+  };
+
   const [connectedRepos, setConnectedRepos] = useState(() => {
     if (typeof window === 'undefined') return [];
     try {
       const saved = localStorage.getItem('cavdax_connected_repos');
-      return saved ? JSON.parse(saved) : [];
+      const parsed = saved ? JSON.parse(saved) : [];
+      const clean = dedupeRepos(parsed);
+      if (clean.length !== (Array.isArray(parsed) ? parsed.length : 0)) {
+        try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(clean)); } catch {}
+      }
+      return clean;
     } catch {
       return [];
     }
@@ -289,14 +308,26 @@ export default function App() {
   };
 
   const handleConnectRepo = (newRepo) => {
+    let resolvedRepo = newRepo;
     setConnectedRepos(prev => {
-      const updated = [newRepo, ...prev.filter(r => r.id !== newRepo.id)];
+      const targetKey = (newRepo.full_name || newRepo.name || String(newRepo.id || '')).toLowerCase().trim();
+      const existingMatch = prev.find(r => {
+        const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
+        return (targetKey && key === targetKey) || (r.id && newRepo.id && String(r.id) === String(newRepo.id));
+      });
+      resolvedRepo = existingMatch ? { ...existingMatch, ...newRepo, id: existingMatch.id || newRepo.id } : newRepo;
+      const remaining = prev.filter(r => {
+        const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
+        return !(targetKey && key === targetKey) && !(r.id && newRepo.id && String(r.id) === String(newRepo.id));
+      });
+      const updated = [resolvedRepo, ...remaining];
       try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(updated)); } catch {}
       window.dispatchEvent(new CustomEvent('cavdax:repos-updated', { detail: { repos: updated } }));
       return updated;
     });
-    setSelectedConnectedRepo(newRepo);
-    setActiveWorkspace(newRepo.id);
+    setSelectedConnectedRepo(resolvedRepo);
+    setActiveWorkspace(resolvedRepo.id);
+    setIsWorkspaceDropdownOpen(false);
   };
 
   const handleUpdateConnectedRepo = (updatedRepo) => {
@@ -310,12 +341,23 @@ export default function App() {
   };
 
   const handleDisconnectRepo = (repoId) => {
+    let removedFullName = '';
     setConnectedRepos(prev => {
+      const target = prev.find(r => String(r.id) === String(repoId));
+      if (target?.full_name) removedFullName = target.full_name;
       const updated = prev.filter(r => String(r.id) !== String(repoId));
       try { localStorage.setItem('cavdax_connected_repos', JSON.stringify(updated)); } catch {}
       window.dispatchEvent(new CustomEvent('cavdax:repos-updated', { detail: { repos: updated } }));
       return updated;
     });
+    if (removedFullName) {
+      fetch('/api/github/repos/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ repo: removedFullName })
+      }).catch(() => {});
+    }
     if (activeWorkspace === repoId || selectedConnectedRepo?.id === repoId) {
       setActiveWorkspace("demo");
       setSelectedConnectedRepo(null);
@@ -378,6 +420,7 @@ export default function App() {
       }
     }
     setActiveTab(tab);
+    setIsWorkspaceDropdownOpen(false);
 
     const scrollToDestination = () => {
       if (typeof window === 'undefined') return;
@@ -825,11 +868,16 @@ export default function App() {
             role: 'user'
           };
           setGithubUser(u);
+          if (d.user.tier) {
+            setActiveTierKey(d.user.tier);
+            try { localStorage.setItem('cavdax_tier', d.user.tier); } catch {}
+          }
           try {
             localStorage.setItem('cavdax_user_session', JSON.stringify({
               username: u.login,
               name: u.name,
               avatarUrl: u.avatarUrl,
+              tier: d.user.tier || 'free',
               connectedAt: new Date().toISOString()
             }));
           } catch {}
@@ -1616,7 +1664,7 @@ export default function App() {
                   onClick={() => setIsWorkspaceDropdownOpen(!isWorkspaceDropdownOpen)}
                   className="h-7 px-2.5 rounded-lg border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-900 dark:text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs select-none"
                 >
-                  {activeWorkspace === "demo" ? (
+                  {String(activeWorkspace) === "demo" ? (
                     <SlidersHorizontal className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 shrink-0" />
                   ) : (
                     <GitBranch className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -1653,7 +1701,7 @@ export default function App() {
                           playClick();
                         }}
                         className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all cursor-pointer ${
-                          activeWorkspace === "demo"
+                          (activeWorkspace === "demo" && !selectedConnectedRepo)
                             ? "bg-slate-100 dark:bg-white/10 text-slate-950 dark:text-white font-bold border border-slate-300 dark:border-white/20"
                             : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200"
                         }`}
@@ -1665,7 +1713,7 @@ export default function App() {
                             <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">Permanent 4-Act Showcase Sandbox</div>
                           </div>
                         </div>
-                        {activeWorkspace === "demo" && <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white shrink-0 ml-2" />}
+                        {String(activeWorkspace) === "demo" && !selectedConnectedRepo && <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white shrink-0 ml-2" />}
                       </button>
 
                       {/* Connected Repositories Section */}
@@ -1674,52 +1722,63 @@ export default function App() {
                           <div className="px-2 py-1 text-[9px] uppercase tracking-wider text-slate-400">
                             Connected Repositories ({connectedRepos.length})
                           </div>
-                          {connectedRepos.map((repo) => (
-                            <div
-                              key={repo.id}
-                              className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all ${
-                                activeWorkspace === repo.id
-                                  ? "bg-slate-200/80 dark:bg-white/10 text-slate-950 dark:text-white font-bold border border-slate-300 dark:border-white/15"
-                                  : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200"
-                              }`}
-                            >
-                              <button
-                                type="button"
+                          {connectedRepos.map((repo) => {
+                            const isCurrent = String(activeWorkspace) === String(repo.id) || (Boolean(repo.full_name) && selectedConnectedRepo?.full_name?.toLowerCase() === repo.full_name?.toLowerCase());
+                            return (
+                              <div
+                                key={repo.id}
+                                role="button"
+                                tabIndex={0}
                                 onClick={() => {
                                   setActiveWorkspace(repo.id);
                                   setSelectedConnectedRepo(repo);
                                   setIsWorkspaceDropdownOpen(false);
                                   playClick();
                                 }}
-                                className="flex items-center gap-2 min-w-0 flex-1 text-left cursor-pointer"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault();
+                                    setActiveWorkspace(repo.id);
+                                    setSelectedConnectedRepo(repo);
+                                    setIsWorkspaceDropdownOpen(false);
+                                    playClick();
+                                  }
+                                }}
+                                className={`w-full flex items-center justify-between p-2 rounded-lg text-left transition-all cursor-pointer select-none ${
+                                  isCurrent
+                                    ? "bg-slate-200/80 dark:bg-white/10 text-slate-950 dark:text-white font-bold border border-slate-300 dark:border-white/15 shadow-xs"
+                                    : "hover:bg-slate-100 dark:hover:bg-white/5 text-slate-800 dark:text-slate-200"
+                                }`}
                               >
-                                <GitBranch className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 shrink-0" />
-                                <div className="truncate">
-                                  <div className="text-xs truncate">{repo.full_name || repo.name}</div>
-                                  <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
-                                    {repo.default_branch || "main"} · {repo.hasAdrs ? "ADRs Active" : "Zero-ADR"}
+                                <div className="flex items-center gap-2 min-w-0 flex-1 text-left">
+                                  <GitBranch className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 shrink-0" />
+                                  <div className="truncate">
+                                    <div className="text-xs truncate">{repo.full_name || repo.name}</div>
+                                    <div className="text-[10px] font-normal text-slate-500 dark:text-slate-400">
+                                      {repo.default_branch || "main"} · {repo.hasAdrs ? "ADRs Active" : "Zero-ADR"}
+                                    </div>
                                   </div>
                                 </div>
-                              </button>
-                              <div className="flex items-center gap-1 shrink-0 ml-2">
-                                {activeWorkspace === repo.id && <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white shrink-0" />}
-                                <Tooltip content="Disconnect from workspace" position="left">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    playClick();
-                                    handleDisconnectRepo(repo.id);
-                                  }}
-                                  className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                                  aria-label="Disconnect repository from workspace"
-                                >
-                                  <Unlink className="w-3 h-3" />
-                                </button>
-                                </Tooltip>
+                                <div className="flex items-center gap-1 shrink-0 ml-2">
+                                  {isCurrent && <Check className="w-3.5 h-3.5 text-slate-950 dark:text-white shrink-0" />}
+                                  <Tooltip content="Disconnect from workspace" position="left">
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        playClick();
+                                        handleDisconnectRepo(repo.id);
+                                      }}
+                                      className="p-1 rounded-md text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                                      aria-label="Disconnect repository from workspace"
+                                    >
+                                      <Unlink className="w-3 h-3" />
+                                    </button>
+                                  </Tooltip>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1733,6 +1792,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     playClick();
+                    setIsWorkspaceDropdownOpen(false);
                     setIsConnectRepoModalOpen(true);
                   }}
                   className="h-7 px-2.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-mono font-medium flex items-center gap-1.5 transition-all cursor-pointer shadow-xs tactile-btn"
@@ -1853,6 +1913,7 @@ export default function App() {
               }}
               onUpdateRepo={handleUpdateConnectedRepo}
               onDisconnectRepo={handleDisconnectRepo}
+              onNavigateTab={handleSelectTab}
             />
           )}
 

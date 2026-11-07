@@ -268,7 +268,7 @@ export default function LandingPage({
 
   useEffect(() => {
 
-    const sectionIds = ['brand-intro', 'hero-section', 'bento-section', 'enclave-hub-section', 'causal-loop-section', 'radar-section', 'faq-section'];
+    const sectionIds = ['brand-intro', 'hero-section', 'bento-section', 'enclave-hub-section', 'causal-loop-section', 'comparison-matrix', 'faq-section', 'radar-section', 'cta-section'];
 
     const observer = new IntersectionObserver(
 
@@ -1033,7 +1033,7 @@ export default function LandingPage({
 
           ══════════════════════════════════════════════════════════════════════ */}
 
-      <section id="bento-section" className="w-full py-16 px-6 max-w-6xl mx-auto border-t border-slate-300 dark:border-white/10">
+      <section id="bento-section" className="w-full min-h-screen flex flex-col justify-center py-12 sm:py-16 px-6 max-w-7xl mx-auto border-t border-slate-300 dark:border-white/10">
 
         <div className="text-center mb-12">
 

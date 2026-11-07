@@ -110,6 +110,24 @@ export default function ProfilePage({
   onOpenSupportPage
 }) {
   const [currentTier, setCurrentTier] = useState(tier);
+  useEffect(() => {
+    if (tier && tier !== currentTier) {
+      setCurrentTier(tier);
+    }
+  }, [tier]);
+
+  const syncTierWithServer = async (targetTier) => {
+    try {
+      await fetch('/api/user/tier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ tier: targetTier })
+      });
+    } catch (err) {
+      console.warn('[ProfilePage] Failed to sync tier with server session:', err);
+    }
+  };
   const [copiedKey, setCopiedKey] = useState(false);
   const [isSponsorHovered, setIsSponsorHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
@@ -298,8 +316,15 @@ export default function ProfilePage({
             setCurrentTier('pro');
             try {
               localStorage.setItem('cavdax_tier', 'pro');
+              const raw = localStorage.getItem('cavdax_user_session');
+              if (raw) {
+                const parsed = JSON.parse(raw);
+                parsed.tier = 'pro';
+                localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+              }
               window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'pro' } }));
             } catch {}
+            syncTierWithServer('pro');
             if (onSelectTier) onSelectTier('pro');
             showToast('Payment verified! Welcome to Pro Autonomous tier.');
           } else {
@@ -480,8 +505,15 @@ export default function ProfilePage({
       setCurrentTier('free');
       try {
         localStorage.setItem('cavdax_tier', 'free');
+        const raw = localStorage.getItem('cavdax_user_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.tier = 'free';
+          localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+        }
         window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'free' } }));
       } catch {}
+      syncTierWithServer('free');
       if (onSelectTier) onSelectTier('free');
       showToast('Active Plan: COMMUNITY Tier');
       return;
@@ -510,8 +542,15 @@ export default function ProfilePage({
       setCurrentTier(newTier);
       try {
         localStorage.setItem('cavdax_tier', newTier);
+        const raw = localStorage.getItem('cavdax_user_session');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          parsed.tier = newTier;
+          localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+        }
         window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: newTier } }));
       } catch {}
+      syncTierWithServer(newTier);
       if (onSelectTier) onSelectTier(newTier);
       showToast(
         isHackathonMode
