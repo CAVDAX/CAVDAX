@@ -3,6 +3,46 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, GripHorizontal, Zap, AlertTriangle, CheckCircle2, Database, Clock, ExternalLink, Activity, GitPullRequest, Loader2, FileCode2, ChevronDown, Search } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 
+/**
+ * Formats inline Markdown links [text](url) into clickable anchor tags
+ * and ensures long tokens wrap safely across narrow card widths.
+ */
+function renderFormattedText(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  const linkRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = linkRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const label = match[1];
+    const url = match[2];
+    parts.push(
+      <a
+        key={match.index}
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300 font-medium underline underline-offset-2 break-all inline"
+      >
+        {label}
+      </a>
+    );
+    lastIndex = match.index + match[0].length;
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 export default function NodeInspector({
   node,
   graphData,
@@ -43,9 +83,16 @@ export default function NodeInspector({
     window.addEventListener('mousedown', handleOutsideClick);
     return () => window.removeEventListener('mousedown', handleOutsideClick);
   }, [isFilesComboboxOpen]);
+  useEffect(() => {
+    return () => {
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, []);
+
   const inspectorCardRef = useRef(null);
 
-  const handleResizeMouseDown = (e) => {
+  const handleResizeMouseDown = (e, corner = 'bottom-right') => {
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(true);
@@ -55,16 +102,35 @@ export default function NodeInspector({
     const startW = currentRect ? currentRect.width : (isFullscreen ? 320 : 288);
     const startH = currentRect ? currentRect.height : 360;
 
+    const cursorStyle = corner === 'bottom-left' ? 'nesw-resize' : 'nwse-resize';
+    document.body.style.cursor = cursorStyle;
+    document.body.style.userSelect = 'none';
+
+    let rafId = null;
+
     const onMouseMove = (moveEvent) => {
-      const deltaX = moveEvent.clientX - startX;
-      const deltaY = moveEvent.clientY - startY;
-      const newWidth = Math.max(260, Math.min(680, startW + deltaX));
-      const newHeight = Math.max(200, Math.min(window.innerHeight * 0.85, startH + deltaY));
-      setCustomSize({ width: newWidth, height: newHeight });
+      moveEvent.preventDefault();
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        const deltaY = moveEvent.clientY - startY;
+        const deltaX = corner === 'bottom-left'
+          ? (startX - moveEvent.clientX)
+          : (moveEvent.clientX - startX);
+
+        const maxAvailableW = window.innerWidth ? Math.min(760, window.innerWidth - 32) : 680;
+        const maxAvailableH = window.innerHeight ? Math.min(window.innerHeight * 0.88, window.innerHeight - 80) : 600;
+
+        const newWidth = Math.max(260, Math.min(maxAvailableW, startW + deltaX));
+        const newHeight = Math.max(200, Math.min(maxAvailableH, startH + deltaY));
+        setCustomSize({ width: Math.round(newWidth), height: Math.round(newHeight) });
+      });
     };
 
     const onMouseUp = () => {
       setIsResizing(false);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
     };
@@ -236,7 +302,7 @@ export default function NodeInspector({
   return (
     <motion.div
       ref={inspectorCardRef}
-      drag
+      drag={!isResizing}
       dragMomentum={false}
       dragConstraints={containerRef || false}
       initial={{ opacity: 0, scale: 0.96 }}
@@ -248,9 +314,11 @@ export default function NodeInspector({
       }}
       className={`absolute ${hasBlastBanner ? 'top-16' : 'top-12'} right-3 sm:right-4 ${
         customSize ? '' : (isFullscreen ? 'w-76 sm:w-80' : 'w-68 sm:w-72')
-      } max-w-[calc(100%-1.5rem)] max-h-[calc(100%-4rem)] overflow-x-auto overflow-y-auto has-scrubbar bg-white/95 dark:bg-[#0B0D11]/95 border border-slate-300 dark:border-white/15 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-xl z-30 font-mono text-xs select-text ${
-        isResizing ? 'select-none cursor-nwse-resize' : ''
-      }`}
+      } max-w-[calc(100%-1.5rem)] ${
+        customSize ? 'max-h-[90vh]' : 'max-h-[calc(100%-4rem)]'
+      } overflow-x-hidden ${
+        isResizing ? 'overflow-y-hidden select-none' : 'overflow-y-auto'
+      } has-scrubbar bg-white/95 dark:bg-[#0B0D11]/95 border border-slate-300 dark:border-white/15 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-xl z-30 font-mono text-xs select-text`}
       data-lenis-prevent
     >
       {/* Header with Draggable Handle */}
@@ -314,23 +382,23 @@ export default function NodeInspector({
 
         {/* Content Body */}
         {node.title && (
-          <div>
+          <div className="min-w-0 max-w-full">
             <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1">
               Title / Directive
             </span>
-            <div className="text-slate-800 dark:text-slate-200 font-sans text-xs bg-slate-50 dark:bg-[#060709] p-2.5 rounded-lg border border-slate-200 dark:border-white/15 leading-relaxed">
-              {node.title}
+            <div className="text-slate-800 dark:text-slate-200 font-sans text-xs bg-slate-50 dark:bg-[#060709] p-2.5 rounded-lg border border-slate-200 dark:border-white/15 leading-relaxed break-words [overflow-wrap:anywhere] max-w-full">
+              {renderFormattedText(node.title)}
             </div>
           </div>
         )}
 
         {node.claim && (
-          <div>
+          <div className="min-w-0 max-w-full">
             <span className="text-[10px] text-slate-500 uppercase tracking-wider block mb-1">
               Extracted Fact Claim
             </span>
-            <div className="text-slate-800 dark:text-slate-200 font-sans text-xs bg-slate-50 dark:bg-[#060709] p-2.5 rounded-lg border border-slate-200 dark:border-white/15 leading-relaxed italic">
-              "{node.claim}"
+            <div className="text-slate-800 dark:text-slate-200 font-sans text-xs bg-slate-50 dark:bg-[#060709] p-2.5 rounded-lg border border-slate-200 dark:border-white/15 leading-relaxed italic break-words [overflow-wrap:anywhere] max-w-full">
+              "{renderFormattedText(node.claim)}"
             </div>
           </div>
         )}
@@ -574,13 +642,26 @@ export default function NodeInspector({
         </div>
       </div>
 
-      {/* Corner Resize Grip */}
+      {/* Bottom-Left Corner Resize Grip (Primary inward resize towards canvas center) */}
       <div
-        onMouseDown={handleResizeMouseDown}
-        className="absolute bottom-1 right-1 w-4 h-4 cursor-nwse-resize flex items-end justify-end p-0.5 z-40 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+        onMouseDown={(e) => handleResizeMouseDown(e, 'bottom-left')}
+        className="absolute bottom-1 left-1 w-5 h-5 cursor-nesw-resize flex items-end justify-start p-1 z-40 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors group"
         title="Drag corner to resize inspector"
+        aria-label="Resize node inspector (bottom-left)"
       >
-        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="shrink-0 pointer-events-none">
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="shrink-0 pointer-events-none group-hover:scale-110 transition-transform">
+          <path d="M1 1L7 7M1 4L4 7M1 7H1.01" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+      </div>
+
+      {/* Bottom-Right Corner Resize Grip */}
+      <div
+        onMouseDown={(e) => handleResizeMouseDown(e, 'bottom-right')}
+        className="absolute bottom-1 right-1 w-5 h-5 cursor-nwse-resize flex items-end justify-end p-1 z-40 text-slate-400 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors group"
+        title="Drag corner to resize inspector"
+        aria-label="Resize node inspector (bottom-right)"
+      >
+        <svg width="8" height="8" viewBox="0 0 8 8" fill="none" className="shrink-0 pointer-events-none group-hover:scale-110 transition-transform">
           <path d="M7 1L1 7M7 4L4 7M7 7H7.01" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
       </div>

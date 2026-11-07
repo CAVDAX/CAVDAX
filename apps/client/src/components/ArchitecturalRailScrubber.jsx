@@ -8,9 +8,10 @@ const TAB_SECTIONS = {
     { id: 'bento-section', label: '03 · Vector Rot vs Graph' },
     { id: 'enclave-hub-section', label: '04 · Causal Enclave' },
     { id: 'causal-loop-section', label: '05 · Verification Loop' },
-    { id: 'faq-section', label: '06 · Specifications' },
-    { id: 'radar-section', label: '07 · Invalidation Radar' },
-    { id: 'cta-section', label: '08 · Live Verification' },
+    { id: 'comparison-matrix', label: '06 · Matrix Comparison' },
+    { id: 'faq-section', label: '07 · Specifications' },
+    { id: 'radar-section', label: '08 · Invalidation Radar' },
+    { id: 'cta-section', label: '09 · Live Verification' },
   ],
   mcp: [
     { id: 'mcp-header', label: '01 · Protocol Gateway' },

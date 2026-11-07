@@ -2,12 +2,13 @@ import React, { useState, useEffect, useLayoutEffect, useCallback, useRef, useMe
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  GitBranch, FolderGit2, FileText, RefreshCw, Terminal, GitPullRequest,
+  GitBranch, FolderGit2, ArrowUpRight, FileText, RefreshCw, Terminal, GitPullRequest,
   CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
 import Tooltip from './Tooltip.jsx';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
+import DevPatLoginModal from './DevPatLoginModal';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
 import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
@@ -85,11 +86,74 @@ function usePillTracker(activeKey, extraDep = null) {
   return { refs, position };
 }
 
+/**
+ * UpgradePlanWateryButton - Monochromatic executive CTA with animated DAG fluid water fill on hover.
+ * Follows UI_DESIGN_SYSTEM.md § 11H (kinetic wave feedback) and industry standards (Linear/Vercel).
+ */
+function UpgradePlanWateryButton({ onClick }) {
+  const [isHovered, setIsHovered] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      className={`relative overflow-hidden group h-9 px-4 rounded-xl border text-xs font-mono font-bold uppercase tracking-wide transition-all duration-300 cursor-pointer tactile-btn select-none flex items-center justify-center gap-1.5 ${
+        isHovered
+          ? 'border-slate-950 dark:border-white text-white dark:text-slate-950 shadow-md shadow-slate-950/20 dark:shadow-white/20'
+          : 'border-slate-950 dark:border-white/40 bg-slate-950/[0.04] dark:bg-white/[0.06] text-slate-950 dark:text-white hover:border-slate-950 dark:hover:border-white shadow-xs'
+      }`}
+      title="Upgrade plan to connect additional repositories"
+    >
+      {/* Fluid Water Fill Layer (Monochrome Obsidian / Porcelain) */}
+      <div
+        aria-hidden="true"
+        style={{
+          transform: isHovered ? 'translateY(0%)' : 'translateY(105%)',
+          opacity: isHovered ? 1 : 0,
+          transition: isHovered
+            ? 'transform 1000ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 200ms ease-out'
+            : 'opacity 250ms ease-out, transform 0s 250ms'
+        }}
+        className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
+      >
+        <svg
+          viewBox="0 0 320 48"
+          preserveAspectRatio="none"
+          className="w-full h-6 shrink-0 text-slate-950 dark:text-white fill-current block"
+        >
+          <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
+          <circle cx="80" cy="20" r="4.5" />
+          <circle cx="120" cy="12" r="3.5" />
+          <circle cx="160" cy="15" r="5" />
+          <circle cx="200" cy="13" r="3.5" />
+          <circle cx="240" cy="22" r="4.5" />
+          <line x1="80" y1="20" x2="120" y2="12" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
+          <line x1="120" y1="12" x2="160" y2="15" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
+          <line x1="160" y1="15" x2="200" y2="13" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
+          <line x1="200" y1="13" x2="240" y2="22" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
+        </svg>
+        <div className="flex-1 w-full bg-slate-950 dark:bg-white" />
+      </div>
+
+      <span className={`relative z-10 transition-colors duration-500 ${
+        isHovered ? 'text-white dark:text-slate-950' : ''
+      }`}>
+        Upgrade Plan
+      </span>
+      <ArrowUpRight className={`w-3.5 h-3.5 relative z-10 transition-all duration-300 transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 ${
+        isHovered ? 'text-white dark:text-slate-950' : 'text-slate-600 dark:text-slate-400'
+      }`} />
+    </button>
+  );
+}
+
 export default function ConnectedRepoWorkspace({
   repo,
   isDarkTheme,
   onUpdateRepo,
-  onDisconnectRepo
+  onDisconnectRepo,
+  onNavigateTab
 }) {
   const { owner, name } = splitFullName(repo.full_name);
   const apiBase = `/api/github/repos/${encodeURIComponent(owner || '')}/${encodeURIComponent(name || '')}`;
@@ -163,6 +227,15 @@ export default function ConnectedRepoWorkspace({
   });
   const [isDraggingSplitter, setIsDraggingSplitter] = useState(false);
   const [isLeftCollapsed, setIsLeftCollapsed] = useState(false);
+  const [isAdrSectionCollapsed, setIsAdrSectionCollapsed] = useState(false);
+  const [isGateSectionCollapsed, setIsGateSectionCollapsed] = useState(false);
+  const [isLogsSectionCollapsed, setIsLogsSectionCollapsed] = useState(false);
+
+  // Dynamic panel flex distribution: when logs are collapsed, expand active upper panels
+  const isAdrFlex = isLogsSectionCollapsed && !isAdrSectionCollapsed;
+  const isGateFlex = isLogsSectionCollapsed && isAdrSectionCollapsed && !isGateSectionCollapsed;
+  const areAllPanelsCollapsed = isAdrSectionCollapsed && isGateSectionCollapsed && isLogsSectionCollapsed;
+  const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
   const splitContainerRef = useRef(null);
 
   // Load repository branches for the branch selector
@@ -281,7 +354,7 @@ export default function ConnectedRepoWorkspace({
       updateAdrScrollProgress();
     }, 80);
     return () => clearTimeout(timer);
-  }, [adrListLen, updateAdrScrollProgress]);
+  }, [adrListLen, updateAdrScrollProgress, expandedAdrId, isLogsSectionCollapsed, isAdrSectionCollapsed, isGateSectionCollapsed]);
 
   const handleSplitterMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -340,12 +413,25 @@ export default function ConnectedRepoWorkspace({
   }, [addLog]);
 
   const runScan = useCallback(async (branchOverride) => {
-    const targetBranch = branchOverride || selectedBranchRef.current || repoRef.current?.default_branch || 'main';
+    const targetBranch = branchOverride || selectedBranchRef.current || repoRef.current?.default_branch || '';
     setPhase('scanning');
     setError(null);
-    addLog('SCAN', `Reading ADRs from ${repoRef.current.full_name} on branch ${targetBranch}.`);
+    addLog('SCAN', `Reading ADRs from ${repoRef.current.full_name}${targetBranch ? ` on branch ${targetBranch}` : ''}.`);
     try {
-      const res = await fetch(`${apiBase}/adrs?branch=${encodeURIComponent(targetBranch)}&_t=${Date.now()}`, { credentials: 'include' });
+      const branchQuery = targetBranch ? `?branch=${encodeURIComponent(targetBranch)}&` : '?';
+      let activeReposHeader = '';
+      try {
+        const saved = localStorage.getItem('cavdax_connected_repos');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          activeReposHeader = JSON.stringify(parsed.map(r => r.full_name || r.name).filter(Boolean));
+        }
+      } catch {}
+      const headers = activeReposHeader ? { 'x-connected-repos': activeReposHeader } : {};
+      const res = await fetch(`${apiBase}/adrs${branchQuery}_t=${Date.now()}`, {
+        headers,
+        credentials: 'include'
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
         failWith(data, 'Could not read this repository.');
@@ -358,8 +444,8 @@ export default function ConnectedRepoWorkspace({
         try {
           localStorage.setItem(`cavdax.selected_branch.${repo.full_name}`, data.branch);
         } catch {}
-        if (onUpdateRepoRef.current && repoRef.current?.selected_branch !== data.branch) {
-          onUpdateRepoRef.current({ ...repoRef.current, selected_branch: data.branch });
+        if (onUpdateRepoRef.current && (repoRef.current?.selected_branch !== data.branch || !repoRef.current?.default_branch)) {
+          onUpdateRepoRef.current({ ...repoRef.current, selected_branch: data.branch, default_branch: data.branch });
         }
       }
       setPhase('ready');
@@ -996,8 +1082,28 @@ export default function ConnectedRepoWorkspace({
           body={error?.message}
           actions={
             <div className="grid grid-cols-2 gap-2">
-              {error?.code === 'AUTH_REQUIRED' || error?.code === 'AUTH_EXPIRED' ? (
-                <a href={`/api/auth/github?returnTo=${encodeURIComponent('/console')}`} className={`${btnPrimary} no-underline`}>Sign in</a>
+              {error?.code === 'TIER_REPO_LIMIT_EXCEEDED' ? (
+                <UpgradePlanWateryButton
+                  onClick={() => {
+                    playClick();
+                    if (typeof onNavigateTab === 'function') {
+                      onNavigateTab('profile');
+                    } else if (typeof window !== 'undefined') {
+                      window.location.hash = '#profile';
+                    }
+                  }}
+                />
+              ) : error?.code === 'AUTH_REQUIRED' || error?.code === 'AUTH_EXPIRED' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    setIsDevPatModalOpen(true);
+                  }}
+                  className={`${btnPrimary} cursor-pointer`}
+                >
+                  Sign in
+                </button>
               ) : (
                 <button onClick={() => { playClick(); runScan(); }} className={btnPrimary}>Try again</button>
               )}
@@ -1016,7 +1122,14 @@ export default function ConnectedRepoWorkspace({
               <span>{isOpeningPr ? 'Opening pull request' : 'Open pull request with ADR-001'}</span>
             </button>
           }
-          footnote={<>Already have ADRs? Put them in <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded">docs/adrs</code>, <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded">docs/adr</code>, root <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded">ADR-*.md</code> or <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded">docs/decisions</code> and rescan.</>} />
+          footnote={
+            <div>
+              <span className="font-medium text-slate-800 dark:text-slate-200 block mb-1">Already have ADRs?</span>
+              <span className="block text-slate-500 dark:text-slate-400">
+                Put them in <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-slate-900 dark:text-slate-200">docs/adrs</code>, <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-slate-900 dark:text-slate-200">docs/adr</code>, root <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-slate-900 dark:text-slate-200">ADR-*.md</code> or <code className="font-mono bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-slate-900 dark:text-slate-200">docs/decisions</code> and rescan.
+              </span>
+            </div>
+          } />
       )}
 
       {noAdrs && pr && (
@@ -1061,12 +1174,23 @@ export default function ConnectedRepoWorkspace({
           >
             <div className="w-full h-full min-w-[320px] flex flex-col overflow-hidden">
             <div className="p-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-2 text-xs font-mono bg-slate-50/80 dark:bg-white/[0.02]">
-              <div className="flex items-center gap-2">
-                <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                <span className="font-bold text-slate-950 dark:text-white">ADRs in this repository</span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">({scan.count} files)</span>
+              <div className="flex items-center gap-2 min-w-0">
+                <Tooltip content={isAdrSectionCollapsed ? "Expand ADR list" : "Collapse ADR list"} position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => { playClick(); setIsAdrSectionCollapsed(prev => !prev); }}
+                    className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    aria-label={isAdrSectionCollapsed ? "Expand ADR list" : "Collapse ADR list"}
+                    aria-expanded={!isAdrSectionCollapsed}
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isAdrSectionCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+                  </button>
+                </Tooltip>
+                <FileText className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                <span className="font-bold text-slate-950 dark:text-white truncate">ADRs in this repository</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono shrink-0">({scan.count} files)</span>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <Tooltip content="Draft a new Architecture Decision Record (ADR)" position="bottom">
                   <button
                     type="button"
@@ -1095,7 +1219,11 @@ export default function ConnectedRepoWorkspace({
               </div>
             </div>
 
-            <div className="relative border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent">
+            <div className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isAdrSectionCollapsed ? 'grid-rows-[0fr] opacity-0 pointer-events-none' : 'grid-rows-[1fr] opacity-100' + (isAdrFlex ? ' flex-1 min-h-0' : '')
+            }`}>
+              <div className={`overflow-hidden ${isAdrFlex ? 'h-full flex flex-col' : ''}`}>
+                <div className={`relative border-b border-slate-200 dark:border-slate-800 bg-slate-50/40 dark:bg-transparent ${isAdrFlex ? 'flex-1 min-h-0 flex flex-col' : ''}`}>
               {/* Left Architectural Scroll Cue Rail */}
               {hasAdrScroll && (
                 <div
@@ -1149,7 +1277,9 @@ export default function ConnectedRepoWorkspace({
                 tabIndex={0}
                 onWheel={handleAdrListWheel}
                 onScroll={updateAdrScrollProgress}
-                className={`max-h-24 overflow-y-auto overscroll-contain select-text repo-cue-only-scroll focus:outline-none divide-y divide-slate-100 dark:divide-white/5 ${
+                className={`overflow-y-auto overscroll-contain select-text repo-cue-only-scroll focus:outline-none divide-y divide-slate-100 dark:divide-white/5 ${
+                  isAdrFlex ? 'flex-1 min-h-0' : 'max-h-52'
+                } ${
                   hasAdrScroll ? 'pl-3.5 pr-2' : 'px-3'
                 }`}
               >
@@ -1232,6 +1362,8 @@ export default function ConnectedRepoWorkspace({
               })}
             </div>
             </div>
+              </div>
+            </div>
 
             {scan.unsynced && scan.unsynced.length > 0 && (
               <div className="p-3 bg-amber-50 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/30 flex flex-col gap-2">
@@ -1262,13 +1394,33 @@ export default function ConnectedRepoWorkspace({
             {/* Decision-Aware Intent Verification Panel */}
             <div data-tour="repo-gate" className="p-3 bg-slate-50/70 dark:bg-white/[0.02] border-b border-slate-200 dark:border-white/10 flex flex-col gap-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono font-bold">
-                  Intent Verification Gate
-                </span>
-                <span className="text-[9px] font-mono text-slate-400">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Tooltip content={isGateSectionCollapsed ? "Expand Intent Verification Gate" : "Collapse Intent Verification Gate"} position="bottom">
+                    <button
+                      type="button"
+                      onClick={() => { playClick(); setIsGateSectionCollapsed(prev => !prev); }}
+                      className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                      aria-label={isGateSectionCollapsed ? "Expand Intent Verification Gate" : "Collapse Intent Verification Gate"}
+                      aria-expanded={!isGateSectionCollapsed}
+                    >
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isGateSectionCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+                    </button>
+                  </Tooltip>
+                  <Cpu className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-mono font-bold truncate">
+                    Intent Verification Gate
+                  </span>
+                </div>
+                <span className="text-[9px] font-mono text-slate-400 shrink-0">
                   {decisions.length} {decisions.length === 1 ? 'Decision' : 'Decisions'}
                 </span>
               </div>
+
+              <div className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                isGateSectionCollapsed ? 'grid-rows-[0fr] opacity-0 pointer-events-none' : 'grid-rows-[1fr] opacity-100' + (isGateFlex ? ' flex-1 min-h-0' : '')
+              }`}>
+                <div className={`overflow-hidden ${isGateFlex ? 'h-full flex flex-col' : ''}`}>
+                  <div className={`pt-2 flex flex-col gap-2 ${isGateFlex ? 'flex-1 min-h-0 overflow-y-auto' : ''}`}>
 
               {decisions.length === 0 ? (
                 <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 py-1">
@@ -1343,9 +1495,40 @@ export default function ConnectedRepoWorkspace({
                   )}
                 </div>
               )}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div data-lenis-prevent className="flex-1 min-h-0 p-3 overflow-y-auto has-scrubbar space-y-2 text-xs select-text bg-white dark:bg-[#09090b]">
+            {/* Live Provenance Stream Header (Collapsible) */}
+            <div className="px-3 py-1.5 bg-slate-100/90 dark:bg-[#08090A] border-b border-slate-300 dark:border-white/10 flex items-center justify-between text-xs font-mono text-slate-600 dark:text-slate-400 select-none shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <Tooltip content={isLogsSectionCollapsed ? "Expand live provenance stream" : "Collapse live provenance stream"} position="bottom">
+                  <button
+                    type="button"
+                    onClick={() => { playClick(); setIsLogsSectionCollapsed(prev => !prev); }}
+                    className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                    aria-label={isLogsSectionCollapsed ? "Expand live provenance stream" : "Collapse live provenance stream"}
+                    aria-expanded={!isLogsSectionCollapsed}
+                  >
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ease-out ${isLogsSectionCollapsed ? '-rotate-90' : 'rotate-0'}`} />
+                  </button>
+                </Tooltip>
+                <span className="flex items-center gap-1.5 text-slate-800 dark:text-slate-300 truncate font-semibold">
+                  <Terminal className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
+                  Live Provenance Stream
+                </span>
+              </div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 font-mono shrink-0">
+                {logs.length} events
+              </span>
+            </div>
+
+            <div className={`grid transition-[grid-template-rows,opacity] duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isLogsSectionCollapsed ? 'grid-rows-[0fr] opacity-0 pointer-events-none' : 'grid-rows-[1fr] opacity-100 flex-1 min-h-0'
+            }`}>
+              <div className="overflow-hidden h-full flex flex-col">
+                <div data-lenis-prevent className="flex-1 min-h-0 p-3 overflow-y-auto has-scrubbar space-y-2 text-xs select-text bg-white dark:bg-[#09090b]">
               {logs.map((log, idx) => (
                 <div key={idx} className="flex items-start gap-2 leading-relaxed">
                   <span className="text-slate-400 dark:text-slate-500 text-[10px] shrink-0 mt-0.5 font-mono">{log.time}</span>
@@ -1359,7 +1542,17 @@ export default function ConnectedRepoWorkspace({
                 </div>
               ))}
               <div ref={logsEndRef} />
+                </div>
+              </div>
             </div>
+
+            {areAllPanelsCollapsed && (
+              <div className="flex-1 min-h-0 flex flex-col items-center justify-center p-6 text-center text-slate-400 dark:text-slate-500 font-mono text-[11px] select-none bg-slate-50/50 dark:bg-white/[0.01]">
+                <PanelLeftClose className="w-5 h-5 mb-2 opacity-40 rotate-180" />
+                <span className="font-semibold text-slate-500 dark:text-slate-400">All sidebar panels collapsed</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Click any section header above to expand</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -2042,6 +2235,15 @@ jobs:
       )}
 
 
+
+      <DevPatLoginModal
+        isOpen={isDevPatModalOpen}
+        onClose={() => setIsDevPatModalOpen(false)}
+        onSuccess={() => {
+          runScan();
+        }}
+        returnTo="/console"
+      />
 
       {/* Activity log for the empty and error states */}
       {!hasAdrs && phase !== 'scanning' && logs.length > 0 && (
