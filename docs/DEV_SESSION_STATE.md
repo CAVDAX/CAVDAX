@@ -36,6 +36,27 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.10 Multi-Display 27" Monitor Calibration & FAQ Viewport Isolation (November 7, 2026)
+
+- **27" Monitor Windowed Breakpoint Trigger Defect Resolved (tailwind.config.js)**:
+  - **Mechanical Root Cause**: The previous `pro-27` Tailwind screen variant was defined as `{ 'raw': '(min-width: 1440px) and (min-height: 960px)' }`. On a standard 27-inch 1080p desktop monitor running Google Chrome with normal OS taskbar and browser chrome (tabs, URL bar, bookmarks bar), the inner window height in windowed mode is ~874px. Because 874px < 960px, `pro-27:` failed to trigger completely, causing the matrix to collapse down to the compact laptop dimensions (8px cell padding, 30px heading, 51px row height) which appeared severely squished and cramped on the 27" display.
+  - **Resolution**: Calibrated `pro-27` to `{ 'raw': '(min-width: 1400px) and (min-height: 820px)' }`.
+  - **Zero Disruption Invariant Verified**: Standard laptop viewports in windowed mode (HP Victus 15.6" at 125% DPI scale = 1536x750, MacBook 13"-14" = 1440x800) have inner heights strictly $\le 800\text{px}$, safely avoiding `pro-27:` and maintaining their compact single-screen clamp (~456px table height, 51px row height) with zero overflow. Meanwhile, 27" monitors in windowed mode (1920x874), F11 mode (1920x1080), and QHD (2560x1440) all reliably trigger `pro-27:`.
+
+- **Proportional Institutional Density & Typography Expansion (ArchitecturalComparisonMatrix.jsx)**:
+  - On desktop/27" monitors (`pro-27:`), table rows expand to generous 14px vertical padding (`pro-27:py-3.5`), row height reaches 63px (up from 51px), table height expands to 567px (up from 456px), and typography scales to `pro-27:text-[12.5px]` (metric titles), `pro-27:text-[10px]` (descriptions), `pro-27:text-[11.5px]` (cell data), and `pro-27:text-[34px]` (section title), providing commanding institutional readability without vertical cramping.
+
+- **FAQ Accordion Section Isolation Buffer (LandingPage.jsx, ArchitecturalRailScrubber.jsx)**:
+  - **Mechanical Root Cause of FAQ Peeking**: The comparison matrix container had `min-h-screen flex flex-col justify-center`. Because the matrix height previously was small, huge top and bottom whitespace surrounded it. When users scrolled down to align the section header near the top of the viewport, the bottom of the section was pulled upward into the screen, exposing the `#faq-section` header ("Frequently Asked Questions") at the bottom of the fold. Furthermore, `ArchitecturalRailScrubber` used an offset of `-30`, pulling the top of `#faq-section` 30px above the viewport bottom.
+  - **Resolution**:
+    1. Added isolation buffer `pro-27:pt-28 pro-27:pb-20` to `#faq-section` in `LandingPage.jsx`, pushing the FAQ title 113px below the viewport fold.
+    2. Updated `ArchitecturalRailScrubber.jsx` so navigation to `comparison-matrix` uses `offset: 0`, precisely aligning the section to the viewport boundary.
+  - **Empirically Verified**: Automated Puppeteer audit across 4 device profiles confirmed `isFaqTitleOnScreen: false` for all devices:
+    - 27" Monitor Windowed (1920x874): FAQ title at y = 987px (113px below viewport fold).
+    - 27" Monitor F11 (1920x1080): FAQ title at y = 1193px (113px below viewport fold).
+    - HP Victus Laptop (1536x750): FAQ title at y = 815px (65px below viewport fold), table fits in 750px.
+    - MacBook (1440x800): FAQ title at y = 865px (65px below viewport fold), table fits in 800px.
+
 ## 1.1.09 Decoupled Workspace Quota Tracking & Universal Repository Metering (November 7, 2026)
 
 - **Decoupled Quota Tracking & Write Permissions (apps/server/index.js)**:

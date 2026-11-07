@@ -8314,7 +8314,7 @@ module.exports = {
 
       screens: {
 
-        'pro-27': { 'raw': '(min-width: 1440px) and (min-height: 960px)' },
+        'pro-27': { 'raw': '(min-width: 1400px) and (min-height: 820px)' },
 
       }
 
@@ -8334,21 +8334,22 @@ module.exports = {
 
 | :--- | :--- | :--- |
 
-| **Section Outer Padding** | `py-4 sm:py-6 px-3 sm:px-6` | `pro-27:py-10 pro-27:px-8` |
+| **Section Outer Padding** | `py-4 sm:py-6 px-3 sm:px-6` | `pro-27:py-8 pro-27:px-8` |
 
-| **Header Margin** | `mb-2.5 sm:mb-4` | `pro-27:mb-10` |
+| **Header Margin** | `mb-2.5 sm:mb-4` | `pro-27:mb-6` |
 
-| **Headline Typography** | `text-xl sm:text-2xl lg:text-3xl` | `pro-27:text-4xl` |
+| **Headline Typography** | `text-xl sm:text-2xl lg:text-3xl` | `pro-27:text-[34px]` |
 
-| **Subtitle Typography** | `text-[10.5px] sm:text-xs leading-snug` | `pro-27:text-sm pro-27:leading-relaxed` |
+| **Subtitle Typography** | `text-[10.5px] sm:text-xs leading-snug` | `pro-27:text-[13px] pro-27:leading-relaxed` |
 
-| **Table Header Height** | `py-2 px-3 sm:px-4 text-[10px] sm:text-[10.5px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11px]` |
+| **Table Header Height** | `py-2 px-3 sm:px-4 text-[10px] sm:text-[10.5px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11.5px]` |
 
-| **Table Row Cell Height** | `py-1.5 sm:py-2 px-3 sm:px-4 text-[10.5px] sm:text-[11px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11.5px]` |
+| **Table Row Cell Height** | `py-1.5 sm:py-2 px-3 sm:px-4 text-[10.5px] sm:text-[11px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[12.5px]` |
 
-| **Table Bottom Bar** | `py-1.5 sm:py-2 text-[10px]` | `pro-27:p-3 pro-27:text-[11px]` |
+| **Table Bottom Bar** | `py-1.5 sm:py-2 text-[10px]` | `pro-27:py-2.5 pro-27:text-[11px]` |
 
-| **Total Section Height** | **~496px – 538px** (Fits 100% in 540px+ viewport) | **~732px** (Airy, luxurious fit in 1440px viewport) |
+| **Total Section Height** | **~496px – 538px** (Fits 100% in 540px+ viewport) | **~670px – 720px** (Generous, institutional fit in 820px-1440px desktop viewports) |
+| **Subsequent Section Isolation Buffer** | Standard `py-16` on `#faq-section` | `pro-27:pt-28 pro-27:pb-20` on `#faq-section` (113px buffer prevents FAQ text peeking into viewport fold) |
 
 
 
