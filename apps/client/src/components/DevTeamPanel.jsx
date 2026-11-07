@@ -15,7 +15,7 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Terminal, Lock, LogOut, CheckCircle2,
+  Terminal, Lock, LogOut, CheckCircle2, CreditCard, RefreshCw, ExternalLink,
   AlertTriangle, Play, RotateCcw, Download, Trash2,
   Radio, Layers, Flame, Users, Globe, EyeOff, Server,
   Cpu, Activity, Database, Key, Sliders, ArrowUpRight,
@@ -103,7 +103,156 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
   const [passkeyInput, setPasskeyInput] = useState('');
   const [authError, setAuthError] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('cavdax_dev_active_tab')) || 'scenarios'); // 'scenarios' | 'diagnostics' | 'tiers' | 'security' | 'audit'
+  const [activeTab, setActiveTab] = useState(() => (typeof window !== 'undefined' && localStorage.getItem('cavdax_dev_active_tab')) || 'scenarios'); // 'scenarios' | 'diagnostics' | 'tiers' | 'security' | 'audit' | 'payment'
+
+  // Localhost confinement & Live Payment Gateway verification state
+  const isLocalhost = Boolean(
+    typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.protocol === 'file:'
+    )
+  );
+
+  const [paymentVerifying, setPaymentVerifying] = useState(false);
+  const [paymentResult, setPaymentResult] = useState(null);
+  const [paymentHistory, setPaymentHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cavdax_dev_payment_verification_history');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const loadRazorpayScript = () => {
+    return new Promise((resolve) => {
+      if (typeof window !== 'undefined' && window.Razorpay) return resolve(true);
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handleInitiatePaymentVerification = async () => {
+    if (isLocalhost) {
+      playRejectBuzz();
+      alert('Payment testing is strictly disabled on localhost to prevent stranded funds. Test exclusively on https://cavdax.sahnirmaan.live/devteam');
+      return;
+    }
+
+    setPaymentVerifying(true);
+    setPaymentResult(null);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        throw new Error('Failed to load Razorpay SDK script.');
+      }
+
+      const orderRes = await fetch('/api/billing/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount_paise: 100, // exact ₹1.00 minimum floor
+          tier: 'supporter',
+          receipt: `dev_verify_${Date.now().toString(36)}`
+        })
+      });
+
+      const orderData = await orderRes.json();
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.error?.message || orderData.error || 'Failed to create ₹1.00 verification order');
+      }
+
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency || 'INR',
+        name: 'CAVDAX Core Dev',
+        description: '₹1.00 Live Gateway Health Verification',
+        order_id: orderData.order_id,
+        prefill: {
+          name: session?.user || 'CAVDAX Dev',
+          email: 'cavdax.dev@gmail.com'
+        },
+        theme: {
+          color: '#090D14'
+        },
+        modal: {
+          ondismiss: () => {
+            setPaymentVerifying(false);
+          }
+        },
+        handler: async (response) => {
+          try {
+            const verifyRes = await fetch('/api/billing/verify-payment', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                tier: 'supporter'
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.success) {
+              playApprovalChime();
+              const record = {
+                id: response.razorpay_payment_id,
+                orderId: response.razorpay_order_id,
+                paymentId: response.razorpay_payment_id,
+                signature: response.razorpay_signature,
+                amountInr: '₹1.00',
+                amountPaise: 100,
+                status: 'CRYPTOGRAPHICALLY_VERIFIED',
+                timestamp: new Date().toLocaleTimeString(),
+                date: new Date().toISOString()
+              };
+              setPaymentResult({ success: true, data: record });
+              setPaymentHistory((prev) => {
+                const next = [record, ...prev].slice(0, 20);
+                try {
+                  localStorage.setItem('cavdax_dev_payment_verification_history', JSON.stringify(next));
+                } catch {}
+                return next;
+              });
+            } else {
+              playRejectBuzz();
+              setPaymentResult({
+                success: false,
+                error: verifyData.error?.message || 'Payment signature verification failed.'
+              });
+            }
+          } catch (verifyErr) {
+            playRejectBuzz();
+            setPaymentResult({ success: false, error: verifyErr.message });
+          } finally {
+            setPaymentVerifying(false);
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', (failResp) => {
+        playRejectBuzz();
+        setPaymentResult({
+          success: false,
+          error: failResp.error?.description || 'Payment failed or was cancelled.'
+        });
+        setPaymentVerifying(false);
+      });
+      rzp.open();
+    } catch (err) {
+      playRejectBuzz();
+      setPaymentResult({ success: false, error: err.message });
+      setPaymentVerifying(false);
+    }
+  };
 
   // Developer tier override state
   const [activeDevTier, setActiveDevTier] = useState(() => getDevCurrentTier());
@@ -608,6 +757,7 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
           { id: 'diagnostics', label: 'Agent Diagnostics', icon: Cpu },
           { id: 'tiers', label: 'Tier Testing', icon: Sliders },
           { id: 'security', label: 'Security & Roster', icon: Key, count: rosterList.length },
+          { id: 'payment', label: 'Payment Verification', icon: CreditCard },
           { id: 'audit', label: 'Team Event Stream', icon: Activity, count: injectionLogs.length },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -1075,6 +1225,234 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB 6: PAYMENT GATEWAY VERIFICATION (₹1.00 LIVE TEST) ── */}
+      {activeTab === 'payment' && (
+        <div className="rounded-2xl border border-slate-300 dark:border-white/15 bg-white/70 dark:bg-[#070709]/70 p-5 flex flex-col gap-5">
+          {/* Header */}
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-white/15">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                  Razorpay Live Gateway Health Verification
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5">
+                  End-to-end cryptographic verification test for live payment processing & webhook pipelines.
+                </p>
+              </div>
+            </div>
+            <span className={`text-[10px] font-mono font-bold uppercase px-2.5 py-1 rounded-full border ${
+              isLocalhost
+                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/25'
+            }`}>
+              {isLocalhost ? 'Localhost Sandbox' : 'Production Mesh'}
+            </span>
+          </div>
+
+          {/* Environment Confinement Banner */}
+          {isLocalhost ? (
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-900 dark:text-amber-300 space-y-2">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold">
+                <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+                <span>LOCAL LOOPBACK CONFINEMENT ACTIVE — LIVE PAYMENTS BLOCKED</span>
+              </div>
+              <p className="text-[11px] text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
+                Payment gateway webhooks cannot route to private loopback addresses (<code>localhost</code> / <code>127.0.0.1</code>). Initiating live payments from localhost will debit money from your bank without server cryptographic confirmation, stranding funds in the air.
+              </p>
+              <div className="pt-1.5 flex items-center gap-3">
+                <a
+                  href="https://cavdax.sahnirmaan.live/devteam"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-mono text-[11px] font-bold transition-all shadow-sm active:scale-95"
+                >
+                  <span>Open Production Verification Panel</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                  (Official TLS host with active webhooks)
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-900 dark:text-emerald-300 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-mono font-bold">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>OFFICIAL PRODUCTION ENVIRONMENT CONFIRMED</span>
+              </div>
+              <p className="text-[11px] text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
+                Public webhook callbacks, TLS termination, and bank redirects are fully functional on <code>cavdax.sahnirmaan.live</code>. You may trigger a live ₹1.00 gateway health verification.
+              </p>
+            </div>
+          )}
+
+          {/* Test Parameters Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Transaction Amount
+              </div>
+              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white mt-1">
+                ₹1.00 <span className="text-[10px] text-slate-400 font-normal">(100 Paise Floor)</span>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Recipient Entity
+              </div>
+              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white mt-1">
+                CAVDAX Core / Geetika Chugh
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Gateway Engine
+              </div>
+              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white mt-1">
+                Razorpay Standard Live
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02]">
+              <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Proof Verification
+              </div>
+              <div className="text-sm font-mono font-bold text-slate-900 dark:text-white mt-1">
+                HMAC-SHA256 Signature
+              </div>
+            </div>
+          </div>
+
+          {/* Action Trigger Card */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-100/50 dark:bg-white/[0.01] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="text-xs font-mono font-bold text-slate-900 dark:text-white">
+                Execute ₹1.00 Gateway Handshake
+              </div>
+              <div className="text-[11px] font-sans text-slate-500 dark:text-slate-400 mt-0.5">
+                Creates live order, opens Razorpay popup, and verifies cryptographic receipt upon completion.
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                playClick();
+                handleInitiatePaymentVerification();
+              }}
+              disabled={isLocalhost || paymentVerifying}
+              className={`px-4 py-2.5 rounded-xl text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 select-none ${
+                isLocalhost
+                  ? 'bg-slate-200 dark:bg-white/5 text-slate-400 cursor-not-allowed border border-transparent'
+                  : paymentVerifying
+                  ? 'bg-amber-500/20 text-amber-500 border border-amber-500/30 cursor-wait'
+                  : 'bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md active:scale-95'
+              }`}
+            >
+              {paymentVerifying ? (
+                <>
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  <span>Processing ₹1.00 Handshake...</span>
+                </>
+              ) : isLocalhost ? (
+                <>
+                  <Lock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>DISABLED ON LOCALHOST</span>
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>Initiate ₹1.00 Live Test Payment</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Verification Result Callout */}
+          {paymentResult && (
+            <div className={`p-4 rounded-xl border ${
+              paymentResult.success
+                ? 'bg-emerald-500/10 border-emerald-500/25 text-emerald-900 dark:text-emerald-300'
+                : 'bg-rose-500/10 border-rose-500/25 text-rose-900 dark:text-rose-300'
+            }`}>
+              <div className="flex items-center gap-2 text-xs font-mono font-bold mb-1.5">
+                {paymentResult.success ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <span>CRYPTOGRAPHIC SIGNATURE VERIFIED (₹1.00 TRANSACTION VALIDATED)</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+                    <span>GATEWAY VERIFICATION ERROR</span>
+                  </>
+                )}
+              </div>
+              {paymentResult.success ? (
+                <div className="font-mono text-[11px] space-y-1 text-slate-700 dark:text-slate-300">
+                  <div><strong>Payment ID:</strong> {paymentResult.data.paymentId}</div>
+                  <div><strong>Order ID:</strong> {paymentResult.data.orderId}</div>
+                  <div><strong>Signature:</strong> {paymentResult.data.signature.slice(0, 24)}... (HMAC-SHA256 Match)</div>
+                  <div><strong>Timestamp:</strong> {paymentResult.data.timestamp}</div>
+                </div>
+              ) : (
+                <div className="font-mono text-xs">{paymentResult.error}</div>
+              )}
+            </div>
+          )}
+
+          {/* Verification History Log */}
+          <div className="pt-2">
+            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-white/10">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold">
+                Verification Ledger ({paymentHistory.length})
+              </span>
+              {paymentHistory.length > 0 && (
+                <button
+                  onClick={() => {
+                    playClick();
+                    setPaymentHistory([]);
+                    try { localStorage.removeItem('cavdax_dev_payment_verification_history'); } catch {}
+                  }}
+                  className="text-[10px] font-mono text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                >
+                  Clear History
+                </button>
+              )}
+            </div>
+
+            {paymentHistory.length === 0 ? (
+              <div className="p-4 text-center text-slate-400 font-mono text-[11px] rounded-xl border border-dashed border-slate-200 dark:border-white/10">
+                No payment verifications executed yet. Trigger a verification on production to populate the ledger.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-1.5 max-h-60 overflow-y-auto font-mono text-xs">
+                {paymentHistory.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between gap-3"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="font-bold text-slate-900 dark:text-white truncate">{item.paymentId}</span>
+                      <span className="text-[10px] text-slate-400 shrink-0">({item.orderId})</span>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className="text-emerald-600 dark:text-emerald-400 font-bold">{item.amountInr}</span>
+                      <span className="text-[10px] text-slate-400">{item.timestamp}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -675,7 +675,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                 <div className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300">
                   <span className="text-[#d9a353] dark:text-[#d9a353] font-mono mt-0.5">•</span>
                   <span className="text-balance [text-wrap:balance]">
-                    <strong className="font-semibold text-slate-900 dark:text-white">Commercial &amp; Deployment Freedom:</strong> Permission to inspect, modify, commercialize, and self-host offline.
+                    <strong className="font-semibold text-slate-900 dark:text-white">Internal &amp; Developer Freedom:</strong> Permissive Apache 2.0 for client tools; free internal modification and self-hosting under BSL 1.1.
                   </span>
                 </div>
               </div>

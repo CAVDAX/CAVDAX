@@ -3879,6 +3879,18 @@ app.get('/api/billing/config', (req, res) => {
 });
 
 app.post('/api/billing/create-order', async (req, res) => {
+  // Hard Localhost Confinement: Block live orders on loopback hosts to prevent stranded funds
+  const originHost = (req.headers.origin || req.headers.host || "").toLowerCase();
+  if (originHost.includes("localhost") || originHost.includes("127.0.0.1")) {
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: "LOCALHOST_PAYMENTS_FORBIDDEN",
+        message: "Live Razorpay orders cannot be initiated on localhost to prevent stranded funds in the air. Public webhooks require the production TLS domain: https://cavdax.sahnirmaan.live/devteam"
+      }
+    });
+  }
+
   if (!razorpayClient) {
     return res.status(503).json({
       success: false,
