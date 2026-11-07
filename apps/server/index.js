@@ -1214,11 +1214,12 @@ app.post('/api/seed', requireAuth, async (req, res) => {
  * Verifies whether the calling user or session has authorized access to requestedRepo.
  * Used to eliminate Insecure Direct Object Reference (IDOR) on audit and graph routes.
  */
-export async function verifyUserRepoAccess(req, requestedRepo) {
+export async function verifyUserRepoAccess(req, requestedRepo, options = {}) {
   if (!requestedRepo || requestedRepo === 'demo') return true;
   const isSessionAuth = Boolean(req.session?.user || req.authUser);
   if (!isSessionAuth) return false;
 
+  const requireWrite = typeof options === 'boolean' ? options : Boolean(options?.requireWrite);
   const userLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
   
   // 1. Root system user or admin role
@@ -1231,9 +1232,14 @@ export async function verifyUserRepoAccess(req, requestedRepo) {
     return true;
   }
 
-  const connected = Array.isArray(req.session?.connectedRepos) ? req.session.connectedRepos : [];
-  if (connected.some(r => r.toLowerCase() === requestedRepo.toLowerCase())) {
-    return true;
+  // 2b. Connected repos in current workspace session:
+  // Grants workspace read/inspection access (viewing graphs, audit records, running causal verification simulations),
+  // but NEVER write access (e.g. proposing pull requests on GitHub).
+  if (!requireWrite) {
+    const connected = Array.isArray(req.session?.connectedRepos) ? req.session.connectedRepos : [];
+    if (connected.some(r => r.toLowerCase() === requestedRepo.toLowerCase())) {
+      return true;
+    }
   }
 
   const [owner] = requestedRepo.split('/');
@@ -3433,9 +3439,9 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   try {
     const result = await scanRepoAdrs({ token: token || undefined, owner, repo, branch: requestedBranch || undefined });
 
-    // ONLY after a successful scan AND verified write access, track connected repo with limit enforcement.
-    // Read-only visibility must never grant tenant access (connectedRepos feeds verifyUserRepoAccess).
-    if (req.session?.user && hasAccess) {
+    // Track connected repository in session with plan limit enforcement.
+    // Workspace tenancy is strictly metered across ALL connected repositories (both owned and public).
+    if (req.session?.user) {
       if (!Array.isArray(req.session.connectedRepos)) {
         req.session.connectedRepos = [];
       }
@@ -3530,7 +3536,7 @@ app.post('/api/github/repos/:owner/:repo/propose-adr', githubActionLimiter, asyn
   }
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`;
-  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName, { requireWrite: true });
   if (!hasAccess) {
     return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to propose ADRs for this repository.' });
   }
@@ -3567,7 +3573,7 @@ app.post('/api/github/repos/:owner/:repo/ci-gate-pr', githubActionLimiter, async
   }
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`;
-  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName, { requireWrite: true });
   if (!hasAccess) {
     return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to install CI workflows on this repository.' });
   }
@@ -3590,7 +3596,7 @@ app.post('/api/github/repos/:owner/:repo/init-adr', githubActionLimiter, async (
   }
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`;
-  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName, { requireWrite: true });
   if (!hasAccess) {
     return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to initialize ADRs on this repository.' });
   }
@@ -3785,7 +3791,7 @@ app.post('/api/github/repos/:owner/:repo/sync-adr-status', githubActionLimiter, 
   }
   const { owner, repo } = req.params;
   const repoFullName = `${owner}/${repo}`;
-  const hasAccess = await verifyUserRepoAccess(req, repoFullName);
+  const hasAccess = await verifyUserRepoAccess(req, repoFullName, { requireWrite: true });
   if (!hasAccess) {
     return res.status(403).json({ success: false, code: 'FORBIDDEN', error: 'You do not have access to synchronize ADR status on this repository.' });
   }
