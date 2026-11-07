@@ -153,7 +153,8 @@ async function verifyFiles(files, options = {}) {
       } else if (remoteDecisions) {
         const status = remoteDecisions[decId];
         if (status === undefined) {
-          result = { is_approved: true, gate_verdict: 'SKIPPED_UNKNOWN_DECISION', violation_paths: [] };
+          // Fail closed: a reference to a decision the graph has never heard of is ungrounded, not harmless.
+          result = { is_approved: false, gate_verdict: 'BLOCKED_UNKNOWN_DECISION', violation_paths: [{ decision: decId, status: 'NOT_FOUND' }] };
         } else if (status === 'VALID') {
           result = { is_approved: true, gate_verdict: 'APPROVED_REMOTE_GRAPH', violation_paths: [] };
         } else {

@@ -184,20 +184,24 @@ export function detectUnsyncedSupersessions(adrs) {
  * Updates the frontmatter status: line, or inserts one if missing.
  */
 export function applySupersededStatusToAdr(text, supersedingId) {
-  const fmMatch = text.match(/^---\n([\s\S]*?)\n---/);
+  // Files checked out on Windows use CRLF; keep the file's own line ending throughout.
+  const eol = text.includes('\r\n') ? '\r\n' : '\n';
+  const fmMatch = text.match(/^---\r?\n([\s\S]*?)\r?\n---/);
   if (fmMatch) {
     const rawFm = fmMatch[1];
     let newFm;
     if (/^status\s*:/im.test(rawFm)) {
-      newFm = rawFm.replace(/^status\s*:.*$/im, "status: SUPERSEDED by " + supersedingId);
+      newFm = rawFm.replace(/^status\s*:.*$/im, () => "status: SUPERSEDED by " + supersedingId);
     } else {
-      newFm = rawFm + "\nstatus: SUPERSEDED by " + supersedingId;
+      newFm = rawFm + eol + "status: SUPERSEDED by " + supersedingId;
     }
-    return text.replace(fmMatch[0], "---\n" + newFm.trim() + "\n---");
+    // Function replacer: a string replacement would expand "$&", "$1" etc. found in the file.
+    return text.replace(fmMatch[0], () => "---" + eol + newFm.trim() + eol + "---");
   }
 
   // Plain markdown without YAML frontmatter
-  return "---\nstatus: SUPERSEDED by " + supersedingId + "\n---\n\n> **Note:** This decision has been superseded by [" + supersedingId + "].\n\n" + text;
+  return "---" + eol + "status: SUPERSEDED by " + supersedingId + eol + "---" + eol + eol +
+    "> **Note:** This decision has been superseded by [" + supersedingId + "]." + eol + eol + text;
 }
 
 /** Lists the ADRs on the repository's default branch and parses them. */
