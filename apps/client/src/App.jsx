@@ -1835,6 +1835,7 @@ export default function App() {
                       onCloseNode={() => setSelectedNode(null)}
                       isDarkTheme={isDarkTheme}
                       isDemo={true}
+                      currentAct={currentAct}
                       isSidebarCollapsed={isDemoLeftCollapsed}
                       onToggleSidebar={() => setIsDemoLeftCollapsed(prev => !prev)}
                     />
