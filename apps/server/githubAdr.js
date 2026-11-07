@@ -31,15 +31,18 @@ export function assertRepoName(owner, repo) {
 }
 
 async function gh(fetchImpl, token, method, urlPath, body, accept = 'application/vnd.github+json') {
+  const headers = {
+    Accept: accept,
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'cavdax',
+    ...(body ? { 'Content-Type': 'application/json' } : {})
+  };
+  if (token && typeof token === 'string' && token !== 'undefined' && token !== 'null') {
+    headers.Authorization = `Bearer ${token.trim()}`;
+  }
   const res = await fetchImpl(`${GH_API}${urlPath}`, {
     method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: accept,
-      'X-GitHub-Api-Version': '2022-11-28',
-      'User-Agent': 'cavdax',
-      ...(body ? { 'Content-Type': 'application/json' } : {})
-    },
+    headers,
     body: body ? JSON.stringify(body) : undefined
   });
   if (res.ok) {
@@ -206,8 +209,18 @@ export async function scanRepoAdrs(args) {
 async function scanWithTree({ token, owner, repo, branch: requestedBranch, fetchImpl = fetch }) {
   assertRepoName(owner, repo);
   const meta = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}`);
-  const branch = requestedBranch || meta.default_branch;
-  const tree = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
+  let branch = requestedBranch || meta.default_branch || 'main';
+  let tree;
+  try {
+    tree = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
+  } catch (err) {
+    if (err instanceof GithubAdrError && err.status === 404 && requestedBranch && requestedBranch !== meta.default_branch) {
+      branch = meta.default_branch || 'master';
+      tree = await gh(fetchImpl, token, 'GET', `/repos/${owner}/${repo}/git/trees/${encodeURIComponent(branch)}?recursive=1`);
+    } else {
+      throw err;
+    }
+  }
 
   const adrFiles = (tree.tree || [])
     .filter((e) => e.type === 'blob' && isAdrPath(e.path))

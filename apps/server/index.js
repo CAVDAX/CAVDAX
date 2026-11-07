@@ -154,6 +154,7 @@ class PersistentFileStore extends session.Store {
   constructor(options = {}) {
     super();
     this.dir = options.dir || SESSIONS_DIR;
+    this.memory = new Map();
     try {
       if (!fs.existsSync(this.dir)) {
         fs.mkdirSync(this.dir, { recursive: true });
@@ -165,8 +166,19 @@ class PersistentFileStore extends session.Store {
 
   get(sid, cb) {
     if (!sid || typeof sid !== 'string') return cb(null, null);
-    // Sanitize sid to prevent path traversal (OWASP Phase 3)
     const safeSid = sid.replace(/[^a-zA-Z0-9_-]/g, '');
+
+    // 1. Instant in-memory cache hit
+    if (this.memory.has(safeSid)) {
+      const sessionData = this.memory.get(safeSid);
+      if (sessionData?.cookie?.expires && new Date(sessionData.cookie.expires).getTime() < Date.now()) {
+        this.destroy(sid, () => cb(null, null));
+        return;
+      }
+      return cb(null, sessionData);
+    }
+
+    // 2. Disk fallback
     const filePath = path.join(this.dir, `${safeSid}.json`);
     fs.readFile(filePath, 'utf8', (err, data) => {
       if (err) return cb(null, null);
@@ -175,6 +187,7 @@ class PersistentFileStore extends session.Store {
         if (sessionData?.cookie?.expires && new Date(sessionData.cookie.expires).getTime() < Date.now()) {
           this.destroy(sid, () => cb(null, null));
         } else {
+          this.memory.set(safeSid, sessionData);
           cb(null, sessionData);
         }
       } catch {
@@ -186,20 +199,25 @@ class PersistentFileStore extends session.Store {
   set(sid, sessionData, cb) {
     if (!sid || typeof sid !== 'string') return cb && cb(null);
     const safeSid = sid.replace(/[^a-zA-Z0-9_-]/g, '');
+    
+    // Immediately persist to memory map (eliminates Windows EPERM race condition)
+    this.memory.set(safeSid, sessionData);
+    if (cb) cb(null);
+
+    // Asynchronously flush to disk (swallow Windows OneDrive EPERM locks)
     const filePath = path.join(this.dir, `${safeSid}.json`);
-    const tempPath = `${filePath}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`;
     const payload = JSON.stringify(sessionData);
-    fs.writeFile(tempPath, payload, 'utf8', (err) => {
-      if (err) return cb && cb(err);
-      fs.rename(tempPath, filePath, (renameErr) => {
-        if (cb) cb(renameErr || null);
-      });
+    fs.writeFile(filePath, payload, 'utf8', (err) => {
+      if (err && err.code !== 'EPERM' && err.code !== 'EBUSY') {
+        console.warn('[CAVDAX SessionStore] Session disk persist warning:', err.message);
+      }
     });
   }
 
   destroy(sid, cb) {
     if (!sid || typeof sid !== 'string') return cb && cb(null);
     const safeSid = sid.replace(/[^a-zA-Z0-9_-]/g, '');
+    this.memory.delete(safeSid);
     const filePath = path.join(this.dir, `${safeSid}.json`);
     fs.unlink(filePath, () => {
       if (cb) cb(null);
@@ -2567,7 +2585,7 @@ const CLIENT_URL           = process.env.CLIENT_URL           || (isProduction ?
 const GITHUB_CALLBACK_URL  = process.env.GITHUB_CALLBACK_URL
   || (isProduction
       ? 'https://cavdax.sahnirmaan.live/api/auth/github/callback'
-      : `http://localhost:${PORT === 3000 ? 3001 : PORT}/api/auth/github/callback`);
+      : `http://localhost:${PORT}/api/auth/github/callback`);
 
 // In-memory CSRF state store (keyed by random state param, TTL 10 min)
 const oauthStateStore = new Map(); // state → { createdAt }
@@ -2705,7 +2723,8 @@ app.get('/api/auth/github/callback', async (req, res) => {
     const userIdStr = String(userData.id);
     const userLoginLower = (userData.login || '').toLowerCase();
     const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers) ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLoginLower]) : null;
-    const userTier = paidRecord?.tier || req.session?.tier || 'free';
+    const isDevMaintainer = Boolean(userLoginLower && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(userLoginLower));
+    const userTier = isDevMaintainer ? 'enterprise' : (paidRecord?.tier || req.session?.tier || 'free');
     const existingConnectedRepos = Array.isArray(req.session?.connectedRepos) ? [...req.session.connectedRepos] : [];
 
     req.session.user = {
@@ -2803,8 +2822,21 @@ app.get('/api/auth/me', (req, res) => {
     );
     return res.status(200).json({ authenticated: false, hasEnvPat });
   }
+  const userLogin = (req.session.user?.login || '').toLowerCase();
+  const isDevMaintainer = Boolean(userLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin));
+  const effectiveTier = isDevMaintainer ? 'enterprise' : (req.session.tier || req.session.user?.tier || 'free');
   const { githubId, login, name, avatarUrl } = req.session.user;
-  res.json({ authenticated: true, user: { githubId, login, name, avatarUrl } });
+  res.json({
+    authenticated: true,
+    user: {
+      githubId,
+      login,
+      name,
+      avatarUrl,
+      tier: effectiveTier,
+      is_dev_maintainer: isDevMaintainer
+    }
+  });
 });
 
 // Test-only session bootstrap (Strictly disabled in production)
@@ -2921,7 +2953,8 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
     const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers)
       ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLoginLower])
       : null;
-    const userTier = paidRecord?.tier || req.session?.tier || 'free';
+    const isDevMaintainer = Boolean(userLoginLower && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(userLoginLower));
+    const userTier = isDevMaintainer ? 'enterprise' : (paidRecord?.tier || req.session?.tier || 'free');
     const existingConnectedRepos = Array.isArray(req.session?.connectedRepos) ? [...req.session.connectedRepos] : [];
 
     const executeSave = () => {
@@ -2994,6 +3027,59 @@ app.post('/api/auth/dev-login', devAuthLimiter, async (req, res) => {
       message: 'Failed to connect to GitHub API.'
     });
   }
+});
+
+/**
+ * POST /api/user/tier
+ * Updates or switches the active tier for developers, evaluation pass users, or authenticated sessions.
+ */
+app.post('/api/user/tier', (req, res) => {
+  const { tier } = req.body || {};
+  const normalizedTier = String(tier || '').toLowerCase().trim();
+  if (!['free', 'pro', 'enterprise'].includes(normalizedTier)) {
+    return res.status(400).json({ success: false, error: 'INVALID_TIER', message: 'Tier must be free, pro, or enterprise.' });
+  }
+
+  const socketIp = (req.socket?.remoteAddress || '').replace(/^.*:/, '').toLowerCase();
+  const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '1' || socketIp === 'localhost' || socketIp === '::1';
+  const userLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
+  const isDevMaintainer = Boolean(userLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin));
+  const isDevOrEval = isDevMaintainer || globalHackathonMode || (!isProduction && isDirectLoopback);
+
+  if (!isDevOrEval && normalizedTier !== 'free') {
+    const userIdStr = String(req.session?.user?.githubId || '');
+    const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers)
+      ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLogin])
+      : null;
+    if (!paidRecord || paidRecord.tier !== normalizedTier) {
+      return res.status(403).json({ success: false, error: 'PAYMENT_REQUIRED', message: 'Upgrading tier requires verified payment or developer evaluation authorization.' });
+    }
+  }
+
+  req.session.tier = normalizedTier;
+  if (req.session.user) {
+    req.session.user.tier = normalizedTier;
+  }
+
+  if (userLogin && typeof savedSystemState !== 'undefined' && savedSystemState) {
+    if (!savedSystemState.paidUsers) savedSystemState.paidUsers = {};
+    savedSystemState.paidUsers[userLogin] = {
+      tier: normalizedTier,
+      updated_at: new Date().toISOString(),
+      source: isDevMaintainer ? 'dev_roster' : (globalHackathonMode ? 'hackathon_eval' : 'dev_override')
+    };
+    saveSystemState();
+  }
+
+  req.session.save((err) => {
+    if (err) console.error('[CAVDAX] Error saving session tier:', err);
+    res.json({
+      success: true,
+      tier: normalizedTier,
+      is_dev_maintainer: isDevMaintainer,
+      message: `Tier successfully updated to ${normalizedTier.toUpperCase()}`
+    });
+  });
 });
 
 /**
@@ -3255,6 +3341,31 @@ export function sanitizeBranchName(branch, fallback = 'main') {
   return fallback;
 }
 
+/**
+ * POST /api/github/repos/disconnect
+ * Untracks a disconnected repository from the session and persisted system state,
+ * preventing ghost quota lockups.
+ */
+app.post('/api/github/repos/disconnect', (req, res) => {
+  const repoToDisconnect = (req.body?.repo || '').toLowerCase().trim();
+  if (!repoToDisconnect) {
+    return res.status(400).json({ success: false, error: 'repo required' });
+  }
+  if (Array.isArray(req.session?.connectedRepos)) {
+    req.session.connectedRepos = req.session.connectedRepos.filter(
+      r => r.toLowerCase() !== repoToDisconnect
+    );
+  }
+  const userLogin = (req.session?.user?.login || req.authUser?.login || '').toLowerCase();
+  if (userLogin && savedSystemState?.userRepos?.[userLogin]) {
+    savedSystemState.userRepos[userLogin] = savedSystemState.userRepos[userLogin].filter(
+      r => r.toLowerCase() !== repoToDisconnect
+    );
+    if (typeof syncSystemStateToDisk === 'function') syncSystemStateToDisk();
+  }
+  return res.json({ success: true, connectedRepos: req.session?.connectedRepos || [] });
+});
+
 app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const authHeader = req.headers['authorization'] || '';
   const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
@@ -3312,8 +3423,10 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
     return res.status(401).json({ success: false, code: 'AUTH_REQUIRED', error: 'GitHub authentication required.' });
   }
 
-  const sessionTier = req.session?.tier || req.session?.user?.tier || authUser?.tier;
-  const effectiveTier = globalHackathonMode ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
+  const sessionUserLogin = (req.session?.user?.login || authUser?.login || '').toLowerCase();
+  const isDevMaintainer = Boolean(sessionUserLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(sessionUserLogin));
+  const sessionTier = isDevMaintainer ? 'enterprise' : (req.session?.tier || req.session?.user?.tier || authUser?.tier);
+  const effectiveTier = (globalHackathonMode || isDevMaintainer) ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
   const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 10 : -1);
 
   const requestedBranch = sanitizeBranchName(req.query.branch, null);
@@ -3326,6 +3439,17 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
       if (!Array.isArray(req.session.connectedRepos)) {
         req.session.connectedRepos = [];
       }
+      // Reconcile session connectedRepos with the client's actual active repositories (preventing ghost quota exhaustion)
+      const clientActiveReposHeader = req.headers['x-connected-repos'];
+      if (clientActiveReposHeader) {
+        try {
+          const activeList = JSON.parse(clientActiveReposHeader).map(r => String(r).toLowerCase().trim());
+          req.session.connectedRepos = req.session.connectedRepos.filter(
+            r => activeList.includes(r.toLowerCase()) || r.toLowerCase() === repoFullName
+          );
+        } catch {}
+      }
+      req.session.connectedRepos = Array.from(new Set(req.session.connectedRepos.map(r => r.toLowerCase())));
       if (!req.session.connectedRepos.includes(repoFullName)) {
         if (repoLimit !== -1 && req.session.connectedRepos.length >= repoLimit) {
           return res.status(403).json({
