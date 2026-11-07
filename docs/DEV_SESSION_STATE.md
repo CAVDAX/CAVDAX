@@ -54,6 +54,10 @@
     2. Enforced strict ₹1.00 (100 paise) minimum floor live gateway verification test.
     3. Implemented dual-plane localhost confinement: client button is physically disabled with amber warning shield, and backend (`POST /api/billing/create-order`) rejects loopback hosts with HTTP 403 `LOCALHOST_PAYMENTS_FORBIDDEN` to prevent stranded funds.
     4. Added high-density cryptographic verification ledger in `DevTeamPanel.jsx` persisted to `localStorage`.
+  - **Repo-Wide Localhost Payment Confinement Completed (ProfilePage.jsx, SupportPage.jsx & apps/server/index.js)**:
+    1. Audited all client payment callers: added loopback checks in `ProfilePage.jsx` (`handleRazorpayUpgrade`) and `SupportPage.jsx` (`handleSponsor`), preventing developers from accidentally executing live subscription or sponsorship orders on localhost.
+    2. Mounted loopback guidance banner on `SupportPage.jsx` directing local testers to the Evaluation Sponsor Pass.
+    3. Hardened `POST /api/billing/verify-payment` against loopback origins, preventing any payment verification desync on localhost.
 
 ## 1.1.12 Pull-Cord Radial Physics Clamping & Viewport-Aware Graph Canvas Auto-Centering (November 7, 2026)
 
