@@ -262,6 +262,16 @@ export default function ProfilePage({
       showToast("Please connect your GitHub account to proceed — we’ll bind your tier to your verified identity.");
       return;
     }
+    const isLocalhost = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '::1' ||
+      window.location.protocol === 'file:'
+    );
+    if (isLocalhost) {
+      showToast("Live subscription payments are disabled on localhost to prevent stranded funds. Upgrade on our production platform: https://cavdax.sahnirmaan.live/profile");
+      return;
+    }
     if (isUpgrading) return;
     setIsUpgrading(true);
 
