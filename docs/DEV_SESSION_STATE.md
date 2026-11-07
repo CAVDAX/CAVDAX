@@ -36,6 +36,25 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.13 GitHub README GFM Parser Guard, Dual-License Alignment, and Razorpay Localhost Confinement (November 8, 2026)
+
+- **GitHub README Hero Header GFM Code Block Trap Resolved (README.md & scripts/lint-markdown.mjs)**:
+  - **Mechanical Root Cause**: Under Section 4.4 of CommonMark/GFM specifications, any line preceded by an HTML container or blank line indented by $ge 4$ spaces is parsed as an indented code block (`<pre><code>`). The README header used compound 2-space indentation (`<div align="center">` [0] $ightarrow$ `<picture>` [2] $ightarrow$ `<source>` [4]), causing GitHub to render raw HTML tags as code blocks with copy buttons and horizontal scrollbars.
+  - **Resolution**:
+    1. Re-aligned all nested HTML tags in `README.md` to strictly 0 leading spaces (flush-left).
+    2. Implemented `scripts/lint-markdown.mjs` to detect synthetic double carriage returns (`\r\r\n`) and indented raw HTML tags (`^\s{4,}<(picture|source|img|a|...)`).
+    3. Wired the linter into `.githooks/pre-commit` and registered `npm run lint:md` in `package.json`.
+
+- **Dual-License Consistency Restored (ProjectVideoPage.jsx)**:
+  - **Resolution**: Replaced contradictory claim *"Commercial & Deployment Freedom: Permission to inspect, modify, commercialize, and self-host offline"* with accurate dual-license terms: *"Internal & Developer Freedom: Permissive Apache 2.0 for client tools; free internal modification and self-hosting under BSL 1.1."*
+
+- **Razorpay Live Gateway Health Verification & Localhost Confinement (DevTeamPanel.jsx & apps/server/index.js)**:
+  - **Resolution**:
+    1. Mounted dedicated `Payment Verification` tab in `DevTeamPanel.jsx` (`/devteam`).
+    2. Enforced strict ₹1.00 (100 paise) minimum floor live gateway verification test.
+    3. Implemented dual-plane localhost confinement: client button is physically disabled with amber warning shield, and backend (`POST /api/billing/create-order`) rejects loopback hosts with HTTP 403 `LOCALHOST_PAYMENTS_FORBIDDEN` to prevent stranded funds.
+    4. Added high-density cryptographic verification ledger in `DevTeamPanel.jsx` persisted to `localStorage`.
+
 ## 1.1.12 Pull-Cord Radial Physics Clamping & Viewport-Aware Graph Canvas Auto-Centering (November 7, 2026)
 
 - **Wordmark Lamp Pull-Cord Bounding & Radial Clamp Defect Resolved (PullCordLampToggle.jsx)**:
