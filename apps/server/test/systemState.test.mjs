@@ -1,16 +1,27 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { loadSystemState, saveSystemState } from '../systemState.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const DATA_DIR = path.resolve(__dirname, '../data');
+// Isolate from the real apps/server/data directory so running the tests can never
+// read, overwrite or delete a developer's or server's live system_state.json.
+const DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cavdax-system-state-'));
+process.env.CAVDAX_DATA_DIR = DATA_DIR;
 const STATE_FILE = path.join(DATA_DIR, 'system_state.json');
 
+const { loadSystemState, saveSystemState } = await import('../systemState.js');
+
+function resetStateFile() {
+  fs.rmSync(STATE_FILE, { force: true });
+}
+
+test.after(() => {
+  fs.rmSync(DATA_DIR, { recursive: true, force: true });
+});
+
 test('systemState: loadSystemState returns clean defaults on initial call', () => {
+  resetStateFile();
   const state = loadSystemState();
   assert.equal(typeof state.hackathonMode, 'boolean');
   assert.ok(Array.isArray(state.whitelistedIps));
@@ -20,6 +31,7 @@ test('systemState: loadSystemState returns clean defaults on initial call', () =
 });
 
 test('systemState: saveSystemState atomically persists state to disk and reloads accurately', () => {
+  resetStateFile();
   const mockState = {
     hackathonMode: true,
     whitelistedIps: ['192.168.1.100', '10.0.0.1'],
@@ -44,9 +56,42 @@ test('systemState: saveSystemState atomically persists state to disk and reloads
   assert.equal(loaded.apiKeys[0].login, 'test-architect');
   assert.equal(loaded.auditEntries.length, 1);
   assert.equal(loaded.auditEntries[0].repo, 'test/repo');
+});
 
-  // Clean up test file so it does not pollute git index or runtime
-  try {
-    fs.unlinkSync(STATE_FILE);
-  } catch {}
+test('systemState: vapidKeys and pushSubscriptions round-trip through save and load', () => {
+  resetStateFile();
+  const state = loadSystemState();
+  state.vapidKeys = { publicKey: 'PUB', privateKey: 'PRIV' };
+  state.pushSubscriptions = { alice: [{ endpoint: 'https://push.example/1' }] };
+  assert.equal(saveSystemState(state), true);
+
+  const reloaded = loadSystemState();
+  assert.deepEqual(reloaded.vapidKeys, { publicKey: 'PUB', privateKey: 'PRIV' });
+  assert.deepEqual(reloaded.pushSubscriptions, { alice: [{ endpoint: 'https://push.example/1' }] });
+});
+
+test('systemState: a save that omits vapidKeys/pushSubscriptions/notificationPreferences preserves them on disk', () => {
+  resetStateFile();
+  const seeded = loadSystemState();
+  seeded.vapidKeys = { publicKey: 'PUB', privateKey: 'PRIV' };
+  seeded.pushSubscriptions = { alice: [{ endpoint: 'https://push.example/1' }] };
+  seeded.notificationPreferences = { alice: { emailAlerts: true, watchedRepos: ['alice/app'] } };
+  assert.equal(saveSystemState(seeded), true);
+
+  // This is exactly what syncSystemStateToDisk() in index.js passes: no push/VAPID/notification fields.
+  assert.equal(saveSystemState({ hackathonMode: false, whitelistedIps: ['1.2.3.4'] }), true);
+
+  const after = loadSystemState();
+  assert.deepEqual(after.vapidKeys, { publicKey: 'PUB', privateKey: 'PRIV' }, 'VAPID keys must survive');
+  assert.deepEqual(after.pushSubscriptions, { alice: [{ endpoint: 'https://push.example/1' }] }, 'subscriptions must survive');
+  assert.deepEqual(after.notificationPreferences, { alice: { emailAlerts: true, watchedRepos: ['alice/app'] } }, 'preferences must survive');
+  assert.deepEqual(after.whitelistedIps, ['1.2.3.4'], 'fields the caller did supply are still updated');
+});
+
+test('systemState: saveSystemState() without a state object fails loudly and does not touch the file', () => {
+  resetStateFile();
+  assert.equal(saveSystemState({ hackathonMode: true }), true);
+  const before = fs.readFileSync(STATE_FILE, 'utf8');
+  assert.equal(saveSystemState(), false);
+  assert.equal(fs.readFileSync(STATE_FILE, 'utf8'), before);
 });

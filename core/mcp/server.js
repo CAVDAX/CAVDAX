@@ -15,6 +15,49 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '../../');
 
+/**
+ * Resolves symlinks for a path that may not exist yet by resolving its deepest
+ * existing ancestor and re-appending the missing tail. Returns null when a symlink
+ * on the path cannot be resolved (e.g. dangling), so callers can fail closed.
+ */
+function realpathOfDeepestAncestor(target) {
+  let current = target;
+  const tail = [];
+  for (;;) {
+    try {
+      fs.lstatSync(current);
+      break;
+    } catch (err) {
+      if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') return null;
+      const parent = path.dirname(current);
+      if (parent === current) return null;
+      tail.unshift(path.basename(current));
+      current = parent;
+    }
+  }
+  try {
+    return path.join(fs.realpathSync(current), ...tail);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Paths an agent must never write through the gate, even with an approved decision:
+ * git internals, environment/secret files and CI workflow definitions.
+ */
+export function isProtectedWritePath(relativePath) {
+  const segments = String(relativePath).split(/[\\/]+/).filter(Boolean).map((s) => s.toLowerCase());
+  if (segments.includes('.git')) return true;
+  if (segments.some((s) => s === '.env' || s.startsWith('.env.'))) return true;
+  if (segments[0] === '.github') return true;
+  return false;
+}
+
+function toRepoRelative(root, absolutePath) {
+  return path.relative(root, absolutePath).split(path.sep).join('/');
+}
+
 export class CavdaxMcpServer {
   /**
    * @param {object} graph FalkorDB graph
@@ -59,6 +102,10 @@ export class CavdaxMcpServer {
             reasoning: {
               type: 'string',
               description: 'Brief explanation of why this code change is being made.'
+            },
+            agent_id: {
+              type: 'string',
+              description: 'Unique identifier of the calling agent (e.g., devin-run-41). Required to write while you hold a decision lock; without it your own lock is treated as foreign.'
             }
           },
           required: ['decision_id', 'file_path', 'code_payload']
@@ -72,7 +119,8 @@ export class CavdaxMcpServer {
           properties: {
             decision_id: { type: 'string', description: 'The ID of the Architecture Decision (e.g., DEC-102 or DEC-103) you intend to implement.' },
             target_file: { type: 'string', description: 'Optional target file path you intend to modify.' },
-            proposed_action: { type: 'string', description: 'Optional summary of the intended implementation or change.' }
+            proposed_action: { type: 'string', description: 'Optional summary of the intended implementation or change.' },
+            agent_id: { type: 'string', description: 'Unique identifier of the calling agent (e.g., devin-run-41). Pass the same id you used in acquire_decision_lock.' }
           },
           required: ['decision_id']
         }
@@ -197,6 +245,31 @@ export class CavdaxMcpServer {
       };
     }
 
+    // Symlink confinement: a link inside the repo that points outside it must not be a way out.
+    let realRepo = resolvedRepo;
+    try { realRepo = fs.realpathSync(resolvedRepo); } catch { /* repo root not created yet: lexical root */ }
+    const realPath = realpathOfDeepestAncestor(resolvedPath);
+    if (!realPath || !realPath.startsWith(realRepo + path.sep)) {
+      console.warn(`[MCP Gate] ⛔ SYMLINK ESCAPE BLOCKED: '${file_path}' resolves outside the sandbox root.`);
+      return {
+        isError: true,
+        gate_verdict: 'BLOCKED_PATH_TRAVERSAL',
+        decision_id,
+        error: 'Access denied: Target file path resolves (through a symlink) outside the sandbox repository root.'
+      };
+    }
+
+    // Protected paths are never writable through the gate, whatever the decision says.
+    if (isProtectedWritePath(toRepoRelative(resolvedRepo, resolvedPath)) || isProtectedWritePath(toRepoRelative(realRepo, realPath))) {
+      console.warn(`[MCP Gate] ⛔ PROTECTED PATH WRITE BLOCKED: '${file_path}'.`);
+      return {
+        isError: true,
+        gate_verdict: 'BLOCKED_PROTECTED_PATH',
+        decision_id,
+        error: 'Access denied: git internals, .env files and .github/ workflow files cannot be modified through the gate.'
+      };
+    }
+
     console.log(`[MCP Gate] Running Query 1 against FalkorDB on '${decision_id}'...`);
 
     // 1. RUN INTERNAL FALKORDB VERIFICATION
@@ -241,6 +314,31 @@ export class CavdaxMcpServer {
         message: `⛔ CAVDAX GATE BLOCKED: Execution rejected. Decision '${decision_id}' status is '${checkResult.gate_verdict}'. A supporting fact or source was superseded. Revalidation is required before code can be written.`,
         instructions_for_agent: `To resolve this, inspect the superseding source, create an updated decision via 'revalidate_decision', and re-submit your change.`
       };
+    }
+
+    // 2b. SCOPE CHECK: when the decision declares the file it governs, the write must target that file.
+    //     A valid decision for one file does not authorise writing a different file.
+    const scopeResult = await this.graph.query(
+      `MATCH (d:Decision {id: $decisionId}) RETURN d.target_file AS target_file`,
+      { params: { decisionId: decision_id } }
+    );
+    const declaredTarget = scopeResult?.data?.[0]?.target_file;
+    if (typeof declaredTarget === 'string' && declaredTarget.trim()) {
+      const normalizeRel = (p) => path.posix.normalize(String(p).replace(/\\/g, '/')).replace(/^\.\//, '');
+      const requestedRel = toRepoRelative(resolvedRepo, resolvedPath);
+      if (normalizeRel(declaredTarget) !== normalizeRel(requestedRel)) {
+        console.warn(`[MCP Gate] ⛔ SCOPE REFUSAL: '${decision_id}' governs '${declaredTarget}', not '${requestedRel}'.`);
+        return {
+          isError: true,
+          gate_verdict: 'BLOCKED_TARGET_FILE_MISMATCH',
+          decision_id,
+          latency_ms: checkResult.latency_ms,
+          declared_target_file: declaredTarget,
+          requested_file: requestedRel,
+          message: `⛔ CAVDAX GATE BLOCKED: Decision '${decision_id}' only authorises changes to '${declaredTarget}', not '${requestedRel}'.`,
+          instructions_for_agent: `Write only to '${declaredTarget}' under '${decision_id}', or use a decision that governs '${requestedRel}'.`
+        };
+      }
     }
 
     // 3. ENFORCEMENT BRANCH B: APPROVED (WRITE TO DISK)

@@ -17,6 +17,7 @@
  */
 
 import { execFileSync } from 'child_process';
+import fs, { readFileSync } from 'fs';
 import path from 'path';
 import { connectGraph, closeQuietly, describeConnectError, falkorConfig, loadCore } from './runtime.js';
 
@@ -88,6 +89,64 @@ function getStagedFiles() {
 }
 
 /**
+ * Extracts decision IDs from a file.
+ * In PR, staged, or commit mode, extracts decision IDs ONLY from added/modified lines in git diff.
+ * In direct file mode (e.g. tests or explicit file scans), scans the full file content.
+ */
+function extractDecisionIds(filePath, options = {}) {
+  const isDiffContext = Boolean(options.pr || options.staged || options.sha || options.diffOnly);
+
+  if (isDiffContext) {
+    try {
+      let diffArgs = null;
+      if (options.pr) {
+        diffArgs = ['diff', '-U0', 'origin/main...HEAD', '--', filePath];
+      } else if (options.staged) {
+        diffArgs = ['diff', '-U0', '--cached', '--', filePath];
+      } else if (options.sha) {
+        diffArgs = ['diff-tree', '-p', '-U0', options.sha, '--', filePath];
+      }
+
+      if (diffArgs) {
+        let diffOutput = '';
+        try {
+          diffOutput = execFileSync('git', diffArgs, { encoding: 'utf-8' });
+        } catch {
+          if (options.pr) {
+            try {
+              diffOutput = execFileSync('git', ['diff', '-U0', 'main...HEAD', '--', filePath], { encoding: 'utf-8' });
+            } catch {
+              diffOutput = '';
+            }
+          }
+        }
+
+        if (diffOutput) {
+          const addedLines = diffOutput
+            .split('\n')
+            .filter((line) => line.startsWith('+') && !line.startsWith('+++'))
+            .join('\n');
+          const matches = addedLines.match(/\bDEC-\d+\b/g) || [];
+          return [...new Set(matches)];
+        }
+        return [];
+      }
+    } catch {
+      // Fall through to full file read if git diff fails
+    }
+  }
+
+  // Direct file mode (used by unit tests and direct file checks)
+  try {
+    const content = readFileSync(filePath, 'utf-8');
+    const matches = content.match(/\bDEC-\d+\b/g) || [];
+    return [...new Set(matches)];
+  } catch {
+    return [];
+  }
+}
+
+/**
  * Attempts to connect to FalkorDB and verify whether a given decision ID
  * (extracted heuristically from source file content) is still valid.
  *
@@ -127,18 +186,8 @@ async function verifyFiles(files, options = {}) {
       continue;
     }
 
-    // Scan for decision ID patterns (e.g. DEC-999)
-    let decisionIds = [];
-    try {
-      const { readFileSync } = await import('fs');
-      const content = readFileSync(filePath, 'utf-8');
-      const matches = content.match(/\bDEC-\d+\b/g) || [];
-      decisionIds = [...new Set(matches)];
-    } catch {
-      // File unreadable or deleted — skip gracefully
-      console.log(`   ⏭️  ${filePath} — skipped (file unreadable or deleted)`);
-      continue;
-    }
+    // Scan for decision ID patterns (in PR/staged mode: inspect added diff lines only)
+    let decisionIds = extractDecisionIds(filePath, options);
 
     if (decisionIds.length === 0) {
       console.log(`   ✅ ${filePath} — no CAVDAX decision references found`);
@@ -153,7 +202,8 @@ async function verifyFiles(files, options = {}) {
       } else if (remoteDecisions) {
         const status = remoteDecisions[decId];
         if (status === undefined) {
-          result = { is_approved: true, gate_verdict: 'SKIPPED_UNKNOWN_DECISION', violation_paths: [] };
+          // Fail closed: a reference to a decision the graph has never heard of is ungrounded, not harmless.
+          result = { is_approved: false, gate_verdict: 'BLOCKED_UNKNOWN_DECISION', violation_paths: [{ decision: decId, status: 'NOT_FOUND' }] };
         } else if (status === 'VALID') {
           result = { is_approved: true, gate_verdict: 'APPROVED_REMOTE_GRAPH', violation_paths: [] };
         } else {

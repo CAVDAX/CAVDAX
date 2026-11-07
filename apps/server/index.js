@@ -98,7 +98,8 @@ app.use(cors({
     // Allow non-browser requests (e.g. mobile apps, local cURL, MCP stdio clients)
     if (!origin) return callback(null, true);
     // Allow any localhost / 127.0.0.1 development port (Vite 5173, preview 4173, 5174, etc.)
-    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
+    // Development only: in production a local page must not make credentialed calls to the API.
+    if (process.env.NODE_ENV !== 'production' && /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     return callback(null, false);
   },
@@ -339,7 +340,10 @@ app.get('/api/push/vapid-public-key', (req, res) => {
  */
 app.post('/api/push/subscribe', (req, res) => {
   const user = req.session?.user;
-  const login = user?.login || 'default';
+  if (!user?.login) {
+    return res.status(401).json({ success: false, error: 'AUTHENTICATION_REQUIRED' });
+  }
+  const login = user.login;
   const { subscription } = req.body || {};
 
   if (!subscription || !subscription.endpoint) {
@@ -1189,7 +1193,8 @@ app.get('/api/events', (req, res) => {
 });
 
 // 3. Seed Demo Graph
-app.post('/api/seed', requireAuth, async (req, res) => {
+// seedDemoGraph() runs MATCH (n) DETACH DELETE n, so like /api/reset it is maintainer-only.
+app.post('/api/seed', requireDevAuth, async (req, res) => {
   try {
     if (!isFalkorConnected) await initDb();
 
@@ -2007,7 +2012,7 @@ app.post('/api/act-iv-revalidate', requireAuthOrDemo, async (req, res) => {
 let isResettingDemo = false;
 let lastResetTimestamp = 0;
 
-app.post('/api/reset', async (req, res) => {
+app.post('/api/reset', requireDevAuth, async (req, res) => {
   const now = Date.now();
   if (isResettingDemo) {
     return res.status(429).json({ success: false, error: 'Demo reset already in progress. Please wait a moment.' });
@@ -3074,7 +3079,7 @@ app.post('/api/user/tier', (req, res) => {
       updated_at: new Date().toISOString(),
       source: isDevMaintainer ? 'dev_roster' : (globalHackathonMode ? 'hackathon_eval' : 'dev_override')
     };
-    saveSystemState();
+    syncSystemStateToDisk();
   }
 
   req.session.save((err) => {
@@ -4077,7 +4082,17 @@ app.post('/api/billing/verify-payment', (req, res) => {
         req.session.user.is_sponsor = true;
         req.session.user.sponsor_tier = sponsorTierLabel;
       }
-      const signedAuth = signAuthToken(req.session.user);
+      // Never place the GitHub OAuth access token in the client-readable cookie
+      // (signed, not encrypted). Mirror the sanitised payload used by the OAuth callback.
+      const cookieUser = {
+        githubId:  req.session.user.githubId,
+        login:     req.session.user.login,
+        name:      req.session.user.name || req.session.user.login,
+        avatarUrl: req.session.user.avatarUrl || '',
+        email:     req.session.user.email || '',
+        tier:      req.session.user.tier
+      };
+      const signedAuth = signAuthToken(cookieUser);
       if (signedAuth) {
         res.cookie('cavdax_auth', signedAuth, {
           httpOnly: true,
@@ -4399,9 +4414,9 @@ if (fs.existsSync(clientDistPath)) {
  */
 app.get('/api/user/notification-preferences', (req, res) => {
   const user = req.session?.user;
-  const login = user?.login || 'default';
+  const login = user?.login || null;
   const savedState = loadSystemState();
-  const prefs = savedState.notificationPreferences?.[login] || {
+  const prefs = (login && savedState.notificationPreferences?.[login]) || {
     emailAlerts: true,
     browserAlerts: true,
     targetEmail: user?.email || '',
@@ -4424,7 +4439,10 @@ app.get('/api/user/notification-preferences', (req, res) => {
  */
 app.post('/api/user/notification-preferences', async (req, res) => {
   const user = req.session?.user;
-  const login = user?.login || 'default';
+  if (!user?.login) {
+    return res.status(401).json({ success: false, error: 'AUTHENTICATION_REQUIRED' });
+  }
+  const login = user.login;
   const { emailAlerts, browserAlerts, targetEmail, webhookUrl, watchedRepos } = req.body || {};
 
   if (targetEmail && (typeof targetEmail !== 'string' || targetEmail.length > 254 || !targetEmail.includes('@'))) {
@@ -4477,7 +4495,7 @@ const RFC5322_EMAIL_REGEX = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-
 const simulationRecipientCooldown = new Map();
 const SIMULATION_RECIPIENT_COOLDOWN_MS = 60 * 1000; // 60 seconds per recipient
 
-app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, res) => {
+app.post('/api/alerts/simulate-invalidation', requireAuth, simulateAlertLimiter, async (req, res) => {
   const {
     repo = 'acme-inventory',
     decisionId = 'DEC-102',
@@ -4488,9 +4506,26 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
   } = req.body || {};
 
   const user = req.session?.user;
-  const login = user?.login || 'default';
+  // requireAuth guarantees an identity except in the unconfigured local-dev fallback (login === null).
+  const login = user?.login || req.authUser?.login || null;
   const savedState = loadSystemState();
-  const userPrefs = savedState.notificationPreferences?.[login];
+  const userPrefs = login ? savedState.notificationPreferences?.[login] : undefined;
+
+  // A caller may only send the test alert to an address that belongs to them
+  // (their GitHub email or the address saved in their alert preferences).
+  // This stops the endpoint being used as an open email relay.
+  const requestedEmail = (typeof targetEmail === 'string' && targetEmail.trim()) ? targetEmail.trim().toLowerCase() : null;
+  if (requestedEmail && login) {
+    const ownedEmails = [user?.email, userPrefs?.targetEmail]
+      .filter(Boolean)
+      .map((e) => String(e).trim().toLowerCase());
+    if (!ownedEmails.includes(requestedEmail)) {
+      return res.status(403).json({
+        success: false,
+        error: 'TARGET_EMAIL_NOT_REGISTERED: Test alerts can only be sent to your GitHub email or the address saved in your alert preferences. Save the address first, then retry.'
+      });
+    }
+  }
 
   // Resolve and validate recipient strictly — zero fallback to hardcoded emails
   const candidate = (
@@ -4531,8 +4566,12 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
     [`Decision:${decisionId}`, 'Fact:F-Auth-v1', `Source:${breakingSourceId} (SUPERSEDED by ${breakingSourceId})`]
   ];
 
-  // 1. Invalidate decision in FalkorDB if live
-  if (isFalkorConnected && graph) {
+  // 1. Invalidate decision in FalkorDB if live. This mutates the shared graph,
+  //    so only maintainers (or hackathon evaluation mode) may trigger it.
+  const maySimulateOnLiveGraph = globalHackathonMode
+    || req.authUser?.role === 'admin'
+    || Boolean(login && globalDevRoster.includes(login.toLowerCase()));
+  if (maySimulateOnLiveGraph && isFalkorConnected && graph) {
     try {
       await cascadeInvalidation(graph, breakingSourceId, 'ADR-001').catch(() => {});
     } catch (e) {
@@ -4557,13 +4596,16 @@ app.post('/api/alerts/simulate-invalidation', simulateAlertLimiter, async (req, 
 
   // 3. Dispatch real Resend email alert
   const hudUrl = `${CLIENT_URL || 'https://cavdax.sahnirmaan.live'}/console?highlight=${encodeURIComponent(decisionId)}&blast=true`;
-  // Dispatch Web Push to registered desktop Service Workers strictly for the requesting user
-  broadcastWebPushAlert({
-    title: 'CAVDAX: Divergence Alert',
-    body: `Decision ${decisionId} is invalidated by ${breakingSourceId}!`,
-    decision_id: decisionId,
-    url: hudUrl
-  }, login).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
+  // Dispatch Web Push to registered desktop Service Workers strictly for the requesting user.
+  // Without an identity there is no target, and a null target would broadcast to every subscriber.
+  if (login) {
+    broadcastWebPushAlert({
+      title: 'CAVDAX: Divergence Alert',
+      body: `Decision ${decisionId} is invalidated by ${breakingSourceId}!`,
+      decision_id: decisionId,
+      url: hudUrl
+    }, login).catch((err) => console.warn('[CAVDAX WebPush] Notice:', err.message));
+  }
 
   // Dispatch outgoing webhook if configured
   if (userPrefs?.webhookUrl) {
@@ -4719,9 +4761,11 @@ const handleGithubWebhook = async (req, res) => {
 
       for (const [login, prefs] of Object.entries(allPrefs)) {
         const watched = Array.isArray(prefs.watchedRepos) ? prefs.watchedRepos : [];
-        const isWatching = watched.length === 0 ||
-          watched.includes(repoFullName) ||
-          repoFullName.toLowerCase().startsWith(`${login.toLowerCase()}/`);
+        // An empty watch list means "watch nothing", never "watch every repo".
+        // Owners are always notified about repositories under their own login.
+        const repoLower = repoFullName.toLowerCase();
+        const isWatching = watched.some((w) => String(w).toLowerCase() === repoLower) ||
+          repoLower.startsWith(`${login.toLowerCase()}/`);
 
         if (isWatching) {
           targetRecipients.push({ login, prefs });
