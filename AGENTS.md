@@ -315,6 +315,26 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
        3. **Hover State**: An ultra-thin (5px), translucent, rounded thumb fades in smoothly to provide visual position feedback and draggable scrubbing for mouse-pointer users.
 
 
+0ab. **CommonMark 4-Space Indentation & Double-CRLF (`\r\r\n`) Parser Trap Invariant (Zero-Broken-Markdown Standard)**:
+   - **The CommonMark 4-Space Invariant**:
+     - Under CommonMark and GitHub Flavored Markdown (GFM), any line preceded by a blank line that begins with **four (4) or more spaces** (or a tab) is unequivocally interpreted as an indented code block (`<pre><code>`).
+     - When authoring centered headers (`<div align="center">`), `<picture>`, `<source>`, or badge arrays, NEVER indent child HTML tags with 4 spaces (`    <picture>`, `    <source...>`). GitHub will parse the child tags as raw code snippets with horizontal scrollbars.
+     - **The Strict Invariant**: All nested HTML elements inside Markdown files must use strictly **0 or 2 spaces** of indentation. Never use 4 spaces or tabs.
+   - **The Double Carriage Return (`\r\r\n`) Synthesis Trap**:
+     - On Windows environments, naive string replacements or cross-platform toolchains (e.g. running `.replace(/\n/g, '\r\n')` on files that already contain `\r\n`) produce synthetic double carriage returns: `\r\r\n`.
+     - CommonMark parsers process `\r\r\n` as two consecutive line breaks (`\n\n`), injecting synthetic blank lines between consecutive HTML elements. Combined with 4-space indentation, this breaks the entire README header into disjointed code boxes.
+     - **The Strict Invariant**: Always normalize files to clean LF (`\n`) by stripping all carriage returns (`content.replace(/\r/g, '')`) before writing to disk. Never perform blind regex injections of `\r\n`.
+   - **Explicit Self-Closing Void Elements & Continuous HTML Blocks**:
+     - Always format void HTML tags as self-closing: `<source media="..." srcset="..." />` and `<img src="..." alt="..." />`.
+     - Maintain continuous HTML blocks without blank lines that would break parser context.
+   - **Pre-Commit Verification Scan**:
+     - Scan staged markdown files before pushing:
+       ```bash
+       grep -P "\r\r" **/*.md && echo "CRCRLF DETECTED"
+       grep -Pn "^\s{4,}<(picture|source|img|a|strong|p|div|span)" **/*.md && echo "INDENTED HTML DETECTED"
+       ```
+
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.
@@ -351,9 +371,11 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
 
 
 
-4. **UTF-8 Encoding & Mojibake Prevention**:
+4. **UTF-8 Encoding, Linefeed Normalization & Mojibake Prevention**:
 
-   - All repository files are **UTF-8 without BOM**.
+   - All repository files are **UTF-8 without BOM**, normalized to single LF (`\n`).
+
+   - **Strict Ban on Double-CRLF (`\r\r\n`)**: Never allow `\r\r` in any file. Always strip `\r` before saving markdown or source files to eliminate synthetic blank lines on GitHub.
 
    - Never read, edit, or save files using Windows-1252, Latin-1, or system default encodings.
 
