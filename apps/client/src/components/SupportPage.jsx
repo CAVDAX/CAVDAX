@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ShieldCheck } from 'lucide-react';
+import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, AlertTriangle, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ShieldCheck } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 
@@ -643,6 +643,16 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
       window.location.href = '/api/auth/github?returnTo=/support';
       return;
     }
+    const isLocalhost = typeof window !== 'undefined' && (
+      window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname === '::1' ||
+      window.location.protocol === 'file:'
+    );
+    if (isLocalhost) {
+      showToast(false, 'Live sponsorship payments are disabled on localhost to prevent stranded funds. Sponsor on our production platform: https://cavdax.sahnirmaan.live/support');
+      return;
+    }
     setLoadingTier(tier.id);
 
     try {
@@ -798,6 +808,24 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
           </button>
         </div>
       </div>
+
+      {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '::1') && (
+        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs font-mono mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>Local Loopback Confinement: Live Razorpay payments are disabled on localhost to prevent stranded funds. Use the Evaluation Sponsor Pass below for local testing.</span>
+          </div>
+          <a
+            href="https://cavdax.sahnirmaan.live/support"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-white shrink-0 inline-flex items-center gap-1 font-bold"
+          >
+            <span>Production Support</span>
+            <ExternalLink size={12} />
+          </a>
+        </div>
+      )}
 
       <section className="pt-0 grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 mb-10 sm:mb-12">
         {TIERS.map((tier) => {
