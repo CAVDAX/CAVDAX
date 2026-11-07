@@ -9,6 +9,21 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.07 Competitive Analysis Modernization, Three-Tier Defense-in-Depth Model & Version Parity Hardening (November 7, 2026)
+- **Competitive Analysis Taxonomy Expansion (`COMPETITIVE_ANALYSIS_AND_DIFFERENTIATION.md`)**:
+  - Incorporated **Category 0: Codebase Vector RAG & Context Ingestion** (`Cursor @codebase`, `Copilot Workspace`, `Pinecone Code RAG`, `.cursorrules`), exposing why naive vector embeddings suffer from temporal/causal blindness and why prompt rule files fail due to context decay ("Lost in the Middle").
+  - Formulated the **GraphBLAS Sparse Boolean Semiring Matrix Equation** ($C = A \odot B$ over $(\lor, \land)$), proving sub-millisecond transitive reachability ($< 1\text{ms}$) in L3 cache versus $O(N \log N)$ vector re-embedding.
+  - Articulated the **Three-Tier Hermetic Defense-in-Depth Boundary**:
+    - *Tier 1 (IDE Pre-Flight Gate)*: MCP tools `check_intent_clearance` and `apply_code_change` reject non-compliant writes before files touch disk.
+    - *Tier 2 (Workstation Git Pre-Commit Hook)*: `npx cavdax check --staged` blocks unauthorized commits at the developer/agent terminal.
+    - *Tier 3 (Inviolable Remote CI Gate)*: `cavdax-gate.yml` querying `/api/github/repos/:owner/:repo/verify-action` blocks PR merges via branch protection rules even if local agents bypass hooks with `--no-verify`.
+  - Replaced stale GPL copyleft warnings with **Invariant 5**: formalizing the Apache-2.0 / BSL-1.1 dual licensing with Sigstore SLSA Level 3 build provenance.
+  - Synchronized private competitive analysis at `Z+\#(CAVDAX-Benefits)\#Competitors-Comparison\#CAVDAX_COMPETITIVE_ANALYSIS_AND_DIFFERENTIATION.md`.
+- **Roadmap Versioning & Distribution Alignment (`FUTURE_ROADMAP.md`)**:
+  - Bumped npm package milestone checklist entry from `@cavdax/mcp-server@1.2.6` to `@cavdax/mcp-server@1.2.8`.
+  - Codified the finalized decision for Option B (pointing npm package homepage directly to `https://cavdax.sahnirmaan.live`).
+
+
 ## 1.1.06 Team Headline 2-Line Polish, Profile Auth Reactivity & Baseline Act-1 Invariant (November 6, 2026)
 - **TeamPage Copy Tightened to Strictly 2 Lines (`TeamPage.jsx`)**:
   - Removed 24 characters of redundant introductory filler (*"An engineering collective"*).
@@ -1430,8 +1445,6 @@
   - Broadened `isAdrPath` to recognize top-level root ADRs (`ADR-*.md`, `0001-*.md`), `docs/ADR-*.md`, `design/adr`, and `wiki/adrs`, preventing false 0-ADR scans on non-standard folder layouts.
 - **Starter Pull Request Confirmation Safety Modal (`apps/client/src/components/ConnectedRepoWorkspace.jsx`)**:
   - Added a defensive confirmation modal prior to triggering `initStarterAdr`, protecting users against accidental real PR generation on production or monorepos.
-
-## 1. Executive Summary of Complete Theme & Scroller Makeover
 
 ## 1.0.58 Latest Session Achievements (November 2, 2026 - Causal Interception Enclave 3D Dynamic Camera Tracking, Vector Domain Glyphs, Keyboard Locks, and Wavefront Sweeps)
 

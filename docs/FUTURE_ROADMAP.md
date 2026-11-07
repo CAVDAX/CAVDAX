@@ -611,7 +611,7 @@ Phase 3.5 — Backend & CLI Resilience
 
 ```
 Phase 1 — Already Done
-  ✅ NPM package (@cavdax/mcp-server@1.2.6)
+  ✅ NPM package (@cavdax/mcp-server@1.2.8)
   ✅ Hosted SSE transport
   ✅ Auth middleware + rate limiting
   ✅ Audit endpoint + Audit UI tab
@@ -704,7 +704,7 @@ Currently, `apps/mcp-server/package.json` configures:
 3. **Option C (Dedicated Docs Subpath)**:
    - Update to `https://cavdax.sahnirmaan.live/mcp` or dedicated quickstart page.
 
-*Decision pending discussion between Geetika Chugh and Suneet Chugh before next npm release (v1.2.6).*
+*Decision Finalized (Implemented in v1.2.8)*: Option B (`https://cavdax.sahnirmaan.live`) was selected and formally shipped in `@cavdax/mcp-server@1.2.8` with Apache-2.0 / BSL-1.1 dual licensing, providing direct live product access from npm.
 
 
 
