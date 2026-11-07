@@ -24,8 +24,16 @@ export default function ConnectRepoModal({
   onConnectRepo,
   onDisconnectRepo,
   connectedRepoIds = [],
-  returnTo = '/console'
+  returnTo = '/console',
+  connectedRepoCount = 0,
+  repoLimit = 1,
+  tier = 'free',
+  onUpgrade
 }) {
+  const effectiveConnectedCount = typeof connectedRepoCount === 'number' && connectedRepoCount > 0
+    ? connectedRepoCount
+    : (Array.isArray(connectedRepoIds) ? connectedRepoIds.length : 0);
+  const isLimitReached = repoLimit !== -1 && effectiveConnectedCount >= repoLimit;
   const githubAuthUrl = `/api/auth/github?returnTo=${encodeURIComponent(`${returnTo}?connected=1&openConnectRepo=1`)}`;
   const [repos, setRepos] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -263,6 +271,10 @@ export default function ConnectRepoModal({
   };
 
   const handleSelectRepo = (repo) => {
+    if (isLimitReached) {
+      if (onUpgrade) onUpgrade();
+      return;
+    }
     playApprovalChime();
     onConnectRepo({
       id: String(repo.id),
@@ -280,6 +292,10 @@ export default function ConnectRepoModal({
 
   const handleConnectCustom = (e) => {
     e.preventDefault();
+    if (isLimitReached) {
+      if (onUpgrade) onUpgrade();
+      return;
+    }
     const rawInput = customRepoUrl.trim();
     if (!rawInput) return;
 
@@ -382,9 +398,18 @@ export default function ConnectRepoModal({
               <Github className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-950 dark:text-white">
-                Connect GitHub Repository
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-slate-950 dark:text-white">
+                  Connect GitHub Repository
+                </h2>
+                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
+                  isLimitReached
+                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold'
+                    : 'border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'
+                }`}>
+                  {effectiveConnectedCount} / {repoLimit === -1 ? '∞' : repoLimit} ({tier === 'free' ? 'Community' : (tier === 'pro' ? 'Pro' : 'Enterprise')})
+                </span>
+              </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
                 Link a repository to generate an enclosed causal verification graph.
               </p>
@@ -403,6 +428,33 @@ export default function ConnectRepoModal({
 
         {/* Content Body */}
         <div data-lenis-prevent className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4">
+          {/* Plan Limit Warning Banner */}
+          {isLimitReached && (
+            <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-500/10 space-y-2">
+              <div className="flex items-center justify-between gap-2 text-amber-600 dark:text-amber-400 text-xs font-mono font-medium">
+                <div className="flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Plan Limit Reached ({effectiveConnectedCount}/{repoLimit})</span>
+                </div>
+                {onUpgrade && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      playClick();
+                      onUpgrade();
+                    }}
+                    className="px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 text-[11px] font-mono font-semibold transition-colors cursor-pointer shadow-xs"
+                  >
+                    Upgrade to Pro
+                  </button>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 font-sans leading-relaxed">
+                Your {tier === 'free' ? 'Community' : 'Pro'} plan allows up to {repoLimit} connected repository. Disconnect an existing repository below or upgrade to connect additional repositories.
+              </p>
+            </div>
+          )}
+
           {user ? (
             <>
               {/* Search Box */}
@@ -523,6 +575,19 @@ export default function ConnectRepoModal({
                                 </button>
                               )}
                             </div>
+                          ) : isLimitReached ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                playClick();
+                                if (onUpgrade) onUpgrade();
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-mono font-medium transition-all shrink-0 flex items-center gap-1.5 cursor-pointer border border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/5 hover:bg-amber-500/10"
+                              title="Plan limit reached. Upgrade to connect more repositories."
+                            >
+                              <Lock className="w-3 h-3" />
+                              <span>Upgrade</span>
+                            </button>
                           ) : (
                             <button
                               onClick={() => handleSelectRepo(repo)}
@@ -643,20 +708,28 @@ export default function ConnectRepoModal({
 
           {/* Manual URL Link */}
           <form onSubmit={handleConnectCustom} className="pt-3 border-t border-slate-200 dark:border-white/15">
-            <label className="block text-[10px] uppercase font-mono tracking-wider text-slate-400 mb-1.5">
-              Link Public Repository URL
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-[10px] uppercase font-mono tracking-wider text-slate-400">
+                Link Public Repository URL
+              </label>
+              {isLimitReached && (
+                <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400">
+                  Limit reached ({effectiveConnectedCount}/{repoLimit})
+                </span>
+              )}
+            </div>
             <div className="flex gap-2">
               <input
                 type="text"
-                placeholder="e.g. github.com/owner/repository"
+                placeholder={isLimitReached ? "Disconnect a repo or upgrade to link more" : "e.g. github.com/owner/repository"}
                 value={customRepoUrl}
+                disabled={isLimitReached}
                 onChange={(e) => setCustomRepoUrl(e.target.value)}
-                className="flex-1 h-8 px-3 rounded-lg border border-slate-200 dark:border-white/15 bg-slate-100/60 dark:bg-white/5 text-xs text-slate-950 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-slate-400 dark:focus:border-white/30"
+                className="flex-1 h-8 px-3 rounded-lg border border-slate-200 dark:border-white/15 bg-slate-100/60 dark:bg-white/5 text-xs text-slate-950 dark:text-white placeholder:text-slate-400 focus:outline-none focus:border-slate-400 dark:focus:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="submit"
-                disabled={!customRepoUrl.trim()}
+                disabled={!customRepoUrl.trim() || isLimitReached}
                 className="px-3 h-8 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:opacity-90 transition-opacity flex items-center gap-1.5 cursor-pointer"
               >
                 <span>Add</span>

@@ -308,13 +308,21 @@ export default function App() {
   };
 
   const handleConnectRepo = (newRepo) => {
+    const targetKey = (newRepo.full_name || newRepo.name || String(newRepo.id || '')).toLowerCase().trim();
+    const existingMatch = connectedRepos.find(r => {
+      const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
+      return (targetKey && key === targetKey) || (r.id && newRepo.id && String(r.id) === String(newRepo.id));
+    });
+
+    const repoLimit = activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 10 : -1);
+    if (!existingMatch && repoLimit !== -1 && connectedRepos.length >= repoLimit) {
+      setIsConnectRepoModalOpen(false);
+      setActiveTab('profile');
+      return;
+    }
+
     let resolvedRepo = newRepo;
     setConnectedRepos(prev => {
-      const targetKey = (newRepo.full_name || newRepo.name || String(newRepo.id || '')).toLowerCase().trim();
-      const existingMatch = prev.find(r => {
-        const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
-        return (targetKey && key === targetKey) || (r.id && newRepo.id && String(r.id) === String(newRepo.id));
-      });
       resolvedRepo = existingMatch ? { ...existingMatch, ...newRepo, id: existingMatch.id || newRepo.id } : newRepo;
       const remaining = prev.filter(r => {
         const key = (r.full_name || r.name || String(r.id || '')).toLowerCase().trim();
@@ -1976,6 +1984,13 @@ export default function App() {
         connectedRepoIds={connectedRepos.map(r => r.id)}
         onDisconnectRepo={handleDisconnectRepo}
         returnTo={TAB_TO_PATH[activeTab] || "/console"}
+        connectedRepoCount={connectedRepos.length}
+        repoLimit={activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 10 : -1)}
+        tier={activeTierKey}
+        onUpgrade={() => {
+          setIsConnectRepoModalOpen(false);
+          setActiveTab('profile');
+        }}
       />
     </div>
   );
