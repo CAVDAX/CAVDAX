@@ -8314,7 +8314,7 @@ module.exports = {
 
       screens: {
 
-        'pro-27': { 'raw': '(min-width: 1440px) and (min-height: 960px)' },
+        'pro-27': { 'raw': '(min-width: 1400px) and (min-height: 820px)' },
 
       }
 
@@ -8334,21 +8334,22 @@ module.exports = {
 
 | :--- | :--- | :--- |
 
-| **Section Outer Padding** | `py-4 sm:py-6 px-3 sm:px-6` | `pro-27:py-10 pro-27:px-8` |
+| **Section Outer Padding** | `py-4 sm:py-6 px-3 sm:px-6` | `pro-27:py-8 pro-27:px-8` |
 
-| **Header Margin** | `mb-2.5 sm:mb-4` | `pro-27:mb-10` |
+| **Header Margin** | `mb-2.5 sm:mb-4` | `pro-27:mb-6` |
 
-| **Headline Typography** | `text-xl sm:text-2xl lg:text-3xl` | `pro-27:text-4xl` |
+| **Headline Typography** | `text-xl sm:text-2xl lg:text-3xl` | `pro-27:text-[34px]` |
 
-| **Subtitle Typography** | `text-[10.5px] sm:text-xs leading-snug` | `pro-27:text-sm pro-27:leading-relaxed` |
+| **Subtitle Typography** | `text-[10.5px] sm:text-xs leading-snug` | `pro-27:text-[13px] pro-27:leading-relaxed` |
 
-| **Table Header Height** | `py-2 px-3 sm:px-4 text-[10px] sm:text-[10.5px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11px]` |
+| **Table Header Height** | `py-2 px-3 sm:px-4 text-[10px] sm:text-[10.5px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11.5px]` |
 
-| **Table Row Cell Height** | `py-1.5 sm:py-2 px-3 sm:px-4 text-[10.5px] sm:text-[11px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[11.5px]` |
+| **Table Row Cell Height** | `py-1.5 sm:py-2 px-3 sm:px-4 text-[10.5px] sm:text-[11px]` | `pro-27:py-3.5 pro-27:px-5 pro-27:text-[12.5px]` |
 
-| **Table Bottom Bar** | `py-1.5 sm:py-2 text-[10px]` | `pro-27:p-3 pro-27:text-[11px]` |
+| **Table Bottom Bar** | `py-1.5 sm:py-2 text-[10px]` | `pro-27:py-2.5 pro-27:text-[11px]` |
 
-| **Total Section Height** | **~496px – 538px** (Fits 100% in 540px+ viewport) | **~732px** (Airy, luxurious fit in 1440px viewport) |
+| **Total Section Height** | **~496px – 538px** (Fits 100% in 540px+ viewport) | **~670px – 720px** (Generous, institutional fit in 820px-1440px desktop viewports) |
+| **Subsequent Section Isolation Buffer** | Standard `py-16` on `#faq-section` | `pro-27:pt-28 pro-27:pb-20` on `#faq-section` (113px buffer prevents FAQ text peeking into viewport fold) |
 
 
 
@@ -8452,3 +8453,185 @@ Before approving any change touching a multi-panel sidebar:
 - [ ] Verify no list is hardcoded to `< 180px` (`max-h-24` or `max-h-32`) when siblings are closed.
 - [ ] Collapse ALL panels simultaneously; verify the intentional zero-state placeholder appears rather than a blank whitespace block.
 - [ ] Expand and collapse panels rapidly; verify the custom scroll rail thumb height and position recalculate immediately without page reload.
+
+
+---
+
+## 79. Bi-Directional Interactive Graph Canvas & Master-Detail List Synchronization
+
+### 79.1 Architectural Principle & The Static Disconnect Anti-Pattern
+In complex engineering dashboards (such as architectural decision registries, causal graph viewers, and code intelligence workspaces), an itemized list of records (e.g., Architecture Decision Records, PR diffs, test suites) frequently sits beside a live SVG/Canvas visual graph (such as a Directed Acyclic Graph or node-link diagram).
+
+A major ergonomic failure occurs when these two visual representations operate in disconnected silos: the user reads an ADR in the sidebar list, but has no direct way to highlight or isolate its corresponding node, decision diamond, or blast radius on the canvas without manually hunting through dozens of canvas nodes.
+
+### 79.2 Core Implementation Invariants
+
+#### 1. Semantic Node Prioritization
+A single record may associate with multiple graph node archetypes (e.g., an ADR document represents a `Source` node, but also defines one or more `Decision` diamond/rhombus nodes). The selection resolver must prioritize the most actionable, semantically relevant node:
+```javascript
+const findNodeForAdr = (adr) => {
+  if (!scan?.graph?.nodes || !adr) return null;
+  // 1. Prioritize Decision diamond nodes
+  const decisionNode = scan.graph.nodes.find(n => 
+    n.label === 'Decision' && (n.source_adr === adr.id || n.adr_path === adr.path || n.id === adr.decision_id)
+  );
+  if (decisionNode) return decisionNode;
+
+  // 2. Fall back to Source document node
+  const sourceNode = scan.graph.nodes.find(n => 
+    n.label === 'Source' && (n.id === adr.id || n.file === adr.path || n.adr_path === adr.path)
+  );
+  if (sourceNode) return sourceNode;
+
+  // 3. Fallback to path or id match
+  return scan.graph.nodes.find(n => n.id === adr.id || n.path === adr.path) || null;
+};
+```
+
+#### 2. Toggle De-Selection (Clean Null State)
+Clicking an already-highlighted item must cleanly toggle off the selection and return the canvas and sidebar to neutral:
+```javascript
+const handleAdrClick = (adr) => {
+  playClick();
+  if (isAdrSelected(adr)) {
+    setSelectedNode(null);
+  } else {
+    const targetNode = findNodeForAdr(adr);
+    if (targetNode) {
+      setSelectedNode(targetNode);
+    }
+  }
+};
+```
+
+#### 3. High-Contrast Active State & Tactile Indicator
+The active item card must be unmistakably distinguished from idle hover states:
+```jsx
+<div
+  key={a.path || a.id}
+  onClick={() => handleAdrClick(a)}
+  className={`px-3 py-2 text-[11px] leading-snug transition-all cursor-pointer border-l-2 ${
+    isSelected
+      ? 'border-l-amber-500 bg-amber-500/10 dark:bg-amber-500/15'
+      : 'border-l-transparent hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
+  }`}
+>
+  <div className="flex items-center justify-between gap-1.5">
+    <div className="text-slate-900 dark:text-slate-100 font-semibold truncate flex items-center gap-1.5 min-w-0">
+      {isSelected && (
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+      )}
+      <span className={isSelected ? 'text-amber-700 dark:text-amber-300 font-bold' : ''}>
+        {a.id}: {a.title}
+      </span>
+    </div>
+    {/* Child Actions */}
+  </div>
+</div>
+```
+
+#### 4. Mandatory Event Propagation Isolation (`e.stopPropagation()`)
+Any secondary buttons, disclosure toggles, or external jump links embedded inside the list card MUST include `e.stopPropagation()`. Failure to isolate child events causes secondary interactions (such as expanding impacted code files or opening GitHub links in a new tab) to inadvertently trigger or toggle graph node selection.
+
+---
+
+## 80. Modal Header AI-De-Slopping, Two-Line Quota Notices & Tactile Secondary Action Restraint
+
+### 80.1 The "AI Prototype Pill" Anti-Pattern
+AI-generated code routinely clutters modal headers with artificial bracketed pill tags, such as:
+```jsx
+// BAD: AI-generated clutter pattern
+<div className="flex items-center gap-2">
+  <h2>Connect GitHub Repository</h2>
+  <span className="badge">[ 1 / 1 (Community) ]</span>
+</div>
+```
+This pattern violates § 1.1 (Ban on Bracketed Tags) and § 74.1 (Ban on Floating Eyebrow Clutter). It screams "unpolished AI prototype" and pollutes executive typography.
+
+### 80.2 The Two-Line Scan-Friendly Quota Architecture
+When an account hits a subscription or workspace limit (e.g., repository capacity ceiling), do NOT bundle the warning into a dense, unformatted paragraph. Split the notification into two purposeful lines:
+1. **Line 1 (Status/Fact)**: Crisp statement of the active plan limit.
+2. **Line 2 (Action/Guidance)**: Clear explanation of operator choices (disconnect existing vs upgrade), rendered in secondary muted text:
+```jsx
+<div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-500/10 space-y-2.5">
+  <div className="flex items-center justify-between gap-2 text-amber-600 dark:text-amber-400 text-xs font-mono font-medium">
+    <div className="flex items-center gap-1.5">
+      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+      <span>Plan Limit Reached</span>
+    </div>
+    {/* Tactile Upgrade CTA */}
+  </div>
+  <div className="text-[11px] text-slate-600 dark:text-slate-300 font-sans leading-relaxed space-y-0.5">
+    <p>Your Community plan allows up to 1 connected repository.</p>
+    <p className="text-slate-500 dark:text-slate-400">
+      Disconnect an existing repository below or upgrade to connect additional repositories.
+    </p>
+  </div>
+</div>
+```
+
+### 80.3 Tactile Button Restraint vs Gimmicky Canvas Shaders (§ 62 Compliance)
+While primary landing page authentication buttons (e.g., hero `Connect GitHub` and `Dev PAT`) feature sophisticated fluid SVG wavefill animations, **secondary action callouts inside modals must remain tactile and disciplined**:
+- **Never** inject wavefill shaders or canvas animations into small modal banners.
+- Use a solid, tactile amber button with an `ArrowUpRight` SVG icon.
+- Implement subtle micro-motion hover translation:
+```jsx
+<button
+  type="button"
+  onClick={onUpgrade}
+  className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-mono font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs hover:shadow group"
+>
+  <span>Upgrade to Pro</span>
+  <ArrowUpRight className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+</button>
+```
+
+---
+
+## 81. Multi-Display Viewport Containment & Isolation Buffer Architecture (27" Desktop vs Laptop)
+
+### 81.1 The Multi-Display Density Dilemma
+Single-screen presentations, complex comparison matrices, and interactive bento grids face a fundamental dilemma:
+- **On Laptop Screens (HP Victus 15.6" at 125% DPI scale = 1536×750, MacBook 13"-14" = 1440×800)**: The entire section must fit inside a single viewport ($le 750	ext{px}$) with zero vertical scrolling or overflow.
+- **On 27-inch Desktop Displays (1080p, 1440p QHD)**: The same compact table appears squished, dense, and vertically choked, surrounded by excessive empty whitespace.
+
+### 81.2 Mechanical Breakpoint Calibration (`pro-27`)
+A common pitfall is defining desktop variants using arbitrary heights like `min-height: 960px`. On a standard 1080p 27" desktop monitor running Google Chrome in windowed mode (with standard Windows taskbar, Chrome tabs, URL bar, and bookmarks bar), the inner window height is approximately **~874px**. As a result, a `960px` rule fails to fire entirely!
+
+#### Calibrated Tailwind Variant:
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      screens: {
+        'pro-27': { 'raw': '(min-width: 1400px) and (min-height: 820px)' },
+      },
+    },
+  },
+};
+```
+- **Laptop Invariant**: Standard laptops in windowed mode have inner heights strictly $le 800	ext{px}$, safely bypassing `pro-27:` and maintaining their compact single-screen clamp.
+- **Desktop Invariant**: 27" monitors in windowed mode (874px), F11 mode (1080px), and QHD (1440px) reliably trigger `pro-27:`.
+
+### 81.3 Proportional Density Expansion
+When `pro-27:` triggers:
+- Increase row vertical padding from `py-1.5` (8px) to `pro-27:py-3.5` (14px).
+- Expand row height from 51px to 63px.
+- Scale typography from `text-[11px]` to `pro-27:text-[12.5px]` (titles) and `pro-27:text-[11.5px]` (body).
+- Scale overall table height from 456px to 567px, filling the expansive display with commanding institutional presence.
+
+### 81.4 Downstream Section Isolation Buffer (Fold-Peeking Prevention)
+When a section is centered via `min-h-screen flex flex-col justify-center`, scrolling to align the section title with the top of the monitor can pull the bottom of the section upward, causing the top heading of the next section (e.g. `#faq-section`) to peek over the bottom fold.
+
+#### The Isolation Buffer Rule:
+Add proportional top padding buffers to downstream landmark sections:
+```jsx
+<section
+  id="faq-section"
+  className="pt-16 sm:pt-20 pro-27:pt-28 pb-20 pro-27:pb-32 px-6 max-w-4xl mx-auto"
+>
+  {/* FAQ content */}
+</section>
+```
+This pushes the downstream heading strictly $> 100	ext{px}$ below the viewport fold across all desktop viewports (1920×874, 1920×1080, 2560×1440), guaranteeing 100% visual isolation.

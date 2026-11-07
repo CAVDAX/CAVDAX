@@ -711,12 +711,12 @@ CAVDAX is deployed and running live in production:
 The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain operational interface spanning 9 specialized views:
 
 1. **Architectural Overview (`/overview` or `/`)**: Value proposition, Causal Invalidation Radar, interactive Cytoscape.js Directed Acyclic Graph canvas with Linear-grade command search ribbon (`Cmd+K` / `Ctrl+K`), and 1-click kinetic sidebar collapse for 100% full-viewport exploration.
-2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, tracking active branch mutations, persistent draggable split-pane handles with double-click toggle, and universal spring-loaded dialog physics.
+2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, universal plan quota metering (enforcing strict repository limits across public and private codebases), bi-directional ADR-to-Graph selection synchronization (clicking an ADR card isolates its corresponding `:Decision` diamond on the live canvas), multi-panel dynamic flex height absorption, and universal spring-loaded dialog physics.
 3. **MCP Action Playground (`/mcp`)**: Interactive pre-flight verification console with dynamic traversal depth sliders (`1..4` hops), live Cypher inspection, and sub-millisecond execution timing metrics.
 4. **4-Act Storyline Stepper (`/walkthrough`)**: Interactive demonstration stepper guiding evaluators through baseline validity, upstream commit mutation, enclosed MCP gate rejection, and Act IV revalidation.
 5. **Immutable Compliance Audit Ledger (`/audit`)**: Tamper-evident ledger providing full provenance and execution verification history across all agent actions.
 6. **Core Maintainers & Attribution (`/team`)**: Project research attribution, engineering background, and architecture credits.
-7. **Developer Profile & Responsive Dual-Display Engine (`/profile`)**: Live plan quota consumption monitoring, capability tiers, secure MCP key generation, and an adaptive dual-layout engine calibrated for both **HP Victus laptop single-screen viewports (1536×864, zero vertical scrolling)** and **27-inch desktop monitors (1440p/1080p, spacious layout)** with profile-exclusive transparent navbar.
+7. **Developer Profile & Multi-Display Viewport Engine (`/profile`)**: Live plan quota consumption monitoring, capability tiers, secure MCP key generation, and an adaptive multi-display responsive engine calibrated for both **laptop single-screen viewports (HP Victus 15.6" at 1536×750 and MacBook at 1440×800, zero vertical scrolling)** and **27-inch desktop monitors (1080p/1440p windowed and fullscreen)** via the calibrated `pro-27` breakpoint with downstream section isolation buffers to prevent fold-peeking.
 8. **Community Stewardship & Operational Backing (`/support`)**: Transparent operational resource breakdown and community sponsorship integration.
 9. **Zero-Trust Administrative Enclave**: Protected diagnostic console, developer IP whitelisting gate, and system status roster.
 
@@ -751,7 +751,10 @@ CAVDAX implements comprehensive defense-in-depth security across both API and ru
   * Container-relative sliding indicator tracking (`usePillTracker`), eliminating cross-route `layoutId` animation artifacts.
   * Portal-hoisted modals (`createPortal`) with `data-lenis-prevent` to deconflict global smooth-scroll momentum from dialog viewports.
   * Collapsible code diff payload inspection with accessible disclosure states (`aria-expanded`).
-  * Decoupled left-rail architectural scroll cues for zero-collision master-detail workspace resizing.
+  * Decoupled left-rail architectural scroll cues for zero-collision master-detail workspace resizing.
+  * Bi-directional master-detail selection: clicking an ADR card highlights its corresponding decision diamond node on the DAG with toggle de-selection and isolated child propagation.
+  * Two-line scan-friendly quota warnings and tactile micro-motion upgrade CTAs, banning AI header bracket tags and reserving wavefill shaders for hero authentication.
+  * Dual-dimension `pro-27` responsive calibration (`min-width: 1400px and min-height: 820px`) with downstream section isolation padding buffers eliminating fold-peeking.
 
 ---
 
