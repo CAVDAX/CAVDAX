@@ -112,9 +112,19 @@ export default function GraphCanvas({
   onTestDecision,
   isVerifyingAction = false,
   isSidebarCollapsed = false,
-  onToggleSidebar
+  onToggleSidebar,
+  currentAct = 1
 }) {
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.search) {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const z = parseFloat(p.get('zoom'));
+        if (!isNaN(z) && z >= 0.5 && z <= 2.5) return z;
+      } catch {}
+    }
+    return 1;
+  });
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [isPanning, setIsPanning] = useState(false);
   const [startPan, setStartPan] = useState({ x: 0, y: 0 });
@@ -226,10 +236,21 @@ export default function GraphCanvas({
     let url = window.location.href;
     try {
       const parsed = new URL(window.location.href);
+      if (isDemo && currentAct) {
+        parsed.searchParams.set('act', String(currentAct));
+      } else if (!isDemo && repo) {
+        const repoStr = typeof repo === 'object' ? (repo.full_name || repo.name || '') : String(repo);
+        if (repoStr) parsed.searchParams.set('repo', repoStr);
+      }
       if (selectedNodeId) {
         parsed.searchParams.set('node', selectedNodeId);
       } else {
         parsed.searchParams.delete('node');
+      }
+      if (zoom && Math.abs(zoom - 1) > 0.05) {
+        parsed.searchParams.set('zoom', zoom.toFixed(2));
+      } else {
+        parsed.searchParams.delete('zoom');
       }
       url = parsed.toString();
     } catch {
