@@ -729,7 +729,12 @@ CAVDAX enforces a mandatory **7-Phase Cloudflare Security & Pen-Test Audit Stand
 CAVDAX implements comprehensive defense-in-depth security across both API and runtime layers:
 
 * **Strict Administrative Authorization (`requireDevAuth`)**: Critical administrative endpoints (`POST /api/system/dev-ips`, `/api/system/dev-roster`, `/api/system/hackathon-mode`) enforce cryptographically hashed developer credentials and remote IP whitelisting.
-* **Path Traversal Defenses**: All file modification operations (`apply_code_change`, `/api/ingest`) validate target paths against project root boundaries to prevent arbitrary file access outside the sandbox.
+* **Deepest-Ancestor Symlink Confinement (`realpathOfDeepestAncestor`)**: In `apply_code_change`, target file paths resolve deepest existing ancestors via `fs.realpathSync` to guarantee that symlinks inside the sandbox cannot escape to parent host filesystems (`BLOCKED_PATH_TRAVERSAL`).
+* **Protected File Writing Invariant (`isProtectedWritePath`)**: Regardless of decision approval status, autonomous agents are strictly barred from writing to git internals (`.git/`), environment secrets (`.env*`), or CI/CD workflow definitions (`.github/`) (`BLOCKED_PROTECTED_PATH`).
+* **Decision Target-File Confinement**: When a graph decision declares a `target_file`, agent writes to any other file are rejected (`BLOCKED_TARGET_FILE_MISMATCH`).
+* **Fail-Closed Unknown Decisions**: Gate verification treats ungrounded or unknown decisions as security violations (`BLOCKED_UNKNOWN_DECISION`), never failing open.
+* **Diff-Aware Patch Gate Scanning**: Pull request and commit gating (`cavdax check --pr`, `--staged`, `--sha`) inspects added lines in the patch diff rather than whole historical files, eliminating false-positive cascades on legacy files while maintaining strict enforcement for newly introduced code.
+* **Open Email Relay & Cascade Mutation Gating**: The alert simulation endpoint (`POST /api/alerts/simulate-invalidation`) enforces session authentication, restricts test recipients to verified registered addresses, and restricts live graph mutation to authorized maintainers.
 * **Client IP Spoofing Mitigation**: The gateway inspects proxy socket addresses rather than untrusted `X-Forwarded-For` headers to prevent spoofed IP bypasses.
 * **Zero-Fallback Identity Sanitization & Multi-Layer Recipient Validation**: Outbound alert simulation endpoints strictly reject empty or unconfigured targets with explicit HTTP 400 (`MISSING_RECIPIENT_EMAIL`, `INVALID_EMAIL_FORMAT`), eliminating prototype developer fallback stubs and preventing inadvertent notifications or identity leaks.
 * **Production Security Headers**: All responses include strict HTTP security directives:

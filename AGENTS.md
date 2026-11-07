@@ -781,13 +781,15 @@ Whenever your current task touches, modifies, refactors, creates, adds, or **REM
 
      - Return to the active feature branch (`git checkout frontend`).
 
-- **Conventional Commit Standard & Vercel Quota Optimization**:
+- **Conventional Commit Standard & CI Directive Hygiene**:
 
-  - Use conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
+  - Use concise conventional prefixes: `feat:`, `fix:`, `docs:`, `refactor:`, `perf:`, `test:`, `chore:`.
 
-  - **Strict `[skip vercel]` vs `[skip ci]` Distinction (Critical Invariant)**:
-    - **Code Commits (`backend`, `infra`, `scripts`, `contracts`, `server`)**: **ALWAYS use `[skip vercel]` — NEVER use `[skip ci]`**. This instructs Vercel to skip building preview deployments (saving our 100/day quota) while **allowing GitHub Actions CI to execute all backend automated test suites and status checks**. Using `[skip ci]` on code commits inadvertently cancels GitHub Actions CI, blinding the team to regressions.
-    - **Documentation & Meta Commits (`docs/`, `*.md`, `README.md`, `DEV_SESSION_STATE.md`)**: Use `[skip ci] [skip vercel]` (or `[skip ci]`) to skip both Vercel preview builds and GitHub Actions runners when no executable code is modified.
+  - **Production Deployment Architecture (Cloud VM + Cloudflare)**:
+    - CAVDAX deploys to an Ubuntu Cloud VM running Docker Compose (`cavdax-server`, `cavdax-client`, `cavdax-falkordb`, `cavdax-caddy`) fronted by Cloudflare DNS/SSL. Continuous deployment is handled via `.github/workflows/deploy.yml` on merges to `main`.
+    - **Universal Ban on `[skip vercel]`**: CAVDAX does NOT use Vercel. Never include `[skip vercel]` or vendor-irrelevant tags in commit messages.
+    - **Code Commits (`backend`, `frontend`, `infra`, `server`, `mcp-server`)**: Use clean conventional commits without skip tags. Never use `[skip ci]` on code commits so that GitHub Actions CI test suites (`ci.yml`, `cavdax-gate.yml`) always execute.
+    - **Documentation & Meta Commits (`docs/`, `*.md`, `README.md`, `DEV_SESSION_STATE.md`)**: Use `[skip ci]` when no executable code is touched to avoid unnecessary GitHub Actions runner minutes.
 
 - **Experimental Spikes & Archive Tags Invariant (Never Merge Spikes into Main/Feature Branches)**:
 
