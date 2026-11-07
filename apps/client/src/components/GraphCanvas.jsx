@@ -171,7 +171,12 @@ export default function GraphCanvas({
     if (node && node.x !== undefined && node.y !== undefined && containerRef.current) {
       const cw = containerRef.current.clientWidth;
       const ch = containerRef.current.clientHeight;
-      setPan({ x: cw / 2 - node.x * zoom, y: ch / 2 - node.y * zoom });
+      if (cw > 0 && ch > 0) {
+        setPan({
+          x: Math.round(cw / (2 * zoom) - node.x),
+          y: Math.round(ch / (2 * zoom) - node.y)
+        });
+      }
     }
   };
 
@@ -439,6 +444,30 @@ export default function GraphCanvas({
       // ignore
     }
   }, [graphData]);
+
+  // Viewport-aware auto-center: center offscreen node without disturbing user focus if already visible
+  useEffect(() => {
+    if (!selectedNodeId || !nodes || nodes.length === 0 || !containerRef.current) return;
+    const targetNode = nodes.find(n => n.id === selectedNodeId);
+    if (!targetNode || targetNode.x === undefined || targetNode.y === undefined) return;
+
+    const cw = containerRef.current.clientWidth;
+    const ch = containerRef.current.clientHeight;
+    if (cw <= 0 || ch <= 0) return;
+
+    // Visual screen position under current zoom and pan
+    const screenX = zoom * (targetNode.x + pan.x);
+    const screenY = zoom * (targetNode.y + pan.y);
+
+    // Only pan if node is outside safe viewport bounds (with 80px margin)
+    const isVisible = screenX >= 80 && screenX <= (cw - 80) && screenY >= 80 && screenY <= (ch - 80);
+    if (!isVisible) {
+      setPan({
+        x: Math.round(cw / (2 * zoom) - targetNode.x),
+        y: Math.round(ch / (2 * zoom) - targetNode.y)
+      });
+    }
+  }, [selectedNodeId]);
 
   function getNodeColors(node) {
     const inBlast = blastNodeIds.has(node.id);

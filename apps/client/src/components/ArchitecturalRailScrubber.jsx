@@ -267,7 +267,7 @@ export default function ArchitecturalRailScrubber({ activeTab = 'landing' }) {
       const el = document.getElementById(sec.id);
       if (el) {
         if (window.__lenis) {
-          window.__lenis.scrollTo(el, { offset: sec.id === 'brand-intro' ? 0 : -30 });
+          window.__lenis.scrollTo(el, { offset: (sec.id === 'brand-intro' || sec.id === 'comparison-matrix') ? 0 : -30 });
         } else {
           el.scrollIntoView({ behavior: 'smooth' });
         }

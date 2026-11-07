@@ -137,6 +137,17 @@ export default function PullCordLampToggle({
 
         p.x += p.vx * dt;
         p.y += p.vy * dt;
+
+        // Defensive radial & bounding clamp: prevent cord from ever exceeding physical length (240px)
+        const curDistFromAnchor = Math.hypot(p.x - ANCHOR_X, p.y - ANCHOR_Y);
+        const MAX_PHYSICAL_DIST = 240;
+        if (curDistFromAnchor > MAX_PHYSICAL_DIST) {
+          const angle = Math.atan2(p.y - ANCHOR_Y, p.x - ANCHOR_X);
+          p.x = ANCHOR_X + Math.cos(angle) * MAX_PHYSICAL_DIST;
+          p.y = ANCHOR_Y + Math.sin(angle) * MAX_PHYSICAL_DIST;
+          p.vx *= 0.5;
+          p.vy *= 0.5;
+        }
       }
 
       // 3. Construct unified smooth catenary / cubic Bézier curve from anchor to bob
@@ -261,11 +272,9 @@ export default function PullCordLampToggle({
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
 
-      // Natural pendulum release recoil in both X and Y
-      const stretchX = p.x - ANCHOR_X;
-      const stretchY = p.y - REST_LENGTH;
-      p.vx = -stretchX * 0.38;
-      p.vy = -stretchY * 0.42;
+      // Clean release: zero artificial impulse so Hooke's restoring spring smoothly returns the bob to rest
+      p.vx = 0;
+      p.vy = 0;
     };
 
     window.addEventListener('pointermove', onPointerMove);

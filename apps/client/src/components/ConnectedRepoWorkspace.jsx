@@ -712,6 +712,42 @@ export default function ConnectedRepoWorkspace({
   const noAdrs = phase === 'ready' && scan && scan.count === 0;
   const pr = repo.adrPr;
 
+  const findNodeForAdr = (adr) => {
+    if (!scan?.graph?.nodes || !adr) return null;
+    const decisionNode = scan.graph.nodes.find(n => 
+      n.label === 'Decision' && (n.source_adr === adr.id || n.adr_path === adr.path || n.id === adr.decision_id)
+    );
+    if (decisionNode) return decisionNode;
+    const sourceNode = scan.graph.nodes.find(n => 
+      n.label === 'Source' && (n.id === adr.id || n.file === adr.path || n.adr_path === adr.path)
+    );
+    if (sourceNode) return sourceNode;
+    return scan.graph.nodes.find(n => n.id === adr.id || n.path === adr.path) || null;
+  };
+
+  const isAdrSelected = (adr) => {
+    if (!selectedNode || !adr) return false;
+    return (
+      selectedNode.id === adr.id ||
+      selectedNode.source_adr === adr.id ||
+      selectedNode.adr_path === adr.path ||
+      selectedNode.file === adr.path ||
+      selectedNode.id === adr.decision_id
+    );
+  };
+
+  const handleAdrClick = (adr) => {
+    playClick();
+    if (isAdrSelected(adr)) {
+      setSelectedNode(null);
+    } else {
+      const targetNode = findNodeForAdr(adr);
+      if (targetNode) {
+        setSelectedNode(targetNode);
+      }
+    }
+  };
+
   const decisions = (scan?.graph?.nodes || []).filter(n => n.label === 'Decision');
   const validDecisions = decisions.filter(d => d.status === 'VALID');
   const staleDecisions = decisions.filter(d => d.status === 'INVALIDATED_NEEDS_REVALIDATION' || d.status === 'SUPERSEDED');
@@ -1289,18 +1325,33 @@ export default function ConnectedRepoWorkspace({
                 const associatedDecisions = (scan?.graph?.nodes || []).filter(n => n.label === 'Decision' && (n.source_adr === a.id || n.adr_path === a.path));
                 const targetFiles = Array.from(new Set(associatedDecisions.map(d => d.target_file).filter(Boolean)));
                 const isExpanded = expandedAdrId === a.id;
+                const isSelected = isAdrSelected(a);
 
                 return (
-                  <div key={a.path || a.id} className="px-3 py-2 text-[11px] leading-snug hover:bg-slate-100/60 dark:hover:bg-white/[0.03] transition-colors">
+                  <div
+                    key={a.path || a.id}
+                    onClick={() => handleAdrClick(a)}
+                    className={`px-3 py-2 text-[11px] leading-snug transition-all cursor-pointer border-l-2 ${
+                      isSelected
+                        ? 'border-l-amber-500 bg-amber-500/10 dark:bg-amber-500/15'
+                        : 'border-l-transparent hover:bg-slate-100/60 dark:hover:bg-white/[0.03]'
+                    }`}
+                  >
                     <div className="flex items-center justify-between gap-1.5">
                       <div className="text-slate-900 dark:text-slate-100 font-semibold truncate flex items-center gap-1.5 min-w-0">
-                        <span>{a.id}: {a.title}</span>
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+                        )}
+                        <span className={isSelected ? 'text-amber-700 dark:text-amber-300 font-bold' : ''}>
+                          {a.id}: {a.title}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
                         {targetFiles.length > 0 && (
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               playClick();
                               setExpandedAdrId(prev => prev === a.id ? null : a.id);
                             }}
@@ -1316,7 +1367,10 @@ export default function ConnectedRepoWorkspace({
                             href={gitAdrUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            onClick={playClick}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              playClick();
+                            }}
                             className="p-1 rounded text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/10 transition-colors"
                             title={`Open ${a.path} on GitHub`}
                           >
@@ -1324,7 +1378,7 @@ export default function ConnectedRepoWorkspace({
                           </a>
                         )}
                       </div>
-            </div>
+                    </div>
                     <div className="text-slate-500 dark:text-slate-400 truncate text-[10px] font-mono mt-0.5">{a.path}</div>
 
                     {/* Impacted Target Files Dropdown */}
