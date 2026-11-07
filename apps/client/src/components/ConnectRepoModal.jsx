@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Github, Search, Plus, Check,
-  X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound, Unlink
+  X, RefreshCw, Lock, Globe, ExternalLink, AlertCircle, KeyRound, Unlink, ArrowUpRight
 } from 'lucide-react';
 import { playClick, playApprovalChime } from '../utils/soundFx';
 import DevPatLoginModal from './DevPatLoginModal';
@@ -398,18 +398,9 @@ export default function ConnectRepoModal({
               <Github className="w-4 h-4" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-950 dark:text-white">
-                  Connect GitHub Repository
-                </h2>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-md border ${
-                  isLimitReached
-                    ? 'border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold'
-                    : 'border-slate-200 dark:border-white/15 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400'
-                }`}>
-                  {effectiveConnectedCount} / {repoLimit === -1 ? '∞' : repoLimit} ({tier === 'free' ? 'Community' : (tier === 'pro' ? 'Pro' : 'Enterprise')})
-                </span>
-              </div>
+              <h2 className="text-sm font-bold text-slate-950 dark:text-white">
+                Connect GitHub Repository
+              </h2>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 font-sans">
                 Link a repository to generate an enclosed causal verification graph.
               </p>
@@ -430,7 +421,7 @@ export default function ConnectRepoModal({
         <div data-lenis-prevent className="p-4 sm:p-5 flex-1 overflow-y-auto space-y-4">
           {/* Plan Limit Warning Banner */}
           {isLimitReached && (
-            <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-500/10 space-y-2">
+            <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/5 dark:bg-amber-500/10 space-y-2.5">
               <div className="flex items-center justify-between gap-2 text-amber-600 dark:text-amber-400 text-xs font-mono font-medium">
                 <div className="flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
@@ -443,15 +434,17 @@ export default function ConnectRepoModal({
                       playClick();
                       onUpgrade();
                     }}
-                    className="px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white dark:bg-amber-500 dark:hover:bg-amber-400 dark:text-slate-950 text-[11px] font-mono font-semibold transition-colors cursor-pointer shadow-xs"
+                    className="px-2.5 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-mono font-bold flex items-center gap-1 transition-all cursor-pointer shadow-xs hover:shadow group"
                   >
-                    Upgrade to Pro
+                    <span>Upgrade to Pro</span>
+                    <ArrowUpRight className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                   </button>
                 )}
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-300 font-sans leading-relaxed">
-                Your {tier === 'free' ? 'Community' : 'Pro'} plan allows up to {repoLimit} connected repository. Disconnect an existing repository below or upgrade to connect additional repositories.
-              </p>
+              <div className="text-[11px] text-slate-600 dark:text-slate-300 font-sans leading-relaxed space-y-0.5">
+                <p>Your {tier === 'free' ? 'Community' : 'Pro'} plan allows up to {repoLimit} connected repository.</p>
+                <p className="text-slate-500 dark:text-slate-400">Disconnect an existing repository below or upgrade to connect additional repositories.</p>
+              </div>
             </div>
           )}
 
