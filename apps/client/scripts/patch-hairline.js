@@ -116,6 +116,19 @@ if (fs.existsSync(targetFile)) {
     content = content.replace(targetPt, replacementPt);
   }
 
+  // 7. Enforce Distributed Mutex Padlock Rest Invariant (Zero Ajar Drift, Solid Locked Rest State)
+  const targetRestO = 'const restO = () => O1 + (1 - O1) * (0.5 - Math.sin(Math.asin(1 - 2 * REST_TURN / tm.t) / 3));';
+  const replacementRestO = 'const restO = () => 0;';
+  if (content.includes(targetRestO)) {
+    content = content.replace(targetRestO, replacementRestO);
+  }
+
+  const targetPadlockSpring = 'const sp = spring(restO(), { eps: 2e-3 });';
+  const replacementPadlockSpring = 'const sp = spring(0, { eps: 2e-3 });';
+  if (content.includes(targetPadlockSpring)) {
+    content = content.replace(targetPadlockSpring, replacementPadlockSpring);
+  }
+
   fs.writeFileSync(targetFile, content, 'utf8');
   console.log('[postinstall] Successfully enforced solitary elevation & setActiveTile API on @lucasmarkes/hairline.');
 }

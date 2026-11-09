@@ -1,13 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Compass, User, Copy, Check, CheckCircle2, Lock, Terminal,
+  Compass, User, Copy, Check, CheckCircle2, Lock, Terminal, Building2,
   SlidersHorizontal, Key, HardDrive, AlertTriangle, RefreshCw, Heart, ExternalLink, LogOut, Github, Eye, EyeOff,
-  ShieldCheck, Award, Gauge, KeyRound, Cable
+  ShieldCheck, Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 import ShimmerImage from './ui/ShimmerImage';
 import DevPatLoginModal from './DevPatLoginModal';
+import Tooltip from './Tooltip';
 
 
 function getStoredUser() {
@@ -107,9 +108,17 @@ export default function ProfilePage({
   onSelectTier,
   onLaunchConsole,
   onOpenMcpPage,
-  onOpenSupportPage
+  onOpenSupportPage,
+  onOpenBenefitsPage,
+  onPrefetchTab
 }) {
   const [currentTier, setCurrentTier] = useState(tier);
+
+  const handlePrefetchBenefits = useCallback(() => {
+    if (onPrefetchTab) {
+      onPrefetchTab('benefits');
+    }
+  }, [onPrefetchTab]);
   useEffect(() => {
     if (tier && tier !== currentTier) {
       setCurrentTier(tier);
@@ -165,6 +174,7 @@ export default function ProfilePage({
   const [connectedRepoCount, setConnectedRepoCount] = useState(0);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
   const [trialState, setTrialState] = useState(() => {
     try {
       const saved = localStorage.getItem('cavdax_pro_trial');
@@ -333,7 +343,7 @@ export default function ProfilePage({
     }
   };
 
-  const handleRazorpayUpgrade = async () => {
+  const handleRazorpayUpgrade = async (targetTier = 'pro') => {
     if (!user) {
       showToast("Please connect your GitHub account to proceed — we’ll bind your tier to your verified identity.");
       return;
@@ -399,20 +409,20 @@ export default function ProfilePage({
           const verifyData = await verifyRes.json();
 
           if (verifyData.success) {
-            setCurrentTier('pro');
+            setCurrentTier(targetTier);
             try {
-              localStorage.setItem('cavdax_tier', 'pro');
+              localStorage.setItem('cavdax_tier', targetTier);
               const raw = localStorage.getItem('cavdax_user_session');
               if (raw) {
                 const parsed = JSON.parse(raw);
-                parsed.tier = 'pro';
+                parsed.tier = targetTier;
                 localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
               }
-              window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'pro' } }));
+              window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: targetTier } }));
             } catch {}
-            syncTierWithServer('pro');
-            if (onSelectTier) onSelectTier('pro');
-            showToast('Payment verified! Welcome to Pro Autonomous tier.');
+            syncTierWithServer(targetTier);
+            if (onSelectTier) onSelectTier(targetTier);
+            showToast(targetTier === 'enterprise' ? 'Payment verified! Welcome to Team & Scale tier.' : 'Payment verified! Welcome to Pro Autonomous tier.');
           } else {
             showToast('Signature verification failed. Contact support with payment ID.');
           }
@@ -428,10 +438,10 @@ export default function ProfilePage({
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'CAVDAX',
-        description: 'Pro Autonomous Tier ($4/mo) — Causal Verification Engine',
+        description: targetTier === 'enterprise' ? 'Team & Scale Tier ($59 / ₹4,999/mo) — Multi-Agent Causal Mesh' : 'Pro Autonomous Tier ($4 / ₹299/mo) — Causal Verification Engine',
         image: `${window.location.origin}/cavdax-brand-logo.jpg`,
         order_id: orderData.order_id,
-        theme: { color: '#F59E0B' },
+        theme: { color: targetTier === 'enterprise' ? '#A855F7' : '#F59E0B' },
         modal: {
           ondismiss: () => setIsUpgrading(false)
         },
@@ -651,12 +661,13 @@ export default function ProfilePage({
         handleStartTrial();
         return;
       }
-      handleRazorpayUpgrade();
+      handleRazorpayUpgrade('pro');
       return;
     }
-    const planName = 'Team & Scale';
-    showToast(`${planName} requires custom contract deployment. Contact sales at cavdax.dev@gmail.com`);
-    return;
+    if (newTier === 'enterprise') {
+      handleRazorpayUpgrade('enterprise');
+      return;
+    }
   };
 
   const handleLogout = async () => {
@@ -731,7 +742,7 @@ export default function ProfilePage({
   const ROLE_RING = {
     free: 'ring-2 ring-slate-400/60 dark:ring-white/30',
     pro: 'ring-2 ring-amber-400/90 shadow-[0_0_12px_rgba(251,191,36,0.35)]',
-    enterprise: 'ring-2 ring-purple-600/90 shadow-[0_0_12px_rgba(147,51,234,0.35)]',
+    enterprise: 'ring-2 ring-slate-800 dark:ring-white/80 shadow-[0_0_12px_rgba(255,255,255,0.15)]',
   };
   const tierRingStyles = ROLE_RING;
   const userInitial = (activeUser?.name || user?.login || 'C').replace(/^@/, '').trim().charAt(0).toUpperCase() || 'C';
@@ -785,11 +796,7 @@ export default function ProfilePage({
               <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-white/15">
                 <div className="w-5 h-5 rounded-full flex items-center justify-center">
                   {currentTier === 'enterprise' ? (
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-purple-500 dark:text-purple-400 shrink-0 transform -rotate-45" aria-hidden="true">
-                      <path d="M3 18h18l-2-11-4.5 4.5L12 4l-2.5 7.5L5 7l-2 11z" fill="currentColor" fillOpacity="0.25" />
-                      <line x1="4" y1="20" x2="20" y2="20" strokeWidth="1.8" />
-                      <circle cx="12" cy="4" r="1.3" fill="currentColor" />
-                    </svg>
+                    <Building2 className="w-3 h-3 text-slate-800 dark:text-slate-200 shrink-0" aria-hidden="true" />
                   ) : currentTier === 'pro' ? (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0 transform -rotate-45" aria-hidden="true">
                       <polygon points="6 3 18 3 22 9 12 22 2 9 6 3" fill="currentColor" fillOpacity="0.25" />
@@ -1010,9 +1017,26 @@ export default function ProfilePage({
         {/* ── 2. Architecture Tiers & Quotas (Exact 4 Benefits per Tier) ── */}
         <section data-tour="profile-tiers" className="mt-0 mb-0">
           <div className="flex items-center justify-between mb-3.5 sm:mb-4">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-              Subscription Tiers
-            </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Subscription Tiers
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (onOpenBenefitsPage) onOpenBenefitsPage();
+                }}
+                onMouseEnter={handlePrefetchBenefits}
+                onFocus={handlePrefetchBenefits}
+                onTouchStart={handlePrefetchBenefits}
+                className="text-[10px] font-mono text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors inline-flex items-center gap-1 cursor-pointer ml-1.5 opacity-80 hover:opacity-100"
+                title="View full architectural tier capabilities & invariant matrix"
+              >
+                <span>(Compare Details)</span>
+                <ExternalLink className="w-2.5 h-2.5" />
+              </button>
+            </div>
   
             <div className="flex items-center gap-2">
               <button
@@ -1064,7 +1088,7 @@ export default function ProfilePage({
               className={`group/card relative p-5 sm:p-6 rounded-2xl border transition-all flex flex-col justify-between ${
                 currentTier === 'free'
                   ? 'bg-slate-50/50 dark:bg-white/[0.02] border-slate-200 dark:border-white/15'
-                  : 'bg-transparent border-slate-200 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/30'
+                  : 'bg-slate-50/80 dark:bg-white/[0.02] border-slate-300 dark:border-white/20 hover:border-slate-500 dark:hover:border-white/40 shadow-xs'
               }`}
             >
               {/* ── Substrate Specular Spotlight & Fine Blueprint Matrix ── */}
@@ -1117,11 +1141,30 @@ export default function ProfilePage({
                     Community
                   </span>
                 </div>
-                {currentTier === 'free' && (
-                  <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-white/10">
-                    CURRENT PLAN
-                  </span>
-                )}
+                <div className="flex items-center gap-1.5">
+                  {currentTier === 'free' && (
+                    <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-white/10">
+                      CURRENT PLAN
+                    </span>
+                  )}
+                  <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        if (onOpenBenefitsPage) onOpenBenefitsPage();
+                      }}
+                      onMouseEnter={handlePrefetchBenefits}
+                      onFocus={handlePrefetchBenefits}
+                      onTouchStart={handlePrefetchBenefits}
+                      className="group/cue p-1 -m-1 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                      aria-label="Explore Tier Capabilities & Invariants"
+                    >
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
               <div className="text-2xl font-bold font-mono text-slate-950 dark:text-white mb-1">
                 {currency === 'INR' ? '₹0' : '$0'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
@@ -1190,7 +1233,7 @@ export default function ProfilePage({
                   </div>
                 )}
                 <span className="relative z-10 transition-colors duration-300">
-                  {currentTier === 'free' ? 'Current Plan' : (hasEvaluationPass ? (isHackathonMode ? 'Switch to Community' : 'Switch (Dev)') : 'Switch to Community')}
+                  {currentTier === 'free' ? 'Current Plan' : (hasEvaluationPass ? (isHackathonMode ? 'Switch to Community' : 'Switch (Dev)') : 'Downgrade to Community')}
                 </span>
               </button>
               </div>
@@ -1257,20 +1300,41 @@ export default function ProfilePage({
                     Pro Autonomous
                   </span>
                 </div>
-                {hasEvaluationPass ? (
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/40 dark:border-amber-500/30">
-                    {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
-                  </span>
-                ) : (
-                  <Lock className="w-3 h-3 text-slate-400" />
-                )}
+                <div className="flex items-center gap-1.5">
+                  {currentTier === 'pro' ? (
+                    <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                      CURRENT PLAN
+                    </span>
+                  ) : hasEvaluationPass ? (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/40 dark:border-amber-500/30">
+                      {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
+                    </span>
+                  ) : null}
+                  <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        if (onOpenBenefitsPage) onOpenBenefitsPage();
+                      }}
+                      onMouseEnter={handlePrefetchBenefits}
+                      onFocus={handlePrefetchBenefits}
+                      onTouchStart={handlePrefetchBenefits}
+                      className="group/cue p-1 -m-1 rounded-md text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                      aria-label="Explore Tier Capabilities & Invariants"
+                    >
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
               <div className="text-2xl font-bold font-mono text-slate-950 dark:text-white mb-1">
-                {currency === 'INR' ? '₹320' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
+                {currency === 'INR' ? '₹299' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
               </div>
               <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold mb-3">
                 {isTrialActive ? (
-                  <span className="text-emerald-600 dark:text-emerald-400">
+                  <span className="text-amber-500 dark:text-amber-400 font-mono font-medium">
                     Active Pro Trial • {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining
                   </span>
                 ) : hasUsedTrial ? (
@@ -1303,7 +1367,7 @@ export default function ProfilePage({
               <div className="relative z-10">
               <button
                 onClick={() => handleTierSwitch('pro')}
-                disabled={currentTier === 'pro' && !isTrialActive}
+                disabled={currentTier === 'pro'}
                 onMouseEnter={() => setHoveredTierBtn('pro')}
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
@@ -1346,7 +1410,7 @@ export default function ProfilePage({
                   <span>
                     {currentTier === 'pro'
                       ? (isTrialActive
-                          ? `Trial Active · Upgrade (${currency === 'INR' ? '₹320' : '$4'})`
+                          ? `Trial Active · Upgrade (${currency === 'INR' ? '₹299' : '$4'})`
                           : 'Current Plan')
                       : (isStartingTrial
                           ? 'Activating Trial...'
@@ -1357,21 +1421,21 @@ export default function ProfilePage({
                               : (!activeUser ? 'Sign In to Activate'
                                   : (!hasUsedTrial
                                       ? 'Start 7-Day Free Pro Trial'
-                                      : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))))}
+                                      : `Upgrade (${currency === 'INR' ? '₹299' : '$4'}/mo)`)))))}
                   </span>
                 </span>
               </button>
               </div>
             </div>
   
-            {/* Tier 3: Team & Scale (Solid Deep Obsidian Purple Card Background) */}
+            {/* Tier 3: Team & Scale (Obsidian Monochromatic & Specular Amber) */}
             <div
               onPointerMove={handleCardPointerMove}
               onPointerLeave={handleCardPointerLeave}
               className={`group/card relative p-5 sm:p-6 rounded-2xl border transition-all flex flex-col justify-between ${
                 currentTier === 'enterprise'
-                  ? 'bg-[#150a26] dark:bg-[#0f051d] border-purple-700/60 dark:border-purple-600/50 ring-1 ring-purple-500/30 shadow-sm'
-                  : 'bg-transparent border-slate-200 dark:border-white/15 hover:border-purple-400/40'
+                  ? 'bg-slate-900 dark:bg-slate-900/90 border-slate-700 dark:border-white/20 ring-1 ring-slate-600/30 shadow-sm'
+                  : 'bg-transparent border-slate-200 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/30'
               }`}
             >
               {/* ── Substrate Specular Spotlight & Fine Blueprint Matrix ── */}
@@ -1386,9 +1450,9 @@ export default function ProfilePage({
                   <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#64748b_1.2px,transparent_1.2px)] [background-size:14px_14px] opacity-20 dark:opacity-45" />
                 </div>
                 <div
-                  className="absolute inset-0 opacity-0 group-hover/card:opacity-35 dark:group-hover/card:opacity-90 transition-opacity duration-300"
+                  className="absolute inset-0 opacity-0 group-hover/card:opacity-20 dark:group-hover/card:opacity-40 transition-opacity duration-300"
                   style={{
-                    background: 'radial-gradient(220px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(168,85,247,0.09), transparent 70%)'
+                    background: 'radial-gradient(220px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(245,158,11,0.08), transparent 70%)'
                   }}
                 />
               </div>
@@ -1396,75 +1460,77 @@ export default function ProfilePage({
               <div className="relative z-10">
                 <div className="mb-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
-                  {/* 45-Degree Tilted King Crown SVG */}
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="w-3.5 h-3.5 text-purple-400 shrink-0 transform -rotate-45"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M3 18h18l-2-11-4.5 4.5L12 4l-2.5 7.5L5 7l-2 11z"
-                      fill="currentColor"
-                      fillOpacity="0.2"
-                    />
-                    <line x1="4" y1="20" x2="20" y2="20" strokeWidth="1.8" />
-                    <circle cx="12" cy="4" r="1.3" fill="currentColor" />
-                    <circle cx="5" cy="7" r="1.1" fill="currentColor" />
-                    <circle cx="19" cy="7" r="1.1" fill="currentColor" />
-                  </svg>
-                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400">
+                  <Building2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`} />
+                  <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
                     Team & Scale
                   </span>
                 </div>
-                {hasEvaluationPass ? (
-                  <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${
-                    currentTier === 'enterprise'
-                      ? 'bg-purple-500/25 text-purple-200 border-purple-400/40'
-                      : 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40 dark:border-purple-500/30'
-                  }`}>
-                    {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
-                  </span>
-                ) : (
-                  <Lock className="w-3 h-3 text-slate-400" />
-                )}
+                <div className="flex items-center gap-1.5">
+                  {currentTier === 'enterprise' ? (
+                    <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/20">
+                      CURRENT PLAN
+                    </span>
+                  ) : hasEvaluationPass ? (
+                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-slate-200/60 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/20">
+                      {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
+                    </span>
+                  ) : null}
+                  <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playClick();
+                        if (onOpenBenefitsPage) onOpenBenefitsPage();
+                      }}
+                      onMouseEnter={handlePrefetchBenefits}
+                      onFocus={handlePrefetchBenefits}
+                      onTouchStart={handlePrefetchBenefits}
+                      className={`group/cue p-1 -m-1 rounded-md transition-colors cursor-pointer ${
+                        currentTier === 'enterprise'
+                          ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                          : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10'
+                      }`}
+                      aria-label="Explore Tier Capabilities & Invariants"
+                    >
+                      <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                    </button>
+                  </Tooltip>
+                </div>
               </div>
               <div className={`text-2xl font-bold font-mono mb-1 ${
                 currentTier === 'enterprise' ? 'text-white' : 'text-slate-950 dark:text-white'
               }`}>
-                Custom <span className={`text-xs font-normal font-sans ${
-                  currentTier === 'enterprise' ? 'text-purple-200/80' : 'text-slate-500'
-                }`}>/ SLA</span>
+                {currency === 'INR' ? '₹4,999' : '$59'} <span className={`text-xs font-normal font-sans ${
+                  currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-500'
+                }`}>/ mo</span>
               </div>
               <div className={`text-[10px] font-mono font-medium mb-3 ${
-                currentTier === 'enterprise' ? 'text-purple-200/70' : 'text-purple-500 dark:text-purple-400'
+                currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400'
               }`}>
-                Tailored Infrastructure &amp; Multi-Tenant Keyspace
+                Dedicated KeySpace &amp; Team Multi-Tenancy
               </div>
-              <ul className={`text-xs font-mono space-y-2 mb-6 ${
-                currentTier === 'enterprise' ? 'text-purple-100/90' : 'text-slate-600 dark:text-slate-300'
+              <ul className={`text-xs font-mono space-y-2 mb-4 ${
+                currentTier === 'enterprise' ? 'text-slate-200' : 'text-slate-600 dark:text-slate-300'
               }`}>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                   <span>Unlimited connected repositories</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  <span>Isolated tenant graph keyspace</span>
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                  <span>Corporate domain provisioning</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  <span>Org OAuth &amp; signed audit ledger</span>
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                  <span>Priority GraphBLAS invalidation</span>
                 </li>
                 <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                  <span>High-availability SLA &amp; team support</span>
+                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                  <span>Unlimited multi-agent mutex locks</span>
                 </li>
               </ul>
+              
               </div>
               <div className="relative z-10">
               <button
@@ -1474,10 +1540,10 @@ export default function ProfilePage({
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
                   currentTier === 'enterprise'
-                    ? 'bg-purple-600/30 border-purple-400/60 text-purple-100 font-semibold cursor-default shadow-xs'
+                    ? 'bg-white/10 border-white/20 text-white font-semibold cursor-default shadow-xs backdrop-blur-xs'
                     : (hoveredTierBtn === 'enterprise'
-                        ? 'border-purple-600 dark:border-purple-400 text-white cursor-pointer shadow-xs'
-                        : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white cursor-pointer')
+                        ? 'border-slate-950 dark:border-white text-white dark:!text-slate-950 font-bold cursor-pointer shadow-xs'
+                        : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white group-hover:text-white dark:group-hover:!text-slate-950 cursor-pointer')
                 }`}
               >
                 {currentTier !== 'enterprise' && (
@@ -1492,7 +1558,7 @@ export default function ProfilePage({
                     }}
                     className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
                   >
-                    <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-purple-400 fill-current block">
+                    <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-slate-800 dark:text-slate-200 fill-current block">
                       <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
                       <circle cx="80" cy="20" r="4.5" />
                       <circle cx="120" cy="12" r="3.5" />
@@ -1504,18 +1570,26 @@ export default function ProfilePage({
                       <line x1="160" y1="15" x2="200" y2="13" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
                       <line x1="200" y1="13" x2="240" y2="22" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
                     </svg>
-                    <div className="flex-1 w-full bg-[#1e1035] dark:bg-[#180b2d]" />
+                    <div className="flex-1 w-full bg-slate-900 dark:bg-white" />
                   </div>
                 )}
-                <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                  {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
+                <span className={`relative z-10 transition-colors duration-300 flex items-center gap-1.5 ${
+                  currentTier === 'enterprise'
+                    ? 'text-white'
+                    : (hoveredTierBtn === 'enterprise'
+                        ? 'text-white dark:!text-slate-950 font-bold'
+                        : 'text-slate-900 dark:text-white group-hover:text-white dark:group-hover:!text-slate-950')
+                }`}>
+                  {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3 text-current shrink-0" />}
                   <span>
                     {currentTier === 'enterprise'
                       ? 'Current Plan'
                       : (hasEvaluationPass
                           ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                           : (!activeUser ? 'Sign In to Activate'
-                              : 'Upgrade (Custom)'))}
+                              : (isUpgrading
+                                  ? 'Connecting...'
+                                  : `Upgrade (${currency === 'INR' ? '₹4,999' : '$59'}/mo)`)))}
                   </span>
                 </span>
               </button>
@@ -1750,11 +1824,7 @@ export default function ProfilePage({
             <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-full p-1 shadow-sm border border-slate-200/80 dark:border-white/15">
               <div className="w-5 h-5 rounded-full flex items-center justify-center">
                 {currentTier === 'enterprise' ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-purple-500 dark:text-purple-400 shrink-0 transform -rotate-45" aria-hidden="true">
-                    <path d="M3 18h18l-2-11-4.5 4.5L12 4l-2.5 7.5L5 7l-2 11z" fill="currentColor" fillOpacity="0.25" />
-                    <line x1="4" y1="20" x2="20" y2="20" strokeWidth="1.8" />
-                    <circle cx="12" cy="4" r="1.3" fill="currentColor" />
-                  </svg>
+                  <Building2 className="w-3 h-3 text-slate-800 dark:text-slate-200 shrink-0" aria-hidden="true" />
                 ) : currentTier === 'pro' ? (
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3 text-amber-500 dark:text-amber-400 shrink-0 transform -rotate-45" aria-hidden="true">
                     <polygon points="6 3 18 3 22 9 12 22 2 9 6 3" fill="currentColor" fillOpacity="0.25" />
@@ -1975,9 +2045,26 @@ export default function ProfilePage({
       {/* ── 2. Architecture Tiers & Quotas (Exact 4 Benefits per Tier) ── */}
       <section data-tour="profile-tiers" className="mt-0 mb-0">
         <div className="flex items-center justify-between mb-2 sm:mb-2.5">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-            Subscription Tiers
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              Subscription Tiers
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                if (onOpenBenefitsPage) onOpenBenefitsPage();
+              }}
+              onMouseEnter={handlePrefetchBenefits}
+              onFocus={handlePrefetchBenefits}
+              onTouchStart={handlePrefetchBenefits}
+              className="text-[10px] font-mono text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors inline-flex items-center gap-1 cursor-pointer ml-1.5 opacity-80 hover:opacity-100"
+              title="View full architectural tier capabilities & invariant matrix"
+            >
+              <span>(Compare Details)</span>
+              <ExternalLink className="w-2.5 h-2.5" />
+            </button>
+          </div>
 
           {/* Monochromatic Subtle Currency Switcher (USD / INR) */}
           <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200/80 dark:border-white/15 text-[10px] font-mono">
@@ -2067,11 +2154,30 @@ export default function ProfilePage({
                   Community
                 </span>
               </div>
-              {currentTier === 'free' && (
-                <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-white/10">
-                  CURRENT PLAN
-                </span>
-              )}
+              <div className="flex items-center gap-1.5">
+                {currentTier === 'free' && (
+                  <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-slate-200/60 dark:bg-white/10 text-slate-600 dark:text-slate-400 border border-slate-300/40 dark:border-white/10">
+                    CURRENT PLAN
+                  </span>
+                )}
+                <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playClick();
+                      if (onOpenBenefitsPage) onOpenBenefitsPage();
+                    }}
+                    onMouseEnter={handlePrefetchBenefits}
+                    onFocus={handlePrefetchBenefits}
+                    onTouchStart={handlePrefetchBenefits}
+                    className="group/cue p-1 -m-1 rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    aria-label="Explore Tier Capabilities & Invariants"
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
             <div className="text-xl sm:text-2xl font-bold font-mono text-slate-950 dark:text-white mb-0.5">
               {currency === 'INR' ? '₹0' : '$0'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
@@ -2140,7 +2246,7 @@ export default function ProfilePage({
                 </div>
               )}
               <span className="relative z-10 transition-colors duration-300">
-                {currentTier === 'free' ? 'Current Plan' : (hasEvaluationPass ? (isHackathonMode ? 'Switch to Community' : 'Switch (Dev)') : 'Switch to Community')}
+                {currentTier === 'free' ? 'Current Plan' : (hasEvaluationPass ? (isHackathonMode ? 'Switch to Community' : 'Switch (Dev)') : 'Downgrade to Community')}
               </span>
             </button>
             </div>
@@ -2207,20 +2313,41 @@ export default function ProfilePage({
                   Pro Autonomous
                 </span>
               </div>
-              {hasEvaluationPass ? (
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/40 dark:border-amber-500/30">
-                  {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
-                </span>
-              ) : (
-                <Lock className="w-3 h-3 text-slate-400" />
-              )}
+              <div className="flex items-center gap-1.5">
+                {currentTier === 'pro' ? (
+                  <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    CURRENT PLAN
+                  </span>
+                ) : hasEvaluationPass ? (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-amber-500/20 dark:bg-amber-500/20 text-amber-900 dark:text-amber-300 border border-amber-600/40 dark:border-amber-500/30">
+                    {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
+                  </span>
+                ) : null}
+                <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playClick();
+                      if (onOpenBenefitsPage) onOpenBenefitsPage();
+                    }}
+                    onMouseEnter={handlePrefetchBenefits}
+                    onFocus={handlePrefetchBenefits}
+                    onTouchStart={handlePrefetchBenefits}
+                    className="group/cue p-1 -m-1 rounded-md text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-amber-500/10 transition-colors cursor-pointer"
+                    aria-label="Explore Tier Capabilities & Invariants"
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
             <div className="text-xl sm:text-2xl font-bold font-mono text-slate-950 dark:text-white mb-0.5">
-              {currency === 'INR' ? '₹320' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
+              {currency === 'INR' ? '₹299' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
             </div>
             <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold mb-2 sm:mb-2.5">
               {isTrialActive ? (
-                <span className="text-emerald-600 dark:text-emerald-400">
+                <span className="text-amber-500 dark:text-amber-400 font-mono font-medium">
                   Active Pro Trial • {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining
                 </span>
               ) : hasUsedTrial ? (
@@ -2253,7 +2380,7 @@ export default function ProfilePage({
             <div className="relative z-10">
             <button
               onClick={() => handleTierSwitch('pro')}
-              disabled={currentTier === 'pro' && !isTrialActive}
+              disabled={currentTier === 'pro'}
               onMouseEnter={() => setHoveredTierBtn('pro')}
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
@@ -2296,7 +2423,7 @@ export default function ProfilePage({
                 <span>
                   {currentTier === 'pro'
                     ? (isTrialActive
-                        ? `Trial Active · Upgrade (${currency === 'INR' ? '₹320' : '$4'})`
+                        ? `Trial Active · Upgrade (${currency === 'INR' ? '₹299' : '$4'})`
                         : 'Current Plan')
                     : (isStartingTrial
                         ? 'Activating Trial...'
@@ -2307,114 +2434,116 @@ export default function ProfilePage({
                             : (!activeUser ? 'Sign In to Activate'
                                 : (!hasUsedTrial
                                     ? 'Start 7-Day Free Pro Trial'
-                                    : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))))}
+                                    : `Upgrade (${currency === 'INR' ? '₹299' : '$4'}/mo)`)))))}
                 </span>
               </span>
             </button>
             </div>
           </div>
 
-          {/* Tier 3: Team & Scale (Solid Deep Obsidian Purple Card Background) */}
+          {/* Tier 3: Team & Scale (Obsidian Monochromatic & Specular Amber) */}
           <div
             onPointerMove={handleCardPointerMove}
             onPointerLeave={handleCardPointerLeave}
             className={`group/card relative p-3.5 sm:p-4 lg:p-4 xl:p-4.5 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between ${
               currentTier === 'enterprise'
-                ? 'bg-[#150a26] dark:bg-[#0f051d] border-purple-700/60 dark:border-purple-600/50 ring-1 ring-purple-500/30 shadow-sm'
-                : 'bg-transparent border-slate-200 dark:border-white/15 hover:border-purple-400/40'
+                ? 'bg-slate-900 dark:bg-slate-900/90 border-slate-700 dark:border-white/20 ring-1 ring-slate-600/30 shadow-sm'
+                : 'bg-transparent border-slate-200 dark:border-white/15 hover:border-slate-400 dark:hover:border-white/30'
             }`}
           >
-              {/* ── Substrate Specular Spotlight & Fine Blueprint Matrix ── */}
-              <div className="pointer-events-none absolute inset-0 rounded-2xl overflow-hidden z-0" aria-hidden="true">
-                <div
-                  className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
-                  style={{
-                    maskImage: 'radial-gradient(190px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), black 0%, transparent 100%)',
-                    WebkitMaskImage: 'radial-gradient(190px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), black 0%, transparent 100%)',
-                  }}
-                >
-                  <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#64748b_1.2px,transparent_1.2px)] [background-size:14px_14px] opacity-20 dark:opacity-45" />
-                </div>
-                <div
-                  className="absolute inset-0 opacity-0 group-hover/card:opacity-35 dark:group-hover/card:opacity-90 transition-opacity duration-300"
-                  style={{
-                    background: 'radial-gradient(220px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(168,85,247,0.09), transparent 70%)'
-                  }}
-                />
+            {/* ── Substrate Specular Spotlight & Fine Blueprint Matrix ── */}
+            <div className="pointer-events-none absolute inset-0 rounded-2xl overflow-hidden z-0" aria-hidden="true">
+              <div
+                className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300"
+                style={{
+                  maskImage: 'radial-gradient(190px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), black 0%, transparent 100%)',
+                  WebkitMaskImage: 'radial-gradient(190px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), black 0%, transparent 100%)',
+                }}
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#64748b_1.2px,transparent_1.2px)] [background-size:14px_14px] opacity-20 dark:opacity-45" />
               </div>
+              <div
+                className="absolute inset-0 opacity-0 group-hover/card:opacity-20 dark:group-hover/card:opacity-40 transition-opacity duration-300"
+                style={{
+                  background: 'radial-gradient(220px circle at var(--mouse-x, -999px) var(--mouse-y, -999px), rgba(245,158,11,0.08), transparent 70%)'
+                }}
+              />
+            </div>
 
-            <div className="relative z-10">
-              <div className="mb-2.5 flex items-center justify-between">
+            <div className="relative z-10 flex-1 flex flex-col">
+              <div className="mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-1.5">
-                {/* 45-Degree Tilted King Crown SVG */}
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="w-3.5 h-3.5 text-purple-400 shrink-0 transform -rotate-45"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M3 18h18l-2-11-4.5 4.5L12 4l-2.5 7.5L5 7l-2 11z"
-                    fill="currentColor"
-                    fillOpacity="0.2"
-                  />
-                  <line x1="4" y1="20" x2="20" y2="20" strokeWidth="1.8" />
-                  <circle cx="12" cy="4" r="1.3" fill="currentColor" />
-                  <circle cx="5" cy="7" r="1.1" fill="currentColor" />
-                  <circle cx="19" cy="7" r="1.1" fill="currentColor" />
-                </svg>
-                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400">
+                <Building2 className={`w-3 h-3 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`} />
+                <span className={`text-[11px] font-mono font-bold uppercase tracking-wider ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-800 dark:text-slate-200'}`}>
                   Team & Scale
                 </span>
               </div>
-              {hasEvaluationPass ? (
-                <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${
-                  currentTier === 'enterprise'
-                    ? 'bg-purple-500/25 text-purple-200 border-purple-400/40'
-                    : 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/40 dark:border-purple-500/30'
-                }`}>
-                  {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
-                </span>
-              ) : (
-                <Lock className="w-3 h-3 text-slate-400" />
-              )}
+              <div className="flex items-center gap-1.5">
+                {currentTier === 'enterprise' ? (
+                  <span className="text-[9px] font-mono font-medium px-2 py-0.5 rounded-full bg-white/10 text-white border border-white/20">
+                    CURRENT PLAN
+                  </span>
+                ) : hasEvaluationPass ? (
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border bg-slate-200/60 dark:bg-white/10 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-white/20">
+                    {isHackathonMode ? 'EVALUATION PASS' : 'DEV ACCESS'}
+                  </span>
+                ) : null}
+                <Tooltip content="Explore Tier Capabilities & Invariants" position="top">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      playClick();
+                      if (onOpenBenefitsPage) onOpenBenefitsPage();
+                    }}
+                    onMouseEnter={handlePrefetchBenefits}
+                    onFocus={handlePrefetchBenefits}
+                    onTouchStart={handlePrefetchBenefits}
+                    className={`group/cue p-1 -m-1 rounded-md transition-colors cursor-pointer ${
+                      currentTier === 'enterprise'
+                        ? 'text-slate-300 hover:text-white hover:bg-white/10'
+                        : 'text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10'
+                    }`}
+                    aria-label="Explore Tier Capabilities & Invariants"
+                  >
+                    <ArrowUpRight className="w-3.5 h-3.5 transition-transform duration-200 group-hover/cue:-translate-y-0.5 group-hover/cue:translate-x-0.5" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
             <div className={`text-xl sm:text-2xl font-bold font-mono mb-0.5 ${
               currentTier === 'enterprise' ? 'text-white' : 'text-slate-950 dark:text-white'
             }`}>
-              Custom <span className={`text-xs font-normal font-sans ${
-                currentTier === 'enterprise' ? 'text-purple-200/80' : 'text-slate-500'
-              }`}>/ SLA</span>
+              {currency === 'INR' ? '₹4,999' : '$59'} <span className={`text-xs font-normal font-sans ${
+                currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-500'
+              }`}>/ mo</span>
             </div>
             <div className={`text-[10px] font-mono font-medium mb-2 sm:mb-2.5 ${
-              currentTier === 'enterprise' ? 'text-purple-200/70' : 'text-purple-500 dark:text-purple-400'
+              currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400'
             }`}>
-              Tailored Infrastructure &amp; Multi-Tenant Keyspace
+              Dedicated KeySpace &amp; Team Multi-Tenancy
             </div>
-            <ul className={`text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 flex-1 ${
-              currentTier === 'enterprise' ? 'text-purple-100/90' : 'text-slate-600 dark:text-slate-300'
+            <ul className={`text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-2.5 sm:mb-3 flex-1 ${
+              currentTier === 'enterprise' ? 'text-slate-200' : 'text-slate-600 dark:text-slate-300'
             }`}>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
                 <span>Unlimited connected repositories</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>Isolated tenant graph keyspace</span>
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>Corporate domain provisioning</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>Org OAuth &amp; signed audit ledger</span>
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>Priority GraphBLAS invalidation</span>
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-                <span>High-availability SLA &amp; team support</span>
+                <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                <span>Unlimited multi-agent mutex locks</span>
               </li>
             </ul>
+            
             </div>
             <div className="relative z-10">
             <button
@@ -2424,10 +2553,10 @@ export default function ProfilePage({
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
                 currentTier === 'enterprise'
-                  ? 'bg-purple-600/30 border-purple-400/60 text-purple-100 font-semibold cursor-default shadow-xs'
+                  ? 'bg-white/10 border-white/20 text-white font-semibold cursor-default shadow-xs backdrop-blur-xs'
                   : (hoveredTierBtn === 'enterprise'
-                      ? 'border-purple-600 dark:border-purple-400 text-white cursor-pointer shadow-xs'
-                      : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white cursor-pointer')
+                      ? 'border-slate-950 dark:border-white text-white dark:!text-slate-950 font-bold cursor-pointer shadow-xs'
+                      : 'bg-transparent border-slate-300 dark:border-white/20 hover:border-slate-950 dark:hover:border-white text-slate-900 dark:text-white group-hover:text-white dark:group-hover:!text-slate-950 cursor-pointer')
               }`}
             >
               {currentTier !== 'enterprise' && (
@@ -2442,7 +2571,7 @@ export default function ProfilePage({
                   }}
                   className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
                 >
-                  <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-purple-400 fill-current block">
+                  <svg viewBox="0 0 320 48" preserveAspectRatio="none" className="w-full h-6 shrink-0 text-slate-800 dark:text-slate-200 fill-current block">
                     <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
                     <circle cx="80" cy="20" r="4.5" />
                     <circle cx="120" cy="12" r="3.5" />
@@ -2454,24 +2583,34 @@ export default function ProfilePage({
                     <line x1="160" y1="15" x2="200" y2="13" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
                     <line x1="200" y1="13" x2="240" y2="22" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.85" />
                   </svg>
-                  <div className="flex-1 w-full bg-[#1e1035] dark:bg-[#180b2d]" />
+                  <div className="flex-1 w-full bg-slate-900 dark:bg-white" />
                 </div>
               )}
-              <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3" />}
+              <span className={`relative z-10 transition-colors duration-300 flex items-center gap-1.5 ${
+                currentTier === 'enterprise'
+                  ? 'text-white'
+                  : (hoveredTierBtn === 'enterprise'
+                      ? 'text-white dark:!text-slate-950 font-bold'
+                      : 'text-slate-900 dark:text-white group-hover:text-white dark:group-hover:!text-slate-950')
+              }`}>
+                {(!activeUser || !hasEvaluationPass) && currentTier !== 'enterprise' && <Lock className="w-3 h-3 text-current shrink-0" />}
                 <span>
                   {currentTier === 'enterprise'
                     ? 'Current Plan'
                     : (hasEvaluationPass
                         ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                         : (!activeUser ? 'Sign In to Activate'
-                            : 'Upgrade (Custom)'))}
+                            : (isUpgrading
+                                ? 'Connecting...'
+                                : `Upgrade (${currency === 'INR' ? '₹4,999' : '$59'}/mo)`)))}
                 </span>
               </span>
             </button>
             </div>
           </div>
         </div>
+
+
       </section>
 
       {/* ── 3. Real-Time Metrics & API Credentials ── */}
@@ -2658,7 +2797,50 @@ export default function ProfilePage({
           <span>{toastMsg}</span>
         </div>
       )}
-          {/* Dev PAT Login Modal for Local Development Authentication */}
+          {/* Downgrade Confirmation Modal */}
+      {isDowngradeModalOpen && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="downgrade-modal-title"
+        >
+          <div className="relative w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#111116] shadow-2xl space-y-4">
+            <div className="flex items-center gap-2.5 text-amber-500">
+              <AlertTriangle className="w-5 h-5 shrink-0" />
+              <h3 id="downgrade-modal-title" className="text-base font-bold font-mono text-slate-950 dark:text-white">
+                Downgrade to Community Tier?
+              </h3>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
+              Downgrading to Community enforces the 1-repository limit, pauses secondary branch causal graphs, and deactivates CI/CD intercept gates.
+            </p>
+            {isTrialActive && (
+              <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-mono">
+                Your remaining trial window ({trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left) will remain preserved and can be reactivated anytime before expiration.
+              </div>
+            )}
+            <div className="pt-2 flex items-center justify-end gap-3 font-mono text-xs">
+              <button
+                type="button"
+                onClick={() => setIsDowngradeModalOpen(false)}
+                className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition-colors cursor-pointer"
+              >
+                Keep {currentTier === 'enterprise' ? 'Team & Scale' : 'Pro'}
+              </button>
+              <button
+                type="button"
+                onClick={executeDowngradeToFree}
+                className="px-3 py-2 text-rose-500 hover:text-rose-400 dark:text-rose-400 dark:hover:text-rose-300 transition-colors cursor-pointer font-medium"
+              >
+                Confirm Downgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dev PAT Login Modal for Local Development Authentication */}
       <DevPatLoginModal
         isOpen={isDevPatModalOpen}
         onClose={() => setIsDevPatModalOpen(false)}

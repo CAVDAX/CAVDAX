@@ -464,7 +464,7 @@ export default function AuditPage() {
     <div className="flex flex-col h-full min-h-0 gap-3">
 
       {/* ── Header bar ── */}
-      <div data-tour="audit-header" className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200 dark:border-white/15">
+      <div data-tour="audit-header" className="relative z-40 flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200/50 dark:border-white/5">
         <div>
           <div>
             <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white font-mono">
@@ -531,7 +531,7 @@ export default function AuditPage() {
       </div>
 
       {/* ── Scope & Quick-Filter Toolbar ── */}
-      <div data-tour="audit-filter" className="flex-shrink-0 flex flex-wrap items-center justify-between gap-2.5 py-2 px-3 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-50/70 dark:bg-white/[0.02]">
+      <div data-tour="audit-filter" className="relative z-30 flex-shrink-0 flex flex-wrap items-center justify-between gap-2.5 py-2.5 px-3.5 rounded-2xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl shadow-[0_12px_32px_-8px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.4)]">
         <div className="flex flex-wrap items-center gap-2">
           {/* Repository Dropdown */}
           <div className="flex items-center gap-1.5">
@@ -634,7 +634,7 @@ export default function AuditPage() {
 
       {/* ── Clean Minimalist Demonstration Ledger Banner ── */}
       {isFallback && (
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-slate-200 dark:border-white/15 bg-slate-100/60 dark:bg-white/[0.02] text-xs font-mono">
+        <div className="relative z-10 flex-shrink-0 flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-2xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl shadow-[0_12px_32px_-8px_rgba(0,0,0,0.05)] dark:shadow-[0_12px_32px_-8px_rgba(0,0,0,0.4)] text-xs font-mono">
           <div className="flex items-center gap-2 min-w-0">
             <Database className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
             <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">
@@ -648,7 +648,7 @@ export default function AuditPage() {
           <button
             onClick={() => { playClick(); fetchAudit(); }}
             disabled={loading}
-            className="shrink-0 flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider border border-slate-300 dark:border-white/15 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors disabled:opacity-40"
+            className="shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors disabled:opacity-40"
           >
             <RefreshCw className={`w-2.5 h-2.5 ${loading ? 'animate-spin' : ''}`} />
             <span>Retry</span>
@@ -664,7 +664,7 @@ export default function AuditPage() {
       )}
 
       {/* ── Audit table ── */}
-      <div data-tour="audit-ledger" className="flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
+      <div data-tour="audit-ledger" className="relative z-0 flex-1 min-h-0 overflow-y-auto" data-lenis-prevent>
         {filteredEntries.length === 0 && !loading ? (
           <EmptyState
             simulated={simulated}
@@ -678,9 +678,9 @@ export default function AuditPage() {
             }}
           />
         ) : (
-          <div className="bezel-card overflow-hidden">
+          <div className="rounded-2xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06)] dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden">
             {/* Table header */}
-            <div className="grid grid-cols-[1fr_1.4fr_0.9fr_0.9fr_1.5fr] gap-x-3 px-3 py-2 border-b border-slate-200 dark:border-white/15 bg-slate-50/80 dark:bg-white/[0.02]">
+            <div className="grid grid-cols-[1fr_1.4fr_0.9fr_0.9fr_1.5fr] gap-x-3 px-3.5 py-2.5 border-b border-slate-200/50 dark:border-white/5 bg-slate-100/50 dark:bg-slate-950/40">
               {['Action ID', 'Target File', 'Verdict', 'Decision', 'Executed At'].map(h => (
                 <span key={h} className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                   {h}
@@ -750,7 +750,7 @@ export default function AuditPage() {
       </div>
 
       {/* ── Footer metrics (Always mounted to guarantee immutable data-tour="audit-metrics" target) ── */}
-      <div data-tour="audit-metrics" className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200 dark:border-white/15">
+      <div data-tour="audit-metrics" className="flex-shrink-0 flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-white/5">
         <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
           Showing {filteredEntries.length} of {entries.length} loaded ({total} total recorded)
         </span>

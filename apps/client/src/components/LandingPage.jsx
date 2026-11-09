@@ -42,8 +42,6 @@ import CavdaxWordmark from './CavdaxWordmark';
 
 import FooterParticles from './FooterParticles';
 
-import DragScrollController from './DragScrollController';
-
 import KineticRollingHeadline from './KineticRollingHeadline';
 
 import ThanosTypewriterHeadline from './ThanosTypewriterHeadline';
@@ -1601,13 +1599,7 @@ export default function LandingPage({
 
 
 
-      {/* ══════════════════════════════════════════════════════════════════════
 
-          6. SIGNATURE CAVDAX DRAGGABLE SCROLL CONTROLLER
-
-          ══════════════════════════════════════════════════════════════════════ */}
-
-      <DragScrollController />
 
     </div>
 
