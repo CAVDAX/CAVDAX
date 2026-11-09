@@ -18,28 +18,58 @@
 
 
 
-> **Status**: Monetization Hardening, Segmented Backer Filtering, Bounded Scroll Viewport & Dead Link Remediation Complete
-
-
-
-
-
-
+> **Status**: v1.3.0 Production Release Live (Sliding Pill Physics, Monospace Table Clearance, MCP Universal CLI v1.3.0 with Sigstore Provenance, GitHub Release v1.3.0 Published, Cold-Mount Invariants Codified)
 
 ---
 
+## 📌 Critical Reminder for Next Session (Mandatory Roadmap)
 
+### 1. Dedicated Sponsors & Backers Showcase Page (`SponsorsPage.jsx`)
+- **Objective**: Build a high-density, institutional showcase page dedicated to all CAVDAX sponsors, backers, and institutional partners.
+- **Features to Implement**:
+  - Monochromatic tier categorization: Community Backers ($4/mo), Pro Autonomous Patrons ($24/mo), Team & Scale Partners ($120/mo), and Proposed CSR Co-Funders.
+  - Verification badges with cryptographic/ledger timestamps (`Verified Backer`, `Active Node Lease`, `Sigstore Provenance`).
+  - Search and filter bar by tier and contribution type.
+  - Live backer counter synchronized with backend billing ledger state.
+  - Seamless navigation hooks from `LandingPage` footer, `SupportPage`, and `ProfilePage`.
 
+### 2. Murphy's Law Accessible Confirmation Dialog Pattern
+- **Objective**: Standardize a dedicated confirmation modal system for destructive, quota-consuming, and high-stakes operations across the platform.
+- **UX & Accessibility Invariants to Enforce**:
+  - **Murphy's Law Defensive Friction**: Anything that can go wrong will go wrong. Any operation that invalidates decisions, unlinks active repositories, rotates API keys, or triggers billing transactions must require deliberate secondary confirmation.
+  - **Single Concise Sentence Prompt**: Strict ban on bloated robotic paragraphs (per `AGENTS.md` § `0d`). Use concise, punchy engineering copy (e.g. *"This action permanently revokes the active token and disconnects the MCP relay immediately."*).
+  - **Keyboard Accessibility**: Auto-focus on Cancel button by default to prevent accidental `Enter` execution; <kbd>Escape</kbd> to dismiss.
+  - **Zero-Displacement & Focus Trap**: Modal mounted via React root portal with non-displacing backdrop blur and clean focus trapping.
+  - **Double-Click Debounce Guard**: State-driven lock preventing duplicate requests during async mutations.
 
-
-
+---
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
+
+## 1.1.14 Tier Benefits Sliding Pill Physics, Table Clearance Invariant & MCP Universal CLI v1.3.0 (November 10, 2026)
+
+- **Tier Benefits Sliding Pill Navigation & Cold-Mount Invariant**:
+  - Implemented declarative spring-physics sliding pill via Framer Motion `<LayoutGroup id="tier-hero-nav">` and `<motion.div layoutId="hero-active-tier-pill">`.
+  - Calibrated snug capsule dimensions (`px-4 py-2` buttons, `w-8 h-8` back button).
+  - Verified instant 0ms first-paint contrast on cold mount and direct browser reloads (`F5`) in both dark and light modes.
+- **Monospace Table Clearance Invariant on 1280px Laptops**:
+  - Enforced `w-full min-w-[1040px]` on the comparison matrix table with explicit column minimum widths (`min-w-[280px]`, `min-w-[260px]`).
+  - Added auto-scroll overshot buffer (`maxScroll + 80`) when activating extended tier tabs ("Team & Scale"), guaranteeing $\ge 59.5\text{px}$ clearance against the floating right-side quick dock.
+  - Added bespoke typographic orange arrow (`→`) to active column headers.
+  - Purged redundant floating scroll-to-top buttons from the landing page.
+- **Universal MCP CLI & Registry Release (@cavdax/mcp-server v1.3.0)**:
+  - Canonicalized `cavdax impact` command for enterprise downstream blast-radius analysis.
+  - Integrated `cavdax init` and `cavdax decisions` CLI operations into the executable package.
+  - Upgraded GitHub Actions workflow to Node 24 and npm 11+, achieving Sigstore cryptographic build provenance via ambient OIDC Trusted Publishing on npmjs.org.
+  - Created formal GitHub Release `v1.3.0` pointing to git tag `v1.3.0` as the official Latest release.
+- **Codification of Architectural Invariants**:
+  - Codified Section `0ag` (Cold-Mount Hydration Invariant), Section `0ah` (1280px Table Clearance Law), and Section `0ai` (Complete Release Distribution Triad) in `AGENTS.md` and `docs/UI_DESIGN_SYSTEM.md`.
+  - Authored `##Cold-Mount-Hydration-And-Release-Distribution-Triad-Master-Protocol.md` in master dev-assets prompts library.
 
 ## 1.1.13 GitHub README GFM Parser Guard, Dual-License Alignment, and Razorpay Localhost Confinement (November 8, 2026)
 
 - **GitHub README Hero Header GFM Code Block Trap Resolved (README.md & scripts/lint-markdown.mjs)**:
-  - **Mechanical Root Cause**: Under Section 4.4 of CommonMark/GFM specifications, any line preceded by an HTML container or blank line indented by $ge 4$ spaces is parsed as an indented code block (`<pre><code>`). The README header used compound 2-space indentation (`<div align="center">` [0] $ightarrow$ `<picture>` [2] $ightarrow$ `<source>` [4]), causing GitHub to render raw HTML tags as code blocks with copy buttons and horizontal scrollbars.
+  - **Mechanical Root Cause**: Under Section 4.4 of CommonMark/GFM specifications, any line preceded by an HTML container or blank line indented by $ge 4$ spaces is parsed as an indented code block (`<pre><code>`). The README header used compound 2-space indentation (`<div align="center">` [0] $ightarrow$ `<picture>` [2] $ightarrow$ `<source>` [4]), causing GitHub to render raw HTML tags as code blocks with copy buttons and horizontal scrollbars.
   - **Resolution**:
     1. Re-aligned all nested HTML tags in `README.md` to strictly 0 leading spaces (flush-left).
     2. Implemented `scripts/lint-markdown.mjs` to detect synthetic double carriage returns (`\r\r\n`) and indented raw HTML tags (`^\s{4,}<(picture|source|img|a|...)`).
