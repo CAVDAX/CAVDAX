@@ -59,6 +59,31 @@
     2. Mounted loopback guidance banner on `SupportPage.jsx` directing local testers to the Evaluation Sponsor Pass.
     3. Hardened `POST /api/billing/verify-payment` against loopback origins, preventing any payment verification desync on localhost.
 
+## 1.1.14 Authentic 7-Day Pro Trial System, Single-Branch Community Quotas, and Dynamic Enterprise Domain Registry (November 9, 2026)
+
+- **Authentic 7-Day Pro Trial System Wired (ProfilePage.jsx & apps/server/index.js)**:
+  - **Mechanical Root Cause**: Previously, `ProfilePage.jsx` featured an unbacked label *"Includes 7-Day Free Pro Trial"*, but clicking Upgrade immediately opened the Razorpay checkout demanding upfront payment with zero trial period logic or deferred verification.
+  - **Resolution**:
+    1. Built backend endpoint `POST /api/billing/start-trial`: binds identity-backed trial status to GitHub ID/user session (`activeTrialsStore`), establishes a strict 7-day expiration (`now + 7 * 86400000`), and rejects repeat claims with HTTP 400 `TRIAL_ALREADY_USED`.
+    2. Enhanced `GET /api/auth/me`: dynamically resolves trial validity, calculates remaining days, and gracefully downgrades expired accounts to Community tier if no active paid subscription exists.
+    3. Wired client UI in `ProfilePage.jsx` across both large and compact views:
+       - Unclaimed: Displays *"Includes 7-Day Free Pro Trial (Instant)"* with a direct 1-click `[Start 7-Day Free Pro Trial]` button (no CC/UPI required).
+       - Active Trial: Displays emerald badge *"Active Pro Trial • X days remaining"* and allows upgrading to permanent Pro (`₹320/mo`).
+       - Expired: Displays *"Pro Trial Expired · Upgrade to continue"* and routes to Razorpay checkout.
+
+- **Community 1-Branch Selection & Pro Multi-Branch Differentiation (ProfilePage.jsx)**:
+  - **Resolution**: Updated tier feature matrices in `ProfilePage.jsx` across large and compact views:
+    - Community Tier: `1 Connected repository (1 active branch)` — empowers developers to select and test any active working branch (`feat/auth`, `develop`, etc.) on their repository without being locked to `main`.
+    - Pro Autonomous Tier: `10 Connected repositories (Unlimited concurrent branches)` — unlocks concurrent multi-branch tracking and cross-branch causal drift detection.
+
+- **Dynamic Enterprise Organization Domain Registry (apps/server/index.js)**:
+  - **Resolution**:
+    1. Replaced static/hardcoded partner domains with dynamic `enterpriseOrganizationsStore`.
+    2. Implemented `POST /api/enterprise/register-domain`: restricted to active Enterprise tier accounts, enforces strict RFC 5322/1035 hostname syntax validation, and blocks public/disposable email providers (`BLOCKED_PUBLIC_EMAIL_DOMAINS` including Gmail, Yahoo, Outlook, Proton, etc.).
+    3. Automated Enterprise Access Elevation: when users authenticate via GitHub OAuth, `GET /api/auth/me` extracts their verified email domain. If it matches a registered enterprise organization, their session is elevated to `enterprise` automatically without requiring manual sales intervention or email tokens.
+    4. Replaced dead sales email `contact@cavdax.live` with active operational inbox `cavdax.dev@gmail.com`.
+    5. Added automated regression test suite (`apps/server/test/proTrialAndEnterpriseDomain.test.mjs`) verifying trial bounds, domain regex, and public freemail rejection.
+
 ## 1.1.12 Pull-Cord Radial Physics Clamping & Viewport-Aware Graph Canvas Auto-Centering (November 7, 2026)
 
 - **Wordmark Lamp Pull-Cord Bounding & Radial Clamp Defect Resolved (PullCordLampToggle.jsx)**:

@@ -95,7 +95,7 @@ Operational constitution, architecture standards, and safety governance for AI c
 
 0i. **Hackathon Evaluation Mode & Real-Time Tier Unlocking Architecture**:
    - **Developer Enclave Master Control**: The secure Developer Enclave must provide an executive `Hackathon Evaluation Mode [ OFF / ON ]` toggle that sets global server state and broadcasts updates via Server-Sent Events (`/api/events`).
-   - **Evaluation Pass Capabilities**: When ON, all visitors receive an Evaluation Pass granting full Enterprise Mesh capabilities (unlimited repositories, causal graph inspection, unthrottled quotas). Tier locks are lifted, displaying `EVALUATION PASS` badges and allowing frictionless switching.
+   - **Evaluation Pass Capabilities**: When ON, all visitors receive an Evaluation Pass granting full Team & Scale capabilities (unlimited repositories, causal graph inspection, unthrottled quotas). Tier locks are lifted, displaying `EVALUATION PASS` badges and allowing frictionless switching.
    - **Commercial Display Integrity**: Tier cards remain visible with real pricing to prove commercial viability to judges.
    - **Elevated Rate Ceiling**: Expands per-IP rate limits to 1,200 req/min (20 req/sec) to guarantee zero throttling during evaluation, while avoiding `skip: true` to keep the server shielded against bots.
    - **Instant Reversion**: Toggling OFF instantly restores standard production enforcement across all clients without redeployment.
@@ -334,6 +334,25 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
        grep -Pn "^\s{4,}<(picture|source|img|a|strong|p|div|span)" **/*.md && echo "INDENTED HTML DETECTED"
        ```
 
+
+0ac. **Monorepo-Wide Terminology Harmonization & Zero-Inconsistency Invariant (Semantic Drift Guard)**:
+    - **The Semantic Inconsistency Anti-Pattern**:
+      - Modifying a domain term, plan name, or brand token (e.g., renaming "Enterprise Mesh" to "Team & Scale") in a single component or file, leaving outdated legacy terms lingering in developer consoles, SEO headers, test assertions, or architectural documentation.
+      - This creates cognitive dissonance for users, breaks test contracts, introduces branding ambiguity, and signals uncoordinated AI editing.
+    - **The 4-Pillar Harmonization Protocol (Mandatory on ANY Terminology Change)**:
+      1. **Whole-Repository Forensic Grep (Zero Blindspots)**:
+         - Before and after modifying ANY brand term, tier title, public route, or capability token, the agent MUST run an exhaustive repo-wide grep:
+           ```bash
+           git grep -n "<OldTerm>"
+           ```
+         - Every occurrence across UI components (`apps/client/src/`), backend server routes (`apps/server/`), test files (`apps/server/test/`), markdown documentation (`docs/`), and meta rules (`AGENTS.md`) must be inspected and updated in the same cohesive pass.
+      2. **Dual-Plane Consistency (Display Copy vs Machine Key)**:
+         - Clearly delineate and harmonize human-facing copy (e.g. `Team & Scale`) and underlying state machine keys (e.g. `tier === 'enterprise'`).
+         - Never update consumer-facing cards while leaving developer enclave simulation buttons (e.g. `SIMULATE ENTERPRISE` vs `SIMULATE TEAM & SCALE`), toasts, or mode switchers showing obsolete terms.
+      3. **Documentation & Spec Symmetrization**:
+         - Architectural specifications (`docs/BILLING_AND_PAYMENTS_ARCHITECTURE.md`, `docs/UI_DESIGN_SYSTEM.md`, `README.md`) must reflect the exact naming established in code. A change in UI copy without matching documentation creates stale specifications.
+      4. **Verification Gate**:
+         - Verify that `npm run build` passes on `apps/client` with zero compilation warnings, and `node --test` passes on `apps/server` with zero test assertion failures.
 
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
