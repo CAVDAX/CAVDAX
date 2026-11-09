@@ -26,6 +26,7 @@ const DevTeamPanel = React.lazy(() => import('./components/DevTeamPanel.jsx'));
 const ProfilePage = React.lazy(() => import('./components/ProfilePage.jsx'));
 const SupportPage = React.lazy(() => import('./components/SupportPage.jsx'));
 const ConnectedRepoWorkspace = React.lazy(() => import('./components/ConnectedRepoWorkspace.jsx'));
+const TierBenefitsPage = React.lazy(() => import('./components/TierBenefitsPage.jsx'));
 import PreferencesModal from './components/PreferencesModal.jsx';
 import KeyboardShortcutsModal from './components/KeyboardShortcutsModal.jsx';
 import McpConnectModal from './components/McpConnectModal.jsx';
@@ -42,10 +43,16 @@ const ROUTE_PREFETCH_LOADERS = {
   profile: () => import('./components/ProfilePage.jsx'),
   dev: () => import('./components/DevConsolePage.jsx'),
   devteam: () => import('./components/DevTeamPanel.jsx'),
-  repo: () => import('./components/ConnectedRepoWorkspace.jsx')
+  repo: () => import('./components/ConnectedRepoWorkspace.jsx'),
+  benefits: () => import('./components/TierBenefitsPage.jsx')
 };
 
 const prefetchedRoutes = new Set();
+
+// Specialized deep-dive routes (e.g. TierBenefitsPage with heavy simulation figures)
+// are excluded from the blanket idle background sweep and instead download strictly
+// on user interaction (hover/focus/touch) over cues like (Compare Details) or tier link buttons.
+const ON_DEMAND_ONLY_ROUTES = new Set(['benefits']);
 
 function prefetchRoute(tabKey) {
   if (!tabKey || prefetchedRoutes.has(tabKey)) return;
@@ -65,6 +72,7 @@ function prefetchAllRoutes() {
 
   schedule(() => {
     Object.entries(ROUTE_PREFETCH_LOADERS).forEach(([key, loader], idx) => {
+      if (ON_DEMAND_ONLY_ROUTES.has(key)) return;
       setTimeout(() => {
         if (!prefetchedRoutes.has(key)) {
           prefetchedRoutes.add(key);
@@ -96,6 +104,7 @@ function resolveTabFromUrl() {
   if (rawPath === '/dev') return 'dev';
   if (rawPath === '/devteam') return 'devteam';
   if (rawPath === '/profile') return 'profile';
+  if (rawPath === '/tier-benefits' || rawPath === '/benefits' || rawPath === '/pricing') return 'benefits';
   if (rawPath === '/support' || rawPath === '/sponsor') return 'support';
   if (rawPath === '/404') return '404';
 
@@ -107,6 +116,7 @@ function resolveTabFromUrl() {
     if (h === '#project' || h === '#demo' || h === '#walkthrough') return 'project';
     if (h === '#team') return 'team';
     if (h === '#profile') return 'profile';
+    if (h === '#benefits' || h === '#tier-benefits' || h === '#pricing') return 'benefits';
     if (h === '#support' || h === '#sponsor') return 'support';
     if (h === '#overview' || h === '' || h === '#') return 'landing';
     if (h === '#404') return '404';
@@ -126,6 +136,7 @@ const TAB_TO_PATH = {
   dev: '/dev',
   devteam: '/devteam',
   profile: '/profile',
+  benefits: '/tier-benefits',
   support: '/support',
   '404': '/404',
 };
@@ -1517,6 +1528,7 @@ export default function App() {
       <SplashLoader isDarkTheme={isDarkTheme} />
 
       {/* 1. Monochromatic Portfolio Header (Icon mark only - NO WORDMARK) */}
+      {activeTab !== 'benefits' && (
       <Header
         status={{ falkorLive, latestLatency }}
         activeTab={activeTab}
@@ -1529,6 +1541,7 @@ export default function App() {
         tier={activeTierKey}
         user={githubUser}
       />
+      )}
 
       {/* 2. Main Viewport Switcher with Fluid Page Ascent */}
       <PageAscentTransition
@@ -1631,6 +1644,20 @@ export default function App() {
             onLaunchConsole={() => handleSelectTab('console')}
             onOpenMcpPage={() => handleSelectTab('mcp')}
             onOpenSupportPage={() => handleSelectTab('support')}
+            onOpenBenefitsPage={() => handleSelectTab('benefits')}
+            onPrefetchTab={prefetchRoute}
+          />
+        </SubsystemErrorBoundary>
+      ) : activeTab === 'benefits' ? (
+        /* Architectural Tier Capabilities & Governance Deep Dive */
+        <SubsystemErrorBoundary name="Tier Capabilities & Governance">
+          <TierBenefitsPage
+            user={githubUser}
+            tier={activeTierKey}
+            onLaunchConsole={() => handleSelectTab('console')}
+            onOpenProfilePage={() => handleSelectTab('profile')}
+            onOpenMcpPage={() => handleSelectTab('mcp')}
+            isDarkTheme={isDarkTheme}
           />
         </SubsystemErrorBoundary>
       ) : activeTab === 'support' ? (
@@ -1967,7 +1994,7 @@ export default function App() {
       />
 
       {/* Universal Scroll Cue & Architectural Rail Scrubber — present wherever there is vertical scroll */}
-      <ArchitecturalRailScrubber activeTab={activeTab} />
+      {activeTab !== 'benefits' && <ArchitecturalRailScrubber activeTab={activeTab} />}
 
       {/* 4. MCP Agent Connection Configuration Modal */}
       <McpConnectModal

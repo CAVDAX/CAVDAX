@@ -15,13 +15,13 @@ export default function PageAscentTransition({
   duration = 550,
   className = ''
 }) {
-  const [willChangeActive, setWillChangeActive] = useState(true);
+  const [animating, setAnimating] = useState(true);
 
   useEffect(() => {
-    setWillChangeActive(true);
+    setAnimating(true);
     const timer = setTimeout(() => {
-      setWillChangeActive(false);
-    }, duration + 150);
+      setAnimating(false);
+    }, duration + 100);
     return () => clearTimeout(timer);
   }, [routeKey, duration]);
 
@@ -37,10 +37,12 @@ export default function PageAscentTransition({
     <main
       id="main-content"
       key={routeKey}
+      onAnimationEnd={() => setAnimating(false)}
       className={`page-ascent-wrapper w-full ${className}`}
       style={{
-        animation: `cavdaxPageAscentIn ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) both`,
-        willChange: willChangeActive ? 'opacity, transform' : 'auto'
+        animation: animating ? `cavdaxPageAscentIn ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) both` : 'none',
+        transform: animating ? undefined : 'none',
+        willChange: animating ? 'opacity, transform' : 'auto'
       }}
     >
       <style>{`

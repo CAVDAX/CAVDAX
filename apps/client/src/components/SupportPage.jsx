@@ -810,16 +810,16 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
       </div>
 
       {typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '::1') && (
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-800 dark:text-amber-300 text-xs font-mono mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-3.5 rounded-xl bg-slate-100 dark:bg-white/[0.04] border border-slate-300 dark:border-white/10 text-slate-800 dark:text-slate-200 text-xs font-mono mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div className="flex items-center gap-2.5">
-            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+            <AlertTriangle className="w-4 h-4 text-slate-600 dark:text-slate-400 shrink-0" />
             <span>Local Loopback Confinement: Live Razorpay payments are disabled on localhost to prevent stranded funds. Use the Evaluation Sponsor Pass below for local testing.</span>
           </div>
           <a
             href="https://cavdax.sahnirmaan.live/support"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-white shrink-0 inline-flex items-center gap-1 font-bold"
+            className="text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white underline shrink-0 inline-flex items-center gap-1 font-semibold"
           >
             <span>Production Support</span>
             <ExternalLink size={12} />
@@ -1456,9 +1456,15 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
             <span>Loading verified backers...</span>
           </div>
         ) : filteredSponsors.length === 0 ? (
-          <div className="py-10 text-center flex flex-col items-center justify-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 dark:text-slate-500">
-              <Heart className="w-5 h-5 text-rose-500/70" />
+          <div className="group/empty py-10 text-center flex flex-col items-center justify-center gap-3">
+            {/* Upper Badge with Dual-Layered Velvet Heart Fill Bloom */}
+            <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all duration-300 group-hover/empty:border-rose-400/40 group-hover/empty:bg-rose-50/50 dark:group-hover/empty:bg-rose-500/10">
+              <div className="relative w-5 h-5 flex items-center justify-center">
+                {/* Crisp Outline Layer */}
+                <Heart className="w-5 h-5 text-rose-500/70 transition-colors duration-300 stroke-[1.8]" />
+                {/* Velvet Fill Bloom (Zero flickering, compositor-accelerated) */}
+                <Heart className="absolute inset-0 w-5 h-5 text-rose-500 fill-rose-500 opacity-0 scale-75 group-hover/empty:opacity-100 group-hover/empty:scale-100 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              </div>
             </div>
             <div>
               <p className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200">
@@ -1477,9 +1483,15 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                   tiersSection.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
-              className="mt-1 px-3 py-1.5 rounded-lg border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-400 text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+              className="group mt-1 px-3.5 py-1.5 rounded-lg border border-slate-300 dark:border-white/20 bg-slate-900 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 text-xs font-mono font-semibold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
             >
-              <Heart className="w-3 h-3 text-amber-500 shrink-0" />
+              {/* Dual-Layered Velvet Heart Button Icon */}
+              <div className="relative w-3.5 h-3.5 shrink-0 flex items-center justify-center">
+                {/* Crisp Outline Layer */}
+                <Heart className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400 shrink-0 transition-colors duration-300 stroke-[2]" />
+                {/* Smooth blossoming velvet fill */}
+                <Heart className="absolute inset-0 w-3.5 h-3.5 text-rose-500 fill-rose-500 dark:text-rose-400 dark:fill-rose-400 shrink-0 opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]" />
+              </div>
               <span>Become First Supporter</span>
             </button>
           </div>

@@ -82,7 +82,7 @@ export default function Combobox({
   };
 
   return (
-    <div ref={containerRef} className={`relative inline-block ${className}`}>
+    <div ref={containerRef} className={`relative inline-block ${isOpen ? 'z-50' : 'z-auto'} ${className}`}>
       {/* Trigger Button */}
       <button
         type="button"

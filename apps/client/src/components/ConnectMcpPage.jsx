@@ -50,9 +50,19 @@ import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
 
 // Container-Relative Slider Tracker Hook (Immune to scroll jumps, unmount morphs, and cross-screen Y-flying)
+// Enhanced with Row-Aware Matrix-Speed Lightning Dissolve when switching between multi-row grid tracks
 function usePillTracker(activeKey, extraDep = null) {
   const refs = useRef({});
-  const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0, ready: false });
+  const prevYRef = useRef(null);
+  const prevKeyRef = useRef(activeKey);
+  const [position, setPosition] = useState({
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+    ready: false,
+    isRowChange: false,
+  });
 
   useLayoutEffect(() => {
     let rafId;
@@ -63,18 +73,26 @@ function usePillTracker(activeKey, extraDep = null) {
         const y = el.offsetTop;
         const width = el.offsetWidth;
         const height = el.offsetHeight;
+
+        const isKeyChanged = prevKeyRef.current !== activeKey;
+        const isRowChange = prevYRef.current !== null && isKeyChanged && Math.abs(prevYRef.current - y) > 6;
+
         setPosition((prev) => {
           if (
             prev.ready &&
             prev.x === x &&
             prev.y === y &&
             prev.width === width &&
-            prev.height === height
+            prev.height === height &&
+            prev.isRowChange === isRowChange
           ) {
             return prev;
           }
-          return { x, y, width, height, ready: true };
+          return { x, y, width, height, ready: true, isRowChange };
         });
+
+        prevYRef.current = y;
+        prevKeyRef.current = activeKey;
       }
     };
 
@@ -99,7 +117,7 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
   const [transportMode, setTransportMode] = useState('sse'); // 'sse' (Cloud) | 'stdio' (NPX Local)
 
-  const [activeCliTab, setActiveCliTab] = useState('mcp'); // 'mcp' | 'doctor' | 'ingest' | 'check'
+  const [activeCliTab, setActiveCliTab] = useState('init'); // 'init' | 'mcp' | 'doctor' | 'ingest' | 'check' | 'gate'
 
   const [copiedKey, setCopiedKey] = useState(null);
 
@@ -507,6 +525,16 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
   const cliCommands = {
 
+    init: {
+
+      cmd: 'npx cavdax init',
+
+      desc: 'Scaffolds docs/adr directory, baseline ADR-001, and Cursor/Claude MCP configuration in current repo.',
+
+      flags: '--yes, -y'
+
+    },
+
     mcp: {
 
       cmd: 'npx cavdax mcp',
@@ -545,6 +573,36 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
 
       flags: '-s, --staged | --pr <number>'
 
+    },
+
+    gate: {
+
+      cmd: 'npx cavdax gate --repo <org/repo> --sha <sha>',
+
+      desc: 'CI/CD status check: validates PR commit diffs against active architecture decisions and invariants.',
+
+      flags: '-r, --repo <name> | --sha <hex> | --strict'
+
+    },
+
+    impact: {
+
+      cmd: 'npx cavdax impact <decision-id>',
+
+      desc: 'Inspect downstream architectural impact and affected source files before refactoring.',
+
+      flags: '-d, --decision <id> (alias: blast)'
+
+    },
+
+    decisions: {
+
+      cmd: 'npx cavdax decisions',
+
+      desc: 'Lists active governing architecture decisions, statuses, and file patterns in the repository.',
+
+      flags: '-f, --filter [ALL|APPROVED|INVALIDATED]'
+
     }
 
   };
@@ -559,17 +617,21 @@ NEVER use native file-editing tools (e.g., Edit, Write, bash echo/sed) to modify
 All codebase modifications MUST be routed through the CAVDAX MCP verification gate.
 
 EXECUTION WORKFLOW:
-1. Discovery & Context:
-   - Call \`query_causal_graph\` or inspect repository ADRs in \`docs/adrs/\` to identify governing architecture decisions (e.g., DEC-103).
+1. Architectural Discovery & Situational Awareness:
+   - Call \`list_active_decisions\` to get a lightweight manifest of governing ADRs, statuses, and file paths.
+   - For detailed dependency links, call \`query_causal_graph\`.
 
-2. Pre-Flight Intent Clearance:
+2. Refactoring & Blast Radius Analysis:
+   - Before modifying or superseding an existing decision, call \`explain_blast_radius\` with \`node_id\` to inspect directly dependent decisions and governed files at risk.
+
+3. Pre-Flight Intent Clearance:
    - Call \`check_intent_clearance\` with your proposed \`decision_id\` and \`target_file\` before generating code.
    - If clearance is APPROVED, proceed to enclosed execution.
 
-3. Enclosed Execution Gate:
+4. Enclosed Execution Gate:
    - Execute file modifications strictly through the \`apply_code_change\` MCP tool passing \`decision_id\`, \`target_file\`, and \`patch\`.
 
-4. Invalidation & Self-Correction:
+5. Invalidation & Self-Correction:
    - If CAVDAX returns BLOCKED_DECISION_INVALIDATED or BLOCKED_SUPERSEDED_SOURCE:
      a. Do NOT attempt direct filesystem overrides.
      b. Call \`revalidate_decision\` with the superseding ADR to refresh the dependency graph.
@@ -1290,29 +1352,30 @@ EXECUTION WORKFLOW:
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 w-full relative">
 
               {clientPill.position.ready && (
-
                 <motion.div
-
                   className="absolute top-0 left-0 rounded-lg bg-slate-950 dark:bg-white shadow-xs pointer-events-none"
-
                   initial={false}
-
                   animate={{
-
                     x: clientPill.position.x,
-
                     y: clientPill.position.y,
-
                     width: clientPill.position.width,
-
                     height: clientPill.position.height,
-
+                    opacity: clientPill.position.isRowChange ? [0, 1] : 1,
+                    scale: clientPill.position.isRowChange ? [0.92, 1] : 1,
                   }}
-
-                  transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-
+                  transition={
+                    clientPill.position.isRowChange
+                      ? {
+                          x: { duration: 0 },
+                          y: { duration: 0 },
+                          width: { duration: 0 },
+                          height: { duration: 0 },
+                          opacity: { duration: 0.14, ease: 'easeOut' },
+                          scale: { duration: 0.14, ease: 'easeOut' },
+                        }
+                      : { type: 'spring', stiffness: 420, damping: 34 }
+                  }
                 />
-
               )}
 
               {Object.keys(clientConfigs[transportMode]).map((key) => {
@@ -1487,100 +1550,65 @@ EXECUTION WORKFLOW:
         <div className="neo-glass-card p-6 sm:p-8">
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-white/10">
-
             <div>
-
               <h2 className="text-lg font-bold text-slate-950 dark:text-white flex items-center gap-2">
-
                 <Terminal className="w-5 h-5 text-slate-900 dark:text-white" />
-
                 <span>Universal CAVDAX CLI Suite</span>
-
               </h2>
-
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-
                 Execute directly via <code className="font-mono text-slate-900 dark:text-white font-semibold">npx cavdax &lt;command&gt;</code> without manual installation.
-
               </p>
-
             </div>
-
-
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 self-start sm:self-auto relative">
-
               {cliTabPill.position.ready && (
-
                 <motion.div
-
                   className="absolute top-0 left-0 rounded-lg bg-slate-950 dark:bg-white shadow-xs pointer-events-none"
-
                   initial={false}
-
                   animate={{
-
                     x: cliTabPill.position.x,
-
                     y: cliTabPill.position.y,
-
                     width: cliTabPill.position.width,
-
                     height: cliTabPill.position.height,
-
+                    opacity: cliTabPill.position.isRowChange ? [0, 1] : 1,
+                    scale: cliTabPill.position.isRowChange ? [0.92, 1] : 1,
                   }}
-
-                  transition={{ type: 'spring', stiffness: 420, damping: 34 }}
-
+                  transition={
+                    cliTabPill.position.isRowChange
+                      ? {
+                          x: { duration: 0 },
+                          y: { duration: 0 },
+                          width: { duration: 0 },
+                          height: { duration: 0 },
+                          opacity: { duration: 0.14, ease: 'easeOut' },
+                          scale: { duration: 0.14, ease: 'easeOut' },
+                        }
+                      : { type: 'spring', stiffness: 420, damping: 34 }
+                  }
                 />
-
               )}
-
               {Object.keys(cliCommands).map((tab) => {
-
                 const isSelected = activeCliTab === tab;
-
                 return (
-
                   <button
-
                     key={tab}
-
                     ref={el => { if (el) cliTabPill.refs.current[tab] = el; }}
-
                     onClick={() => {
-
                       playClick();
-
                       setActiveCliTab(tab);
-
                     }}
-
-                    className={`relative px-3 py-1 rounded-lg text-xs font-mono uppercase font-bold transition-colors duration-200 select-none ${
-
+                    className={`relative px-3 py-1.5 rounded-lg text-xs font-mono uppercase font-bold transition-colors duration-200 select-none text-center ${
                       isSelected
-
                         ? 'text-white dark:text-slate-950 z-10'
-
                         : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white'
-
                     }`}
-
                   >
-
                     <span className="relative z-10">{tab}</span>
-
                   </button>
-
                 );
-
               })}
-
             </div>
-
           </div>
-
-
 
           <div className="p-4 rounded-xl bg-slate-950 dark:bg-[#07090D] border border-slate-800 dark:border-white/10 font-mono text-xs text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
 
