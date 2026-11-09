@@ -7976,6 +7976,21 @@ Cloning global environment toggles (such as Theme/Appearance, Dark Mode switches
 
   - Table containers must provide adequate min-width (`min-w-[960px]`) and horizontally scroll on mobile (`overflow-x-auto scrollbar-thin`) rather than crushing columns into ragged multi-line text blocks.
 
+### 73.3 Strict Single-Line Discipline & Copy Budgeting for Tier Benefits and Pricing Badges
+
+* **The Defect**:
+  - Appending wordy qualifiers (e.g., `10 Connected repositories (Unlimited concurrent branches)`) or colloquial suffixes (e.g., `Includes 7-Day Free Pro Trial (Instant)`) in pricing cards.
+  - This pushes micro-copy to 60+ characters, causing awkward 2-line wraps, broken card heights, and ragged vertical spacing on 13-inch laptop displays (1280px).
+
+* **The Single-Line Character Budget Standard**:
+  1. **Strict 42-Character Ceiling for Tier Bullets**: Every benefit bullet in subscription cards must strictly stay within **42 characters** (including spaces). This guarantees that text renders cleanly on a single line across mobile, 13" laptops, and widescreen displays without wrapping.
+  2. **Ban on Colloquial & Infomercial Suffixes**: Never append `(Instant)`, `(Free!)`, or `(Act Now)` to trial badges or headers. Premium developer tools communicate value through clean typography and calm, confident phrasing (e.g., `Includes 7-Day Free Pro Trial`).
+  3. **Telegraphic Quota Phrasing**:
+     - *Banned*: `10 Connected repositories (Unlimited concurrent branches)` (62 chars, wraps awkwardly)
+     - *Required*: `10 Connected repositories (All branches)` (40 chars, single line)
+     - *Banned*: `1 Connected repository (1 active branch)`
+     - *Required*: `1 Connected repository (1 branch)` (34 chars, single line)
+
 
 
 ---
