@@ -1026,7 +1026,7 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
             }`}>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white">Autonomous Enterprise</span>
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-900 dark:text-white">Team & Scale</span>
                   <span className="text-[10px] font-mono text-slate-400">$299/mo</span>
                 </div>
                 <p className="text-[11px] font-mono text-slate-500 leading-relaxed">
@@ -1039,7 +1039,7 @@ export default function DevTeamPanel({ githubUser, onNavigateHome }) {
                 disabled={activeDevTier === 'enterprise'}
                 className="mt-4 w-full py-2 rounded-lg bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-xs font-mono font-bold hover:opacity-90 active:scale-98 transition-all disabled:opacity-40 disabled:pointer-events-none cursor-pointer shadow-xs"
               >
-                {activeDevTier === 'enterprise' ? 'CURRENTLY ACTIVE' : 'SIMULATE ENTERPRISE (FREE DEV)'}
+                {activeDevTier === 'enterprise' ? 'CURRENTLY ACTIVE' : 'SIMULATE TEAM & SCALE (FREE DEV)'}
               </button>
             </div>
           </div>
