@@ -159,6 +159,51 @@ export const TOOLS = [
         }
       }
     }
+  },
+  {
+    name: 'list_active_decisions',
+    description:
+      'Returns a lightweight manifest of all architectural decisions governing this repository, their approval status, grounded facts, and target files.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status_filter: {
+          type: 'string',
+          enum: ['ALL', 'APPROVED', 'VALID', 'INVALIDATED_NEEDS_REVALIDATION', 'STALE'],
+          description: 'Filter decisions by status (default: "ALL").'
+        }
+      }
+    }
+  },
+  {
+    name: 'explain_blast_radius',
+    description:
+      'Computes downstream architectural blast radius and invalidated dependencies before modifying an ADR, Decision, or Fact.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        node_id: {
+          type: 'string',
+          description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.'
+        }
+      },
+      required: ['node_id']
+    }
+  },
+  {
+    name: 'explain_architectural_impact',
+    description:
+      'Analyzes downstream architectural impact, invalidated decisions, and affected source files before modifying an ADR, Decision, or Fact. (Alias for explain_blast_radius).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        node_id: {
+          type: 'string',
+          description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.'
+        }
+      },
+      required: ['node_id']
+    }
   }
 ];
 
@@ -169,7 +214,10 @@ const REQUIRED_ARGS = {
   acquire_decision_lock: ['decision_id', 'agent_id'],
   release_decision_lock: ['decision_id', 'agent_id'],
   query_causal_graph: [],
-  export_graph_image: []
+  export_graph_image: [],
+  list_active_decisions: [],
+  explain_blast_radius: ['node_id'],
+  explain_architectural_impact: ['node_id']
 };
 
 const toolResult = (payload, isError = false) => ({
@@ -254,6 +302,8 @@ export class CavdaxStdioGateway {
       else if (name === 'check_intent_clearance') result = sim.checkIntentClearance(args);
       else if (name === 'acquire_decision_lock') result = sim.acquireLock(args);
       else if (name === 'release_decision_lock') result = sim.releaseLock(args);
+      else if (name === 'list_active_decisions') result = sim.listActiveDecisions(args);
+      else if (name === 'explain_blast_radius' || name === 'explain_architectural_impact') result = sim.explainBlastRadius(args);
       else if (name === 'export_graph_image') {
         const [{ renderGraphToSvg, computeBlastRadius }] = await Promise.all([loadCore('graph/renderSvg.js')]);
         const { blastNodeIds, summary } = (args.node_id && args.highlight_blast_radius)

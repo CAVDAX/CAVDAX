@@ -17,6 +17,9 @@ import { runIngest } from '../src/ingestCommand.js';
 import { runCheck } from '../src/checkCommand.js';
 import { runGate } from '../src/gateCommand.js';
 import { runDoctor } from '../src/doctorCommand.js';
+import { runInit } from '../src/initCommand.js';
+import { runImpact } from '../src/impactCommand.js';
+import { runDecisions } from '../src/decisionsCommand.js';
 
 const program = new Command();
 const { version } = createRequire(import.meta.url)('../package.json');
@@ -80,6 +83,34 @@ program
   .description('Diagnose FalkorDB connectivity, GraphBLAS matrix health, and MCP readiness')
   .action(async () => {
     await runDoctor();
+  });
+
+
+program
+  .command('init')
+  .description('Scaffold ADR documentation structure and MCP client configurations for a project')
+  .option('-r, --repo <path>', 'Repository root path', process.cwd())
+  .action(async (options) => {
+    await runInit(options);
+  });
+
+program
+  .command('impact [nodeId]')
+  .alias('blast')
+  .description('Inspect downstream architectural impact and affected source files')
+  .option('-d, --decision <id>', 'Decision ID to analyze (e.g. DEC-101)')
+  .action(async (nodeId, options) => {
+    const success = await runImpact(nodeId, options);
+    process.exit(success ? 0 : 1);
+  });
+
+program
+  .command('decisions')
+  .description('List active architecture decisions, their statuses, and governed paths')
+  .option('-f, --filter <status>', 'Status filter: ALL | APPROVED | SUPERSEDED | INVALIDATED', 'ALL')
+  .action(async (options) => {
+    await runDecisions(options);
+    process.exit(0);
   });
 
 program.parse(process.argv);
