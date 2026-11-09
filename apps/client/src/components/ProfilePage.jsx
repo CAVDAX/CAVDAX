@@ -1132,7 +1132,7 @@ export default function ProfilePage({
               <ul className="text-xs font-mono space-y-2 mb-6 text-slate-600 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>1 Connected repository (1 active branch)</span>
+                  <span>1 Connected repository (1 branch)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -1278,13 +1278,13 @@ export default function ProfilePage({
                     Pro Trial Expired · Upgrade to continue
                   </span>
                 ) : (
-                  <span>Includes 7-Day Free Pro Trial (Instant)</span>
+                  <span>Includes 7-Day Free Pro Trial</span>
                 )}
               </div>
               <ul className="text-xs font-mono space-y-2 mb-6 text-slate-600 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>10 Connected repositories (Unlimited concurrent branches)</span>
+                  <span>10 Connected repositories (All branches)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -2082,7 +2082,7 @@ export default function ProfilePage({
             <ul className="text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 text-slate-600 dark:text-slate-300 flex-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span>1 Connected repository (1 active branch)</span>
+                <span>1 Connected repository (1 branch)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -2228,13 +2228,13 @@ export default function ProfilePage({
                   Pro Trial Expired · Upgrade to continue
                 </span>
               ) : (
-                <span>Includes 7-Day Free Pro Trial (Instant)</span>
+                <span>Includes 7-Day Free Pro Trial</span>
               )}
             </div>
             <ul className="text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 text-slate-600 dark:text-slate-300 flex-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>10 Connected repositories (Unlimited concurrent branches)</span>
+                <span>10 Connected repositories (All branches)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
