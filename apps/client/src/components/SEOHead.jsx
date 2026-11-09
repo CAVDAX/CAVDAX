@@ -33,7 +33,7 @@ const SEO_MAP = {
   },
   profile: {
     title: 'CAVDAX | Developer Pricing, Currency Switcher & Account Tiers',
-    description: 'Explore Free, Pro ($4 USD / ₹320 INR), and Enterprise developer tiers with 7-day free trial and multi-tenant FalkorDB access.',
+    description: 'Explore Free, Pro ($4 USD / ₹320 INR), and Team & Scale developer tiers with 7-day free trial and multi-tenant FalkorDB access.',
     path: '/profile'
   },
   support: {

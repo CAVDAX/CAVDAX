@@ -654,7 +654,7 @@ export default function ProfilePage({
       handleRazorpayUpgrade();
       return;
     }
-    const planName = 'Enterprise Mesh';
+    const planName = 'Team & Scale';
     showToast(`${planName} requires custom contract deployment. Contact sales at cavdax.dev@gmail.com`);
     return;
   };
@@ -1364,7 +1364,7 @@ export default function ProfilePage({
               </div>
             </div>
   
-            {/* Tier 3: Enterprise Mesh (Solid Deep Obsidian Purple Card Background) */}
+            {/* Tier 3: Team & Scale (Solid Deep Obsidian Purple Card Background) */}
             <div
               onPointerMove={handleCardPointerMove}
               onPointerLeave={handleCardPointerLeave}
@@ -1418,7 +1418,7 @@ export default function ProfilePage({
                     <circle cx="19" cy="7" r="1.1" fill="currentColor" />
                   </svg>
                   <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400">
-                    Enterprise Mesh
+                    Team & Scale
                   </span>
                 </div>
                 {hasEvaluationPass ? (
@@ -1513,7 +1513,7 @@ export default function ProfilePage({
                     {currentTier === 'enterprise'
                       ? 'Current Plan'
                       : (hasEvaluationPass
-                          ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
+                          ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                           : (!activeUser ? 'Sign In to Activate'
                               : 'Upgrade (Custom)'))}
                   </span>
@@ -2314,7 +2314,7 @@ export default function ProfilePage({
             </div>
           </div>
 
-          {/* Tier 3: Enterprise Mesh (Solid Deep Obsidian Purple Card Background) */}
+          {/* Tier 3: Team & Scale (Solid Deep Obsidian Purple Card Background) */}
           <div
             onPointerMove={handleCardPointerMove}
             onPointerLeave={handleCardPointerLeave}
@@ -2368,7 +2368,7 @@ export default function ProfilePage({
                   <circle cx="19" cy="7" r="1.1" fill="currentColor" />
                 </svg>
                 <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-purple-400">
-                  Enterprise Mesh
+                  Team & Scale
                 </span>
               </div>
               {hasEvaluationPass ? (
@@ -2463,7 +2463,7 @@ export default function ProfilePage({
                   {currentTier === 'enterprise'
                     ? 'Current Plan'
                     : (hasEvaluationPass
-                        ? (isHackathonMode ? 'Switch to Enterprise' : 'Switch (Dev)')
+                        ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                         : (!activeUser ? 'Sign In to Activate'
                             : 'Upgrade (Custom)'))}
                 </span>
