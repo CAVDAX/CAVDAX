@@ -402,6 +402,64 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
         - Icon & text pairing: `flex items-center gap-1.5` with equal vertical optical balance (`4px` padding above and below the 14px icon).
     - **No Active Micro-Scale Wobble (`active:scale-95`)**:
       - Navigation pill buttons must never shrink or distort on click (`active:scale-95` is banned on sliding pill tabs). The active pill transitions smoothly across elements via spring kinematics without shrinking the button.
+
+0ag. **Cold-Mount Hydration & Direct-Reload Visual Verification Invariant (Zero-Collapsed-Pill Standard)**:
+    - **The Cold-Mount / Reload Regression Flaw**:
+      - When dynamic sliding pills, active tab indicators, or segmented controls use client-side layout projection libraries (e.g. Framer Motion `layoutId`, FLIP animators, or dynamic CSS transforms), developers frequently test only **post-interaction states** (clicking between tabs).
+      - On a **fresh cold page mount** or a **direct browser reload (`F5`)**, the animation library evaluates before DOM element geometry settles, or fails to reconcile layout projection trees across hydration.
+      - **The Catastrophic Failure**: The active background pill fails to mount or collapses to 0×0 dimensions. In light mode, the active tab's typography renders in its active state (e.g. `text-white`) directly against a light gray navbar substrate with zero contrast, making the active tab invisible.
+    - **The 3-State Empirical Verification Law (Mandatory Headless Verification)**:
+      - Any component featuring animated pills, sliding indicators, or tab capsules MUST be programmatically verified in a headless browser across three (3) distinct lifecycles before declaring the task complete:
+        1. **State 1: Cold Initial Load**: Navigate from `about:blank` directly to the target URL (`page.goto(url, { waitUntil: 'networkidle0' })`).
+        2. **State 2: Immediate Hard Reload**: Refresh the page without user interaction (`page.reload({ waitUntil: 'networkidle0' })`).
+        3. **State 3: Interactive Dynamic Transition**: Execute programmatic tab clicks (`button.click()`) to confirm fluid spring interpolation between items.
+      - Under all three states, test assertions MUST empirically confirm:
+        - `pillRect !== null && pillRect.width > 0 && pillRect.height > 0`
+        - Computed pill `opacity === "1"`
+        - Contrast ratio between tab text and rendered background meets WCAG AA standard ($\ge 4.5:1$).
+    - **Architectural Safeguards**:
+      - Always scope layout animations using a unique, dedicated `<LayoutGroup id="...">` wrapper to prevent projection collision with global layout trees.
+      - Ensure the active element renders its background capsule deterministically on the initial server/client pass without relying on asynchronous bounding rect measurements.
+
+0ah. **Viewport-Fixed Chrome Bounding-Box Non-Collision Invariant (The 1280px Table-Clearance Law)**:
+    - **The Fixed-Chrome Collision Trap**:
+      - Data-dense layouts (comparison matrices, audit ledgers, timeline streams) paired with viewport-fixed navigation chrome (floating vertical sidebar docks, elevated quick-switchers, pull-cords, sticky toolbars) look spacious on 1920×1080 or 2560×1440 desktop monitors.
+      - On compact desktop and laptop displays (1280×800, 1366×768, 1024×768), selecting the rightmost columns (e.g. "Team & Scale" or the terminal column) causes horizontal scroll or expansion where table data cells collide directly beneath or behind the fixed chrome, truncating text, cutting off status badges, and preventing interaction.
+    - **The Strict Clearance Invariant (`clearance >= 48px`)**:
+      - Any scrollable data container placed beside viewport-fixed chrome MUST enforce:
+        1. **Explicit Table Minimum Width**: The table or matrix must declare a calibrated minimum width (e.g. `w-full min-w-[1040px]`).
+        2. **Calibrated Column Width Budgets**: Every column must declare a minimum width (`min-w-[260px]`, `min-w-[280px]`) preventing text compression.
+        3. **Dynamic Overshot Auto-Scroll Buffer**: When a filter or tab triggers horizontal scrolling to reveal a target column, the container MUST scroll past the raw width by an overshot clearance buffer:
+           ```javascript
+           const maxScroll = container.scrollWidth - container.clientWidth;
+           container.scrollTo({ left: maxScroll + 80, behavior: 'smooth' });
+           ```
+        4. **Zero-Collision Bounding Box Verification**: Verification via Puppeteer must evaluate `fixedChromeRect.left - dataCellRect.right` across all rows when the rightmost filter is active. If clearance is less than 48px, the build is blocked.
+
+0ai. **The Complete Release Distribution Triad (Git Tag ⇄ NPM Registry ⇄ GitHub Release Invariant)**:
+    - **The Partial-Release Illusion**:
+      - Assuming that running an npm publishing script or pushing an annotated git tag (`git push origin vX.Y.Z`) automatically satisfies the release lifecycle.
+      - Result: Developers and automated agents report that a version is "released", but users inspecting `github.com/<org>/<repo>/releases` see an obsolete previous version because GitHub Releases are distinct, first-class GitHub API objects that require explicit creation.
+    - **The 3-Vertex Mandatory Triad**:
+      A release is **NEVER complete** until all three vertices of the triad are verified:
+      1. **Vertex 1: Git Tree Tag**:
+         - Annotated, signed git tag created and pushed to the remote repository:
+           ```bash
+           git tag -a vX.Y.Z -m "release: vX.Y.Z <title>" && git push origin vX.Y.Z
+           ```
+      2. **Vertex 2: Package Registry (NPM / OIDC)**:
+         - Tarball built, verified for zero ambient secrets, and published to the npm registry with Sigstore cryptographic build provenance via GitHub Actions OIDC:
+           ```bash
+           npm view @cavdax/mcp-server version # Must output X.Y.Z
+           ```
+      3. **Vertex 3: GitHub Release Object**:
+         - Formal GitHub Release created pointing to the pushed tag, containing comprehensive engineering highlights, changelog categories, and distribution links:
+           ```bash
+           gh release create vX.Y.Z --title "vX.Y.Z: <Summary>" --notes-file <notes.md>
+           gh release list # Must list vX.Y.Z as Latest
+           ```
+      - If any single vertex is missing, the release pipeline is incomplete and cannot be marked finished.
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.

@@ -8819,3 +8819,74 @@ When engineering administrative developer panels (`/devteam`) or billing diagnos
    - When a tier is selected from navigation controls, the table container must auto-scroll smoothly to ensure full visibility:
      `container.scrollTo({ left: maxScroll + 80, behavior: 'smooth' });`
    - This ensures the active column is positioned with generous visual clearance and zero border collision.
+
+## 87. The Headless 3-State Empirical Lifecycle Verification Protocol (Cold-Mount, Direct-Reload, and Dynamic-Transition)
+
+### 87.1 The Single-Interaction Verification Vulnerability
+- **The Defect**: An agent modifies a component featuring animated sliding pills, segmented controls, or dynamic tab layouts, triggers a click via automated script, observes that the pill animates, and declares the issue resolved.
+- **The Undetected Breakage**:
+  1. **Cold First-Mount**: When a user opens the page in a fresh tab from `about:blank`, Framer Motion or the layout projection engine evaluates before element layout settles. The background pill collapses to 0×0 or fails to mount.
+  2. **Direct Browser Reload (`F5`)**: Upon hard refresh, hydration state mismatches or timing gaps drop the pill element entirely.
+  3. **Contrast Disaster**: Because the active tab was assigned active foreground colors (e.g. `text-white`), the absence of the background pill leaves pure white text on a light gray navbar (`#f1f5f9`), resulting in a 1.1:1 contrast failure that renders the active tab unreadable.
+
+### 87.2 The Mandatory 3-State Headless Verification Protocol
+Every component containing animated layout indicators, sliding pills, or active state backgrounds MUST pass a headless Puppeteer audit verifying all three lifecycles before PR creation:
+1. **State 1: Cold Initial Mount**:
+   ```javascript
+   await page.goto(targetUrl, { waitUntil: 'networkidle0' });
+   await new Promise(r => setTimeout(r, 400));
+   const state1 = await page.evaluate(() => {
+     const pill = document.querySelector('[data-projection-id], .bg-slate-950, .dark\\:bg-white');
+     return pill && pill.getBoundingClientRect().width > 0 && pill.getBoundingClientRect().height > 0;
+   });
+   ```
+2. **State 2: Immediate Hard Reload**:
+   ```javascript
+   await page.reload({ waitUntil: 'networkidle0' });
+   await new Promise(r => setTimeout(r, 400));
+   const state2 = await page.evaluate(() => {
+     const activeBtn = document.querySelector('button.font-bold');
+     return activeBtn && activeBtn.innerText.length > 0;
+   });
+   ```
+3. **State 3: Dynamic Tab Transition**:
+   ```javascript
+   await page.evaluate(() => {
+     const nextTab = Array.from(document.querySelectorAll('button')).find(b => b.innerText.includes('Pro'));
+     if (nextTab) nextTab.click();
+   });
+   await new Promise(r => setTimeout(r, 400));
+   ```
+- **Attestation Gate**: If computed pill dimensions are 0×0, or text contrast is below 4.5:1 under any of the 3 states, the audit fails closed and blocks merging.
+
+## 88. Viewport-Fixed Chrome Bounding-Box Non-Collision Invariant (The 1280px Clearance Law)
+
+### 88.1 The Floating Dock & Data Table Collision Defect
+- **The Defect**: Viewing wide tables or matrices on a 1920px screen gives the false impression of boundless space. When tested on standard enterprise laptops (1280×800 or 1366×768), fixed right-side navigation docks (`fixed right-6 top-1/2 -translate-y-1/2`) float directly over the rightmost table columns.
+- **The Consequence**: Selecting extended tiers ("Team & Scale") scrolls the column under the floating dock, clipping critical data labels (`< 0.8ms Dedicated`, `Tenant Multi-Bra`, `Dedicated SSE Me!`).
+
+### 88.2 The Strict Clearance Bounding-Box Audit Invariant
+- **The Verification Requirement**: Any layout pairing fixed floating chrome with horizontal scrollable data MUST execute an automated collision calculation:
+  ```javascript
+  const clearance = sidebarRect.left - dataCellRect.right;
+  if (clearance < 48) throw new Error(`Fixed chrome collision detected! Clearance: ${clearance}px < 48px`);
+  ```
+- **Mandatory Protections**:
+  1. Minimum table width: `w-full min-w-[1040px]`.
+  2. Column minimum width budgets (`min-w-[260px]`).
+  3. Dynamic scroll buffer (`maxScroll + 80`) ensuring the active column stops with generous right-side padding before the floating dock.
+
+## 89. The Complete Release Distribution Triad & Artifact Symmetrization Architecture
+
+### 89.1 The Partial-Release Pitfall
+- Pushing a Git Tag (`v1.3.0`) and publishing an npm package (`@cavdax/mcp-server@1.3.0`) without executing `gh release create v1.3.0` leaves GitHub's public Releases UI stranded on older versions.
+- Users navigating to GitHub to check release notes see an outdated release, creating confusion regarding project activity.
+
+### 89.2 The Atomic Triad Release Protocol
+Every production version bump is an atomic 3-vertex transaction that MUST be completed sequentially:
+1. **Vertex 1 (Git Tree Tag)**: Annotated Git tag created with LF line endings and pushed to origin:
+   `git tag -a vX.Y.Z -m "release: vX.Y.Z" && git push origin vX.Y.Z`
+2. **Vertex 2 (Package Registry)**: Ambient OIDC publishing via GitHub Actions with Sigstore cryptographic build provenance verification (`npm view <package> version`).
+3. **Vertex 3 (GitHub Release Entity)**: Formal GitHub Release object authored with comprehensive changelog categories and distribution URLs:
+   `gh release create vX.Y.Z --title "vX.Y.Z: <Title>" --notes-file <notes.md>`
+- A task tracking a release is only complete when `gh release list` confirms `vX.Y.Z` as **Latest**.
