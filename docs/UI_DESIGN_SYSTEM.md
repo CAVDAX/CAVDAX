@@ -820,7 +820,7 @@ You must strictly incorporate and enforce every single one of the following 34 a
 
 
 
-  - **Enterprise Mesh**: Deep Iris / Violet ring (`ring-2 ring-violet-400 dark:ring-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.35)]`).
+  - **Team & Scale**: Deep Iris / Violet ring (`ring-2 ring-violet-400 dark:ring-violet-400 shadow-[0_0_8px_rgba(167,139,250,0.35)]`).
 
 
 

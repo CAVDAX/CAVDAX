@@ -56,7 +56,7 @@ In strict accordance with RBI regulations, the Companies Act CSR guidelines, and
 
 CAVDAX defines three distinct architectural tiers, visually communicated via the concentric profile Tier Ring:
 
-| Dimension | Tier 1: Free Community | Tier 2: Pro Autonomous | Tier 3: Enterprise Mesh |
+| Dimension | Tier 1: Free Community | Tier 2: Pro Autonomous | Tier 3: Team & Scale |
 |---|---|---|---|
 | **Tier Ring Hue** | Platinum / Titanium (`ring-slate-400` / `ring-white/30`) | Golden Amber (`ring-amber-400` with specular glow) | Deep Iris / Violet (`ring-violet-400` with aura) |
 | **Price (Simulated)** | $0 / month (Free forever) | $29 / month (₹2,499 / mo) | Custom / Air-gapped deployment |
