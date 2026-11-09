@@ -164,6 +164,24 @@ export default function ProfilePage({
   const [quotaData, setQuotaData] = useState(null);
   const [connectedRepoCount, setConnectedRepoCount] = useState(0);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isStartingTrial, setIsStartingTrial] = useState(false);
+  const [trialState, setTrialState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cavdax_pro_trial');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return null;
+  });
+
+  const isTrialActive = Boolean(
+    trialState?.claimed &&
+    trialState?.expiresAt &&
+    trialState.expiresAt > Date.now()
+  );
+  const trialDaysRemaining = isTrialActive
+    ? Math.max(1, Math.ceil((trialState.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
+  const hasUsedTrial = Boolean(trialState?.claimed && (!isTrialActive || trialState.expiresAt <= Date.now()));
   const [currency, setCurrency] = useState(() => {
     try {
       const saved = localStorage.getItem('cavdax_currency');
@@ -256,6 +274,64 @@ export default function ProfilePage({
     };
   }, [user, currentTier]);
 
+
+  const handleStartTrial = async () => {
+    const effectiveUser = user || getStoredUser() || getActiveDevSession();
+    if (!effectiveUser) {
+      showToast("Please connect your GitHub account to activate your 7-Day Free Pro Trial.");
+      return;
+    }
+    if (isStartingTrial) return;
+    setIsStartingTrial(true);
+
+    try {
+      const res = await fetch('/api/billing/start-trial', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.trial) {
+        setTrialState(data.trial);
+        setCurrentTier('pro');
+        try {
+          localStorage.setItem('cavdax_tier', 'pro');
+          localStorage.setItem('cavdax_pro_trial', JSON.stringify(data.trial));
+          const raw = localStorage.getItem('cavdax_user_session');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            parsed.tier = 'pro';
+            parsed.trial = data.trial;
+            localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+          }
+          window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'pro', trial: data.trial } }));
+        } catch {}
+        if (onSelectTier) onSelectTier('pro');
+        showToast('7-Day Free Pro Trial activated! All Pro features unlocked.');
+      } else {
+        showToast(data?.error?.message || 'Pro Trial could not be started.');
+      }
+    } catch {
+      // Offline fallback: simulate local trial activation
+      const fallbackTrial = {
+        claimed: true,
+        claimedAt: Date.now(),
+        expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000),
+        daysRemaining: 7
+      };
+      setTrialState(fallbackTrial);
+      setCurrentTier('pro');
+      try {
+        localStorage.setItem('cavdax_tier', 'pro');
+        localStorage.setItem('cavdax_pro_trial', JSON.stringify(fallbackTrial));
+        window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'pro', trial: fallbackTrial } }));
+      } catch {}
+      if (onSelectTier) onSelectTier('pro');
+      showToast('7-Day Free Pro Trial activated!');
+    } finally {
+      setIsStartingTrial(false);
+    }
+  };
 
   const handleRazorpayUpgrade = async () => {
     if (!user) {
@@ -571,11 +647,15 @@ export default function ProfilePage({
     }
 
     if (newTier === 'pro') {
+      if (!isTrialActive && !hasUsedTrial) {
+        handleStartTrial();
+        return;
+      }
       handleRazorpayUpgrade();
       return;
     }
     const planName = 'Enterprise Mesh';
-    showToast(`${planName} requires custom contract deployment. Contact sales at contact@cavdax.live`);
+    showToast(`${planName} requires custom contract deployment. Contact sales at cavdax.dev@gmail.com`);
     return;
   };
 
@@ -1052,7 +1132,7 @@ export default function ProfilePage({
               <ul className="text-xs font-mono space-y-2 mb-6 text-slate-600 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                  <span>1 Connected repository</span>
+                  <span>1 Connected repository (1 active branch)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -1189,12 +1269,22 @@ export default function ProfilePage({
                 {currency === 'INR' ? '₹320' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
               </div>
               <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold mb-3">
-                Includes 7-Day Free Pro Trial
+                {isTrialActive ? (
+                  <span className="text-emerald-600 dark:text-emerald-400">
+                    Active Pro Trial • {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining
+                  </span>
+                ) : hasUsedTrial ? (
+                  <span className="text-slate-500 dark:text-slate-400">
+                    Pro Trial Expired · Upgrade to continue
+                  </span>
+                ) : (
+                  <span>Includes 7-Day Free Pro Trial (Instant)</span>
+                )}
               </div>
               <ul className="text-xs font-mono space-y-2 mb-6 text-slate-600 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>10 Connected repositories</span>
+                  <span>10 Connected repositories (Unlimited concurrent branches)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -1213,7 +1303,7 @@ export default function ProfilePage({
               <div className="relative z-10">
               <button
                 onClick={() => handleTierSwitch('pro')}
-                disabled={currentTier === 'pro'}
+                disabled={currentTier === 'pro' && !isTrialActive}
                 onMouseEnter={() => setHoveredTierBtn('pro')}
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
@@ -1255,13 +1345,19 @@ export default function ProfilePage({
                   {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
                   <span>
                     {currentTier === 'pro'
-                      ? 'Current Plan'
-                      : (isUpgrading
+                      ? (isTrialActive
+                          ? `Trial Active · Upgrade (${currency === 'INR' ? '₹320' : '$4'})`
+                          : 'Current Plan')
+                      : (isStartingTrial
+                          ? 'Activating Trial...'
+                          : (isUpgrading
                           ? 'Connecting...'
                           : (hasEvaluationPass
                               ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
                               : (!activeUser ? 'Sign In to Activate'
-                                  : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
+                                  : (!hasUsedTrial
+                                      ? 'Start 7-Day Free Pro Trial'
+                                      : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))))}
                   </span>
                 </span>
               </button>
@@ -1986,7 +2082,7 @@ export default function ProfilePage({
             <ul className="text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 text-slate-600 dark:text-slate-300 flex-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span>1 Connected repository</span>
+                <span>1 Connected repository (1 active branch)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
@@ -2123,12 +2219,22 @@ export default function ProfilePage({
               {currency === 'INR' ? '₹320' : '$4'} <span className="text-xs font-normal text-slate-500 font-sans">/ mo</span>
             </div>
             <div className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-semibold mb-2 sm:mb-2.5">
-              Includes 7-Day Free Pro Trial
+              {isTrialActive ? (
+                <span className="text-emerald-600 dark:text-emerald-400">
+                  Active Pro Trial • {trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} remaining
+                </span>
+              ) : hasUsedTrial ? (
+                <span className="text-slate-500 dark:text-slate-400">
+                  Pro Trial Expired · Upgrade to continue
+                </span>
+              ) : (
+                <span>Includes 7-Day Free Pro Trial (Instant)</span>
+              )}
             </div>
             <ul className="text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 text-slate-600 dark:text-slate-300 flex-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>10 Connected repositories</span>
+                <span>10 Connected repositories (Unlimited concurrent branches)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -2147,7 +2253,7 @@ export default function ProfilePage({
             <div className="relative z-10">
             <button
               onClick={() => handleTierSwitch('pro')}
-              disabled={currentTier === 'pro'}
+              disabled={currentTier === 'pro' && !isTrialActive}
               onMouseEnter={() => setHoveredTierBtn('pro')}
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
@@ -2189,13 +2295,19 @@ export default function ProfilePage({
                 {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
                 <span>
                   {currentTier === 'pro'
-                    ? 'Current Plan'
-                    : (isUpgrading
+                    ? (isTrialActive
+                        ? `Trial Active · Upgrade (${currency === 'INR' ? '₹320' : '$4'})`
+                        : 'Current Plan')
+                    : (isStartingTrial
+                        ? 'Activating Trial...'
+                        : (isUpgrading
                         ? 'Connecting...'
                         : (hasEvaluationPass
                             ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
                             : (!activeUser ? 'Sign In to Activate'
-                                : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))}
+                                : (!hasUsedTrial
+                                    ? 'Start 7-Day Free Pro Trial'
+                                    : `Upgrade (${currency === 'INR' ? '₹320' : '$4'}/mo)`)))))}
                 </span>
               </span>
             </button>
