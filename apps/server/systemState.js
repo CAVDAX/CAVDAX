@@ -44,7 +44,9 @@ export function loadSystemState() {
         paidUsers: (typeof parsed.paidUsers === 'object' && parsed.paidUsers !== null) ? parsed.paidUsers : {},
         userRepos: (typeof parsed.userRepos === 'object' && parsed.userRepos !== null) ? parsed.userRepos : {},
         vapidKeys: (typeof parsed.vapidKeys === 'object' && parsed.vapidKeys !== null) ? parsed.vapidKeys : null,
-        pushSubscriptions: (typeof parsed.pushSubscriptions === 'object' && parsed.pushSubscriptions !== null) ? parsed.pushSubscriptions : {}
+        pushSubscriptions: (typeof parsed.pushSubscriptions === 'object' && parsed.pushSubscriptions !== null) ? parsed.pushSubscriptions : {},
+        activeTrials: (typeof parsed.activeTrials === 'object' && parsed.activeTrials !== null) ? parsed.activeTrials : {},
+        enterpriseOrganizations: (typeof parsed.enterpriseOrganizations === 'object' && parsed.enterpriseOrganizations !== null) ? parsed.enterpriseOrganizations : {}
       };
     }
   } catch (err) {
@@ -59,7 +61,9 @@ export function loadSystemState() {
     notificationPreferences: {},
     sponsors: [],
     vapidKeys: null,
-    pushSubscriptions: {}
+    pushSubscriptions: {},
+    activeTrials: {},
+    enterpriseOrganizations: {}
   };
 }
 
@@ -103,6 +107,8 @@ export function saveSystemState(state) {
       userRepos: (typeof state.userRepos === 'object' && state.userRepos !== null) ? state.userRepos : {},
       vapidKeys: (typeof vapidKeys === 'object' && vapidKeys !== null) ? vapidKeys : null,
       pushSubscriptions: (typeof pushSubscriptions === 'object' && pushSubscriptions !== null) ? pushSubscriptions : {},
+      activeTrials: (typeof state.activeTrials === 'object' && state.activeTrials !== null) ? state.activeTrials : {},
+      enterpriseOrganizations: (typeof state.enterpriseOrganizations === 'object' && state.enterpriseOrganizations !== null) ? state.enterpriseOrganizations : {},
       updatedAt: new Date().toISOString()
     }, null, 2);
 
