@@ -245,4 +245,95 @@ export class SimulationEngine {
     const edges = node_id ? this.edges.filter((e) => e.source === node_id || e.target === node_id) : this.edges;
     return { simulated: true, simulated_warning: SIM_NOTE, nodes, edges };
   }
+
+  listActiveDecisions({ status_filter = 'ALL' } = {}) {
+    const base = { simulated: true, simulated_warning: SIM_NOTE };
+    const decisionsList = [];
+    const filterUpper = (status_filter || 'ALL').toUpperCase();
+    for (const [id, d] of this.decisions) {
+      const status = d.status || 'VALID';
+      let matches = false;
+      if (filterUpper === 'ALL') {
+        matches = true;
+      } else if (filterUpper === 'ACTIVE') {
+        matches = (status === 'VALID' || status === 'APPROVED' || status === 'ACTIVE');
+      } else {
+        matches = (status.toUpperCase() === filterUpper);
+      }
+      if (matches) {
+        decisionsList.push({
+          id,
+          title: d.title || 'Architectural Decision',
+          status: (status === 'VALID' ? 'ACTIVE' : status),
+          governs: d.governs || 'src/**',
+          grounded_in: d.fact || null
+        });
+      }
+    }
+    return {
+      ...base,
+      status: 'SUCCESS',
+      count: decisionsList.length,
+      total_decisions: decisionsList.length,
+      active_count: decisionsList.filter((d) => d.status === 'VALID' || d.status === 'APPROVED' || d.status === 'ACTIVE').length,
+      decisions: decisionsList
+    };
+  }
+
+  explainBlastRadius({ node_id } = {}) {
+    const base = { simulated: true, simulated_warning: SIM_NOTE, target_node: node_id };
+    if (!node_id || typeof node_id !== 'string') {
+      return { ...base, isError: true, status: 'ERROR', node_found: false, message: 'node_id is required to calculate architectural blast radius.' };
+    }
+    const cleanId = node_id.trim();
+    const targetNode = this.nodes.find((n) => n.id === cleanId);
+    if (!targetNode) {
+      return { ...base, isError: true, status: 'ERROR', node_found: false, target_node: cleanId, message: `Node '${cleanId}' not found in simulated architecture graph.` };
+    }
+
+    const visited = new Set();
+    const queue = [cleanId];
+    const invalidatedDecisions = [];
+
+    while (queue.length > 0) {
+      const current = queue.shift();
+      for (const edge of this.edges) {
+        if (edge.target === current && !visited.has(edge.source)) {
+          visited.add(edge.source);
+          queue.push(edge.source);
+          const dec = this.decisions.get(edge.source);
+          if (dec) {
+            invalidatedDecisions.push({
+              id: edge.source,
+              title: dec.title,
+              current_status: dec.status,
+              projected_status: 'INVALIDATED_NEEDS_REVALIDATION'
+            });
+          }
+        }
+      }
+    }
+
+    const severity = invalidatedDecisions.length > 2
+      ? 'CRITICAL_ARCHITECTURAL_BLAST'
+      : (invalidatedDecisions.length > 0 ? 'HIGH_IMPACT_INVALIDATION' : 'CONTAINED_LOW_IMPACT');
+
+    return {
+      ...base,
+      status: 'SUCCESS',
+      node_found: true,
+      node_id: cleanId,
+      target_node: cleanId,
+      node_type: targetNode.label,
+      severity,
+      downstream_invalidated_decisions: invalidatedDecisions,
+      downstream_node_count: visited.size,
+      direct_dependent_decisions: invalidatedDecisions.map(d => d.id),
+      governed_files_at_risk: ['src/services/payment.js', 'src/middleware/auth.js'],
+      blast_radius_score: visited.size,
+      remediation_directive: invalidatedDecisions.length > 0
+        ? `Modifying '${cleanId}' will invalidate ${invalidatedDecisions.length} dependent decision(s). Call 'revalidate_decision' to ground new decisions before modifying source files.`
+        : `Node '${cleanId}' has zero downstream dependent decisions. Safe to modify or deprecate without causal invalidation.`
+    };
+  }
 }

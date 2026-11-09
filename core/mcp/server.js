@@ -177,6 +177,42 @@ export class CavdaxMcpServer {
             format: { type: 'string', enum: ['svg', 'markdown'], description: 'Output format (default: "svg").' }
           }
         }
+      },
+      {
+        name: 'list_active_decisions',
+        description: 'Returns a lightweight manifest of all architectural decisions governing this repository, their approval status, grounded facts, and target files.',
+        parameters: {
+          type: 'object',
+          properties: {
+            status_filter: {
+              type: 'string',
+              enum: ['ALL', 'APPROVED', 'VALID', 'INVALIDATED_NEEDS_REVALIDATION', 'STALE'],
+              description: 'Filter decisions by status (default: "ALL").'
+            }
+          }
+        }
+      },
+      {
+        name: 'explain_blast_radius',
+        description: 'Computes downstream architectural blast radius and invalidated dependencies before modifying an ADR, Decision, or Fact.',
+        parameters: {
+          type: 'object',
+          properties: {
+            node_id: { type: 'string', description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.' }
+          },
+          required: ['node_id']
+        }
+      },
+      {
+        name: 'explain_architectural_impact',
+        description: 'Analyzes downstream architectural impact, invalidated decisions, and affected source files before modifying an ADR, Decision, or Fact. (Alias for explain_blast_radius).',
+        parameters: {
+          type: 'object',
+          properties: {
+            node_id: { type: 'string', description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.' }
+          },
+          required: ['node_id']
+        }
       }
     ];
   }
@@ -199,6 +235,10 @@ export class CavdaxMcpServer {
       return globalLockManager.releaseLock(args.decision_id, args.agent_id);
     } else if (toolName === 'export_graph_image') {
       return await this.executeExportGraphImage(args);
+    } else if (toolName === 'list_active_decisions') {
+      return await this.executeListActiveDecisions(args);
+    } else if (toolName === 'explain_blast_radius' || toolName === 'explain_architectural_impact') {
+      return await this.executeExplainBlastRadius(args);
     } else {
       throw new Error(`Unknown tool: '${toolName}'`);
     }
@@ -496,6 +536,112 @@ export class CavdaxMcpServer {
       node_count: graphState.nodes.length,
       edge_count: graphState.edges.length,
       blast_radius: summary
+    };
+  }
+
+  /**
+   * Returns a lightweight manifest of all architectural decisions
+   */
+  async executeListActiveDecisions({ status_filter = 'ALL' } = {}) {
+    let graphState = { nodes: [], edges: [] };
+    if (this.graph) {
+      try {
+        graphState = await fetchGraphState(this.graph);
+      } catch (err) {
+        console.warn('[MCP Gate] Could not fetch graph state from FalkorDB:', err.message);
+      }
+    }
+    const decisions = graphState.nodes
+      .filter((n) => n.label === 'Decision')
+      .map((d) => {
+        const factEdges = graphState.edges.filter((e) => e.source === d.id && e.type === 'DEPENDS_ON');
+        const factIds = factEdges.map((e) => e.target);
+        return {
+          id: d.id,
+          title: d.title || 'Architectural Decision',
+          status: d.status || 'APPROVED',
+          governs: d.target_file || 'src/**',
+          grounded_in: factIds.length ? factIds.join(', ') : 'None'
+        };
+      })
+      .filter((d) => {
+        if (!status_filter || status_filter.toUpperCase() === 'ALL') return true;
+        return d.status.toUpperCase() === status_filter.toUpperCase();
+      });
+
+    return {
+      status: 'SUCCESS',
+      status_filter,
+      count: decisions.length,
+      total_decisions: decisions.length,
+      active_count: decisions.filter((d) => d.status === 'APPROVED' || d.status === 'VALID' || d.status === 'ACTIVE').length,
+      decisions
+    };
+  }
+
+  /**
+   * Computes downstream blast radius for a given architectural node
+   */
+  async executeExplainBlastRadius({ node_id } = {}) {
+    if (!node_id || typeof node_id !== 'string') {
+      return { isError: true, message: 'node_id is required to calculate architectural blast radius.' };
+    }
+    const cleanId = node_id.trim();
+    let graphState = { nodes: [], edges: [] };
+    if (this.graph) {
+      try {
+        graphState = await fetchGraphState(this.graph);
+      } catch (err) {
+        console.warn('[MCP Gate] Could not fetch graph state from FalkorDB:', err.message);
+      }
+    }
+
+    const targetNode = graphState.nodes.find((n) => n.id === cleanId);
+    if (!targetNode) {
+      return {
+        isError: true,
+        status: 'ERROR',
+        node_found: false,
+        target_node: cleanId,
+        message: `Node '${cleanId}' not found in active architecture graph.`
+      };
+    }
+
+    const { blastNodeIds, summary } = computeBlastRadius(graphState.nodes, graphState.edges, cleanId);
+
+    const nodeMap = new Map(graphState.nodes.map((n) => [n.id, n]));
+    const downstreamDecisions = [];
+    for (const id of blastNodeIds) {
+      const n = nodeMap.get(id);
+      if (n && n.label === 'Decision') {
+        downstreamDecisions.push({
+          id: n.id,
+          title: n.title,
+          current_status: n.status,
+          projected_status: 'INVALIDATED_NEEDS_REVALIDATION'
+        });
+      }
+    }
+
+    const severity = downstreamDecisions.length > 2
+      ? 'CRITICAL_ARCHITECTURAL_BLAST'
+      : (downstreamDecisions.length > 0 ? 'HIGH_IMPACT_INVALIDATION' : 'CONTAINED_LOW_IMPACT');
+
+    return {
+      status: 'SUCCESS',
+      node_found: true,
+      node_id: cleanId,
+      target_node: cleanId,
+      node_type: targetNode.label,
+      severity,
+      downstream_invalidated_decisions: downstreamDecisions,
+      downstream_node_count: blastNodeIds.size,
+      direct_dependent_decisions: downstreamDecisions.map((d) => d.id),
+      governed_files_at_risk: summary.files,
+      blast_radius_score: blastNodeIds.size,
+      remediation_directive: downstreamDecisions.length > 0
+        ? `Modifying '${cleanId}' will invalidate ${downstreamDecisions.length} dependent decision(s) across ${summary.files.length} file(s). Call 'revalidate_decision' to ground new decisions before modifying source files.`
+        : `Node '${cleanId}' has zero downstream dependent decisions. Safe to modify or deprecate without causal invalidation.`
     };
   }
 }

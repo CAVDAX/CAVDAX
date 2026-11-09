@@ -62,4 +62,15 @@ describe('7-Day Pro Trial & Enterprise Corporate Domain Security Hardening', () 
     assert.ok(INDEX_SRC.includes("'/integrations/cursor'"), 'Cursor integration must be configured in catalog');
     assert.ok(INDEX_SRC.includes("'/integrations/claude-code'"), 'Claude Code integration must be configured in catalog');
   });
+
+  it('enforces calibrated canonical tier prices (₹299 Pro, ₹4,999 Enterprise)', () => {
+    assert.ok(INDEX_SRC.includes('pro: 29900'), 'Pro tier must be calibrated to 29900 paise (₹299/mo)');
+    assert.ok(INDEX_SRC.includes('enterprise: 499900'), 'Enterprise tier must be calibrated to 499900 paise (₹4,999/mo)');
+  });
+
+  it('allows authentic active Pro trial users to restore Pro tier via /api/user/tier', () => {
+    const tierRoute = INDEX_SRC.slice(INDEX_SRC.indexOf("app.post('/api/user/tier'"), INDEX_SRC.indexOf("app.get('/api/user/api-key'"));
+    assert.ok(tierRoute.includes('isTrialValid'), '/api/user/tier must verify isTrialValid');
+    assert.ok(tierRoute.includes('!hasPaidAccess && !isTrialValid'), 'Must allow upgrading to Pro if trial is valid');
+  });
 });

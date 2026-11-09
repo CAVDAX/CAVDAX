@@ -60,7 +60,10 @@ claude mcp add cavdax npx -y @cavdax/mcp-server
 
 ```bash
 npx @cavdax/mcp-server              # Start MCP stdio server (default)
+npx cavdax init                     # Scaffold docs/adr, baseline ADR-001, and .cursor/mcp.json
 npx cavdax mcp                      # Start MCP stdio server (explicit)
+npx cavdax decisions                # List active decisions and governed file targets
+npx cavdax impact <node_id>         # Calculate downstream architectural impact (alias: blast)
 npx cavdax ingest --repo .          # Ingest ADRs from current repo into FalkorDB
 npx cavdax check --staged           # Validate staged files (git pre-commit hook)
 npx cavdax check --staged --strict  # ...and fail if FalkorDB is unreachable (CI)
@@ -75,6 +78,8 @@ npx cavdax doctor                   # Diagnose FalkorDB & MCP readiness
 
 | Tool | Description |
 |------|-------------|
+| `list_active_decisions` | Returns a lightweight, structured manifest of governing architectural decisions, active status, and governed file targets (<100 tokens for agent discovery). |
+| `explain_blast_radius` | Analyzes downstream architectural impact before modifying an upstream decision. Returns directly dependent decisions, affected files, and blast severity. |
 | `apply_code_change` | Writes a file (confined to the repo root) only if the referenced `decision_id` is causally valid. Hard-rejects stale, invalidated and unknown decisions. |
 | `revalidate_decision` | Archives an invalidated decision and creates a new one grounded in a superseding ADR. |
 | `check_intent_clearance` | Pre-flight check. Call before writing code to find out whether a `decision_id` is still valid, without generating anything. Takes `decision_id` (required), `target_file` and `proposed_action`. |

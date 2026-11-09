@@ -3156,7 +3156,17 @@ app.post('/api/user/tier', (req, res) => {
     const paidRecord = (typeof savedSystemState !== 'undefined' && savedSystemState?.paidUsers)
       ? (savedSystemState.paidUsers[userIdStr] || savedSystemState.paidUsers[userLogin])
       : null;
-    if (!paidRecord || paidRecord.tier !== normalizedTier) {
+
+    // Allow restoring Pro tier if user possesses an authentic, active, unexpired 7-day Pro trial
+    const activeTrial = (normalizedTier === 'pro')
+      ? (activeTrialsStore.get(userIdStr) || activeTrialsStore.get(userLogin) || 
+         (savedSystemState?.activeTrials && (savedSystemState.activeTrials[userIdStr] || savedSystemState.activeTrials[userLogin])))
+      : null;
+    const isTrialValid = Boolean(activeTrial && activeTrial.claimed && activeTrial.expiresAt && activeTrial.expiresAt > Date.now());
+
+    const hasPaidAccess = Boolean(paidRecord && paidRecord.tier === normalizedTier);
+
+    if (!hasPaidAccess && !isTrialValid) {
       return res.status(403).json({ success: false, error: 'PAYMENT_REQUIRED', message: 'Upgrading tier requires verified payment or developer evaluation authorization.' });
     }
   }
@@ -3950,8 +3960,8 @@ if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
  */
 // Canonical server-side tier pricing table (paise: ₹1 = 100 paise)
 const CANONICAL_TIER_PRICES_PAISE = Object.freeze({
-  pro: 33900,         // ₹339 / mo ($4/mo)
-  enterprise: 990000  // ₹9,900 / mo ($120/mo)
+  pro: 29900,         // ₹299 / mo ($4/mo)
+  enterprise: 499900  // ₹4,999 / mo ($59/mo)
 });
 
 // In-memory order tracking to prevent tier tampering (OWASP A04 Hardening)
