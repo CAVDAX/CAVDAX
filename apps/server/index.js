@@ -260,6 +260,7 @@ function verifyAuthToken(token) {
     const json = Buffer.from(data, 'base64url').toString('utf8');
     const parsed = JSON.parse(json);
     if (!parsed || typeof parsed !== 'object') return null;
+    if (parsed.exp && (typeof parsed.exp !== 'number' || parsed.exp < Date.now())) return null;
     if (typeof parsed.login !== 'string' || parsed.login.length > 64) return null;
     if (parsed.name && typeof parsed.name === 'string' && parsed.name.length > 128) {
       parsed.name = parsed.name.slice(0, 128);
@@ -419,7 +420,9 @@ function syncSystemStateToDisk() {
     auditEntries: Array.isArray(savedSystemState.auditEntries) ? savedSystemState.auditEntries : [],
     sponsors: Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : [],
     paidUsers: (typeof savedSystemState.paidUsers === 'object' && savedSystemState.paidUsers !== null) ? savedSystemState.paidUsers : {},
-    userRepos: (typeof savedSystemState.userRepos === 'object' && savedSystemState.userRepos !== null) ? savedSystemState.userRepos : {}
+    userRepos: (typeof savedSystemState.userRepos === 'object' && savedSystemState.userRepos !== null) ? savedSystemState.userRepos : {},
+    activeTrials: Object.fromEntries(activeTrialsStore.entries()),
+    enterpriseOrganizations: Object.fromEntries(enterpriseOrganizationsStore.entries())
   });
 }
 
@@ -458,12 +461,31 @@ const TIER_CONFIG = {
 
 const activeTier = TIER_CONFIG[CAVDAX_TIER] || TIER_CONFIG.free;
 
+// Helper to normalize socket IPs and strip IPv4-mapped IPv6 prefix safely
+export function normalizeSocketIp(raw) {
+  if (!raw) return '';
+  let clean = String(raw).trim().toLowerCase();
+  if (clean.startsWith('::ffff:')) {
+    clean = clean.slice(7);
+  }
+  return clean;
+}
+
+export function isLoopbackIp(ip) {
+  if (!ip) return false;
+  const clean = normalizeSocketIp(ip);
+  return clean === '127.0.0.1' || clean === '::1' || clean === 'localhost';
+}
+
 // Detect if socket connection originates from a trusted reverse proxy, Docker network, or Cloudflare edge
 export function isTrustedProxyIp(ip) {
   if (!ip) return false;
-  const clean = String(ip).trim().toLowerCase();
+  let clean = String(ip).trim().toLowerCase();
+  if (clean.startsWith('::ffff:')) {
+    clean = clean.slice(7);
+  }
   // 1. Direct loopback
-  if (clean === '127.0.0.1' || clean === '::1' || clean === 'localhost' || clean === '1') return true;
+  if (clean === '127.0.0.1' || clean === '::1' || clean === 'localhost') return true;
 
   // 2. Explicit configured trusted reverse proxies (e.g. Caddy container IP or gateway)
   const configured = (typeof process !== 'undefined' && process.env?.TRUSTED_PROXIES || '')
@@ -514,15 +536,19 @@ export function isTrustedProxyIp(ip) {
 
 // Helper to extract client IP safely with reverse-proxy trust validation (OWASP A07 Hardening)
 export function extractClientIp(req) {
-  const socketIp = (req.socket?.remoteAddress || '').replace(/^.*:/, '').toLowerCase();
-  const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '1' || socketIp === 'localhost' || socketIp === '::1';
+  let socketIp = String(req.socket?.remoteAddress || '').trim().toLowerCase();
+  if (socketIp.startsWith('::ffff:')) {
+    socketIp = socketIp.slice(7);
+  }
+  const isDirectLoopback = socketIp === '127.0.0.1' || socketIp === '::1' || socketIp === 'localhost';
   const isTrustedPeer = isDirectLoopback || process.env.TRUST_PROXY === 'true' || isTrustedProxyIp(socketIp);
 
   // Only inspect forwarding headers if request arrives through a verified proxy, edge network, or loopback
   if (isTrustedPeer) {
     const cfIp = req.headers['cf-connecting-ip'] || req.headers['true-client-ip'];
     if (cfIp) {
-      const clean = (typeof cfIp === 'string' ? cfIp.trim() : cfIp[0]).toLowerCase();
+      let clean = String(typeof cfIp === 'string' ? cfIp.trim() : cfIp[0]).trim().toLowerCase();
+      if (clean.startsWith('::ffff:')) clean = clean.slice(7);
       // Forwarded headers must NEVER be trusted to claim loopback/localhost status
       if (clean === '127.0.0.1' || clean === '::1' || clean === 'localhost') {
         return socketIp || 'unknown';
@@ -531,7 +557,8 @@ export function extractClientIp(req) {
     }
     const forwarded = req.headers['x-forwarded-for'];
     if (forwarded) {
-      const first = (typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0]).toLowerCase();
+      let first = String(typeof forwarded === 'string' ? forwarded.split(',')[0].trim() : forwarded[0]).trim().toLowerCase();
+      if (first.startsWith('::ffff:')) first = first.slice(7);
       if (first === '127.0.0.1' || first === '::1' || first === 'localhost') {
         return socketIp || 'unknown';
       }
@@ -540,7 +567,6 @@ export function extractClientIp(req) {
   }
   return req.ip || socketIp || 'unknown';
 }
-
 // Global Whitelisted Developer IPs (stored in server state)
 let globalWhitelistedIps = Array.from(new Set([
   '127.0.0.1',
@@ -766,7 +792,12 @@ const BLOCKED_PUBLIC_EMAIL_DOMAINS = new Set([
   'yandex.com', 'gmx.com', 'tempmail.com', 'guerrillamail.com'
 ]);
 
-const enterpriseOrganizationsStore = new Map(); // .unref() so the interval doesn't keep the process alive during tests
+const enterpriseOrganizationsStore = new Map();
+if (savedSystemState?.enterpriseOrganizations && typeof savedSystemState.enterpriseOrganizations === 'object') {
+  for (const [k, v] of Object.entries(savedSystemState.enterpriseOrganizations)) {
+    enterpriseOrganizationsStore.set(k, v);
+  }
+}
 
 function sanitizeBroadcastPayload(eventType, payload) {
   if (eventType === 'MCP_TOOL_EXECUTED' && payload && typeof payload === 'object') {
@@ -2860,7 +2891,8 @@ app.get('/api/auth/me', (req, res) => {
   const userEmail = (req.session.user?.email || '').toLowerCase().trim();
   const userDomain = userEmail.includes('@') ? userEmail.split('@')[1] : null;
   let matchedOrg = null;
-  if (userDomain && !BLOCKED_PUBLIC_EMAIL_DOMAINS.has(userDomain)) {
+  const isEmailVerified = req.session.user?.email_verified !== false;
+  if (userDomain && isEmailVerified && !BLOCKED_PUBLIC_EMAIL_DOMAINS.has(userDomain)) {
     for (const org of enterpriseOrganizationsStore.values()) {
       if (org.domains && org.domains.includes(userDomain)) {
         matchedOrg = org;
@@ -3983,6 +4015,7 @@ app.post('/api/billing/start-trial', (req, res) => {
   req.session.user.trial = trialObj;
   req.session.user.tier = 'pro';
   if (req.session.tier) req.session.tier = 'pro';
+  syncSystemStateToDisk();
 
   res.json({
     success: true,
@@ -4042,14 +4075,40 @@ app.post('/api/enterprise/register-domain', (req, res) => {
     });
   }
 
+  const userEmail = (user.email || '').toLowerCase().trim();
+  const userDomain = userEmail.includes('@') ? userEmail.split('@')[1] : null;
+
+  // Domain Ownership Hardening: User must possess a verified corporate email matching the domain, or be a dev maintainer
+  if (!isDev && (!user.email_verified || userDomain !== cleanDomain)) {
+    return res.status(403).json({
+      success: false,
+      error: {
+        code: 'DOMAIN_OWNERSHIP_UNVERIFIED',
+        message: `You can only register a corporate domain matching your verified GitHub primary email address (@${userDomain || 'none'}).`
+      }
+    });
+  }
+
   const orgId = `org_${cleanDomain.replace(/[^a-z0-9]/g, '_')}`;
+  const existingOrg = enterpriseOrganizationsStore.get(orgId);
+  if (existingOrg && existingOrg.owner !== user.login && !isDev) {
+    return res.status(409).json({
+      success: false,
+      error: {
+        code: 'DOMAIN_ALREADY_CLAIMED',
+        message: `Domain ${cleanDomain} is already registered by another organization.`
+      }
+    });
+  }
+
   enterpriseOrganizationsStore.set(orgId, {
     id: orgId,
     name: cleanOrgName,
     domains: [cleanDomain],
     owner: user.login,
-    registeredAt: Date.now()
+    registeredAt: existingOrg?.registeredAt || Date.now()
   });
+  syncSystemStateToDisk();
 
   res.json({
     success: true,
@@ -4586,13 +4645,146 @@ app.post('/api/billing/webhook', (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Static Web HUD Serving & SPA Path Routing Fallback (/overview, /console, /mcp, /project, /team)
+// 9. Static Web HUD Serving, Bot Social Interception & SPA Route Fallback
 const clientDistPath = path.resolve(__dirname, '../client/dist');
+
+// Canonical metadata and pre-rendered semantic HTML catalog for bots & social crawlers
+const BOT_UA_REGEX = /googlebot|bingbot|yandex|baiduspider|twitterbot|facebookexternalhit|rogerbot|linkedinbot|embedly|quora link preview|showyoubot|outbrain|pinterest\/0\.|pinterestbot|slackbot|vkshare|w3c_validator|whatsapp|telegrambot|discordbot/i;
+
+const CANONICAL_META_CATALOG = {
+  '/': {
+    title: 'CAVDAX | Graph-Grounded Decision Execution for Coding Agents',
+    description: 'Contextual Action & Verified Decision Autonomous eXecution. Preventing coding agents from acting on stale retrieved documents via FalkorDB causal DAGs and enclosed MCP gates.',
+    url: 'https://cavdax.sahnirmaan.live/'
+  },
+  '/overview': {
+    title: 'CAVDAX | Graph-Grounded Decision Execution for Coding Agents',
+    description: 'Contextual Action & Verified Decision Autonomous eXecution. Preventing coding agents from acting on stale retrieved documents via FalkorDB causal DAGs and enclosed MCP gates.',
+    url: 'https://cavdax.sahnirmaan.live/overview'
+  },
+  '/mcp': {
+    title: 'CAVDAX | Enclosed Model Context Protocol (MCP) Gate & Integration',
+    description: 'Connect Cursor, Claude Code, and autonomous coding agents to the CAVDAX MCP server over stdio or SSE. Hard-gate writes against stale ADRs.',
+    url: 'https://cavdax.sahnirmaan.live/mcp'
+  },
+  '/console': {
+    title: 'CAVDAX | Real-Time Execution Console & GraphBLAS Observability',
+    description: 'Monitor live causal DAG state, sub-millisecond matrix invalidations, and enclosed MCP tool call verification in real time.',
+    url: 'https://cavdax.sahnirmaan.live/console'
+  },
+  '/walkthrough': {
+    title: 'CAVDAX | Interactive Causal Protocol Walkthrough & Architectural Proof',
+    description: 'Step through Act I to Act IV: from ADR ingestion and cascading invalidation to agent interception and deterministic self-healing.',
+    url: 'https://cavdax.sahnirmaan.live/walkthrough'
+  },
+  '/team': {
+    title: 'CAVDAX | Founding Engineering Team & Architectural Foundations',
+    description: 'The engineers, researchers, and systems architects building graph-grounded causal safety for autonomous coding agents.',
+    url: 'https://cavdax.sahnirmaan.live/team'
+  },
+  '/audit': {
+    title: 'CAVDAX | Agent Action History & Compliance Ledger',
+    description: 'Cryptographically ordered audit trail of every agent file modification, grounding ADR decision, and verification latency record.',
+    url: 'https://cavdax.sahnirmaan.live/audit'
+  },
+  '/profile': {
+    title: 'CAVDAX | Developer Pricing, Currency Switcher & Account Tiers',
+    description: 'Explore Free, Pro ($4 USD / ₹320 INR), and Team & Scale developer tiers with 7-day free trial and multi-tenant FalkorDB access.',
+    url: 'https://cavdax.sahnirmaan.live/profile'
+  },
+  '/support': {
+    title: 'CAVDAX | Open-Source Sponsorship & Community Backing',
+    description: 'Support the development of open-source causal DAG governance for AI software engineering agents.',
+    url: 'https://cavdax.sahnirmaan.live/support'
+  },
+  '/docs': {
+    title: 'CAVDAX Documentation | Causal DAG & MCP Gate Architecture',
+    description: 'Comprehensive guides for configuring CAVDAX Model Context Protocol gates, FalkorDB GraphBLAS causal DAGs, and ADR deterministic frontmatter parsers.',
+    url: 'https://cavdax.sahnirmaan.live/docs',
+    preRenderedHtml: `<article style="max-width:840px;margin:40px auto;padding:24px;font-family:system-ui,-apple-system,sans-serif;color:#f8fafc;line-height:1.65;background:#0A0D12;border:1px solid #1E293B;border-radius:12px;">
+      <h1 style="font-size:2rem;margin-bottom:1rem;color:#ffffff;">CAVDAX Documentation &amp; Architectural Specification</h1>
+      <p>CAVDAX (Contextual Action &amp; Verified Decision Autonomous eXecution) is an open-source, graph-grounded causal governance platform for autonomous coding agents (Cursor, Claude Code, Windsurf, GitHub Copilot).</p>
+      <h2 style="font-size:1.4rem;margin-top:1.5rem;color:#ffffff;">Core Subsystems</h2>
+      <ul>
+        <li><strong>FalkorDB GraphBLAS Matrix Engine</strong>: Causal DAG dependency resolution executed via sub-millisecond sparse matrix multiplications.</li>
+        <li><strong>Enclosed MCP Tool Gate</strong>: Intercepts agent file mutations (<code>apply_code_change</code>) and verifies decision validity before permitting disk writes.</li>
+        <li><strong>Cascading Stale Invalidation</strong>: When an ADR is marked <code>SUPERSEDED</code> or <code>DEPRECATED</code>, all downstream causal nodes transition to <code>INVALIDATED</code> in &lt;1ms.</li>
+      </ul>
+      <h2 style="font-size:1.4rem;margin-top:1.5rem;color:#ffffff;">Getting Started with MCP</h2>
+      <pre style="background:#0F172A;padding:12px;border-radius:8px;overflow-x:auto;"><code style="color:#38BDF8;">npx @cavdax/mcp-server --stdio</code></pre>
+    </article>`
+  },
+  '/integrations/cursor': {
+    title: 'CAVDAX + Cursor Integration | Causal ADR Enforcement',
+    description: 'Connect Cursor IDE to the CAVDAX Model Context Protocol gate. Hard-block stale code modifications and enforce architectural decision compliance.',
+    url: 'https://cavdax.sahnirmaan.live/integrations/cursor',
+    preRenderedHtml: `<article style="max-width:840px;margin:40px auto;padding:24px;font-family:system-ui,-apple-system,sans-serif;color:#f8fafc;line-height:1.65;background:#0A0D12;border:1px solid #1E293B;border-radius:12px;">
+      <h1 style="font-size:2rem;margin-bottom:1rem;color:#ffffff;">Integrating CAVDAX with Cursor IDE</h1>
+      <p>Cursor\'s Composer and Agent mode rely on retrieval to read project context. CAVDAX encloses Cursor within a causal Model Context Protocol (MCP) gate to prevent the agent from applying changes based on obsolete ADRs.</p>
+      <h2 style="font-size:1.4rem;margin-top:1.5rem;color:#ffffff;">Configuration (.cursor/mcp.json)</h2>
+      <pre style="background:#0F172A;padding:12px;border-radius:8px;overflow-x:auto;"><code style="color:#38BDF8;">{
+  "mcpServers": {
+    "cavdax": {
+      "command": "node",
+      "args": ["node_modules/@cavdax/mcp-server/bin/cavdax-mcp.js", "--stdio"]
+    }
+  }
+}</code></pre>
+    </article>`
+  },
+  '/integrations/claude-code': {
+    title: 'CAVDAX + Claude Code Integration | Architecture Governance',
+    description: 'Equip Anthropic Claude Code CLI with the CAVDAX MCP causal gate to enforce architectural compliance and block invalid tool calls.',
+    url: 'https://cavdax.sahnirmaan.live/integrations/claude-code',
+    preRenderedHtml: `<article style="max-width:840px;margin:40px auto;padding:24px;font-family:system-ui,-apple-system,sans-serif;color:#f8fafc;line-height:1.65;background:#0A0D12;border:1px solid #1E293B;border-radius:12px;">
+      <h1 style="font-size:2rem;margin-bottom:1rem;color:#ffffff;">Integrating CAVDAX with Claude Code</h1>
+      <p>Claude Code is an autonomous CLI coding agent. By adding CAVDAX to Claude Code\'s MCP configuration, all file modification tools are verified against the FalkorDB causal DAG before execution.</p>
+      <h2 style="font-size:1.4rem;margin-top:1.5rem;color:#ffffff;">Setup Command</h2>
+      <pre style="background:#0F172A;padding:12px;border-radius:8px;overflow-x:auto;"><code style="color:#38BDF8;">claude mcp add cavdax node /path/to/cavdax/bin/mcp-server.js --stdio</code></pre>
+    </article>`
+  }
+};
+
 if (fs.existsSync(clientDistPath)) {
   app.use(express.static(clientDistPath));
+
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api')) return next();
-    res.sendFile(path.join(clientDistPath, 'index.html'));
+
+    const normalizedPath = req.path.toLowerCase().replace(/\/+$/, '') || '/';
+    const isBot = BOT_UA_REGEX.test(req.headers['user-agent'] || '');
+    const meta = CANONICAL_META_CATALOG[normalizedPath] || CANONICAL_META_CATALOG['/'];
+    const indexPath = path.join(clientDistPath, 'index.html');
+
+    // If bot crawler or direct request for pre-rendered content route (/docs, /integrations/*)
+    const isDocOrIntegration = normalizedPath === '/docs' || normalizedPath.startsWith('/integrations/');
+    if ((isBot || isDocOrIntegration) && fs.existsSync(indexPath)) {
+      try {
+        let html = fs.readFileSync(indexPath, 'utf8');
+
+        // Dynamically inject route-specific title, description and OpenGraph tags
+        html = html.replace(/<title>[^<]*<\/title>/i, `<title>${meta.title}</title>`);
+        html = html.replace(/<meta\s+name="description"\s+content="[^"]*"/i, `<meta name="description" content="${meta.description}"`);
+        html = html.replace(/<meta\s+property="og:title"\s+content="[^"]*"/i, `<meta property="og:title" content="${meta.title}"`);
+        html = html.replace(/<meta\s+property="og:description"\s+content="[^"]*"/i, `<meta property="og:description" content="${meta.description}"`);
+        html = html.replace(/<meta\s+property="og:url"\s+content="[^"]*"/i, `<meta property="og:url" content="${meta.url}"`);
+        html = html.replace(/<meta\s+name="twitter:title"\s+content="[^"]*"/i, `<meta name="twitter:title" content="${meta.title}"`);
+        html = html.replace(/<meta\s+name="twitter:description"\s+content="[^"]*"/i, `<meta name="twitter:description" content="${meta.description}"`);
+        html = html.replace(/<link\s+rel="canonical"\s+href="[^"]*"/i, `<link rel="canonical" href="${meta.url}"`);
+
+        // Inject pre-rendered semantic HTML body if present
+        if (meta.preRenderedHtml && html.includes('<div id="root"></div>')) {
+          html = html.replace('<div id="root"></div>', `<div id="root">${meta.preRenderedHtml}</div>`);
+        }
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
+      } catch (err) {
+        console.warn('[CAVDAX Static] Error injecting bot metadata:', err.message);
+      }
+    }
+
+    res.sendFile(indexPath);
   });
 }
 

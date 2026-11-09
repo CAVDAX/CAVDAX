@@ -33,15 +33,33 @@ describe('7-Day Pro Trial & Enterprise Corporate Domain Security Hardening', () 
     assert.ok(INDEX_SRC.includes('domainRegex'), 'Domain regex must be enforced');
   });
 
-  it('binds 7-day Pro trial to identity and rejects repeat claims', () => {
+  it('binds 7-day Pro trial to identity, rejects repeat claims, and persists to disk', () => {
     assert.ok(INDEX_SRC.includes('TRIAL_ALREADY_USED'), 'Repeat trial claims must be rejected with TRIAL_ALREADY_USED');
     assert.ok(INDEX_SRC.includes('7 * 24 * 60 * 60 * 1000'), 'Trial duration must be strictly 7 days');
+    const startTrialBlock = INDEX_SRC.slice(INDEX_SRC.indexOf("app.post('/api/billing/start-trial'"), INDEX_SRC.indexOf("app.post('/api/enterprise/register-domain'"));
+    assert.ok(startTrialBlock.includes('syncSystemStateToDisk()'), 'start-trial must persist active trial to disk');
   });
 
-  it('resolves active trial and corporate org match in /api/auth/me', () => {
+  it('enforces corporate domain ownership verification and collision guard', () => {
+    const regDomainBlock = INDEX_SRC.slice(INDEX_SRC.indexOf("app.post('/api/enterprise/register-domain'"), INDEX_SRC.indexOf("app.post('/api/billing/create-order'"));
+    assert.ok(regDomainBlock.includes('DOMAIN_OWNERSHIP_UNVERIFIED'), 'Must enforce DOMAIN_OWNERSHIP_UNVERIFIED check');
+    assert.ok(regDomainBlock.includes('DOMAIN_ALREADY_CLAIMED'), 'Must enforce DOMAIN_ALREADY_CLAIMED collision check');
+    assert.ok(regDomainBlock.includes('syncSystemStateToDisk()'), 'register-domain must persist to disk');
+  });
+
+  it('resolves active trial and corporate org match in /api/auth/me with email verification', () => {
     const authMeBlock = INDEX_SRC.slice(INDEX_SRC.indexOf("app.get('/api/auth/me'"), INDEX_SRC.indexOf('// Test-only session bootstrap'));
     assert.ok(authMeBlock.includes('isTrialActive'), '/api/auth/me must check isTrialActive');
     assert.ok(authMeBlock.includes('trialDaysRemaining'), '/api/auth/me must compute trialDaysRemaining');
     assert.ok(authMeBlock.includes('matchedOrg'), '/api/auth/me must resolve matched organization');
+    assert.ok(authMeBlock.includes('isEmailVerified'), '/api/auth/me must verify email ownership');
+  });
+
+  it('enforces Edge Bot Interceptor and pre-rendered docs / integration routes in index.js', () => {
+    assert.ok(INDEX_SRC.includes('BOT_UA_REGEX'), 'BOT_UA_REGEX must be defined');
+    assert.ok(INDEX_SRC.includes('CANONICAL_META_CATALOG'), 'CANONICAL_META_CATALOG must be defined');
+    assert.ok(INDEX_SRC.includes("'/docs'"), 'Docs route must be configured in catalog');
+    assert.ok(INDEX_SRC.includes("'/integrations/cursor'"), 'Cursor integration must be configured in catalog');
+    assert.ok(INDEX_SRC.includes("'/integrations/claude-code'"), 'Claude Code integration must be configured in catalog');
   });
 });
