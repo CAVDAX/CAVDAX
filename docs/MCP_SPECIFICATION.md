@@ -69,7 +69,7 @@ CAVDAX implements both standard MCP transport mechanisms to accommodate local de
 
 ## 3. Tool Definitions & JSON-RPC Schemas
 
-CAVDAX registers six core MCP tools under the `2024-11-05` specification:
+CAVDAX registers eight core MCP tools under the `2024-11-05` specification:
 
 ### 3.1 Tool 1: `apply_code_change` (Enclosed Write Interceptor)
 The primary execution gate. Encloses all filesystem mutations behind causal provenance validation.
@@ -308,6 +308,94 @@ sequenceDiagram
 
 ---
 
+### 3.7 Tool 7: `list_active_decisions` (Lightweight Architectural Discovery Manifest)
+Provides AI coding agents with instant architectural situational awareness in **< 100 tokens**, eliminating the need to execute full Cypher traversals or grep arbitrary Markdown files.
+
+#### Input Schema
+```json
+{
+  "name": "list_active_decisions",
+  "description": "Returns a lightweight, token-efficient manifest of all architectural decisions in the causal graph, including their active verification status and governed file paths. Use this before check_intent_clearance to discover valid decision IDs.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "status_filter": {
+        "type": "string",
+        "enum": ["ACTIVE", "APPROVED", "INVALIDATED", "SUPERSEDED", "ALL"],
+        "description": "Optional status filter (default: 'ALL'). Use 'ACTIVE' to receive only currently valid, un-superseded decisions."
+      }
+    }
+  }
+}
+```
+
+#### Success Response
+```json
+{
+  "status": "SUCCESS",
+  "count": 2,
+  "total_decisions": 2,
+  "active_count": 1,
+  "decisions": [
+    {
+      "id": "DEC-101",
+      "title": "Architectural Baseline & Verification Invariants",
+      "status": "ACTIVE",
+      "governs": "src/**",
+      "grounded_in": "F-Baseline-001"
+    },
+    {
+      "id": "DEC-102",
+      "title": "Legacy Token Authentication",
+      "status": "INVALIDATED",
+      "governs": "src/services/payment.js",
+      "grounded_in": "F-Auth-v1"
+    }
+  ]
+}
+```
+
+---
+
+### 3.8 Tool 8: `explain_architectural_impact` / `explain_blast_radius` (Downstream Invalidation & Architectural Impact Analysis)
+Computes downstream reachability from any Decision, Source, or Fact across the causal graph. Prevents autonomous agents from blindly refactoring code by exposing dependent decisions and governed files that will be broken. `explain_architectural_impact` serves as the primary modern tool name, with `explain_blast_radius` supported as a backwards-compatible alias.
+
+#### Input Schema
+```json
+{
+  "name": "explain_architectural_impact",
+  "description": "Analyzes downstream architectural impact, invalidated decisions, and affected source files before modifying an ADR, Decision, or Fact. (Alias for explain_blast_radius).",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "node_id": {
+        "type": "string",
+        "description": "Target node ID (e.g. 'DEC-101' or 'ADR-001') to trace downstream causal dependencies for."
+      }
+    },
+    "required": ["node_id"]
+  }
+}
+```
+
+#### Blast Analysis Response
+```json
+{
+  "status": "SUCCESS",
+  "node_found": true,
+  "node_id": "DEC-102",
+  "node_type": "Decision",
+  "severity": "HIGH_IMPACT_INVALIDATION",
+  "downstream_node_count": 2,
+  "direct_dependent_decisions": ["DEC-201"],
+  "governed_files_at_risk": ["src/services/payment.js", "src/middleware/auth.js"],
+  "blast_radius_score": 2,
+  "remediation_directive": "Modifying 'DEC-102' will invalidate 1 dependent decision(s) across 2 file(s). Call 'revalidate_decision' to ground new decisions before modifying source files."
+}
+```
+
+---
+
 ## 4. Client Configuration Guides (Drop-In Integration)
 
 Connecting an AI coding agent to CAVDAX requires zero modification to agent core logic. Drop the corresponding configuration into your client:
@@ -453,9 +541,11 @@ CAVDAX provides a unified CLI and npm package architecture:
 ```
 
 ### CLI Command Syntax
+- `npx cavdax init [--repo ./]`: Scaffolds `docs/adr/` documentation structure, initial baseline `ADR-001`, and `.cursor/mcp.json` gate configuration.
 - `npx cavdax mcp`: Spawns the stdio MCP proxy server for Cursor and Claude Code.
 - `npx cavdax ingest [--repo ./]`: Scans the current git repository, parses ADRs, and seeds FalkorDB.
 - `npx cavdax check [--staged]`: Standalone pre-commit lint gate that checks if staged git diffs violate any invalidation paths.
+- `npx cavdax gate --repo <owner/repo> --sha <commit_sha> [--strict]`: CI/CD pull request gate runner that validates PR commits against remote causal graphs.
 - `npx cavdax doctor`: Verifies FalkorDB connectivity, GraphBLAS matrix memory health, and MCP protocol registration.
 
 ---

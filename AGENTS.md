@@ -354,6 +354,54 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
       4. **Verification Gate**:
          - Verify that `npm run build` passes on `apps/client` with zero compilation warnings, and `node --test` passes on `apps/server` with zero test assertion failures.
 
+
+0ad. **Clean Direct SVG Glyphs & Card Subtext 2-Line Budget Invariant (Anti-Squircle & Scannability Guard)**:
+    - **The Cliché Squircle Icon Box Trap (Strict Ban on Synthetic Icon Wrappers)**:
+      - Forcing rounded-square (`rounded-xl p-2 bg-slate-100 dark:bg-white/5 border border-slate-200`) background wrappers around icons in card headers.
+      - This "icon inside a squircle" pattern is a cliché, generic AI-slop convention that clutters cards, adds visual boxiness, and destroys clean typographic hierarchy.
+      - **The Strict Invariant (Clean Direct SVGs)**: All card headers, feature headings, and category tags MUST render SVGs directly and cleanly (`w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0`) inline with text without artificial bounding squircle cards, decorative background boxes, or container borders. Icons must stand freely alongside their labels.
+    - **Card Subtext 2-Line Maximum Budget (Scannability & Rhythm Invariant)**:
+      - Long, meandering paragraphs that wrap to 3 or 4 lines on desktop/laptop viewports break visual rhythm, induce cognitive fatigue, and disrupt horizontal symmetry across sibling cards.
+      - **The Strict Invariant**:
+        - Card descriptions and feature subtexts MUST obey a strict **2-line maximum budget** (≤ 2 lines, strictly 90–130 characters) of high-signal, punchy architectural copy.
+        - Never allow descriptions to stretch to 3 or 4 lines.
+        - Pair the concise copy with CSS `line-clamp-2` and `leading-relaxed` so that across all responsive viewports, descriptions never balloon vertically or cause layout collisions.
+      - **Canonical Benchmarks**:
+        - *Topological Engine*: "Sparse algebraic semiring sweeps computing multi-hop reachability across the entire AST dependency DAG." (104 chars, max 2 lines).
+        - *Concurrency Protection*: "Leases exclusive locks on decisions so parallel agent fleets cannot mutate the same ADR concurrently or cause split-brain drift." (129 chars, max 2 lines).
+        - *Security & Compliance*: "Mandatory GitHub Status Check blocking pull requests if code touches invalidated decisions or breaches architectural invariants." (131 chars, max 2 lines).
+    - **Comparison Matrix Single-Line Row Invariant & Dynamic Comparative Rose Contrast (Zero Multi-Line Wrap & Visual Harmony Guard)**:
+      - **The Multi-Line Matrix Row Distortion Trap**: Allowing capability and comparison table cells to wrap into 2, 3, or more lines (e.g. `1 Repository (Active \n branch)` or `Single Agent (No \n concurrency)`) disrupts vertical cadence, misaligns sibling columns, and creates visual clunkiness.
+      - **The Strict Invariant (Single-Line Row Budget)**:
+        - Every table cell across all comparative columns (`Community`, `Pro Autonomous`, `Team & Scale`) MUST fit on strictly **1 line** with CSS `whitespace-nowrap`.
+        - Column descriptions in the primary invariant column must use `whitespace-nowrap truncate` to maintain absolute 1-line harmony across all rows.
+        - Pair concise, punchy engineering terminology (`< 2.8ms`, `1 Active Repo`, `Main only`, `Single Agent`, `Local Process`, `< 3ms Gateway`, `Manual CLI`, `Individual PAT`, `Ephemeral Log`, `Public Mesh`) with the active tier filter.
+      - **Dynamic Comparative Rose Contrast & Gold Bullet Semantics**:
+        - Whichever tier is selected displays the gold accent bullet `<span className="text-[#d9a353] font-mono select-none shrink-0">•</span>` in both the column header and every row cell.
+        - Inferior tiers dynamically draw contextual comparison annotations in rose text (`text-rose-500/90 dark:text-rose-400/90`):
+          - When *Community* is selected: base default presentation, zero rose text.
+          - When *Pro Autonomous* is selected: Community tier highlights its limitations in rose (`(2x Slower)`, `(Capped)`, `(No Branches)`, `(No Mutex)`, `(No Relay)`, `(No Priority)`, `(No Gate)`, `(No SSO)`, `(Unsaved)`, `(Shared)`).
+          - When *Team & Scale* is selected: both Community and Pro tiers display comparative weaknesses in rose (`(3.5x Slower)`, `(Single)`, `(No KeySpace)`, `(No Mutex)`, `(Isolated)`, etc. for Community; `(Shared Key)`, `(Capped 10)`, `(Shared DB)`, `(Capped 3)`, `(No SSE)`, `(No SLA)`, `(Advisory)`, `(Manual Seats)`, `(Unsigned)`, `(Multi-Tenant)` for Pro).
+        - All text stays strictly on 1 line with `whitespace-nowrap`.
+0ae. **Viewport-Aware Simulation & Heavy Visual Loop Invariant (Off-Screen Sleep Contract)**:
+    - **Continuous Tick Loop Hazard**: Running unconstrained `requestAnimationFrame` loops on WebGL2, Canvas2D, or particle graphs while out of view burns CPU/GPU threads, drains mobile batteries, and introduces scroll stutter.
+    - **Strict Invariant**: Every heavy canvas/WebGL simulation MUST mount an `IntersectionObserver` with `{ threshold: 0 }`. It must immediately invoke `cancelAnimationFrame(rafId)` when scrolled off-screen (`entry.isIntersecting === false`), and resume cleanly upon viewport re-entry without catch-up delta-time jumps.
+
+0af. **Zero SVG Icon Translation Shifts & Compact Calibrated Capsule Navigation Standard (The Anti-Icon-Jitter & Optical Alignment Invariant)**:
+    - **The Icon Jitter / Translation Trap (Strict Ban on SVG Hover Offsets)**:
+      - Forcing hover translations (`group-hover:-translate-y-0.5`, `group-hover:translate-x-0.5`, `hover:-translate-y-*`) onto SVG icons inside navigation bars, tab docks, pill selectors, and segmented controls.
+      - This causes twitchy layout shifts and makes controls feel like cheap toy widgets when users sweep their cursor across tabs.
+      - **The Strict Invariant (Rock-Solid Anchor)**: SVG icons in navigation bars, tab selectors, and pill docks must remain statically, immutably anchored (`shrink-0`). All hover and active feedback must be conveyed solely through background capsule pills, text/icon color transitions, or subtle opacity changes — **NEVER by physically shifting, translating, or bouncing the SVG vector**.
+    - **Compact Calibrated Capsule Geometry (Anti-Ballooning & Optical Centering Guard)**:
+      - Oversized capsule pill containers (`py-1.5`, `p-1`, button height > 28px) surrounding small monospace text (`text-[11px]`) and `14px` icons create massive vertical voids of empty space. Because monospace fonts without `leading-none` add asymmetric line-height half-leading, and rounded capsule ends curve inwards, oversized pills create an optical distortion where the SVG icon appears physically dislocated or shifted upwards.
+      - **The Strict Invariant (22px Compact Pill Standard)**:
+        - Outer navigation bar: snug `py-1 pl-1.5 pr-1.5` (height ~36px–40px).
+        - Pill track container: `p-0.5 rounded-full`.
+        - Sliding capsule pill & buttons: exact `py-1 px-3` (height strictly 22px–24px).
+        - Typography: `text-[11px] font-mono leading-none` so glyph boxes snap to their true typographic boundaries.
+        - Icon & text pairing: `flex items-center gap-1.5` with equal vertical optical balance (`4px` padding above and below the 14px icon).
+    - **No Active Micro-Scale Wobble (`active:scale-95`)**:
+      - Navigation pill buttons must never shrink or distort on click (`active:scale-95` is banned on sliding pill tabs). The active pill transitions smoothly across elements via spring kinematics without shrinking the button.
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.
@@ -1338,4 +1386,69 @@ To ensure that automated visual testing, screenshot captures, and UI audit proof
 ### 19.3 Windows CRLF Multi-Line String Replacement Safety
 - **The Protocol**: On Windows systems where files may use CRLF line endings (`\r\n`), multi-line regex replacements in Node.js or Python can fail silently if newlines are mismatched.
 - **The Verification Rule**: Immediately after applying any programmatic file modification, the agent MUST run `git diff <file>` to inspect the unstaged diff and verify that the intended target block was actually modified as expected.
+
+---
+
+## 20. Containing Block Hijacking, Viewport-Fixed Chrome & Root Projection Invariant (W3C CSS Transforms Law)
+
+To ensure that floating navigation docks, sidebars, modal dialogs, and viewport chrome never get trapped in parent containers or scrolled off-screen, all AI coding agents must follow these strict architectural invariants:
+
+### 20.1 The W3C CSS Transforms Containing Block Trap (The Spec Law)
+- **The Specification Invariant (W3C CSS Transforms Module Level 1, §2)**:
+  Any non-none value for `transform`, `filter`, `perspective`, or `backdrop-filter` creates a new containing block for all descendants, including those styled with `position: fixed` or `position: absolute`.
+- **The Empirical Failure Scenario**:
+  When page ascent transitions, route entrances, or container animations use CSS keyframes (e.g., `<PageAscentTransition>` with `animation-fill-mode: both`), the terminal keyframe `transform: translate3d(0, 0, 0)` remains permanently attached to full-height wrappers (such as `<main id="main-content">` spanning 3,450px+).
+  As a result:
+  - Any descendant with `position: fixed; top: 50%` computes its offset against `<main>` (`50% * 3,450px = 1,725px`) rather than the 900px physical browser viewport.
+  - The element scrolls with the document rather than floating, disappearing completely off the screen at `scrollY > 1000px`.
+
+### 20.2 The Mandatory Root Projection Protocol (`createPortal`)
+- **Direct Viewport Projection**:
+  Any UI component designed to remain fixed to the physical browser viewport across scrolling (such as top navigation docks, elevated right-hand sidebar docks, floating action buttons, command palettes, and modal scrims) MUST be rendered via React Portals directly into `document.body`:
+  ```jsx
+  import { createPortal } from 'react-dom';
+
+  {mounted && typeof document !== 'undefined' && createPortal(
+    <AnimatePresence>
+      {/* Viewport-fixed floating chrome */}
+    </AnimatePresence>,
+    document.body
+  )}
+  ```
+- **Invariant**: Mounting directly into `document.body` guarantees the root window viewport is the containing block with zero possible CSS transform, filter, or perspective interference from layout ancestors.
+
+### 20.3 Lenis Virtual Scroll Real-Time Coordination Invariant
+- **The Coordinate Normalization Protocol**:
+  Smooth-scroll engines (such as Lenis) intercept and virtualize native scroll events. Direct reads of `window.scrollY` during scroll momentum or settling phases can report stale or desynchronized coordinates.
+- **The Handler Invariant**:
+  All viewport scroll listeners and threshold observers MUST normalize coordinates by checking Lenis event payloads before falling back to `window.scrollY`:
+  ```javascript
+  const handleScroll = (e) => {
+    const currentScroll = typeof e?.scroll === 'number' ? e.scroll : window.scrollY;
+    setIsBelowHero(currentScroll >= threshold);
+  };
+  ```
+
+### 20.4 Permanent Animation & Transform Cleanup Protocol
+- **Lifecycle Cleanup on Animation Completion**:
+  Any page or container animation wrapper that applies CSS transforms during entry or exit transitions MUST strip those transform and animation styles as soon as the transition completes:
+  ```jsx
+  <main
+    id="main-content"
+    onAnimationEnd={() => setAnimating(false)}
+    style={{
+      animation: animating ? `cavdaxPageAscentIn ${duration}ms cubic-bezier(0.22, 1, 0.36, 1) both` : 'none',
+      transform: animating ? undefined : 'none',
+      willChange: animating ? 'opacity, transform' : 'auto'
+    }}
+  >
+  ```
+- **Invariant**: No persistent non-none `transform` may remain on top-level layout containers after entrance animation concludes.
+
+### 20.5 Declarative Layout Primitives vs. Imperative RAF Measurement Trap
+- **The Portal Measurement Timing Skew**:
+  Imperative RAF measurement hooks (e.g. tracking indicator tabs via `useLayoutEffect` and `getBoundingClientRect`) race with deferred React Portal mount phases (`mounted === false` on initial frame). This causes active sliding pill indicators to fail to mount or compute `(0, 0)`, leaving active tab text unreadable or black-on-black without background pill substrates.
+- **The Declarative Invariant**:
+  For all sliding indicators, active state highlights, and animated tabs inside portals or floating docks, developers MUST use declarative layout animation primitives (such as Framer Motion's scoped `layoutId="active-pill"`) rather than imperative DOM measurement loops.
+
 

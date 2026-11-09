@@ -8683,3 +8683,139 @@ When engineering administrative developer panels (`/devteam`) or billing diagnos
 - Display verified transactions in a high-density, monochromatic event ledger.
 - Each record must display the Razorpay Payment ID, Order ID, masked HMAC signature, formatted amount (`₹1.00`), and timestamp.
 - Persist verified test runs in `localStorage` so developers have an audit trail across page refreshes without cluttering production databases.
+
+---
+
+## 83. Clean Direct SVG Glyphs & Card Subtext 2-Line Budget Invariant
+
+### 83.1 Strict Ban on Cliché Squircle Icon Containers (Anti-Squircle Law)
+- **The Defect**: Wrapping SVGs inside generic rounded-square boxes (`rounded-xl p-2 bg-slate-100 dark:bg-white/5 border border-slate-200`) in card headers and category tags. This pattern generates visual clutter, creates nested "box-inside-a-box" noise, and breaks minimalist typographic harmony.
+- **The Strict Invariant**: Render SVGs directly and cleanly inline:
+  ```jsx
+  // ✅ Clean, unboxed SVG glyph
+  <div className="flex items-center gap-2 mb-3">
+    <Layers className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
+    <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+      Topological Engine
+    </span>
+  </div>
+
+  // ⛔ BANNED: Cliché squircle container
+  <div className="p-2 rounded-xl bg-slate-100 dark:bg-white/5 border ...">
+    <Layers className="w-5 h-5" />
+  </div>
+  ```
+- SVGs must stand unencumbered alongside their semantic label.
+
+### 83.2 Card Subtext 2-Line Maximum Budget (Scannability & Rhythm Invariant)
+- **The Defect**: Wordy, paragraph-dense subtexts that wrap to 3 or 4 lines on desktop/laptop viewports, destroying horizontal visual rhythm and causing cards to balloon vertically.
+- **The Invariant**:
+  1. **Strict 2-Line Character Budget**: Subtexts must strictly fit within **≤ 2 lines** (90–130 characters maximum).
+  2. **High-Signal Architectural Tone**: Strip filler; state the exact causal invariant or technical mechanism directly.
+  3. **Mandatory CSS Guard**: Enforce `line-clamp-2` and `leading-relaxed` on all description paragraphs so they can never wrap onto a 3rd line on any viewport.
+- **Canonical Tier Benefits Copy Benchmarks**:
+  - *Topological Engine*: "Sparse algebraic semiring sweeps computing multi-hop reachability across the entire AST dependency DAG." (104 chars).
+  - *Concurrency Protection*: "Leases exclusive locks on decisions so parallel agent fleets cannot mutate the same ADR concurrently or cause split-brain drift." (129 chars).
+  - *Security & Compliance*: "Mandatory GitHub Status Check blocking pull requests if code touches invalidated decisions or breaches architectural invariants." (131 chars).
+
+### 83.3 Comparison Matrix Single-Line Row Invariant & Dynamic Rose Contrast
+- **The Defect**: Allowing matrix rows and cells to wrap across multiple lines (e.g. `1 Repository (Active \n branch)` or `Single Agent (No \n concurrency)`). This creates uneven row heights, breaks horizontal scanning, and looks unpolished.
+- **The Invariants**:
+  1. **Strict 1-Line Row Budget**: All capability table cells MUST use `whitespace-nowrap` and concise terminology (`< 2.8ms`, `1 Active Repo`, `Main only`, `Single Agent`, `Local Process`, `< 3ms Gateway`, `Manual CLI`, `Individual PAT`, `Ephemeral Log`, `Public Mesh`).
+  2. **1-Line Category Subtexts**: Category descriptions in the primary invariant column must enforce `whitespace-nowrap truncate` to maintain identical 1-line vertical cadence.
+  3. **Selected Tier Accent Bullet**: The active tier header and cells render an amber gold accent bullet (`<span className="text-[#d9a353] font-mono select-none shrink-0">•</span>`).
+  4. **Dynamic Contextual Rose Annotations**:
+     - Community selected: default baseline presentation, no rose text.
+     - Pro selected: Community shows comparative weaknesses in rose (`text-rose-500/90 dark:text-rose-400/90`): `(2x Slower)`, `(Capped)`, `(No Branches)`, `(No Mutex)`, `(No Relay)`, etc.
+     - Team & Scale selected: Community and Pro both highlight comparative weaknesses in rose (e.g., `(3.5x Slower)`, `(Single)`, `(No KeySpace)` for Community; `(Shared Key)`, `(Capped 10)`, `(Shared DB)`, `(Capped 3)`, `(No SSE)` for Pro).
+
+## 84. Heavy Simulation & Visual Loop Viewport-Sleep Invariant (IntersectionObserver Pause Contract)
+
+### 84.1 The Off-Screen CPU/GPU Thread Exhaustion Trap
+- **The Defect**: Continuous WebGL2 shader loops, Canvas2D particle renders, or physics tick loops running unconstrained `requestAnimationFrame` iterations while the component is scrolled off-screen.
+- **The Hazard**: Off-screen tick loops consume up to 40% idle CPU/GPU threads, trigger fan spin-ups, drain mobile batteries, and introduce jank during viewport scroll operations (dropping frame rates below 30fps).
+
+### 84.2 The Strict Invariant (Viewport-Aware Execution Loop)
+- **Mandatory IntersectionObserver Guard**: Every high-framerate visual figure, WebGL2 shader canvas, or Canvas2D particle/ray simulation (`Lightfall.jsx`, `HairlineFigure.jsx`, graph canvases) MUST mount an `IntersectionObserver` on its root container with `{ threshold: 0 }`.
+- **Immediate Pause on Scroll-Exit**:
+  - When `entry.isIntersecting === false`, immediately invoke `cancelAnimationFrame(rafId)` and suspend the tick loop.
+  - Set an internal running flag `isVisibleRef.current = false`.
+- **Instant Resume on Viewport Re-Entry**:
+  - When `entry.isIntersecting === true`, reset frame timers and resume the loop smoothly without catch-up delta-time spikes (`lastTime = performance.now()`).
+- **Canonical Reference Implementation**:
+  ```jsx
+  useEffect(() => {
+    let rafId = null;
+    let isVisible = true;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isVisible = entry.isIntersecting;
+      if (isVisible) {
+        lastTime = performance.now();
+        tick();
+      } else {
+        cancelAnimationFrame(rafId);
+      }
+    }, { threshold: 0 });
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    return () => {
+      observer.disconnect();
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+  ```
+
+## 85. The Containing Block & Viewport-Fixed Chrome Invariant (W3C CSS Transforms Level 1 Specification Law)
+
+### 85.1 The Containing Block Hijacking Trap
+- **The Architectural Vulnerability**:
+  Per the W3C CSS Transforms Module Level 1 Specification (§2), setting any non-none value for `transform`, `filter`, `perspective`, or `backdrop-filter` on an ancestor element transforms that element into the containing block for all its `position: fixed` descendants.
+- **The Empirical Puppeteer Diagnostic Evidence**:
+  During deep automated testing of viewport-fixed docks (`benchmark/test-sidebar-scroll.js`), elevated floating sidebars and hero docks were discovered anchored to `top: 1,725px` instead of the physical 900px viewport:
+  - **Scroll Y = 0**: Hero nav visible, sidebar unmounted.
+  - **Scroll Y = 600**: Sidebar mounts with computed `top: 660px`, but anchored to ancestor `<main id="main-content">` which had `transform: translate3d(0, 0, 0)` retained via `animation-fill-mode: both`.
+  - **Scroll Y = 2,000**: Sidebar computed `top: -438px` (scrolled completely off-screen above the viewport).
+  - **Scroll Y = 4,000**: Sidebar computed `top: -988px` (completely lost).
+
+### 85.2 The Three Architectural Implementation Contracts
+1. **Direct Root Viewport Projection via React Portal (`createPortal`)**:
+   - Floating navigation docks, viewport sidebars, status HUDs, and modal dialogs must project directly into `document.body` via `createPortal`.
+   - Never embed `position: fixed` viewport navigation components inside layout wrappers or animated page shells.
+2. **Lenis Virtual Scroll Event Normalization**:
+   - Scroll handlers must coordinate with Lenis virtual scroll frames:
+     `const currentScroll = typeof e?.scroll === 'number' ? e.scroll : window.scrollY;`
+   - Real-time dock visibility thresholds recalculate immediately during both virtual momentum and native scroll frames.
+3. **Mandatory Transform Stripping on Transition End (`onAnimationEnd`)**:
+   - Page transition wrappers (`PageAscentTransition.jsx`) must attach `onAnimationEnd` to strip `animation`, `transform`, and `willChange` styles to `'none'` once entrance finishes.
+4. **Declarative Layout Animation over Imperative Portal Measurement**:
+   - Imperative DOM measurement hooks (`usePillTracker`) that rely on `getBoundingClientRect` race with portal mounting schedules, causing sliding pill indicators to fail to render and leaving active tab text unreadable (black-on-black).
+   - All sliding pill indicators within portaled navigation docks must use declarative layout primitives like Framer Motion's scoped `layoutId` (e.g. `layoutId="hero-active-tier-pill"` and `layoutId="sidebar-active-tier-pill"`).
+5. **Multi-Theme Substrate Contrast Invariant**:
+   - For all high-contrast CTA buttons with animated wave or fill backgrounds (e.g. white fill in dark mode), button text and SVG icons must explicitly enforce dark contrast (`dark:!text-slate-950 font-bold`) to prevent invisible white-on-white text during hover states.
+
+6. **Synchronous 0ms Pill Substrate & Dual-State Active Highlighting (Preventing First-Paint Dropouts)**:
+   - When navigation pills are rendered inside portaled, dynamically mounted, or animated containers, Framer Motion's `layoutId` layout projection calculation can be deferred across initial hydration frames.
+   - If active text colors depend on the presence of the projected pill (e.g. `dark:text-slate-950` expecting a white background pill), any dropped layout calculation leaves dark text on a dark background or white text on a white background.
+   - **The Strict Invariant**: Active tab buttons must declare solid background classes directly on the button element (`bg-slate-950 dark:bg-white text-white dark:text-slate-950 font-bold shadow-xs`). This guarantees 0ms instantaneous first-paint contrast on both initial load and reloads without layout projection flicker.
+
+## 86. Monospace Table Column Budgeting & Horizontal Scroll Clearance Invariant
+
+### 86.1 The Percentage-Width Monospace Truncation Trap
+- **The Defect**: Allocating relative percentage widths (e.g. `w-[24%]`) to table columns containing non-wrapping monospace text (`whitespace-nowrap font-mono`). On viewports below 1440px or high-DPI scaling (125%/150%), percentage calculations compress columns below the physical width of the monospace character string (e.g. compressing a 185px string into a 140px column).
+- **The Hazard**: When the enclosing card enforces `overflow-hidden` (from `rounded-3xl` glassmorphic designs), the excess characters are silently clipped behind the right border of the card (e.g. `Dedicated VPC / Air-Gap` clipped to `Dedicated VPC / A`).
+- **The Zero-Scroll False Equilibrium Trap**: If the table has `w-full` without an explicit `min-w`, `container.scrollWidth` equals `container.clientWidth`. The browser reports no overflow, preventing the user from scrolling to see the clipped text.
+
+### 86.2 The Strict Invariant
+1. **Mandatory Explicit Column Minimum Widths (`min-w-[Npx]`)**:
+   - Every column in a technical invariant matrix must enforce a minimum width calculated from the maximum character count of its contents:
+     - `Capability & Invariant`: `min-w-[280px]` (fits 36 monospace characters).
+     - Standard tier columns: `min-w-[220px]`–`min-w-[240px]` (fits comparative tags and metrics).
+     - Extended tier columns (e.g. Team & Scale): `min-w-[260px]` with `pr-8` (guarantees ≥ 60px of right clearance for 25-character strings like `Dedicated VPC / Air-Gap`).
+2. **Table Container Minimum Width (`min-w-[1040px]`)**:
+   - The table element itself must declare `w-full min-w-[1040px]`. On any viewport where the card is narrower than 1040px, `container.scrollWidth > container.clientWidth` is guaranteed, activating horizontal scrollability.
+3. **Active-Tier Auto-Scroll Clearance Protocol**:
+   - When a tier is selected from navigation controls, the table container must auto-scroll smoothly to ensure full visibility:
+     `container.scrollTo({ left: maxScroll + 80, behavior: 'smooth' });`
+   - This ensures the active column is positioned with generous visual clearance and zero border collision.
