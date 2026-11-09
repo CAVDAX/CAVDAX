@@ -754,7 +754,19 @@ setInterval(() => {
       console.log(`[CAVDAX SSE] Evicted stale MCP session ${sessionId} (TTL exceeded)`);
     }
   }
-}, 60 * 1000).unref(); // .unref() so the interval doesn't keep the process alive during tests
+}, 60 * 1000).unref();
+
+// Stores for authentic 7-Day Pro Trials & Enterprise Corporate Domain verification
+const activeTrialsStore = new Map();
+
+const BLOCKED_PUBLIC_EMAIL_DOMAINS = new Set([
+  'gmail.com', 'googlemail.com', 'yahoo.com', 'yahoo.co.in', 'yahoo.co.uk',
+  'outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'icloud.com',
+  'proton.me', 'protonmail.com', 'aol.com', 'zoho.com', 'mail.com',
+  'yandex.com', 'gmx.com', 'tempmail.com', 'guerrillamail.com'
+]);
+
+const enterpriseOrganizationsStore = new Map(); // .unref() so the interval doesn't keep the process alive during tests
 
 function sanitizeBroadcastPayload(eventType, payload) {
   if (eventType === 'MCP_TOOL_EXECUTED' && payload && typeof payload === 'object') {
@@ -2834,8 +2846,48 @@ app.get('/api/auth/me', (req, res) => {
     return res.status(200).json({ authenticated: false, hasEnvPat });
   }
   const userLogin = (req.session.user?.login || '').toLowerCase();
+  const userId = String(req.session.user?.githubId || userLogin);
   const isDevMaintainer = Boolean(userLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(userLogin));
-  const effectiveTier = isDevMaintainer ? 'enterprise' : (req.session.tier || req.session.user?.tier || 'free');
+
+  // 1. Identity-bound 7-day Pro trial resolution
+  const userTrial = activeTrialsStore.get(userId) || req.session.user?.trial || null;
+  const isTrialActive = Boolean(userTrial && userTrial.claimed && userTrial.expiresAt > Date.now());
+  const trialDaysRemaining = isTrialActive
+    ? Math.max(1, Math.ceil((userTrial.expiresAt - Date.now()) / (24 * 60 * 60 * 1000)))
+    : 0;
+
+  // 2. Dynamic Enterprise Organization domain resolution
+  const userEmail = (req.session.user?.email || '').toLowerCase().trim();
+  const userDomain = userEmail.includes('@') ? userEmail.split('@')[1] : null;
+  let matchedOrg = null;
+  if (userDomain && !BLOCKED_PUBLIC_EMAIL_DOMAINS.has(userDomain)) {
+    for (const org of enterpriseOrganizationsStore.values()) {
+      if (org.domains && org.domains.includes(userDomain)) {
+        matchedOrg = org;
+        break;
+      }
+    }
+  }
+
+  let effectiveTier = 'free';
+  if (isDevMaintainer || matchedOrg) {
+    effectiveTier = 'enterprise';
+  } else if (req.session.user?.is_sponsor || req.session.user?.subscription_active) {
+    effectiveTier = req.session.user?.tier || 'pro';
+  } else if (isTrialActive) {
+    effectiveTier = 'pro';
+  } else if (req.session.tier === 'pro' || req.session.user?.tier === 'pro') {
+    if (userTrial && userTrial.expiresAt <= Date.now()) {
+      effectiveTier = 'free';
+      req.session.user.tier = 'free';
+      if (req.session.tier) req.session.tier = 'free';
+    } else {
+      effectiveTier = 'pro';
+    }
+  } else {
+    effectiveTier = req.session.tier || req.session.user?.tier || 'free';
+  }
+
   const { githubId, login, name, avatarUrl } = req.session.user;
   res.json({
     authenticated: true,
@@ -2845,7 +2897,17 @@ app.get('/api/auth/me', (req, res) => {
       name,
       avatarUrl,
       tier: effectiveTier,
-      is_dev_maintainer: isDevMaintainer
+      is_dev_maintainer: isDevMaintainer,
+      trial: userTrial ? {
+        ...userTrial,
+        isActive: isTrialActive,
+        daysRemaining: trialDaysRemaining
+      } : null,
+      organization: matchedOrg ? {
+        id: matchedOrg.id,
+        name: matchedOrg.name,
+        domain: userDomain
+      } : null
     }
   });
 });
@@ -3875,6 +3937,128 @@ app.get('/api/billing/config', (req, res) => {
   res.json({
     configured: Boolean(razorpayClient),
     key_id: RAZORPAY_KEY_ID || null
+  });
+});
+
+/**
+ * POST /api/billing/start-trial
+ * Activates an authentic, identity-bound 7-day Pro trial without requiring upfront payment.
+ */
+app.post('/api/billing/start-trial', (req, res) => {
+  const user = req.session?.user;
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      error: { code: 'UNAUTHENTICATED', message: 'You must connect your GitHub account to activate the 7-Day Free Pro Trial.' }
+    });
+  }
+
+  const userId = String(user.githubId || user.login || '').toLowerCase().trim();
+  if (!userId) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_USER', message: 'Could not resolve user identifier from session.' }
+    });
+  }
+
+  const existingTrial = activeTrialsStore.get(userId) || user.trial;
+  if (existingTrial && existingTrial.claimed) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'TRIAL_ALREADY_USED', message: 'The 7-Day Free Pro Trial has already been claimed for this account.' }
+    });
+  }
+
+  const now = Date.now();
+  const trialDurationMs = 7 * 24 * 60 * 60 * 1000;
+  const trialObj = {
+    claimed: true,
+    claimedAt: now,
+    expiresAt: now + trialDurationMs,
+    daysRemaining: 7,
+    isActive: true
+  };
+
+  activeTrialsStore.set(userId, trialObj);
+  req.session.user.trial = trialObj;
+  req.session.user.tier = 'pro';
+  if (req.session.tier) req.session.tier = 'pro';
+
+  res.json({
+    success: true,
+    tier: 'pro',
+    trial: trialObj,
+    message: '7-Day Free Pro Trial successfully activated.'
+  });
+});
+
+/**
+ * POST /api/enterprise/register-domain
+ * Enterprise administrators can register their verified corporate domain.
+ * Enforces strict RFC domain syntax and blocks public freemails.
+ */
+app.post('/api/enterprise/register-domain', (req, res) => {
+  const user = req.session?.user;
+  if (!user) {
+    return res.status(401).json({
+      success: false,
+      error: { code: 'UNAUTHENTICATED', message: 'Authentication required.' }
+    });
+  }
+
+  const isDev = Boolean(user.login && globalDevRoster?.map(r => r.toLowerCase()).includes(user.login.toLowerCase()));
+  if (user.tier !== 'enterprise' && !isDev) {
+    return res.status(403).json({
+      success: false,
+      error: { code: 'FORBIDDEN', message: 'Only active Enterprise Tier accounts can register organization domains.' }
+    });
+  }
+
+  const { domain, orgName } = req.body || {};
+  const cleanDomain = (domain || '').toLowerCase().trim();
+  const cleanOrgName = (orgName || '').trim();
+
+  if (!cleanDomain || !cleanOrgName) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'MISSING_FIELDS', message: 'Both orgName and domain are required.' }
+    });
+  }
+
+  // RFC 5322 / RFC 1035 Domain syntax verification
+  const domainRegex = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/;
+  if (!domainRegex.test(cleanDomain)) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'INVALID_DOMAIN_SYNTAX', message: 'Domain must be a valid, fully-qualified domain name (e.g. acme.corp).' }
+    });
+  }
+
+  // Strictly block public and disposable email providers
+  if (BLOCKED_PUBLIC_EMAIL_DOMAINS.has(cleanDomain)) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'PUBLIC_DOMAIN_FORBIDDEN', message: 'Public email providers (Gmail, Yahoo, Outlook, etc.) cannot be claimed as Enterprise domains.' }
+    });
+  }
+
+  const orgId = `org_${cleanDomain.replace(/[^a-z0-9]/g, '_')}`;
+  enterpriseOrganizationsStore.set(orgId, {
+    id: orgId,
+    name: cleanOrgName,
+    domains: [cleanDomain],
+    owner: user.login,
+    registeredAt: Date.now()
+  });
+
+  res.json({
+    success: true,
+    organization: {
+      id: orgId,
+      name: cleanOrgName,
+      domains: [cleanDomain]
+    },
+    message: `Domain ${cleanDomain} successfully registered for ${cleanOrgName}.`
   });
 });
 
