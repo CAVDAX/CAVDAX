@@ -14,6 +14,15 @@ if [ -f "scripts/lint-markdown.mjs" ]; then
   fi
 fi
 
+if [ -f "scripts/lint-clean-svgs.mjs" ]; then
+  node scripts/lint-clean-svgs.mjs --staged
+  SVG_EXIT=$?
+  if [ $SVG_EXIT -ne 0 ]; then
+    echo "[CAVDAX] Commit aborted: Staged UI components violate the Anti-Squircle Direct SVG Invariant (Rule 0ad)."
+    exit 1
+  fi
+fi
+
 if command -v npx >/dev/null 2>&1; then
   node apps/mcp-server/bin/cavdax.js check --staged
   EXIT_CODE=$?
