@@ -1,17 +1,22 @@
 #!/usr/bin/env node
 
 /**
- * CAVDAX Universal CLI Entrypoint
+ * CAVDAX Universal CLI Entrypoint (Zero-Dependency Standard Library)
+ * Powered by Node.js native util.parseArgs (Zero external child_process imports)
+ *
  * Supports:
  *   npx cavdax mcp         -> Launches stdio MCP server for Cursor / Claude
  *   npx cavdax ingest      -> Ingests local ADRs and git history into FalkorDB
  *   npx cavdax check       -> Validates staged files against causal graph
  *   npx cavdax gate        -> Enforces PR / commit architectural invariants in CI
  *   npx cavdax doctor      -> Runs connectivity and health checks
+ *   npx cavdax init        -> Scaffolds ADR documentation structure
+ *   npx cavdax impact      -> Inspects downstream architectural impact (alias: blast)
+ *   npx cavdax decisions   -> Lists active architecture decisions
  */
 
-import { Command } from 'commander';
-import { createRequire } from 'module';
+import { parseArgs } from 'node:util';
+import { createRequire } from 'node:module';
 import { startStdioServer } from '../src/stdioServer.js';
 import { runIngest } from '../src/ingestCommand.js';
 import { runCheck } from '../src/checkCommand.js';
@@ -21,96 +26,176 @@ import { runInit } from '../src/initCommand.js';
 import { runImpact } from '../src/impactCommand.js';
 import { runDecisions } from '../src/decisionsCommand.js';
 
-const program = new Command();
-const { version } = createRequire(import.meta.url)('../package.json');
+const require = createRequire(import.meta.url);
+const { version } = require('../package.json');
 
-program
-  .name('cavdax')
-  .description('CAVDAX: Causal Invalidation & Enclosed MCP Execution Gate for AI Coding Agents')
-  .version(version);
+const rawArgs = process.argv.slice(2);
 
-program
-  .command('mcp', { isDefault: true })
-  .description('Start the Model Context Protocol (MCP) stdio server for Claude Code and Cursor')
-  .action(async () => {
-    await startStdioServer();
-  });
+// Top-level help printer
+function printHelp() {
+  console.log(`
+CAVDAX CLI v${version}
+Causal Invalidation & Enclosed MCP Execution Gate for AI Coding Agents
 
-program
-  .command('ingest')
-  .description('Ingest sources into FalkorDB (ADR, commit, package.json, CODEOWNERS, GitHub Issue)')
-  .option('-r, --repo <path>', 'Repository root path', process.cwd())
-  .option('-h, --host <host>', 'FalkorDB host', process.env.FALKORDB_HOST || 'localhost')
-  .option('-p, --port <port>', 'FalkorDB port', process.env.FALKORDB_PORT || '6379')
-  .option('-t, --type <type>', 'Source type: adr | commit | package | codeowners | issue | all', 'adr')
-  .option('--sha <sha>', 'Git commit SHA (required for --type commit)')
-  .option('--message <msg>', 'Commit message override (optional for --type commit)')
-  .option('--author <author>', 'Commit author (optional for --type commit)')
-  .option('--issue <number>', 'GitHub Issue number (required for --type issue)')
-  .option('--url <url>', 'GitHub Issue HTML URL (required for --type issue)')
-  .option('--title <title>', 'GitHub Issue title (optional for --type issue)')
-  .option('--body <body>', 'GitHub Issue body (optional, scanned for supersedes refs)')
-  .option('--supersedes <ids>', 'Comma-separated source IDs this supersedes (e.g. ADR-001,ADR-002)')
-  .action(async (options) => {
-    await runIngest(options);
-  });
+Usage:
+  npx cavdax [command] [options]
 
-program
-  .command('check')
-  .description('Verify staged files or PR commits against the FalkorDB causal dependency graph')
-  .option('-s, --staged', 'Check currently staged git files')
-  .option('--pr <number>', 'GitHub Pull Request number (for CI environments)')
-  .option('--strict', 'Fail (exit 1) when FalkorDB is unreachable instead of skipping the check')
-  .action(async (options) => {
-    const success = await runCheck(options);
-    process.exit(success ? 0 : 1);
-  });
+Commands:
+  mcp (default)        Start the Model Context Protocol (MCP) stdio server
+  ingest               Ingest sources into FalkorDB (ADR, commit, package.json, issue)
+  check                Verify staged files or PR commits against causal graph
+  gate                 Verify PR commits against architectural boundaries in CI/CD
+  doctor               Diagnose FalkorDB connectivity and MCP readiness
+  init                 Scaffold ADR documentation structure and MCP client configs
+  impact, blast <id>   Inspect downstream architectural impact of a decision
+  decisions            List active architecture decisions and governed paths
 
-program
-  .command('gate')
-  .description('Verify PR commits or staged files against architectural boundaries in CI/CD pipelines')
-  .option('-r, --repo <repo>', 'Repository full name (owner/repo)')
-  .option('--sha <sha>', 'Pull request head commit SHA')
-  .option('-b, --branch <branch>', 'Target branch name')
-  .option('--strict', 'Fail when verification server or graph is unreachable')
-  .action(async (options) => {
-    const success = await runGate(options);
-    process.exit(success ? 0 : 1);
-  });
+Options:
+  -v, --version        Output version number
+  -h, --help           Display help information
 
-program
-  .command('doctor')
-  .description('Diagnose FalkorDB connectivity, GraphBLAS matrix health, and MCP readiness')
-  .action(async () => {
-    await runDoctor();
-  });
+Examples:
+  npx cavdax                      # Starts MCP stdio server
+  npx cavdax check --staged       # Validates git staged files before commit
+  npx cavdax impact DEC-101       # Explains downstream invalidation risk
+`);
+}
 
-
-program
-  .command('init')
-  .description('Scaffold ADR documentation structure and MCP client configurations for a project')
-  .option('-r, --repo <path>', 'Repository root path', process.cwd())
-  .action(async (options) => {
-    await runInit(options);
-  });
-
-program
-  .command('impact [nodeId]')
-  .alias('blast')
-  .description('Inspect downstream architectural impact and affected source files')
-  .option('-d, --decision <id>', 'Decision ID to analyze (e.g. DEC-101)')
-  .action(async (nodeId, options) => {
-    const success = await runImpact(nodeId, options);
-    process.exit(success ? 0 : 1);
-  });
-
-program
-  .command('decisions')
-  .description('List active architecture decisions, their statuses, and governed paths')
-  .option('-f, --filter <status>', 'Status filter: ALL | APPROVED | SUPERSEDED | INVALIDATED', 'ALL')
-  .action(async (options) => {
-    await runDecisions(options);
+async function main() {
+  // Check for global flags first
+  if (rawArgs.includes('-v') || rawArgs.includes('--version')) {
+    console.log(`cavdax v${version}`);
     process.exit(0);
-  });
+  }
 
-program.parse(process.argv);
+  // Parse command name (positional)
+  let command = rawArgs.find(arg => !arg.startsWith('-')) || 'mcp';
+  if (command === 'blast') command = 'impact';
+
+  if (rawArgs.includes('-h') || rawArgs.includes('--help')) {
+    printHelp();
+    process.exit(0);
+  }
+
+  switch (command) {
+    case 'mcp': {
+      await startStdioServer();
+      break;
+    }
+
+    case 'ingest': {
+      const { values } = parseArgs({
+        args: rawArgs.filter(a => a !== 'ingest'),
+        options: {
+          repo: { type: 'string', short: 'r', default: process.cwd() },
+          host: { type: 'string', short: 'h', default: process.env.FALKORDB_HOST || 'localhost' },
+          port: { type: 'string', short: 'p', default: process.env.FALKORDB_PORT || '6379' },
+          type: { type: 'string', short: 't', default: 'adr' },
+          sha: { type: 'string' },
+          message: { type: 'string' },
+          author: { type: 'string' },
+          issue: { type: 'string' },
+          url: { type: 'string' },
+          title: { type: 'string' },
+          body: { type: 'string' },
+          supersedes: { type: 'string' }
+        },
+        allowPositionals: false,
+        strict: false
+      });
+      await runIngest(values);
+      break;
+    }
+
+    case 'check': {
+      const { values } = parseArgs({
+        args: rawArgs.filter(a => a !== 'check'),
+        options: {
+          staged: { type: 'boolean', short: 's', default: false },
+          pr: { type: 'string' },
+          strict: { type: 'boolean', default: false }
+        },
+        allowPositionals: false,
+        strict: false
+      });
+      const success = await runCheck(values);
+      process.exit(success ? 0 : 1);
+      break;
+    }
+
+    case 'gate': {
+      const { values } = parseArgs({
+        args: rawArgs.filter(a => a !== 'gate'),
+        options: {
+          repo: { type: 'string', short: 'r' },
+          sha: { type: 'string' },
+          branch: { type: 'string', short: 'b' },
+          strict: { type: 'boolean', default: false }
+        },
+        allowPositionals: false,
+        strict: false
+      });
+      const success = await runGate(values);
+      process.exit(success ? 0 : 1);
+      break;
+    }
+
+    case 'doctor': {
+      await runDoctor();
+      break;
+    }
+
+    case 'init': {
+      const { values } = parseArgs({
+        args: rawArgs.filter(a => a !== 'init'),
+        options: {
+          repo: { type: 'string', short: 'r', default: process.cwd() }
+        },
+        allowPositionals: false,
+        strict: false
+      });
+      await runInit(values);
+      break;
+    }
+
+    case 'impact': {
+      const { values, positionals } = parseArgs({
+        args: rawArgs.filter(a => a !== 'impact' && a !== 'blast'),
+        options: {
+          decision: { type: 'string', short: 'd' }
+        },
+        allowPositionals: true,
+        strict: false
+      });
+      const targetId = positionals[0] || values.decision;
+      const success = await runImpact(targetId, values);
+      process.exit(success ? 0 : 1);
+      break;
+    }
+
+    case 'decisions': {
+      const { values } = parseArgs({
+        args: rawArgs.filter(a => a !== 'decisions'),
+        options: {
+          filter: { type: 'string', short: 'f', default: 'ALL' }
+        },
+        allowPositionals: false,
+        strict: false
+      });
+      await runDecisions(values);
+      process.exit(0);
+      break;
+    }
+
+    default: {
+      console.error(`Unknown command: ${command}`);
+      printHelp();
+      process.exit(1);
+    }
+  }
+}
+
+main().catch((err) => {
+  console.error('[cavdax fatal error]', err);
+  process.exit(1);
+});

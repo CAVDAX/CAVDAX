@@ -4559,7 +4559,7 @@ app.post('/api/billing/reset-evaluation-sponsor', (req, res) => {
 
 /**
  * GET /api/sponsors
- * Returns verified community backers and supporters.
+ * Returns verified community backers and supporters with privacy invariants enforced.
  */
 app.get('/api/sponsors', (req, res) => {
   const persistedSponsors = Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : [];
@@ -4570,11 +4570,60 @@ app.get('/api/sponsors', (req, res) => {
       allSponsors.push(seed);
     }
   }
+
+  // Enforce Privacy Invariant: Filter 'private' and sanitize 'anonymous'
+  const publicSponsors = allSponsors
+    .filter(s => s.visibility !== 'private')
+    .map(s => {
+      if (s.visibility === 'anonymous') {
+        return {
+          ...s,
+          name: 'Anonymous Backer',
+          github_handle: null,
+          avatar_url: null,
+          backer_message: null
+        };
+      }
+      return s;
+    });
+
   res.json({
     success: true,
-    count: allSponsors.length,
-    sponsors: allSponsors
+    count: publicSponsors.length,
+    sponsors: publicSponsors
   });
+});
+
+/**
+ * POST /api/sponsors/consent
+ * Updates a backer's public recognition and visibility preferences.
+ * Body: { backer_id, visibility: 'public' | 'anonymous' | 'private', display_name, backer_message }
+ */
+app.post('/api/sponsors/consent', (req, res) => {
+  const { backer_id, visibility, display_name, backer_message } = req.body || {};
+  if (!backer_id) {
+    return res.status(400).json({ success: false, error: 'backer_id is required' });
+  }
+
+  if (!Array.isArray(savedSystemState.sponsors)) {
+    savedSystemState.sponsors = [];
+  }
+
+  const sponsor = savedSystemState.sponsors.find(s => s.id === backer_id);
+  if (sponsor) {
+    sponsor.visibility = visibility || 'public';
+    if (visibility === 'public') {
+      if (display_name) sponsor.name = String(display_name).slice(0, 40);
+      if (backer_message !== undefined) sponsor.backer_message = String(backer_message).slice(0, 60);
+    } else if (visibility === 'anonymous') {
+      sponsor.name = 'Anonymous Backer';
+      sponsor.backer_message = null;
+    }
+    syncSystemStateToDisk();
+    return res.json({ success: true, backer: sponsor });
+  }
+
+  return res.json({ success: true, message: 'Preference acknowledged' });
 });
 
 /**
