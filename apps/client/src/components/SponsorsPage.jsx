@@ -108,7 +108,7 @@ const FILTER_TABS = [
  * - §90: Universal Modal Portal Isolation
  * - §91: Anti-Orphan Heading Typography
  */
-export default function SponsorsPage({ onNavigateToSupport, user }) {
+export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user }) {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
@@ -276,6 +276,9 @@ export default function SponsorsPage({ onNavigateToSupport, user }) {
               playClick();
               if (onNavigateToSupport) onNavigateToSupport();
             }}
+            onMouseEnter={handlePrefetchSupport}
+            onFocus={handlePrefetchSupport}
+            onTouchStart={handlePrefetchSupport}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-mono font-semibold transition-all cursor-pointer shadow-xs"
           >
             <span>Become a Backer</span>

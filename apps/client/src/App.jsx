@@ -1673,6 +1673,7 @@ export default function App() {
             onLaunchConsole={() => handleSelectTab('console')}
             onNavigateHome={() => handleSelectTab('landing')}
             onNavigateToSponsors={() => handleSelectTab('sponsors')}
+            onPrefetchTab={prefetchRoute}
           />
         </SubsystemErrorBoundary>
       ) : activeTab === 'sponsors' ? (
@@ -1681,6 +1682,7 @@ export default function App() {
           <SponsorsPage
             user={githubUser}
             onNavigateToSupport={() => handleSelectTab('support')}
+            onPrefetchTab={prefetchRoute}
           />
         </SubsystemErrorBoundary>
       ) : activeTab === '404' ? (

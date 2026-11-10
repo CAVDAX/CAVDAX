@@ -120,6 +120,12 @@ export default function ProfilePage({
       onPrefetchTab('benefits');
     }
   }, [onPrefetchTab]);
+
+  const handlePrefetchSupport = useCallback(() => {
+    if (onPrefetchTab) {
+      onPrefetchTab('support');
+    }
+  }, [onPrefetchTab]);
   useEffect(() => {
     if (tier && tier !== currentTier) {
       setCurrentTier(tier);
@@ -858,7 +864,9 @@ export default function ProfilePage({
                 playClick();
                 if (onOpenSupportPage) onOpenSupportPage();
               }}
-              onMouseEnter={() => setIsSponsorHovered(true)}
+              onMouseEnter={() => { setIsSponsorHovered(true); handlePrefetchSupport(); }}
+              onFocus={handlePrefetchSupport}
+              onTouchStart={handlePrefetchSupport}
               onMouseLeave={() => setIsSponsorHovered(false)}
               className={`relative overflow-hidden group h-9 min-w-[140px] px-5 flex items-center justify-center gap-2 rounded-lg border text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none ${
                 isSponsorHovered
@@ -1886,7 +1894,9 @@ export default function ProfilePage({
               playClick();
               if (onOpenSupportPage) onOpenSupportPage();
             }}
-            onMouseEnter={() => setIsSponsorHovered(true)}
+            onMouseEnter={() => { setIsSponsorHovered(true); handlePrefetchSupport(); }}
+            onFocus={handlePrefetchSupport}
+            onTouchStart={handlePrefetchSupport}
             onMouseLeave={() => setIsSponsorHovered(false)}
             className={`relative overflow-hidden group h-8 sm:h-8.5 min-w-[125px] sm:min-w-[135px] px-3.5 sm:px-4 flex items-center justify-center gap-2 rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none ${
               isSponsorHovered

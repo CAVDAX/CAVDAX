@@ -531,7 +531,7 @@ function getStoredUser() {
   return null;
 }
 
-export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigateToSponsors, user }) {
+export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigateToSponsors, onPrefetchTab, user }) {
   const [hoveredTier, setHoveredTier] = useState(null);
   const [isHeadingHovered, setIsHeadingHovered] = useState(false);
   const [isExploreHovered, setIsExploreHovered] = useState(false);
@@ -548,6 +548,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
     e.currentTarget.style.setProperty('--mouse-x', '-999px');
     e.currentTarget.style.setProperty('--mouse-y', '-999px');
   };
+
+  const handlePrefetchSponsors = useCallback(() => {
+    if (onPrefetchTab) {
+      onPrefetchTab('sponsors');
+    }
+  }, [onPrefetchTab]);
   const [loadingTier, setLoadingTier] = useState(null);
   const [evalLoadingTier, setEvalLoadingTier] = useState(null);
   const [toast, setToast]             = useState(null); // { ok: bool, text: string }
@@ -961,7 +967,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                   playClick();
                   onNavigateToSponsors();
                 }}
-                onMouseEnter={() => setIsExploreHovered(true)}
+                onMouseEnter={() => {
+                  setIsExploreHovered(true);
+                  handlePrefetchSponsors();
+                }}
+                onFocus={handlePrefetchSponsors}
+                onTouchStart={handlePrefetchSponsors}
                 onMouseLeave={() => setIsExploreHovered(false)}
                 className="group flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/80 dark:hover:bg-white/10 text-xs font-mono text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
                 title="Open dedicated community backers wall with 3D supporter galaxy"
@@ -1734,7 +1745,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                     playClick();
                     onNavigateToSponsors();
                   }}
-                  onMouseEnter={() => setIsExploreHovered(true)}
+                  onMouseEnter={() => {
+                    setIsExploreHovered(true);
+                    handlePrefetchSponsors();
+                  }}
+                  onFocus={handlePrefetchSponsors}
+                  onTouchStart={handlePrefetchSponsors}
                   onMouseLeave={() => setIsExploreHovered(false)}
                   className="group inline-flex items-center gap-1 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer font-medium"
                 >
