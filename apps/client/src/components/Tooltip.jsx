@@ -13,6 +13,8 @@ export default function Tooltip({
   children,
   className = '',
   disabled = false,
+  normalCase = false,
+  tooltipClassName = '',
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [coords, setCoords] = useState({ top: 0, left: 0 });
@@ -150,7 +152,7 @@ export default function Tooltip({
             }}
             className="select-none pointer-events-none"
           >
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0B0D11] text-slate-100 text-[10px] font-mono uppercase font-bold tracking-tight border border-[#1E293B] shadow-2xl backdrop-blur-md whitespace-nowrap">
+            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0B0D11] text-slate-100 text-[10px] font-mono ${normalCase ? 'normal-case' : 'uppercase'} font-bold tracking-tight border border-[#1E293B] shadow-2xl backdrop-blur-md whitespace-nowrap ${tooltipClassName}`}>
               <span>{content}</span>
               {shortcut && (
                 <kbd className="hidden md:inline-flex shrink-0 px-1 py-0.2 rounded bg-white/10 text-[8.5px] font-mono font-bold border border-white/15 text-slate-400">

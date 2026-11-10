@@ -2,13 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Compass, User, Copy, Check, CheckCircle2, Lock, Terminal, Building2,
   SlidersHorizontal, Key, HardDrive, AlertTriangle, RefreshCw, Heart, ExternalLink, LogOut, Github, Eye, EyeOff,
-  ShieldCheck, Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight
+  Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 import ShimmerImage from './ui/ShimmerImage';
 import DevPatLoginModal from './DevPatLoginModal';
 import Tooltip from './Tooltip';
+import ConfirmationDialog from './ConfirmationDialog';
 
 
 function getStoredUser() {
@@ -143,6 +144,7 @@ export default function ProfilePage({
   const [isGithubHovered, setIsGithubHovered] = useState(false);
   const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
+  const [isRotateConfirmOpen, setIsRotateConfirmOpen] = useState(false);
   const [isHackathonMode, setIsHackathonMode] = useState(() => {
     return typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true';
   });
@@ -709,8 +711,12 @@ export default function ProfilePage({
     setTimeout(() => setCopiedKey(false), 2000);
   };
 
-  const handleRotateKey = async () => {
+  const triggerRotateKey = () => {
     playClick();
+    setIsRotateConfirmOpen(true);
+  };
+
+  const handleRotateKey = async () => {
     setIsRotating(true);
     try {
       const res = await fetch('/api/user/rotate-api-key', {
@@ -1664,7 +1670,7 @@ export default function ProfilePage({
                 {user && (
                   <div className="flex items-center text-[10px] font-mono text-slate-500">
                     <button
-                      onClick={handleRotateKey}
+                      onClick={triggerRotateKey}
                       className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
                       title="Rotate API Key"
                     >
@@ -1683,7 +1689,7 @@ export default function ProfilePage({
               <div className="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 shadow-xs">
                 <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
                 <div className="text-xs text-rose-700 dark:text-rose-300">
-                  <span className="font-bold">Emergency Revocation Notice:</span> All credentials across the network were invalidated by administrator emergency response. Please click <button onClick={handleRotateKey} className="font-bold underline hover:text-rose-950 dark:hover:text-white cursor-pointer">Rotate Key</button> to generate a replacement token.
+                  <span className="font-bold">Emergency Revocation Notice:</span> All credentials across the network were invalidated by administrator emergency response. Please click <button onClick={triggerRotateKey} className="font-bold underline hover:text-rose-950 dark:hover:text-white cursor-pointer">Rotate Key</button> to generate a replacement token.
                 </div>
               </div>
             )}
@@ -2679,7 +2685,7 @@ export default function ProfilePage({
               {user && (
                 <div className="flex items-center text-[10px] font-mono text-slate-500">
                   <button
-                    onClick={handleRotateKey}
+                    onClick={triggerRotateKey}
                     className="hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer flex items-center gap-1"
                     title="Rotate API Key"
                   >
@@ -2698,7 +2704,7 @@ export default function ProfilePage({
             <div className="mb-3 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 shadow-xs">
               <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
               <div className="text-xs text-rose-700 dark:text-rose-300">
-                <span className="font-bold">Emergency Revocation Notice:</span> All credentials across the network were invalidated by administrator emergency response. Please click <button onClick={handleRotateKey} className="font-bold underline hover:text-rose-950 dark:hover:text-white cursor-pointer">Rotate Key</button> to generate a replacement token.
+                <span className="font-bold">Emergency Revocation Notice:</span> All credentials across the network were invalidated by administrator emergency response. Please click <button onClick={triggerRotateKey} className="font-bold underline hover:text-rose-950 dark:hover:text-white cursor-pointer">Rotate Key</button> to generate a replacement token.
               </div>
             </div>
           )}
@@ -2839,6 +2845,17 @@ export default function ProfilePage({
           </div>
         </div>
       )}
+
+      {/* Cryptographic Key Rotation Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isRotateConfirmOpen}
+        onClose={() => setIsRotateConfirmOpen(false)}
+        onConfirm={handleRotateKey}
+        title="Rotate Cryptographic API Key?"
+        description="Rotating your API key immediately revokes your existing token across all connected agent IDEs (Cursor, Claude Code, Windsurf) and CI/CD pipelines. Any active background agent sessions will be severed until updated with the new key."
+        confirmLabel="Rotate API Key"
+        severity="warning"
+      />
 
       {/* Dev PAT Login Modal for Local Development Authentication */}
       <DevPatLoginModal

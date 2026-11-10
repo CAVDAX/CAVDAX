@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, AlertTriangle, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ShieldCheck } from 'lucide-react';
+import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, AlertTriangle, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ArrowUpRight } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
+import BackerConsentModal from './BackerConsentModal';
+import AnimatedAvatarGroup from './ui/AnimatedAvatarGroup';
 
 /**
  * SupportPage.jsx — Razorpay-powered Community Sponsor Portal
@@ -87,6 +89,150 @@ function ShinyGemIcon({ className = "w-3.5 h-3.5" }) {
       {/* Specular Gleam Glint in Crown */}
       <circle cx="15" cy="5.5" r="0.75" fill="#FFFFFF" stroke="none" />
     </svg>
+  );
+}
+
+/**
+ * Architectural Dual Heart — Precision Monochromatic Thin-Lined SVG Glyph with Fluid Wave Fill
+ * Features a primary foreground heart with a nested heart behind it (100% outline opacity, zero fade).
+ * Incorporates a rising watery fluid wave fill matching ProfilePage's sponsor button:
+ * - Fills on hover on individual hearts
+ * - Fills both hearts simultaneously on hover on heading ("Support CAVDAX") or tier buttons ("Sponsor").
+ */
+function ArchitecturalDualHeart({ align = 'left', className = 'w-7 h-7', isGlobalActive = false }) {
+  const isLeft = align === 'left';
+  const idPrefix = useId().replace(/:/g, '');
+  const clipBgId = `${idPrefix}-bg`;
+  const clipFgId = `${idPrefix}-fg`;
+
+  const [hoverFg, setHoverFg] = useState(false);
+  const [hoverBg, setHoverBg] = useState(false);
+  const [hoverSelf, setHoverSelf] = useState(false);
+
+  // Background heart fills if globally active, whole component hovered, or background heart hovered
+  const isBgFilled = isGlobalActive || hoverSelf || hoverBg;
+  // Foreground heart fills if globally active, whole component hovered, or foreground heart hovered
+  const isFgFilled = isGlobalActive || hoverSelf || hoverFg;
+
+  return (
+    <div
+      className={`relative inline-flex items-center justify-center cursor-pointer select-none ${className}`}
+      onMouseEnter={() => setHoverSelf(true)}
+      onMouseLeave={() => {
+        setHoverSelf(false);
+        setHoverFg(false);
+        setHoverBg(false);
+      }}
+    >
+      <svg
+        viewBox="0 0 32 26"
+        fill="none"
+        className="w-full h-full overflow-visible"
+        aria-hidden="true"
+      >
+        <defs>
+          {/* Background Heart ClipPath */}
+          <clipPath id={clipBgId}>
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </clipPath>
+
+          {/* Foreground Heart ClipPath */}
+          <clipPath id={clipFgId}>
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+          </clipPath>
+        </defs>
+
+        {/* 1. Background Heart (100% outline opacity, same weight as foreground heart) */}
+        <g
+          transform={isLeft ? 'translate(1, 1) scale(0.72)' : 'translate(10, 1) scale(0.72)'}
+          onMouseEnter={(e) => {
+            e.stopPropagation();
+            setHoverBg(true);
+          }}
+          onMouseLeave={() => setHoverBg(false)}
+          className="cursor-pointer"
+        >
+          {/* Watery Fluid Wave Fill Layer */}
+          <g clipPath={`url(#${clipBgId})`}>
+            <g
+              style={{
+                transform: isBgFilled ? 'translateY(0px)' : 'translateY(24px)',
+                opacity: isBgFilled ? 1 : 0,
+                transition: isBgFilled
+                  ? 'transform 750ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 150ms ease-out'
+                  : 'opacity 200ms ease-out, transform 0s 200ms'
+              }}
+              className="pointer-events-none"
+            >
+              <svg viewBox="0 0 48 24" x="0" y="0" width="24" height="24" className="w-full h-full fill-rose-500 dark:fill-rose-600 block">
+                <path d="M 0 6 Q 6 2, 12 5 T 24 3 T 36 5 T 48 3 L 48 28 L 0 28 Z" />
+                <circle cx="6" cy="4" r="0.8" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="12" cy="5" r="1.1" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="18" cy="3.5" r="0.9" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="24" cy="4.5" r="1" className="fill-rose-300 dark:fill-rose-400" />
+              </svg>
+              <rect y="7" width="24" height="20" className="fill-rose-500 dark:fill-rose-600" />
+            </g>
+          </g>
+
+          {/* Crisp Hairline Outline (100% opacity, same weight as front heart) */}
+          <path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-900 dark:text-white transition-colors duration-300"
+          />
+        </g>
+
+        {/* 2. Foreground Heart (Primary prominent outline) */}
+        <g
+          transform={isLeft ? 'translate(6, 4) scale(0.88)' : 'translate(2, 4) scale(0.88)'}
+          onMouseEnter={(e) => {
+            e.stopPropagation();
+            setHoverFg(true);
+          }}
+          onMouseLeave={() => setHoverFg(false)}
+          className="cursor-pointer"
+        >
+          {/* Watery Fluid Wave Fill Layer */}
+          <g clipPath={`url(#${clipFgId})`}>
+            <g
+              style={{
+                transform: isFgFilled ? 'translateY(0px)' : 'translateY(24px)',
+                opacity: isFgFilled ? 1 : 0,
+                transition: isFgFilled
+                  ? 'transform 750ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 150ms ease-out'
+                  : 'opacity 200ms ease-out, transform 0s 200ms'
+              }}
+              className="pointer-events-none"
+            >
+              <svg viewBox="0 0 48 24" x="0" y="0" width="24" height="24" className="w-full h-full fill-rose-500 dark:fill-rose-600 block">
+                <path d="M 0 6 Q 6 2, 12 5 T 24 3 T 36 5 T 48 3 L 48 28 L 0 28 Z" />
+                <circle cx="6" cy="4" r="0.8" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="12" cy="5" r="1.1" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="18" cy="3.5" r="0.9" className="fill-rose-300 dark:fill-rose-400" />
+                <circle cx="24" cy="4.5" r="1" className="fill-rose-300 dark:fill-rose-400" />
+              </svg>
+              <rect y="7" width="24" height="20" className="fill-rose-500 dark:fill-rose-600" />
+            </g>
+          </g>
+
+          {/* Crisp Hairline Outline */}
+          <path
+            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="text-slate-900 dark:text-white transition-colors duration-300"
+          />
+        </g>
+      </svg>
+    </div>
   );
 }
 
@@ -200,8 +346,8 @@ function BackerCard({ backer }) {
           : 'border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/[0.01] hover:border-amber-800/30 dark:hover:border-amber-700/30'
       }`}
     >
-      {/* Avatar Container with Themed Badges & Ascending Appreciation Heart */}
-      <div className="relative shrink-0">
+      {/* Avatar Container with Precision Hairline Outline (UI_DESIGN_SYSTEM.md §4287) */}
+      <div className="relative shrink-0 transition-transform duration-200 group-hover:scale-105">
         {canLink ? (
           <a
             href={`https://github.com/${backer.github_handle}`}
@@ -301,17 +447,7 @@ function BackerCard({ backer }) {
           )}
         </div>
 
-        {/* Ascending Appreciation Heart Bloom on Hover */}
-        {hovered && (
-          <motion.div
-            initial={{ y: 0, opacity: 0.85, scale: 0.8 }}
-            animate={{ y: -24, opacity: 0, scale: 1.2 }}
-            transition={{ duration: 0.8, ease: 'easeOut', repeat: Infinity }}
-            className="absolute -top-1 left-1/2 -translate-x-1/2 pointer-events-none text-rose-500 z-20"
-          >
-            <Heart className="w-3.5 h-3.5 fill-current" />
-          </motion.div>
-        )}
+        
       </div>
 
       {/* Content */}
@@ -395,8 +531,12 @@ function getStoredUser() {
   return null;
 }
 
-export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
+export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigateToSponsors, user }) {
   const [hoveredTier, setHoveredTier] = useState(null);
+  const [isHeadingHovered, setIsHeadingHovered] = useState(false);
+  const [isExploreHovered, setIsExploreHovered] = useState(false);
+
+  const isGlobalHeartActive = isHeadingHovered || hoveredTier !== null || isExploreHovered;
 
   const handleCardPointerMove = (e) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -414,6 +554,23 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
   const [sponsors, setSponsors]       = useState([]);
   const [loadingSponsors, setLoadingSponsors] = useState(true);
   const [selectedFilter, setSelectedFilter]   = useState('all'); // 'all' | 'core' | 'two_cups' | 'cookie'
+  const [consentBacker, setConsentBacker]     = useState(null);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+
+  const handleSaveConsent = async (consentData) => {
+    try {
+      await fetch('/api/sponsors/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(consentData)
+      });
+      fetchSponsors();
+      showToast(true, 'Backer visibility preference updated.');
+    } catch (err) {
+      console.warn('[SupportPage] Failed to save consent:', err);
+    }
+  };
 
   // Evaluation Mode & Dev pass detection
   const [isHackathonMode, setIsHackathonMode] = useState(() => {
@@ -449,15 +606,6 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
   useEffect(() => {
     fetchSponsors();
   }, [fetchSponsors]);
-
-  // Floating one-shot Hackathon Window Active toast notification (aligned with ProfilePage.jsx)
-  const hasTriggeredWindowToast = useRef(false);
-  useEffect(() => {
-    if (hasEvaluationPass && !hasTriggeredWindowToast.current) {
-      hasTriggeredWindowToast.current = true;
-      showToast(true, 'Hackathon Evaluation Window Active — In-App Sponsor Testing Unlocked');
-    }
-  }, [hasEvaluationPass]);
 
   // Sync Hackathon Evaluation Mode state & auto-revert when disabled from Dev Panel
   useEffect(() => {
@@ -586,7 +734,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
       return;
     }
 
-    const activeUser = user || getActiveDevSession();
+    const activeUser = user || getStoredUser() || getActiveDevSession();
     if (!activeUser) {
       setEvalLoadingTier(null);
       playClick();
@@ -628,6 +776,15 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
       } catch {}
 
       showToast(true, `Activated ${tier.tierName} Sponsor! In-app halo is live.`);
+      setConsentBacker({
+        id: data.backer?.id || ('spn_eval_' + (activeUser.id || activeUser.login)),
+        name: activeUser.name || activeUser.login,
+        login: activeUser.login,
+        avatar_url: activeUser.avatar_url || activeUser.avatarUrl,
+        tier_id: tier.id,
+        tierName: tier.tierName
+      });
+      setIsConsentModalOpen(true);
       fetchSponsors();
     } catch (err) {
       showToast(false, `Error: ${err.message}`);
@@ -731,6 +888,15 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 localStorage.removeItem('cavdax_sponsor_is_evaluation');
                 window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: verifyData.backer }));
               } catch {}
+              setConsentBacker({
+                id: verifyData.backer?.id,
+                name: user.name || user.login,
+                login: user.login,
+                avatar_url: user.avatar_url || user.avatarUrl,
+                tier_id: tier.id,
+                tierName: tier.tierName
+              });
+              setIsConsentModalOpen(true);
             } else {
               showToast(false, 'Signature verification failed. Contact support with your payment ID.');
             }
@@ -763,14 +929,57 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
 
       {/* ── 1. Header ── */}
       <section className="text-center mb-10 sm:mb-12">
-        <h1 className="text-2xl sm:text-3xl font-mono font-bold text-slate-950 dark:text-white tracking-tight flex items-center justify-center gap-2.5">
-          <Heart className="w-5 h-5 text-rose-500 fill-current shrink-0" />
-          <span>Support CAVDAX</span>
-          <Heart className="w-5 h-5 text-rose-500 fill-current shrink-0" />
+        <h1
+          onMouseEnter={() => setIsHeadingHovered(true)}
+          onMouseLeave={() => setIsHeadingHovered(false)}
+          className="text-2xl sm:text-3xl font-mono font-bold text-slate-950 dark:text-white tracking-tight flex items-center justify-center gap-3 cursor-pointer group/heading"
+        >
+          <ArchitecturalDualHeart align="left" isGlobalActive={isGlobalHeartActive} className="w-7 h-7" />
+          <span className="text-slate-950 dark:text-white transition-colors duration-300">Support CAVDAX</span>
+          <ArchitecturalDualHeart align="right" isGlobalActive={isGlobalHeartActive} className="w-7 h-7" />
         </h1>
         <p className="mt-3 text-xs font-sans text-slate-500 dark:text-slate-400">
           Direct community backing funds open causal benchmarks and maintainer hours.
         </p>
+        {sponsors.length > 0 && (
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <AnimatedAvatarGroup
+              avatars={sponsors.map((s) => ({
+                id: s.id,
+                name: s.name,
+                src: s.avatar_url,
+                tier: s.tier_id === 3 ? 'Core Patron' : s.tier_id === 2 ? '2 Cups' : 'Cookie',
+              }))}
+              max={6}
+              size={30}
+              overlap={8}
+            />
+            {onNavigateToSponsors ? (
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  onNavigateToSponsors();
+                }}
+                onMouseEnter={() => setIsExploreHovered(true)}
+                onMouseLeave={() => setIsExploreHovered(false)}
+                className="group flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/80 dark:hover:bg-white/10 text-xs font-mono text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
+                title="Open dedicated community backers wall with 3D supporter galaxy"
+              >
+                <span>{sponsors.length} verified backers</span>
+                <span className="opacity-30">•</span>
+                <span className="font-semibold text-slate-900 dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)] transition-all">
+                  Explore Wall
+                </span>
+                <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 text-slate-500 group-hover:text-slate-950 dark:text-slate-400 dark:group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+              </button>
+            ) : (
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                {sponsors.length} verified backers
+              </span>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ── 2. Sponsorship Tiers & Currency Switcher ── */}
@@ -946,7 +1155,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 <button
                   type="button"
                   onClick={() => {
-                    const activeUser = user || getActiveDevSession();
+                    const activeUser = user || getStoredUser() || getActiveDevSession();
                     if (!activeUser) {
                       playClick();
                       window.location.href = '/api/auth/github?returnTo=/support';
@@ -1405,8 +1614,9 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
             </div>
           </div>
 
-          {/* Segmented Filter Pills — Container-Relative Sliding Pill Bar (UI_DESIGN_SYSTEM.md §1.8) */}
-          <div className="relative flex items-center gap-1 self-start sm:self-auto p-0.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/60 dark:bg-white/[0.02]">
+          <div className="flex items-center gap-2.5 self-start sm:self-auto">
+            {/* Segmented Filter Pills — Container-Relative Sliding Pill Bar (UI_DESIGN_SYSTEM.md §1.8) */}
+            <div className="relative flex items-center gap-1 p-0.5 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-100/60 dark:bg-white/[0.02]">
             {filterPill.position.ready && (
               <motion.div
                 className="absolute top-0 left-0 rounded-md bg-white dark:bg-white/15 shadow-xs pointer-events-none"
@@ -1447,6 +1657,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 </button>
               );
             })}
+            </div>
           </div>
         </div>
 
@@ -1514,6 +1725,24 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
                 </span>
               </div>
             )}
+            {onNavigateToSponsors && (
+              <div className="mt-4 pt-3 border-t border-slate-200/50 dark:border-white/5 flex items-center justify-between text-xs font-mono text-slate-500 dark:text-slate-400">
+                <span>Honoring independent contributors</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    onNavigateToSponsors();
+                  }}
+                  onMouseEnter={() => setIsExploreHovered(true)}
+                  onMouseLeave={() => setIsExploreHovered(false)}
+                  className="group inline-flex items-center gap-1 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer font-medium"
+                >
+                  <span>Explore 3D Backers Wall</span>
+                  <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                </button>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -1525,13 +1754,20 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, user }) {
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-slate-900/95 dark:bg-white/95 text-white dark:text-slate-900 text-xs font-mono font-medium shadow-2xl backdrop-blur-md flex items-center gap-2 border border-white/10 dark:border-slate-900/10 pointer-events-none transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 whitespace-nowrap"
         >
           {toast.ok ? (
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-400 dark:text-amber-600 shrink-0" />
+            <CheckCircle2 className="w-3.5 h-3.5 text-current shrink-0" />
           ) : (
             <Heart className="w-3.5 h-3.5 text-rose-400 shrink-0" />
           )}
           <span>{toast.text}</span>
         </div>
       )}
+      {/* ── Post-Sponsorship Recognition & Consent Modal ── */}
+      <BackerConsentModal
+        isOpen={isConsentModalOpen}
+        onClose={() => setIsConsentModalOpen(false)}
+        onSave={handleSaveConsent}
+        backer={consentBacker}
+      />
     </div>
   );
 }

@@ -519,7 +519,7 @@ export default function TierBenefitsPage({
         id="tier-hero-section"
         className="relative w-full h-[100dvh] min-h-[640px] flex flex-col items-center justify-center overflow-hidden select-none"
       >
-        {/* Full-bleed 3D Lightfall Ambient Light Tunnel Background (100% Monochromatic) */}
+        {/* Full-bleed 3D Lightfall Ambient Light Tunnel Background (Calibrated Sweet-Spot: Balanced Speed, Moderate Gaps & Natural Ray Cadence) */}
         <div className="absolute inset-0 z-0">
           <Lightfall
             colors={['#ffffff', '#e2e8f0', '#94a3b8']}
@@ -537,18 +537,21 @@ export default function TierBenefitsPage({
           />
         </div>
 
-        {/* ── Atmospheric Filter Blur Layer (Softens Raw Streaks into Luminous Monochromatic Bloom) ── */}
-        <div className="absolute inset-0 backdrop-blur-md bg-slate-50/40 dark:bg-slate-950/60 pointer-events-none z-1" />
+        {/* ── Atmospheric Filter Blur Layer (Exact Match to Main Benchmark) ── */}
+        <div className="absolute inset-0 backdrop-blur-md bg-slate-50/40 dark:backdrop-blur-[2.5px] dark:bg-slate-950/20 pointer-events-none z-1" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-transparent to-transparent dark:from-slate-950 dark:via-transparent dark:to-transparent pointer-events-none z-1" />
 
-        {/* Center-Aligned Monumental Display Typography (Pure, Uncluttered, Zero Subtext Slop) */}
+        {/* Center-Aligned Monumental Display Typography with Localized Optical Vignette */}
         <div className="relative z-10 max-w-4xl mx-auto px-6 text-center flex flex-col items-center">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 dark:text-white tracking-tight font-mono drop-shadow-md">
+          {/* Localized soft radial vignette: active strictly in dark mode */}
+          <div className="absolute inset-0 -inset-x-12 -inset-y-16 bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.65)_0%,rgba(2,6,23,0.35)_45%,transparent_75%)] dark:block hidden pointer-events-none -z-1 rounded-3xl" />
+
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 dark:text-white tracking-tight font-mono dark:drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
             Tier Plans, Capabilities &amp; Benefits
           </h1>
         </div>
 
-        {/* ── Wordmark Page Scroll Cue (Exact Match to LandingPage.jsx with High-Precision Snapper) ── */}
+        {/* ── Wordmark Page Scroll Cue (with Localized Optical Vignette in Dark Theme) ── */}
         <div
           onClick={() => {
             playClick();
@@ -566,12 +569,15 @@ export default function TierBenefitsPage({
               }
             }
           }}
-          className="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer group select-none opacity-80 hover:opacity-100 transition-opacity z-20"
+          className="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 cursor-pointer group select-none opacity-85 hover:opacity-100 transition-opacity z-20 px-4 py-2"
         >
-          <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">
+          {/* Localized dark theme radial vignette behind the scroll cue and mouse icon */}
+          <div className="absolute inset-0 -inset-x-6 -inset-y-3 bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.75)_0%,rgba(2,6,23,0.4)_50%,transparent_80%)] dark:block hidden pointer-events-none -z-1 rounded-2xl" />
+
+          <span className="text-[10px] font-mono tracking-widest uppercase text-slate-500 dark:text-slate-300 dark:drop-shadow-[0_2px_8px_rgba(0,0,0,0.9)] group-hover:text-slate-900 dark:group-hover:text-white transition-colors relative z-10">
             Scroll to inspect engine
           </span>
-          <div className="w-5 h-8 rounded-full border border-slate-400/80 dark:border-white/30 flex items-start justify-center p-1 group-hover:border-slate-800 dark:group-hover:border-white transition-colors">
+          <div className="w-5 h-8 rounded-full border border-slate-400/80 dark:border-white/40 dark:bg-slate-950/40 dark:shadow-[0_2px_12px_rgba(0,0,0,0.8)] flex items-start justify-center p-1 group-hover:border-slate-800 dark:group-hover:border-white transition-colors relative z-10 backdrop-blur-[1px]">
             <div className="w-1 h-2 rounded-full bg-slate-700 dark:bg-white animate-bounce" />
           </div>
         </div>
@@ -613,90 +619,101 @@ export default function TierBenefitsPage({
         </div>
 
         {/* Active Tier Summary Glassmorphic Banner (Borderless Frosted Glass) */}
-        <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)] flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <currentTierData.icon className="w-5 h-5 text-slate-900 dark:text-white shrink-0" />
-              <h2 className="text-2xl font-bold font-mono text-slate-950 dark:text-white">
-                {currentTierData.label}
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-950 text-white dark:bg-white dark:text-slate-950">
-                {currentTierData.tag}
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-sans mt-1">
-              {currentTierData.desc}
-            </p>
-          </div>
-
-          {(() => {
-            const isPlanActive =
-              (selectedTier === 'community' && (tier === 'free' || tier === 'community')) ||
-              (selectedTier === 'pro' && tier === 'pro') ||
-              (selectedTier === 'enterprise' && tier === 'enterprise');
-            const isLoggedIn = Boolean(
-              user?.login ||
-              user?.id ||
-              (typeof window !== 'undefined' &&
-                (localStorage.getItem('cavdax_github_token') || localStorage.getItem('cavdax_dev_session')))
-            );
-
-            let ctaLabel = currentTierData.btnLabel;
-            let showLock = false;
-            if (isPlanActive) {
-              ctaLabel = 'Current Plan';
-            } else if (!isLoggedIn) {
-              ctaLabel = 'Sign In to Activate';
-              showLock = true;
-            }
-
-            const handleCtaClick = () => {
-              playClick();
-              if (isPlanActive) return;
-              if (!isLoggedIn) {
-                const isLocalhost =
-                  typeof window !== 'undefined' &&
-                  (window.location.hostname === 'localhost' ||
-                    window.location.hostname === '127.0.0.1' ||
-                    window.location.hostname === '::1');
-                if (isLocalhost) {
-                  if (onOpenProfilePage) onOpenProfilePage();
-                } else {
-                  window.location.href = '/api/auth/github?returnTo=/profile';
-                }
-                return;
-              }
-              // Authenticated user navigates to Profile page to confirm and activate plan
-              if (onOpenProfilePage) onOpenProfilePage();
-            };
-
-            return (
-              <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
-                <div>
-                  <div className="text-2xl font-black font-mono text-slate-950 dark:text-white">
-                    {currentTierData.price}
-                    <span className="text-xs font-normal text-slate-500"> {currentTierData.period}</span>
-                  </div>
-                  <div className="text-[10px] font-mono text-slate-400">
-                    {isPlanActive ? 'Active Plan' : 'Managed via Account'}
-                  </div>
+        <div className="relative z-10 p-6 sm:p-8 rounded-3xl bg-white/50 dark:bg-slate-950/40 backdrop-blur-xl shadow-[0_20px_50px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)] transition-all duration-300">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={selectedTier}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6"
+            >
+              <div>
+                <div className="flex items-center gap-3">
+                  <currentTierData.icon className="w-5 h-5 text-slate-900 dark:text-white shrink-0" />
+                  <h2 className="text-2xl font-bold font-mono text-slate-950 dark:text-white">
+                    {currentTierData.label}
+                  </h2>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-950 text-white dark:bg-white dark:text-slate-950">
+                    {currentTierData.tag}
+                  </span>
                 </div>
-
-                <button
-                  onClick={handleCtaClick}
-                  disabled={isPlanActive}
-                  className={`px-5 py-2.5 rounded-full font-mono font-bold text-xs transition-transform shadow-md flex items-center gap-1.5 ${
-                    isPlanActive
-                      ? 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 cursor-default border border-slate-300/60 dark:border-white/10'
-                      : 'bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95 cursor-pointer'
-                  }`}
-                >
-                  {showLock && <Lock className="w-3 h-3" />}
-                  <span>{ctaLabel}</span>
-                </button>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-sans mt-1">
+                  {currentTierData.desc}
+                </p>
               </div>
-            );
-          })()}
+
+              {(() => {
+                const isPlanActive =
+                  (selectedTier === 'community' && (tier === 'free' || tier === 'community')) ||
+                  (selectedTier === 'pro' && tier === 'pro') ||
+                  (selectedTier === 'enterprise' && tier === 'enterprise');
+                const isLoggedIn = Boolean(
+                  user?.login ||
+                  user?.id ||
+                  (typeof window !== 'undefined' &&
+                    (localStorage.getItem('cavdax_github_token') || localStorage.getItem('cavdax_dev_session')))
+                );
+
+                let ctaLabel = currentTierData.btnLabel;
+                let showLock = false;
+                if (isPlanActive) {
+                  ctaLabel = 'Current Plan';
+                } else if (!isLoggedIn) {
+                  ctaLabel = 'Sign In to Activate';
+                  showLock = true;
+                }
+
+                const handleCtaClick = () => {
+                  playClick();
+                  if (isPlanActive) return;
+                  if (!isLoggedIn) {
+                    const isLocalhost =
+                      typeof window !== 'undefined' &&
+                      (window.location.hostname === 'localhost' ||
+                        window.location.hostname === '127.0.0.1' ||
+                        window.location.hostname === '::1');
+                    if (isLocalhost) {
+                      if (onOpenProfilePage) onOpenProfilePage();
+                    } else {
+                      window.location.href = '/api/auth/github?returnTo=/profile';
+                    }
+                    return;
+                  }
+                  // Authenticated user navigates to Profile page to confirm and activate plan
+                  if (onOpenProfilePage) onOpenProfilePage();
+                };
+
+                return (
+                  <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                    <div>
+                      <div className="text-2xl font-black font-mono text-slate-950 dark:text-white">
+                        {currentTierData.price}
+                        <span className="text-xs font-normal text-slate-500"> {currentTierData.period}</span>
+                      </div>
+                      <div className="text-[10px] font-mono text-slate-400">
+                        {isPlanActive ? 'Active Plan' : 'Managed via Account'}
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={handleCtaClick}
+                      disabled={isPlanActive}
+                      className={`px-5 py-2.5 rounded-full font-mono font-bold text-xs transition-transform shadow-md flex items-center gap-1.5 ${
+                        isPlanActive
+                          ? 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-400 cursor-default border border-slate-300/60 dark:border-white/10'
+                          : 'bg-slate-950 text-white dark:bg-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 active:scale-95 cursor-pointer'
+                      }`}
+                    >
+                      {showLock && <Lock className="w-3 h-3" />}
+                      <span>{ctaLabel}</span>
+                    </button>
+                  </div>
+                );
+              })()}
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         {/* ── FEATURE 1: GraphBLAS Matrix Invalidation ── */}
@@ -708,7 +725,7 @@ export default function TierBenefitsPage({
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: false, amount: 0.25 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
+            className="rounded-3xl bg-white/50 dark:bg-slate-950/40 backdrop-blur-xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
           >
             <div className="flex items-center gap-2 mb-3">
               <Network className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -768,7 +785,7 @@ export default function TierBenefitsPage({
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: false, amount: 0.25 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
+            className="rounded-3xl bg-white/50 dark:bg-slate-950/40 backdrop-blur-xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
           >
             <div className="flex items-center gap-2 mb-3">
               <Lock className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -825,7 +842,7 @@ export default function TierBenefitsPage({
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: false, amount: 0.25 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
+            className="rounded-3xl bg-white/50 dark:bg-slate-950/40 backdrop-blur-xl p-6 sm:p-8 shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)]"
           >
             <div className="flex items-center gap-2 mb-3">
               <Fingerprint className="w-4 h-4 text-slate-700 dark:text-slate-300 shrink-0" />
@@ -873,7 +890,7 @@ export default function TierBenefitsPage({
         </div>
 
         {/* ── SECTION 3: Architectural Invariant Matrix Table (Borderless Frosted Slab) ── */}
-        <div className="relative z-10 rounded-3xl bg-white/60 dark:bg-slate-950/50 backdrop-blur-3xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)] overflow-hidden mt-16">
+        <div className="relative z-10 rounded-3xl bg-white/50 dark:bg-slate-950/40 backdrop-blur-xl shadow-[0_24px_60px_-15px_rgba(0,0,0,0.06),0_2px_8px_rgba(0,0,0,0.03)] dark:shadow-[0_30px_70px_-15px_rgba(0,0,0,0.55),0_2px_8px_rgba(0,0,0,0.25)] overflow-hidden mt-16">
           <div className="py-4 px-6 border-b border-slate-200/50 dark:border-white/5 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <MatrixGridIcon className="w-4 h-4" />
@@ -891,7 +908,7 @@ export default function TierBenefitsPage({
                     Capability &amp; Invariant
                   </th>
                   <th
-                    className={`py-3 px-4 font-bold uppercase tracking-wider w-[23%] min-w-[220px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap ${
+                    className={`py-3 px-4 font-bold uppercase tracking-wider w-[23%] min-w-[220px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap transition-colors duration-300 ease-out ${
                       selectedTier === 'community'
                         ? 'text-slate-950 dark:text-white bg-slate-200/60 dark:bg-white/[0.06] font-bold'
                         : 'text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-950/40'
@@ -899,13 +916,15 @@ export default function TierBenefitsPage({
                   >
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       {selectedTier === 'community' && (
-                        <ArrowRightAmber className="w-3.5 h-3.5" />
+                        <motion.span layoutId="matrixActiveArrowIndicator" transition={{ type: 'spring', stiffness: 500, damping: 35 }}>
+                          <ArrowRightAmber className="w-3.5 h-3.5" />
+                        </motion.span>
                       )}
                       <span>Community</span>
                     </span>
                   </th>
                   <th
-                    className={`py-3 px-4 font-bold uppercase tracking-wider w-[23%] min-w-[240px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap ${
+                    className={`py-3 px-4 font-bold uppercase tracking-wider w-[23%] min-w-[240px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap transition-colors duration-300 ease-out ${
                       selectedTier === 'pro'
                         ? 'text-slate-950 dark:text-white bg-slate-200/60 dark:bg-white/[0.06] font-bold'
                         : 'text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-950/40'
@@ -913,13 +932,15 @@ export default function TierBenefitsPage({
                   >
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       {selectedTier === 'pro' && (
-                        <ArrowRightAmber className="w-3.5 h-3.5" />
+                        <motion.span layoutId="matrixActiveArrowIndicator" transition={{ type: 'spring', stiffness: 500, damping: 35 }}>
+                          <ArrowRightAmber className="w-3.5 h-3.5" />
+                        </motion.span>
                       )}
                       <span>Pro Autonomous</span>
                     </span>
                   </th>
                   <th
-                    className={`py-3 px-4 pr-8 font-bold uppercase tracking-wider w-[23%] min-w-[260px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap ${
+                    className={`py-3 px-4 pr-8 font-bold uppercase tracking-wider w-[23%] min-w-[260px] border-b border-slate-200/50 dark:border-white/5 whitespace-nowrap transition-colors duration-300 ease-out ${
                       selectedTier === 'enterprise'
                         ? 'text-slate-950 dark:text-white bg-slate-200/60 dark:bg-white/[0.06] font-bold'
                         : 'text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-950/40'
@@ -927,7 +948,9 @@ export default function TierBenefitsPage({
                   >
                     <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                       {selectedTier === 'enterprise' && (
-                        <ArrowRightAmber className="w-3.5 h-3.5" />
+                        <motion.span layoutId="matrixActiveArrowIndicator" transition={{ type: 'spring', stiffness: 500, damping: 35 }}>
+                          <ArrowRightAmber className="w-3.5 h-3.5" />
+                        </motion.span>
                       )}
                       <span>Team &amp; Scale</span>
                     </span>
@@ -1023,7 +1046,7 @@ export default function TierBenefitsPage({
                       <div className="text-[11px] font-sans text-slate-500 mt-0.5 truncate max-w-[190px] sm:max-w-[230px] whitespace-nowrap">{row.desc}</div>
                     </td>
                     <td
-                      className={`py-2.5 px-4 whitespace-nowrap ${
+                      className={`py-2.5 px-4 whitespace-nowrap transition-colors duration-300 ease-out ${
                         selectedTier === 'community'
                           ? 'bg-slate-200/50 dark:bg-white/[0.06] font-bold text-slate-950 dark:text-white'
                           : 'text-slate-600 dark:text-slate-400'
@@ -1047,7 +1070,7 @@ export default function TierBenefitsPage({
                       )}
                     </td>
                     <td
-                      className={`py-2.5 px-4 whitespace-nowrap ${
+                      className={`py-2.5 px-4 whitespace-nowrap transition-colors duration-300 ease-out ${
                         selectedTier === 'pro'
                           ? 'bg-slate-200/50 dark:bg-white/[0.06] font-bold text-slate-950 dark:text-white'
                           : 'text-slate-700 dark:text-slate-300'
@@ -1068,7 +1091,7 @@ export default function TierBenefitsPage({
                       )}
                     </td>
                     <td
-                      className={`py-2.5 px-4 pr-8 whitespace-nowrap ${
+                      className={`py-2.5 px-4 pr-8 whitespace-nowrap transition-colors duration-300 ease-out ${
                         selectedTier === 'enterprise'
                           ? 'bg-slate-200/50 dark:bg-white/[0.06] font-bold text-slate-950 dark:text-white'
                           : 'text-slate-700 dark:text-slate-300'
