@@ -460,6 +460,15 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
            ```
       - If any single vertex is missing, the release pipeline is incomplete and cannot be marked finished.
 
+0aj. **Universal Strict Ban on In-Visual Text, Floating Tags & Badges in 3D Visual Instruments (Anti-AI-Infographic Slop Law)**:
+    - **The Generic AI Infographic Slop Anti-Pattern**:
+      - Generic AI diagram generators (Canva, DALL-E, mid-tier diagrammers) habitually paste floating text tags, pill badges, percentage chips, or leader-line callout labels directly onto or inside 3D graphics (e.g. `[Active]`, `[Node 1]`, `[Graph Engine]`, `[99.9% SLA]`).
+      - This pattern immediately signals cheap, uncalibrated AI slop, destroys spatial depth, clutters physical instrument geometry, and induces cognitive noise.
+    - **The Strict Invariant (Pure Physical Geometry Only)**:
+      - **STRICTLY ZERO text inside the visual**: Never include `<text>`, `<tspan>`, HTML labels, floating badges, percentage chips, or alphanumeric callouts inside or directly floating over any 3D visual SVG, canvas, or graphic container.
+      - **The Object is the Explanation**: The 3D instrument communicates exclusively through mechanical form, volumetric bevels, specular reflections, depth sorting, and physics kinematics.
+      - **Clean External Typographic Separation**: All titles, metric values, status badges, and descriptions belong **OUTSIDE** the visual in clean, structured typography on the adjacent card or section. The 3D instrument remains a pristine, unblemished physical object.
+
 1. **NEVER Commit Credentials, Secrets, or Sensitive Identifiers**:
 
    - **Zero Credentials in Git**: Never stage or commit API keys, auth tokens, passwords, private keys, connection strings, or cloud secrets.

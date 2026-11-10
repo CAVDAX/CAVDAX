@@ -8890,3 +8890,17 @@ Every production version bump is an atomic 3-vertex transaction that MUST be com
 3. **Vertex 3 (GitHub Release Entity)**: Formal GitHub Release object authored with comprehensive changelog categories and distribution URLs:
    `gh release create vX.Y.Z --title "vX.Y.Z: <Title>" --notes-file <notes.md>`
 - A task tracking a release is only complete when `gh release list` confirms `vX.Y.Z` as **Latest**.
+
+## 90. Universal Strict Ban on In-Visual Text & Badges in 3D Visual Instruments (Anti-AI-Infographic Slop Law)
+
+### 90.1 The Generic AI Infographic Cliché
+- **The Defect**: Embedding floating alphanumeric labels, status chips, percentage pills, or callout tags directly inside or over a 3D visual instrument (e.g. `[Active]`, `[Node 1]`, `[Graph Engine]`, `[99.9% SLA]`).
+- **The Hazard**: This immediately destroys spatial immersion, clutters physical instrument geometry, and flags the interface as uncalibrated AI slop. High-end bench instruments are physical objects, not slide infographics.
+
+### 90.2 The Pure Geometry & External Typography Standard
+1. **STRICTLY ZERO In-Visual Text**:
+   - Never embed `<text>`, `<tspan>`, HTML labels, floating badges, or status callouts inside the 3D visual SVG or canvas.
+2. **The Object Communicates Mechanically**:
+   - The visual explains itself through mechanical form, volumetric bevels, specular reflections, depth sorting, and physics kinematics.
+3. **Structured External Typography**:
+   - All titles, metrics, status badges, and descriptions belong **OUTSIDE** the visual on the adjacent text card or section header. The 3D instrument remains a pristine, unblemished physical object.
