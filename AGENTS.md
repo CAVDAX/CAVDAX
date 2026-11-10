@@ -1519,3 +1519,57 @@ To ensure that floating navigation docks, sidebars, modal dialogs, and viewport 
   For all sliding indicators, active state highlights, and animated tabs inside portals or floating docks, developers MUST use declarative layout animation primitives (such as Framer Motion's scoped `layoutId="active-pill"`) rather than imperative DOM measurement loops.
 
 
+
+## 20.6 Suneet-Perfect-AI-Slop-Remover & Ruthless Mentor Controller Protocol
+- **The Master Controller Directive**:
+  Whenever building, refactoring, or reviewing any user interface across the CAVDAX ecosystem, the agent operates under the **Ruthless Mentor & Chief Design Officer** persona. It assumes every AI-generated screen contains subtle AI slop until proven innocent through forensic DOM inspection and automated Puppeteer visual audits.
+- **The 14 Deadly AI Slop Patterns**:
+  1. *Glowing Cyan/Purple Chrome*: Neon borders and saturated button gradients replaced with neutral hairlines (`border-white/10`) and quiet glass fills (`dark:bg-white/[0.03]`).
+  2. *Emoji Clutter in UI Chrome*: Strictly zero emoji characters in headers, pills, or buttons; replaced with contextual monochromatic Lucide line SVGs (`strokeWidth={1.5}`).
+  3. *Generic AI Shield SVGs in Toasts*: `ShieldCheck` and `ShieldAlert` banned from toasts and error boundaries in favor of semantically precise `CheckCircle2` and `AlertCircle` with `text-current` inheritance.
+  4. *Saturated Navy Dark Mode*: Pure neutral obsidian (`#07090D` / `#090A0C`) replaces muddy navy/slate (`#0f172a`).
+  5. *Lonely-Child Word Wraps*: Multi-line headers require `text-balance`; modal bios require `max-w-lg` container width and `whitespace-nowrap overflow-hidden text-ellipsis`.
+  6. *In-Visual Floating Text & Badges*: Strictly zero typography or percentage chips inside 3D visuals; all metrics live outside on adjacent cards.
+  7. *CSS Perspective Modal Trapping*: All modals, dialogs, and tooltips must escape CSS 3D transforms via React Portal (`createPortal(..., document.body)`) at `z-[99999]`.
+  8. *Halfway-Halting Splines*: Long multi-tier pages use full-height SVG coordinate canvases (`viewBox="0 0 1200 2500"`) and container-relative scroll tracking (`offset: ['start start', 'end end']`).
+  9. *Raw Text Underlines*: Replaced with bold font contrast, subtle text-shadow hover glows, and micro-arrow translations.
+  10. *Generic Heart Cards*: Transformed into monochromatic dual-vector hearts with synchronized fluid liquid wave clip-paths.
+  11. *Presumed Exhibition (Privacy Blindspot)*: Enforced 3-Tier recognition choice (Public, Anonymous, Private) before storing backer identity.
+  12. *Supply Chain CLI Bloat*: Replaced heavy CLI frameworks with Node.js built-in 'util.parseArgs' for zero external dependencies.
+  13. *Carnival Dashboard Overload*: Solitary elevation with exactly ONE primary metric per card and single accent color discipline.
+  14. *Uncalibrated Spacing & Margin Drift*: Strictly enforced 4px scale (`4, 8, 12, 16, 20, 24, 32, 48, 64, 80, 96`).
+
+## 20.7 Suneet-3D-Revolving-Image-Sphere Protocol (Tier Scaling & 1:1 Entity Mapping)
+- **Zero-WebGL Crash-Proof Invariant**:
+  Replaces fragile Three.js / Canvas3D contexts with pure CSS 3D transforms (`preserve-3d`, `perspective`, `translate3d`, `scale`) and depth-sorted painter's order (z-index) to prevent context loss across background tabs.
+- **Strict 1:1 Human Entity Invariant (Anti-Clone Ban)**:
+  Every real human contributor or backer is rendered strictly ONCE. Duplicating an individual's photo across 10-15 nodes to artificially inflate volume is strictly prohibited.
+- **Tier-Scaled Node Diameters**:
+  - *Tier 1 (Core Patron / Principal)*: 1.6x scale (64px), luminous obsidian ring, prominent orbit.
+  - *Tier 2 (Supporter / 2 Cups)*: 1.15x scale (46px).
+  - *Tier 3 (Micro / Cookie)*: 0.85x scale (34px).
+  - *Celestial Constellation Waypoints*: When total backers N < 14, subtle 0.4x scale (16px) neutral slate nodes complete the Fibonacci spherical lattice without fabricating human identities.
+- **Fibonacci Spiral Distribution**:
+  Uniform node coordinates on a sphere generated via Golden Ratio angle spacing (theta = 2 * PI * i / phi).
+- **Portal-Mounted Single-Line Lightbox**:
+  Node inspection dialogs mount to `document.body` with a strict single-line text constraint (`max-w-lg whitespace-nowrap overflow-hidden text-ellipsis`).
+
+## 20.8 Suneet-Hero-Page Immersion & Kinetic Lamp Protocol
+- **F11 Full-Viewport Immersion Engine**:
+  Hero landing viewports occupy exactly 100dvh (`min-h-[100dvh]`), framing wordmarks, spatial telemetry, and core CTAs in dynamic optical equilibrium without premature scrollbars or trapped modals.
+- **Kinetic Pull-Cord Theme Lamp (Spring & Inverse Kinematics)**:
+  Theme switching is physically manifested as an overhead industrial hanging lamp with a segmented beaded pull cord. Pointer drag induces tension modeled via a 3-point quadratic Bézier spline; release triggers spring kinematics (`stiffness: 350`, `damping: 22`) with haptic/audio click feedback toggling between obsidian dark mode (`#090A0C`) and ceramic light mode (`#FAFAFA`).
+- **Non-Hijacking Snappy Viewport Transition**:
+  Strictly zero `e.preventDefault()` scroll hijacking. Uses native CSS scroll snap (`scroll-snap-type: y mandatory`) allowing smooth, accelerated navigation.
+- **Lightfall Monospace Matrix Mount Sequence**:
+  On initial mount, cryptographic tokens cascade downward, resolving via an optical blur dispersion (`blur(16px) -> blur(0px)`) into the crisp geometric wordmark.
+
+## 20.9 Dual-Cadence Telemetry Architecture & Ban on Generic AI Shield SVGs
+- **Truth in Live Metrics**:
+  Telemetry pills display empirically verified numbers directly from official endpoints (e.g., npm API). Never display rounded marketing exaggerations.
+- **Dual-Cadence Tooltip Standard**:
+  Wrap compact metric badges (e.g. `[ ⤓ 2,083/mo ]`) in a portal-mounted obsidian tooltip displaying both monthly and weekly cadences: `2,083/mo • 1,304 this week on npmjs ↗`.
+- **Monospace Tooltip Case Preservation**:
+  Tooltips rendering telemetry or URLs MUST use `normalCase={true}` to prevent CSS `uppercase` from corrupting lowercase metrics (`/mo`, `/wk`).
+- **Total Eradication of Generic AI Shield SVGs**:
+  Zero shield icons in toasts, banners, or action pills. Replace with contextual monochromatic indicators (`CheckCircle2` for success, `AlertCircle` for errors, `ArrowDownToLine` for downloads).

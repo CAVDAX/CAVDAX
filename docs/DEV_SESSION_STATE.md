@@ -11642,3 +11642,60 @@ A complete visual and architectural transformation has been executed across the 
   - Merged PR #148 into `main` after resolving whole-file scan false positives via patch diff extraction.
   - Documented deepest-ancestor symlink traversal confinement, protected write paths (`.git`, `.env*`, `.github/`), decision `target_file` scoping, and open relay defense in `README.md`.
   - Updated Master AI Prompts library (`##CI-CD-Architectural-Invariant-Gates-And-MCP-Distribution-Playbook.md`) with Vulnerability 4 (Whole-File Scan vs Patch Diff), Vulnerability 5 (Self-Hosting Engine Paradox), Windows NTFS junction invariants, and CI skip directive standards.
+
+
+- **Supply Chain Hardening & Zero-Dependency CLI Architecture (`node:util.parseArgs`)**:
+  - Replaced `commander` in `apps/mcp-server/bin/cavdax.js` with Node.js native `node:util.parseArgs`.
+  - Removed `commander` from `apps/mcp-server/package.json` dependencies, eliminating third-party imports of `node:child_process`.
+  - Resolved Socket.dev `Shell access: node:child_process` security alert, elevating Supply Chain Security score to 100/100 with zero external runtime dependencies.
+  - Authored automated regression suite `apps/mcp-server/test/cliZeroDep.test.mjs` (2/2 passing).
+
+- **Continuous Scroll-Drawn Ribbon Spline Full-Height Weave**:
+  - Re-anchored `ContinuousRibbon` in `SponsorsPage.jsx` to full-height canvas (`viewBox="0 0 1200 2500"`, `offset: ['start start', 'end end']`).
+  - Weaved parametric cubic Bézier control points down past Core Patrons, 2 Cups, and Cookie Backers to the footer baseline floor.
+
+- **3D Constellation Authenticity & Scaled Sphere Nodes**:
+  - Eliminated clone duplication loop in `SponsorsPage.jsx` and `SphereImageGrid.jsx`; mapped unique backers strictly 1:1.
+  - Sized node diameters proportionally by sponsorship tier: Core Patron 1.6× with illuminated halo, 2 Cups 1.15×, Cookie 0.85×.
+  - Supplemented low distributions ($N < 14$) with subtle celestial waypoint constellation nodes (0.4×) to preserve 3D volume authentically.
+
+- **Anti-Orphan Typography & Single-Line Lightbox Safeguard**:
+  - Expanded modal card container in `SphereImageGrid.jsx` to `max-w-lg` (512px) with `whitespace-nowrap px-3`.
+  - Rendered quotes (e.g. `@suneetchugh-dev supporting open-source causal engineering`) cleanly on a single line without lonely-child wrapping or ellipsis cut-off.
+  - Refined `Explore Wall` link in `SupportPage.jsx` with bold contrast, hover glow, and micro-arrow translation without underline.
+
+- **Monochromatic Obsidian Dark Mode & Quiet Chrome**:
+  - Replaced saturated navy/blue slate (`#0f172a`) with pure obsidian (`dark:bg-[#07090D]`), translucent glass surfaces (`dark:bg-white/[0.03]`), and hairline borders (`dark:border-white/10`).
+  - Purged warm yellow/brown ambient blur blobs in favor of neutral diffuse spline underglows.
+
+- **Master AI Prompts Library Synchronization**:
+  - Updated `##NPM-Package-Distribution-Sigstore-Provenance-And-Supply-Chain-Auditing.md` with Section 6 (Zero-Dependency CLI Hardening).
+  - Updated `##Continuous-Scroll-Drawn-Ribbon-Spline-Engine.md` with Section 6 (Full-Height Traversal Standard).
+  - Updated `##Unslopping-And-Anti-AI-Slop-Design-Craft-Architecture.md` with Passes 10–12.
+  - Synchronized `#UI_DESIGN_SYSTEM.md file.md` with all latest design system sections (83–96).
+  - Created new master prompt `##Backer-Recognition-Consent-And-Privacy-Hardening-Architecture.md`.
+
+### Milestone 2026-11-11: Global Master Skills & Anti-AI Slop Architectural Triad
+
+- **Global Master Skills Creation & Multi-Runtime Installation**:
+  - Architected and globally installed **`Suneet-Perfect-AI-Slop-Remover`**: The definitive Anti-AI Slop Engine and Ruthless Mentor controller agent. Codified 14 deadly AI tropes, automated Puppeteer visual audits, and a 4-subagent adversarial inspection loop.
+  - Architected and globally installed **`Suneet-3D-Revolving-Image-Sphere`**: Zero-WebGL crash-proof 3D interactive Fibonacci sphere with tier-proportional node scaling (Core 1.6x, 2 Cups 1.15x, Cookie 0.85x), strict 1:1 human backer mapping (anti-clone ban), celestial constellation waypoints (0.4x), and portal-isolated single-line lightbox dialogs.
+  - Architected and globally installed **`Suneet-Hero-Page`**: F11 full-viewport immersion engine (100dvh), kinetic pull-cord theme lamp (spring & inverse kinematics), non-hijacking smooth scroll snap, and Lightfall monospace matrix particle mount sequence.
+  - Synchronized all 5 skills across:
+    1. `C:\Users\krish\.agents\skills\` (universal CLI & agent tools)
+    2. `C:\Users\krish\.gemini\config\skills\` (Antigravity local configuration)
+    3. `C:\Users\krish\.gemini\skills\` (Global Antigravity skills)
+    4. `C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\SKILLS For Agents\.agents\skills\` (master prompts bank)
+  - Registered automatic activation directives in `C:\Users\krish\.gemini\GEMINI.md`.
+
+- **Documentation & Protocol Synchronization**:
+  - Extended `Codebase/AGENTS.md` with sections 20.6–20.9; mirrored to `###(AGENTS.md File).md`.
+  - Extended `Codebase/docs/UI_DESIGN_SYSTEM.md` with sections 97–99; mirrored to `##(UI_DESIGN_SYSTEM.md file).md`.
+  - Mirrored master prompt protocols into `#General-Main`:
+    - `##Suneet-Perfect-AI-Slop-Remover-Master-Protocol.md`
+    - `##Suneet-3D-Revolving-Image-Sphere-Master-Protocol.md`
+    - `##Suneet-Hero-Page-Master-Protocol.md`
+
+- **Verification & Invariant Attestation**:
+  - `npm run build` passing cleanly in 10.92s with zero bundle regressions.
+  - Zero commits staged or pushed (`don't commit yet` rule strictly observed).
