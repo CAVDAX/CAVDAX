@@ -9085,3 +9085,18 @@ Landing sections frequently suffer from awkward vertical overflow where the hero
 3. **Dynamic Spline Kinematics**: The cord sways along a 3-point quadratic Bézier curve where the midpoint control point dynamically tracks pull tension and lateral angular displacement.
 4. **Non-Hijacking Snappy Viewport Transition**: Strictly zero `e.preventDefault()` scroll hijacking. Uses native CSS scroll snap (`scroll-snap-type: y mandatory`) allowing smooth, accelerated navigation.
 5. **Lightfall Monospace Matrix Mount Sequence**: Full monospace code-rain cascading entrance resolving into crisp geometric wordmarks via optical blur dispersion (`blur(16px) -> blur(0px)`).
+
+
+---
+
+## 100. Zero-Latency Speculative Hover-Prefetch & Instantaneous Route Hydration Engine (Suneet-Optimised-Page-Download)
+
+### 100.1 Context & Problem Analysis
+In modern code-split Single-Page Applications (Vite / React lazy chunking), routes dynamically import their JavaScript bundles when requested. Traditional implementations wait until the physical click or pointerup event fires before triggering the dynamic import(). Across high-latency or mobile networks, this introduces an awkward 300ms-800ms loading dead zone where the UI freezes or flashes a loading spinner before rendering the destination view.
+
+### 100.2 The Suneet Human-Interface Speculative Prefetch Architecture
+1. **The Intent-Based Physiological Window**: There is an innate biological delay of 100ms to 300ms between the moment a user hovers a cursor over a button (mouseenter/pointerenter), navigates with keyboard Tab (focus), or places a finger on a mobile screen (touchstart), and the moment the physical click resolves.
+2. **Speculative Intent Hydration**: Every interactive cue, button, card, or navigation trigger pointing to a route view MUST attach intent listeners (onMouseEnter, onFocus, onTouchStart) invoking onPrefetchTab(targetKey). The browser initiates the chunk HTTP download and V8 bytecode compilation during this intent window.
+3. **True Zero-Latency Navigation**: By the time the click event fires, the destination component is already downloaded, parsed, and cached in memory. The view transitions immediately with 0ms perceived latency and zero loading spinners.
+4. **Idempotent Single-Flight Memory Cache**: Dynamic loaders are gated by an internal Set (prefetchedRoutes). Duplicate hover events or rapid cursor sweeps fire exactly one network request per route key.
+5. **Bandwidth Isolation for Heavy 3D/Canvas Views**: Heavy computational views (e.g. TierBenefitsPage with multi-tier causal simulations, SponsorsPage with 3D Fibonacci image spheres) are explicitly isolated from blanket requestIdleCallback sweeps (ON_DEMAND_ONLY_ROUTES = new Set(['benefits', 'sponsors'])), downloading strictly upon user interaction cues to preserve initial load bandwidth.
