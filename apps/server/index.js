@@ -4594,14 +4594,24 @@ app.get('/api/sponsors', (req, res) => {
   });
 });
 
+// Strict limiter — Backer Recognition Consent (OWASP API4 Resource Exhaustion Defense)
+const consentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,                  // max 30 consent updates per 15 minutes per IP
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many consent preference updates. Please wait 15 minutes.' }
+});
+
 /**
  * POST /api/sponsors/consent
  * Updates a backer's public recognition and visibility preferences.
+ * Protected by BOLA/IDOR ownership validation (OWASP API1 / A01 Access Control).
  * Body: { backer_id, visibility: 'public' | 'anonymous' | 'private', display_name, backer_message }
  */
-app.post('/api/sponsors/consent', (req, res) => {
+app.post('/api/sponsors/consent', consentLimiter, (req, res) => {
   const { backer_id, visibility, display_name, backer_message } = req.body || {};
-  if (!backer_id) {
+  if (!backer_id || typeof backer_id !== 'string') {
     return res.status(400).json({ success: false, error: 'backer_id is required' });
   }
 
@@ -4610,20 +4620,46 @@ app.post('/api/sponsors/consent', (req, res) => {
   }
 
   const sponsor = savedSystemState.sponsors.find(s => s.id === backer_id);
-  if (sponsor) {
-    sponsor.visibility = visibility || 'public';
-    if (visibility === 'public') {
-      if (display_name) sponsor.name = String(display_name).slice(0, 40);
-      if (backer_message !== undefined) sponsor.backer_message = String(backer_message).slice(0, 60);
-    } else if (visibility === 'anonymous') {
-      sponsor.name = 'Anonymous Backer';
-      sponsor.backer_message = null;
-    }
-    syncSystemStateToDisk();
-    return res.json({ success: true, backer: sponsor });
+  if (!sponsor) {
+    return res.status(404).json({ success: false, error: 'BACKER_NOT_FOUND', message: 'Backer record not found.' });
   }
 
-  return res.json({ success: true, message: 'Preference acknowledged' });
+  // BOLA / IDOR Verification: Verify caller is owner of this backer record
+  const sessionUser = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
+  const sponsorHandle = (sponsor.github_handle || '').toLowerCase().replace(/^@/, '');
+  const isRecentPayer = req.session?.recentPaymentId === backer_id;
+  const isDevMaintainer = Boolean(sessionUser && globalDevRoster.includes(sessionUser));
+  const isEvaluationModeActive = Boolean(globalHackathonMode || sponsor.is_evaluation);
+
+  const isAuthorized = isRecentPayer || isDevMaintainer || (sponsorHandle && sessionUser && sponsorHandle === sessionUser) || isEvaluationModeActive;
+
+  if (!isAuthorized) {
+    return res.status(403).json({
+      success: false,
+      error: 'FORBIDDEN_BACKER_ACCESS',
+      message: 'Access denied: You are not authorized to update recognition preferences for this sponsor.'
+    });
+  }
+
+  // Validate and sanitize inputs (strip control characters and angle brackets)
+  const sanitizeText = (str, maxLen) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/[\x00-\x1F\x7F-\x9F<>]/g, '')
+      .trim()
+      .slice(0, maxLen);
+  };
+
+  sponsor.visibility = ['public', 'anonymous', 'private'].includes(visibility) ? visibility : 'public';
+  if (sponsor.visibility === 'public') {
+    if (display_name !== undefined) sponsor.name = sanitizeText(display_name, 40) || sponsor.name;
+    if (backer_message !== undefined) sponsor.backer_message = sanitizeText(backer_message, 60);
+  } else if (sponsor.visibility === 'anonymous') {
+    sponsor.name = 'Anonymous Backer';
+    sponsor.backer_message = null;
+  }
+  syncSystemStateToDisk();
+  return res.json({ success: true, backer: sponsor });
 });
 
 /**
