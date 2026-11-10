@@ -19,7 +19,7 @@ import {
   AlertTriangle, Play, RotateCcw, Download, Trash2,
   Radio, Layers, Flame, Users, Globe, EyeOff, Server,
   Cpu, Activity, Database, Key, Sliders, ArrowUpRight,
-  UserPlus, UserMinus, Shield, Plus
+  UserPlus, UserMinus, Plus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {

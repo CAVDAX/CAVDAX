@@ -25,6 +25,7 @@ const DevConsolePage = React.lazy(() => import('./components/DevConsolePage.jsx'
 const DevTeamPanel = React.lazy(() => import('./components/DevTeamPanel.jsx'));
 const ProfilePage = React.lazy(() => import('./components/ProfilePage.jsx'));
 const SupportPage = React.lazy(() => import('./components/SupportPage.jsx'));
+const SponsorsPage = React.lazy(() => import('./components/SponsorsPage.jsx'));
 const ConnectedRepoWorkspace = React.lazy(() => import('./components/ConnectedRepoWorkspace.jsx'));
 const TierBenefitsPage = React.lazy(() => import('./components/TierBenefitsPage.jsx'));
 import PreferencesModal from './components/PreferencesModal.jsx';
@@ -40,6 +41,7 @@ const ROUTE_PREFETCH_LOADERS = {
   team: () => import('./components/TeamPage.jsx'),
   audit: () => import('./components/AuditPage.jsx'),
   support: () => import('./components/SupportPage.jsx'),
+  sponsors: () => import('./components/SponsorsPage.jsx'),
   profile: () => import('./components/ProfilePage.jsx'),
   dev: () => import('./components/DevConsolePage.jsx'),
   devteam: () => import('./components/DevTeamPanel.jsx'),
@@ -106,6 +108,7 @@ function resolveTabFromUrl() {
   if (rawPath === '/profile') return 'profile';
   if (rawPath === '/tier-benefits' || rawPath === '/benefits' || rawPath === '/pricing') return 'benefits';
   if (rawPath === '/support' || rawPath === '/sponsor') return 'support';
+  if (rawPath === '/sponsors' || rawPath === '/backers') return 'sponsors';
   if (rawPath === '/404') return '404';
 
   // 2. Hash routing fallback ONLY if on root '/'
@@ -118,6 +121,7 @@ function resolveTabFromUrl() {
     if (h === '#profile') return 'profile';
     if (h === '#benefits' || h === '#tier-benefits' || h === '#pricing') return 'benefits';
     if (h === '#support' || h === '#sponsor') return 'support';
+    if (h === '#sponsors' || h === '#backers') return 'sponsors';
     if (h === '#overview' || h === '' || h === '#') return 'landing';
     if (h === '#404') return '404';
   }
@@ -138,6 +142,7 @@ const TAB_TO_PATH = {
   profile: '/profile',
   benefits: '/tier-benefits',
   support: '/support',
+  sponsors: '/sponsors',
   '404': '/404',
 };
 
@@ -1528,7 +1533,7 @@ export default function App() {
       <SplashLoader isDarkTheme={isDarkTheme} />
 
       {/* 1. Monochromatic Portfolio Header (Icon mark only - NO WORDMARK) */}
-      {activeTab !== 'benefits' && (
+      {activeTab !== 'benefits' && activeTab !== 'sponsors' && (
       <Header
         status={{ falkorLive, latestLatency }}
         activeTab={activeTab}
@@ -1667,6 +1672,15 @@ export default function App() {
             user={githubUser}
             onLaunchConsole={() => handleSelectTab('console')}
             onNavigateHome={() => handleSelectTab('landing')}
+            onNavigateToSponsors={() => handleSelectTab('sponsors')}
+          />
+        </SubsystemErrorBoundary>
+      ) : activeTab === 'sponsors' ? (
+        /* Dedicated Community Backers & Sponsors Showcase Page */
+        <SubsystemErrorBoundary name="Backers Wall & Sponsors">
+          <SponsorsPage
+            user={githubUser}
+            onNavigateToSupport={() => handleSelectTab('support')}
           />
         </SubsystemErrorBoundary>
       ) : activeTab === '404' ? (
@@ -1994,7 +2008,7 @@ export default function App() {
       />
 
       {/* Universal Scroll Cue & Architectural Rail Scrubber — present wherever there is vertical scroll */}
-      {activeTab !== 'benefits' && <ArchitecturalRailScrubber activeTab={activeTab} />}
+      {activeTab !== 'benefits' && activeTab !== 'sponsors' && <ArchitecturalRailScrubber activeTab={activeTab} />}
 
       {/* 4. MCP Agent Connection Configuration Modal */}
       <McpConnectModal

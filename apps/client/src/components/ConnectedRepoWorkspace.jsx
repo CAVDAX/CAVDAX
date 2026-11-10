@@ -9,6 +9,7 @@ import Tooltip from './Tooltip.jsx';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
 import McpActionPlayground from './McpActionPlayground';
 import DevPatLoginModal from './DevPatLoginModal';
+import ConfirmationDialog from './ConfirmationDialog';
 import { playClick, playApprovalChime, playRejectBuzz } from '../utils/soundFx';
 import { MCP_SERVER_DEFAULT_VERSION } from '../constants/version.js';
 
@@ -163,6 +164,7 @@ export default function ConnectedRepoWorkspace({
   const [error, setError] = useState(null);
   const [isOpeningPr, setIsOpeningPr] = useState(false);
   const [showInitConfirmModal, setShowInitConfirmModal] = useState(false);
+  const [isDisconnectConfirmOpen, setIsDisconnectConfirmOpen] = useState(false);
   const [syncingTarget, setSyncingTarget] = useState(null);
   const [showAgentSetupModal, setShowAgentSetupModal] = useState(false);
   const [showCiGateModal, setShowCiGateModal] = useState(false);
@@ -1093,7 +1095,7 @@ export default function ConnectedRepoWorkspace({
           {onDisconnectRepo && (
             <Tooltip content="Disconnect repository from workspace" position="bottom">
               <button
-                onClick={() => { playClick(); onDisconnectRepo(repo.id); }}
+                onClick={() => { playClick(); setIsDisconnectConfirmOpen(true); }}
                 className={`${btnSecondary} hover:bg-rose-500/10 hover:border-rose-500/30`}
                 aria-label="Disconnect repository from workspace"
               >
@@ -1143,7 +1145,7 @@ export default function ConnectedRepoWorkspace({
               ) : (
                 <button onClick={() => { playClick(); runScan(); }} className={btnPrimary}>Try again</button>
               )}
-              <button onClick={() => { playClick(); onDisconnectRepo?.(repo.id); }} className={btnSecondary}>Disconnect</button>
+              <button onClick={() => { playClick(); setIsDisconnectConfirmOpen(true); }} className={btnSecondary}>Disconnect</button>
             </div>
           } />
       )}
@@ -2297,6 +2299,20 @@ jobs:
           runScan();
         }}
         returnTo="/console"
+      />
+
+      {/* Defensive Confirmation Dialog for Repository Disconnect */}
+      <ConfirmationDialog
+        isOpen={isDisconnectConfirmOpen}
+        onClose={() => setIsDisconnectConfirmOpen(false)}
+        onConfirm={() => {
+          if (onDisconnectRepo) onDisconnectRepo(repo.id);
+        }}
+        title="Disconnect Repository?"
+        description={`Are you sure you want to disconnect ${repo.full_name || 'this repository'}? This will sever real-time causal graph synchronization and remove local workspace cache.`}
+        confirmLabel="Disconnect Repository"
+        requireMatch={repo.name || repo.full_name?.split('/')[1] || 'disconnect'}
+        severity="danger"
       />
 
       {/* Activity log for the empty and error states */}
