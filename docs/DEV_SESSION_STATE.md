@@ -18,28 +18,58 @@
 
 
 
-> **Status**: Monetization Hardening, Segmented Backer Filtering, Bounded Scroll Viewport & Dead Link Remediation Complete
-
-
-
-
-
-
+> **Status**: v1.3.0 Production Release Live (Sliding Pill Physics, Monospace Table Clearance, MCP Universal CLI v1.3.0 with Sigstore Provenance, GitHub Release v1.3.0 Published, Cold-Mount Invariants Codified)
 
 ---
 
+## 📌 Critical Reminder for Next Session (Mandatory Roadmap)
 
+### 1. Dedicated Sponsors & Backers Showcase Page (`SponsorsPage.jsx`)
+- **Objective**: Build a high-density, institutional showcase page dedicated to all CAVDAX sponsors, backers, and institutional partners.
+- **Features to Implement**:
+  - Monochromatic tier categorization: Community Backers ($4/mo), Pro Autonomous Patrons ($24/mo), Team & Scale Partners ($120/mo), and Proposed CSR Co-Funders.
+  - Verification badges with cryptographic/ledger timestamps (`Verified Backer`, `Active Node Lease`, `Sigstore Provenance`).
+  - Search and filter bar by tier and contribution type.
+  - Live backer counter synchronized with backend billing ledger state.
+  - Seamless navigation hooks from `LandingPage` footer, `SupportPage`, and `ProfilePage`.
 
+### 2. Murphy's Law Accessible Confirmation Dialog Pattern
+- **Objective**: Standardize a dedicated confirmation modal system for destructive, quota-consuming, and high-stakes operations across the platform.
+- **UX & Accessibility Invariants to Enforce**:
+  - **Murphy's Law Defensive Friction**: Anything that can go wrong will go wrong. Any operation that invalidates decisions, unlinks active repositories, rotates API keys, or triggers billing transactions must require deliberate secondary confirmation.
+  - **Single Concise Sentence Prompt**: Strict ban on bloated robotic paragraphs (per `AGENTS.md` § `0d`). Use concise, punchy engineering copy (e.g. *"This action permanently revokes the active token and disconnects the MCP relay immediately."*).
+  - **Keyboard Accessibility**: Auto-focus on Cancel button by default to prevent accidental `Enter` execution; <kbd>Escape</kbd> to dismiss.
+  - **Zero-Displacement & Focus Trap**: Modal mounted via React root portal with non-displacing backdrop blur and clean focus trapping.
+  - **Double-Click Debounce Guard**: State-driven lock preventing duplicate requests during async mutations.
 
-
-
+---
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
+
+## 1.1.14 Tier Benefits Sliding Pill Physics, Table Clearance Invariant & MCP Universal CLI v1.3.0 (November 10, 2026)
+
+- **Tier Benefits Sliding Pill Navigation & Cold-Mount Invariant**:
+  - Implemented declarative spring-physics sliding pill via Framer Motion `<LayoutGroup id="tier-hero-nav">` and `<motion.div layoutId="hero-active-tier-pill">`.
+  - Calibrated snug capsule dimensions (`px-4 py-2` buttons, `w-8 h-8` back button).
+  - Verified instant 0ms first-paint contrast on cold mount and direct browser reloads (`F5`) in both dark and light modes.
+- **Monospace Table Clearance Invariant on 1280px Laptops**:
+  - Enforced `w-full min-w-[1040px]` on the comparison matrix table with explicit column minimum widths (`min-w-[280px]`, `min-w-[260px]`).
+  - Added auto-scroll overshot buffer (`maxScroll + 80`) when activating extended tier tabs ("Team & Scale"), guaranteeing $\ge 59.5\text{px}$ clearance against the floating right-side quick dock.
+  - Added bespoke typographic orange arrow (`→`) to active column headers.
+  - Purged redundant floating scroll-to-top buttons from the landing page.
+- **Universal MCP CLI & Registry Release (@cavdax/mcp-server v1.3.0)**:
+  - Canonicalized `cavdax impact` command for enterprise downstream blast-radius analysis.
+  - Integrated `cavdax init` and `cavdax decisions` CLI operations into the executable package.
+  - Upgraded GitHub Actions workflow to Node 24 and npm 11+, achieving Sigstore cryptographic build provenance via ambient OIDC Trusted Publishing on npmjs.org.
+  - Created formal GitHub Release `v1.3.0` pointing to git tag `v1.3.0` as the official Latest release.
+- **Codification of Architectural Invariants**:
+  - Codified Section `0ag` (Cold-Mount Hydration Invariant), Section `0ah` (1280px Table Clearance Law), and Section `0ai` (Complete Release Distribution Triad) in `AGENTS.md` and `docs/UI_DESIGN_SYSTEM.md`.
+  - Authored `##Cold-Mount-Hydration-And-Release-Distribution-Triad-Master-Protocol.md` in master dev-assets prompts library.
 
 ## 1.1.13 GitHub README GFM Parser Guard, Dual-License Alignment, and Razorpay Localhost Confinement (November 8, 2026)
 
 - **GitHub README Hero Header GFM Code Block Trap Resolved (README.md & scripts/lint-markdown.mjs)**:
-  - **Mechanical Root Cause**: Under Section 4.4 of CommonMark/GFM specifications, any line preceded by an HTML container or blank line indented by $ge 4$ spaces is parsed as an indented code block (`<pre><code>`). The README header used compound 2-space indentation (`<div align="center">` [0] $ightarrow$ `<picture>` [2] $ightarrow$ `<source>` [4]), causing GitHub to render raw HTML tags as code blocks with copy buttons and horizontal scrollbars.
+  - **Mechanical Root Cause**: Under Section 4.4 of CommonMark/GFM specifications, any line preceded by an HTML container or blank line indented by $ge 4$ spaces is parsed as an indented code block (`<pre><code>`). The README header used compound 2-space indentation (`<div align="center">` [0] $ightarrow$ `<picture>` [2] $ightarrow$ `<source>` [4]), causing GitHub to render raw HTML tags as code blocks with copy buttons and horizontal scrollbars.
   - **Resolution**:
     1. Re-aligned all nested HTML tags in `README.md` to strictly 0 leading spaces (flush-left).
     2. Implemented `scripts/lint-markdown.mjs` to detect synthetic double carriage returns (`\r\r\n`) and indented raw HTML tags (`^\s{4,}<(picture|source|img|a|...)`).
@@ -11612,3 +11642,60 @@ A complete visual and architectural transformation has been executed across the 
   - Merged PR #148 into `main` after resolving whole-file scan false positives via patch diff extraction.
   - Documented deepest-ancestor symlink traversal confinement, protected write paths (`.git`, `.env*`, `.github/`), decision `target_file` scoping, and open relay defense in `README.md`.
   - Updated Master AI Prompts library (`##CI-CD-Architectural-Invariant-Gates-And-MCP-Distribution-Playbook.md`) with Vulnerability 4 (Whole-File Scan vs Patch Diff), Vulnerability 5 (Self-Hosting Engine Paradox), Windows NTFS junction invariants, and CI skip directive standards.
+
+
+- **Supply Chain Hardening & Zero-Dependency CLI Architecture (`node:util.parseArgs`)**:
+  - Replaced `commander` in `apps/mcp-server/bin/cavdax.js` with Node.js native `node:util.parseArgs`.
+  - Removed `commander` from `apps/mcp-server/package.json` dependencies, eliminating third-party imports of `node:child_process`.
+  - Resolved Socket.dev `Shell access: node:child_process` security alert, elevating Supply Chain Security score to 100/100 with zero external runtime dependencies.
+  - Authored automated regression suite `apps/mcp-server/test/cliZeroDep.test.mjs` (2/2 passing).
+
+- **Continuous Scroll-Drawn Ribbon Spline Full-Height Weave**:
+  - Re-anchored `ContinuousRibbon` in `SponsorsPage.jsx` to full-height canvas (`viewBox="0 0 1200 2500"`, `offset: ['start start', 'end end']`).
+  - Weaved parametric cubic Bézier control points down past Core Patrons, 2 Cups, and Cookie Backers to the footer baseline floor.
+
+- **3D Constellation Authenticity & Scaled Sphere Nodes**:
+  - Eliminated clone duplication loop in `SponsorsPage.jsx` and `SphereImageGrid.jsx`; mapped unique backers strictly 1:1.
+  - Sized node diameters proportionally by sponsorship tier: Core Patron 1.6× with illuminated halo, 2 Cups 1.15×, Cookie 0.85×.
+  - Supplemented low distributions ($N < 14$) with subtle celestial waypoint constellation nodes (0.4×) to preserve 3D volume authentically.
+
+- **Anti-Orphan Typography & Single-Line Lightbox Safeguard**:
+  - Expanded modal card container in `SphereImageGrid.jsx` to `max-w-lg` (512px) with `whitespace-nowrap px-3`.
+  - Rendered quotes (e.g. `@suneetchugh-dev supporting open-source causal engineering`) cleanly on a single line without lonely-child wrapping or ellipsis cut-off.
+  - Refined `Explore Wall` link in `SupportPage.jsx` with bold contrast, hover glow, and micro-arrow translation without underline.
+
+- **Monochromatic Obsidian Dark Mode & Quiet Chrome**:
+  - Replaced saturated navy/blue slate (`#0f172a`) with pure obsidian (`dark:bg-[#07090D]`), translucent glass surfaces (`dark:bg-white/[0.03]`), and hairline borders (`dark:border-white/10`).
+  - Purged warm yellow/brown ambient blur blobs in favor of neutral diffuse spline underglows.
+
+- **Master AI Prompts Library Synchronization**:
+  - Updated `##NPM-Package-Distribution-Sigstore-Provenance-And-Supply-Chain-Auditing.md` with Section 6 (Zero-Dependency CLI Hardening).
+  - Updated `##Continuous-Scroll-Drawn-Ribbon-Spline-Engine.md` with Section 6 (Full-Height Traversal Standard).
+  - Updated `##Unslopping-And-Anti-AI-Slop-Design-Craft-Architecture.md` with Passes 10–12.
+  - Synchronized `#UI_DESIGN_SYSTEM.md file.md` with all latest design system sections (83–96).
+  - Created new master prompt `##Backer-Recognition-Consent-And-Privacy-Hardening-Architecture.md`.
+
+### Milestone 2026-11-11: Global Master Skills & Anti-AI Slop Architectural Triad
+
+- **Global Master Skills Creation & Multi-Runtime Installation**:
+  - Architected and globally installed **`Suneet-Perfect-AI-Slop-Remover`**: The definitive Anti-AI Slop Engine and Ruthless Mentor controller agent. Codified 14 deadly AI tropes, automated Puppeteer visual audits, and a 4-subagent adversarial inspection loop.
+  - Architected and globally installed **`Suneet-3D-Revolving-Image-Sphere`**: Zero-WebGL crash-proof 3D interactive Fibonacci sphere with tier-proportional node scaling (Core 1.6x, 2 Cups 1.15x, Cookie 0.85x), strict 1:1 human backer mapping (anti-clone ban), celestial constellation waypoints (0.4x), and portal-isolated single-line lightbox dialogs.
+  - Architected and globally installed **`Suneet-Hero-Page`**: F11 full-viewport immersion engine (100dvh), kinetic pull-cord theme lamp (spring & inverse kinematics), non-hijacking smooth scroll snap, and Lightfall monospace matrix particle mount sequence.
+  - Synchronized all 5 skills across:
+    1. `C:\Users\krish\.agents\skills\` (universal CLI & agent tools)
+    2. `C:\Users\krish\.gemini\config\skills\` (Antigravity local configuration)
+    3. `C:\Users\krish\.gemini\skills\` (Global Antigravity skills)
+    4. `C:\Users\krish\OneDrive\Desktop\(Lectures)\+[Dev-Assets]\#(AI-AGENTS)\#Prompts\SKILLS For Agents\.agents\skills\` (master prompts bank)
+  - Registered automatic activation directives in `C:\Users\krish\.gemini\GEMINI.md`.
+
+- **Documentation & Protocol Synchronization**:
+  - Extended `Codebase/AGENTS.md` with sections 20.6–20.9; mirrored to `###(AGENTS.md File).md`.
+  - Extended `Codebase/docs/UI_DESIGN_SYSTEM.md` with sections 97–99; mirrored to `##(UI_DESIGN_SYSTEM.md file).md`.
+  - Mirrored master prompt protocols into `#General-Main`:
+    - `##Suneet-Perfect-AI-Slop-Remover-Master-Protocol.md`
+    - `##Suneet-3D-Revolving-Image-Sphere-Master-Protocol.md`
+    - `##Suneet-Hero-Page-Master-Protocol.md`
+
+- **Verification & Invariant Attestation**:
+  - `npm run build` passing cleanly in 10.92s with zero bundle regressions.
+  - Zero commits staged or pushed (`don't commit yet` rule strictly observed).

@@ -8890,3 +8890,198 @@ Every production version bump is an atomic 3-vertex transaction that MUST be com
 3. **Vertex 3 (GitHub Release Entity)**: Formal GitHub Release object authored with comprehensive changelog categories and distribution URLs:
    `gh release create vX.Y.Z --title "vX.Y.Z: <Title>" --notes-file <notes.md>`
 - A task tracking a release is only complete when `gh release list` confirms `vX.Y.Z` as **Latest**.
+
+
+## 90. Universal Modal, Lightbox & Dialog Portal Isolation Invariant (The Zero-Trapping Law)
+
+### 90.1 The CSS Transform & Perspective Trapping Vulnerability
+- **The Defect**: Rendering modal backdrops, dialogs, or lightboxes (`position: fixed; inset: 0`) inline inside component JSX trees that reside within ancestor elements declaring CSS `transform`, `perspective`, `filter`, or `contain`.
+- **The Architectural Failure**:
+  1. Under the W3C CSS Transforms Specification, any ancestor element with `transform`, `perspective`, or `filter` acts as the *containing block* for all `position: fixed` descendants.
+  2. Consequently, a backdrop intended to cover the entire viewport (`inset: 0`) is trapped inside the local bounding box of the parent container or shifted off-axis.
+  3. Global headers, navigation chrome, and scrubbers remain un-occluded above the broken backdrop, and click-outside dismissal behaves erratically.
+
+### 90.2 The Inviolable Modal / Lightbox Standard
+1. **Mandatory React Portal Mounting (`createPortal`)**:
+   - Every modal, lightbox, spotlight dialog, confirmation alert, and fullscreen overlay MUST mount directly into `document.body` via `createPortal(..., document.body)`.
+   - Inline rendering of modal dialogs inside cards, 3D grids, lists, or sections is strictly prohibited.
+2. **Mandatory Viewport-Layer Stacking (`z-[9999]`)**:
+   - Modal backdrop layers must declare `fixed inset-0 z-[9999]` and combine full backdrop blur with semi-transparent tint (`bg-slate-950/80 backdrop-blur-md`).
+3. **Mandatory Body Scroll Locking**:
+   - While the modal or lightbox is mounted, the document body must lock scroll (`document.body.style.overflow = 'hidden'`) and safely restore previous overflow upon unmount.
+4. **Mandatory Universal Dismissal Ergonomics**:
+   - Lightboxes and modals must register an `Escape` key event listener (`e.key === 'Escape'`) to dismiss immediately.
+   - Lightboxes and modals must dismiss when clicking anywhere on the outer backdrop while stopping event propagation (`e.stopPropagation()`) on the modal card itself.
+5. **Monochromatic & Anti-Slop Card Aesthetics**:
+   - Zero neon borders, zero garish amber rings, and zero emoji badges inside lightboxes.
+   - Pure monochromatic hairline borders (`border border-slate-200 dark:border-white/10`), unified Lucide iconography (`X` dismiss), and spring-animated presence transitions (`type: 'spring', stiffness: 400, damping: 30`).
+
+## 91. Anti-Orphan Heading Typography Invariant (The `text-balance` & No "Lonely Child" Standard)
+
+### 91.1 The "Lonely Child" / Orphan Word Defect
+- **The Defect**: An AI-generated or developer-authored multi-line heading wraps such that a single word drops onto the final line on common viewports (e.g. `Backed by Builders & Systems` followed by a solitary lonely `Engineers`).
+- **The Visual Toll**: Orphan words destroy typographic rhythm, waste vertical headroom, create asymmetric ragged edges, and instantly signal unpolished "AI-templated" output.
+
+### 91.2 The Strict Typographic Invariant
+1. **Mandatory `text-balance` on All Display Typography**:
+   - Every `<h1>`, `<h2>`, `<h3>`, hero title, and multi-line section subtitle MUST declare the Tailwind `text-balance` utility (backed by native CSS `text-wrap: balance`).
+   - This forces the browser rendering engine to distribute line lengths harmoniously and prevents orphan words across all responsive viewport widths.
+2. **Intentional Phrase Brevity (Anti-AI Cliché Headings)**:
+   - Never use bloated generative clichés like `Backed by Builders & Systems Engineers` or `A Symphony of Verification`.
+   - Use crisp, authoritative 1-to-3 word titles (e.g. `Community Backers`, `Tier Benefits`, `System Architecture`).
+   - No decorative slashes (`/`), emojis, or pseudo-subtitles inside heading tags.
+
+
+## 92. Supply Chain Security & Zero-Dependency CLI Architecture (`node:util.parseArgs`)
+
+### 92.1 The Shell Access & Process Injection Attack Surface
+- **The Defect**: Relying on heavy CLI frameworks like `commander` or `yargs` for distributed utilities (such as `@cavdax/mcp-server`).
+- **The Vulnerability**:
+  1. `commander` internally imports `node:child_process` to support Git-style executable subcommands (`cavdax-subcommand`).
+  2. Security scanners (e.g. Socket.dev, Snyk) statically trace the AST and flag packages with alerts: `Shell access: node:child_process`, reducing the **Supply Chain Security** score to 75–80.
+  3. If untrusted arguments pass through un-sanitized flags, command injection risks increase.
+
+### 92.2 The Zero-Dependency Invariant
+1. **Mandatory Native Argument Parsing (`node:util.parseArgs`)**:
+   - Modern Node.js ($ge 18.3$) provides `node:util.parseArgs` with strict typing, flag validation, and default handling.
+   - For CLI tools and MCP servers, eliminate third-party parsers and implement argument dispatching natively:
+     ```javascript
+     import { parseArgs } from 'node:util';
+     const { values, positionals } = parseArgs({
+       args: process.argv.slice(2),
+       options: {
+         repo: { type: 'string', default: '.' },
+         sha: { type: 'string' },
+         strict: { type: 'boolean', default: false }
+       },
+       allowPositionals: true
+     });
+     ```
+2. **Zero Runtime Subprocesses**:
+   - Forbid `child_process.exec` or `child_process.spawn` inside user-facing CLI tools unless sandboxed behind an isolated execution gate.
+   - Removing `commander` and `child_process` achieves **100/100 Vulnerability**, **100/100 Quality**, and **100/100 License** health scores across automated supply chain scans.
+
+
+## 93. 3D Constellation Authenticity & Scaled Sphere Nodes
+
+### 93.1 The "Clone Clutter" Anti-Pattern in 3D Point Clouds
+- **The Defect**: When populating a 3D Fibonacci sphere or orbital galaxy with user avatars, duplicating a single backer or maintainer 8 to 24 times to fill geometric voids.
+- **The Toll**: Users immediately perceive repeated photos as simulated "fake volume" or AI slop, eroding community trust.
+
+### 93.2 The Tier-Scaled Unique Backer Standard
+1. **Strict 1:1 Identity Invariant**:
+   - Every human supporter, patron, or organization MUST appear exactly ONCE in the 3D coordinate space.
+2. **Physical Diameter Sizing by Patron Tier**:
+   - Differentiate sponsorship weight through physical node geometry rather than colored badges:
+     - **Core Patron ($10)**: 1.6× diameter with double-ring illuminated outline (`ring-2 ring-slate-900/60 dark:ring-white/80 shadow-[0_0_12px_rgba(255,255,255,0.18)]`).
+     - **2 Cups of Coffee ($4)**: 1.15× diameter with clean hairline border.
+     - **Cookie ($2)**: 0.85× diameter.
+3. **Subtle Celestial Waypoint Supplementation**:
+   - If total backer count is below the mathematical Fibonacci threshold ($N < 14$), populate empty coordinates with non-human celestial constellation nodes (e.g., `scaleMultiplier: 0.4`, subtle translucent slate/white dots).
+   - This maintains orbital volumetric presence while preserving 100% human authenticity.
+
+
+## 94. Monochromatic Dual-Vector Watery Waves & Fluid Hover Dynamics
+
+### 94.1 Beyond Generic Heart Slop
+- **The Defect**: Using generic red/pink heart emojis (❤️) or saturated neon gradients on support and sponsorship surfaces.
+- **The Craft Solution**: Bespoke dual-layer SVG vector hearts constructed with precision paths ($M...$) and equal stroke weights:
+  - **Foreground Heart**: Crisp monoline outline (`strokeWidth="1.8"`).
+  - **Background Heart**: Scaled offset shadow geometry ($X+6	ext{px}, Y+4	ext{px}$) with equal opacity, eliminating flat, single-layer clichés.
+
+### 94.2 Synchronized Watery Fluid Wave Clip-Path
+1. **Fluid Rising Water Dynamics**:
+   - Incorporate an SVG `<clipPath>` driven by a translated sine wave polygon.
+   - On idle: fluid level sits at $Y = 100%$ (empty outline).
+   - On hover: fluid rises to $Y = 0%$ while translating horizontally across $X$, mimicking liquid sloshing inside glass.
+2. **Synchronized Parent-Child Coupling**:
+   - Hovering an individual heart fills that specific vector.
+   - Hovering the parent section heading (`Support CAVDAX`) or primary CTA button triggers fluid fill across both hearts simultaneously.
+3. **Strict Monochromatic Text Invariant**:
+   - While vector fills may introduce warm amber or metallic luster, heading typography MUST remain strictly monochromatic (`text-slate-900 dark:text-white`), never shifting to red or pink on hover.
+
+
+## 95. Backer Recognition Preference & Privacy Guard Architecture
+
+### 95.1 The Public Exhibition Assumption Trap
+- **The Defect**: Assuming every sponsor or patron desires immediate public indexing of their GitHub username, real name, and corporate avatar on marketing walls.
+- **The Privacy Requirement**: GDPR, institutional policies, and personal developer preferences require granular consent before public recognition.
+
+### 95.2 The Three-Tier Recognition Modal Protocol
+Every post-sponsorship confirmation flow MUST present an explicit, unhurried consent modal with three distinct options:
+1. **Public Backers Wall (Default / Recommended)**:
+   - Displays real name/handle, avatar, and optional quote ($le 60$ characters).
+   - Enforces single-line presentation (`whitespace-nowrap`) and input validation to eliminate multi-line wrapping and orphan words.
+2. **Anonymous Backer**:
+   - Displays tier badge (e.g. "Core Patron") and anonymous identifier ("Anonymous Patron").
+   - Avatar and personal handle remain completely hidden from public DOM and crawler indexing.
+3. **Private (Do Not List)**:
+   - Completely excluded from the public backers wall and 3D constellation.
+   - In-app features, API token allotments, and tier perks remain fully active.
+4. **Frictionless Anonymous Escape**:
+   - A dedicated `Keep Anonymous` secondary action allows users to exit immediately with complete privacy preservation.
+
+
+## 96. Pure Monochromatic Obsidian Dark Theme Architecture
+
+### 96.1 The Navy/Blue Slate Degradation
+- **The Defect**: Using default Tailwind `dark:bg-slate-900` (`#0f172a`) across developer tooling surfaces.
+- **The Visual Penalty**: Slate-900 has a strong navy-blue saturation cast. When paired with high-tech terminal outputs, 3D vector instruments, or graph visualizations, it creates an uncalibrated, muddy appearance.
+- **Ambient Blob Bleed**: Warm yellow/brown or purple blur blobs behind dark themes destroy focus and look like generic landing page templates.
+
+### 96.2 The Obsidian Invariant
+1. **Root Surface Obsidian (`#07090D`)**:
+   - Dark theme root surfaces must use deep neutral obsidian (`dark:bg-[#07090D]` or `dark:bg-[#050608]`).
+2. **Hairline Translucent Surfaces**:
+   - Cards and containers elevate through subtle alpha translucency (`dark:bg-white/[0.03]` to `dark:bg-white/[0.05]`) framed by crisp hairlines (`dark:border-white/10` with `dark:hover:border-white/20`).
+3. **Monochromatic Grid & Spline Underglow**:
+   - Background grids use subtle neutral strokes (`stroke: rgba(255, 255, 255, 0.04)`).
+   - Ribbon underglow paths use neutral diffuse white/slate highlights (`stroke="white" opacity="0.12"`) rather than saturated color washes.
+
+---
+
+## 97. Dual-Cadence Monospace Telemetry & Ban on AI Shield SVGs
+
+### 97.1 Context & Problem Analysis
+Compact metric pills (such as npm download counts) often present conflicting timeframes: showing monthly downloads provides stability, while weekly metrics reflect immediate community momentum. Displaying both inline creates clutter, while using generic browser `title` attributes causes unstyled OS tooltips that collide with custom UI. Furthermore, AI agents habitually use generic `ShieldCheck` or `ShieldAlert` SVGs in toasts and status badges, creating security-theater slop.
+
+### 97.2 The Dual-Cadence Telemetry Standard
+1. **Compact Baseline Pill**: The visible resting UI displays a concise monthly cadence in monospace brackets: `[ ⤓ 2,083/mo ]`.
+2. **Custom Obsidian Tooltip**: Hovering mounts a high-craft obsidian tooltip (`#0B0D11`, hairline border `border-white/10`, `z-[99999]`) rendering the dual-cadence breakdown:
+   ```
+   2,083/mo • 1,304 this week on npmjs ↗
+   ```
+3. **Monospace Case Preservation (`normalCase={true}`)**: Standard UI design tokens often apply `uppercase` to badges. Telemetry tooltips MUST accept `normalCase={true}` to prevent converting `/mo`, `/wk`, and package names into jarring all-caps.
+4. **Total Eradication of Generic AI Shield SVGs**: Never use shield SVGs (`Shield`, `ShieldCheck`, `ShieldAlert`) in toasts, error boundaries, or action badges. Use semantically precise indicators (`CheckCircle2` for successful operations, `AlertCircle` for boundary catches, `ArrowDownToLine` for package downloads) with `text-current` color inheritance.
+
+---
+
+## 98. Fibonacci 3D Revolving Image Sphere & Tier-Proportional Kinematics
+
+### 98.1 Context & Problem Analysis
+Traditional backer grids either use flat paginated cards or heavy WebGL canvas scenes (Three.js) that crash due to context loss when multiple instances are mounted or browser tabs are backgrounded. Furthermore, naive AI implementations duplicate a single backer's avatar 15 times to fake visual volume.
+
+### 98.2 The 3D Revolving Fibonacci Sphere Engine
+1. **Zero-WebGL Invariant**: 100% crash-proof 3D orbital mechanics implemented via pure CSS 3D transforms (`preserve-3d`, `perspective`, `translate3d`, `scale`) with depth-sorted painter's order ($z$-index).
+2. **Strict 1:1 Human Entity Invariant**: Real backers are mapped strictly ONCE. Never duplicate avatars to pad volume.
+3. **Tier-Proportional Diameter Multipliers**:
+   - *Tier 1 (Core Patron / Principal - $10+)*: 1.6x scale (64px base), luminous obsidian ring, high-visibility orbit.
+   - *Tier 2 (Supporter / 2 Cups - $4)*: 1.15x scale (46px base).
+   - *Tier 3 (Micro / Cookie - $2)*: 0.85x scale (34px base).
+   - *Celestial Constellation Waypoints*: When active backers $N < 14$, discrete 0.4x scale (16px) neutral slate nodes complete the Fibonacci spherical geometry without fabricating human identities.
+4. **Fibonacci Distribution Math**: Uniform distribution on a sphere using Golden Ratio angle spacing ($theta = 2\pi i / \phi$).
+5. **Portal-Mounted Single-Line Lightbox**: Clicking any node opens an inspection dialog mounted via `createPortal(..., document.body)` with a strict single-line text constraint (`max-w-lg whitespace-nowrap overflow-hidden text-ellipsis`) to eliminate lonely-child word wrapping.
+
+---
+
+## 99. F11 Full-Viewport Immersion Engine & Kinetic Pull-Cord Theme Lamp
+
+### 99.1 Context & Problem Analysis
+Landing sections frequently suffer from awkward vertical overflow where the hero requires a small, jarring scroll to reveal bottom CTAs, or marketing headers hijack native mouse-wheel velocity. Additionally, theme toggles are typically generic pill switches without physical tactile satisfaction.
+
+### 99.2 The Immersion & Kinetic Lamp Architecture
+1. **F11 Full-Viewport Immersion (100dvh)**: The hero viewport occupies exactly $100\text{dvh}$ (`min-h-[100dvh]`), framing the bespoke wordmark, spatial telemetry, and core CTAs in dynamic optical equilibrium without premature scrollbars.
+2. **Kinetic Pull-Cord Theme Lamp**: Theme switching is physically manifested as an overhead industrial hanging lamp with a segmented beaded pull cord. Pointer drag stretches the cord elastically; releasing it executes spring kinematics (`stiffness: 350`, `damping: 22`) with haptic/audio click feedback and toggles between obsidian dark mode (`#090A0C`) and ceramic light mode (`#FAFAFA`).
+3. **Dynamic Spline Kinematics**: The cord sways along a 3-point quadratic Bézier curve where the midpoint control point dynamically tracks pull tension and lateral angular displacement.
+4. **Non-Hijacking Snappy Viewport Transition**: Strictly zero `e.preventDefault()` scroll hijacking. Uses native CSS scroll snap (`scroll-snap-type: y mandatory`) allowing smooth, accelerated navigation.
+5. **Lightfall Monospace Matrix Mount Sequence**: Full monospace code-rain cascading entrance resolving into crisp geometric wordmarks via optical blur dispersion (`blur(16px) -> blur(0px)`).
