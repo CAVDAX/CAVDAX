@@ -10,6 +10,16 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Optical Comma Kerning in Monospace Hero Typography (`TierBenefitsPage.jsx`)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - In monospace fonts (`"Fira Code"`, `"JetBrains Mono"`), every glyph has a fixed advance width (36px at 60px font size). The comma character `,` occupies only the bottom-left 6px of its cell, leaving 30px of empty space inside its bounding box.
+    - When followed by a standard monospace space ` ` (another 36px cell) and `tracking-wide`, the total blank gap between `Plans,` and `Capabilities` blew out to ~70px (over 1.5x wider than the 45px word space between `Tier` and `Plans`), creating a glaring visual chasm.
+  - **The High-Craft Architectural Resolution**:
+    - Replaced bloated `tracking-wide` with pure `tracking-normal`.
+    - Applied negative right-margin kerning to the comma glyph: `Tier Plans<span className="-mr-2 sm:-mr-3.5">,</span> Capabilities`.
+    - Result: Absorbed the empty fixed-cell void, equalizing the visual gap after the comma with the rest of the heading for pristine typographic optical equilibrium.
+  - **Empirical Visual Audit**:
+    - Captured `proof-kerned-comma-live-dark.png` and `proof-kerned-comma-live-light.png`.
 - **Eradication of Hero Background Mask & Spacious Typographic Breathing Room (`TierBenefitsPage.jsx`)**:
   - **Adversarial Forensic Discovery (/devils-advocate)**:
     - Any background mask div (whether wide or tight) introduced an artificial geometric boundary into the fluid Lightfall atmospheric tunnel.
