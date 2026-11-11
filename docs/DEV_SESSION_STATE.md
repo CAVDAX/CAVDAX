@@ -10,6 +10,29 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Pattern 20: Subsystem Error Boundary Slop Eradication & Unboxed Plumb-Line Architecture (`SubsystemErrorBoundary.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
+  - **Identified Slop**:
+    - Floating tag clutter: `<div className="...">SUBSYSTEM ISOLATED</div>` sitting above the error title.
+    - Boxed SVG: enclosing the status icon inside an inner rounded card (`w-12 h-12 rounded-xl bg-amber-500/10 border...`).
+    - Ragged 3-line paragraph prose: unconstrained text wrapping into 3 messy lines.
+  - **The Suneet Standard (Pattern 20)**:
+    1. Zero floating status pills above error headers.
+    2. Zero enclosed mini-boxes around SVGs; rendered unboxed solitary hardware line SVG directly (`AlertTriangle className="w-7 h-7 text-amber-500 dark:text-amber-400 stroke-[1.75]" mb-3`).
+    3. Strict 2-Line Physical Cap (`whitespace-nowrap overflow-hidden text-ellipsis` on each line):
+       - Line 1: `Isolated unexpected operational event in ${name}.`
+       - Line 2: `Navigation and other subsystems remain fully operational.`
+    4. Codified Pattern 20 in `Suneet-Perfect-AI-Slop-Remover` master skill.
+- **Borderless Authentic Sponsor Badge & Eye Icon Removal (`ProfilePage.jsx`)**:
+  - Replaced harsh bordered pill (`border border-slate-300`) with subtle, professional borderless background tint (`bg-slate-200/50 dark:bg-white/[0.08] text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium`).
+  - Swapped out generic AI Lucide sparkles for authentic tier SVG glyphs: `CookieIcon` (artisanal cacao cookie with chocolate morsels), `Coffee` cup, and `ShinyGemIcon` (faceted crystal).
+  - Eradicated tacky `Eye` icon from the badge.
+  - Fixed Pattern 17 (Responsive Branch Trapping): mounted `<BackerConsentModal>` across both `isLargeDisplay` (27" displays) and standard laptop layouts.
+- **Monochromatic Backer Recognition Ribbon Strip (`SupportPage.jsx`)**:
+  - Moved Backer Recognition settings directly into their natural context on the Sponsor Page (`/support` and `/sponsor`).
+  - Mounted a sleek, monochromatic ribbon strip above the Verified Backers Directory for active sponsors:
+    - Real-time display of active attribution mode (`Public Backers Wall`, `Anonymous Patron`, or `Private`).
+    - Direct `[Edit Recognition]` button opening `BackerConsentModal`.
+    - Live synchronization with `/api/sponsors/consent`, `localStorage`, and real-time directory re-fetching.
 - **Profile Header Spatial Equilibrium, Ghost Modal Eradication & Tier Identity Alignment (`ProfilePage.jsx`)**:
   - **Honest Industry Analysis & Anti-AI Slop**:
     - Eradicated clunky AI-slop literalism: "2 Cups of Coffee" is a funding metaphor, not a person's identity noun. Professional developer platforms (GitHub Sponsors, Patreon, Vercel) name tiers as dignified identity nouns: `Core Patron` (Diamond / `ShinyGemIcon`), `Supporter` (`Coffee` icon), `Backer` (`Sparkles` icon).
