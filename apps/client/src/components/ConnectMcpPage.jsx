@@ -670,30 +670,36 @@ export default function ConnectMcpPage({ onLaunchConsole, user: propUser, onAuth
   const agentRulesSnippet = `# CAVDAX Architecture Verification Gate Guardrails
 
 CRITICAL DIRECTIVE:
-You are operating in an architecture-verified repository protected by the CAVDAX MCP Gate.
-NEVER use native file-editing tools (e.g., Edit, Write, bash echo/sed) to modify source files directly.
-All codebase modifications MUST be routed through the CAVDAX MCP verification gate.
+You are operating in an architecture-verified repository governed by the CAVDAX MCP Gate.
+NEVER use native file-editing tools (e.g., Edit, Write, bash echo/sed) to bypass architectural checks.
+All protected codebase modifications MUST be routed through the CAVDAX MCP verification gate.
 
 EXECUTION WORKFLOW:
 1. Architectural Discovery & Situational Awareness:
-   - Call \`list_active_decisions\` to get a lightweight manifest of governing ADRs, statuses, and file paths.
-   - For detailed dependency links, call \`query_causal_graph\`.
+   - Call \`list_active_decisions\` to retrieve governing ADRs, decision statuses, and assigned file paths.
+   - Call \`query_causal_graph\` to inspect the multi-tier dependency subgraph.
 
-2. Refactoring & Blast Radius Analysis:
-   - Before modifying or superseding an existing decision, call \`explain_blast_radius\` with \`node_id\` to inspect directly dependent decisions and governed files at risk.
+2. Blast Radius & Downstream Risk Analysis:
+   - Call \`explain_blast_radius\` (or \`explain_architectural_impact\`) with \`node_id\` (e.g. DEC-102 or ADR-002) to verify all affected downstream decisions and governed files.
 
-3. Pre-Flight Intent Clearance:
-   - Call \`check_intent_clearance\` with your proposed \`decision_id\` and \`target_file\` before generating code.
-   - If clearance is APPROVED, proceed to enclosed execution.
+3. Multi-Agent Concurrency & Intent Clearance:
+   - Call \`check_intent_clearance\` with \`decision_id\`, \`target_file\`, and your \`agent_id\` before generating code.
+   - For multi-agent workflows, lease an exclusive lock via \`acquire_decision_lock\` (\`decision_id\`, \`agent_id\`) and release when finished via \`release_decision_lock\`.
 
 4. Enclosed Execution Gate:
-   - Execute file modifications strictly through the \`apply_code_change\` MCP tool passing \`decision_id\`, \`target_file\`, and \`patch\`.
+   - Apply modifications strictly through \`apply_code_change\`:
+     Required parameters:
+       • \`decision_id\`: Active Architecture Decision ID (e.g. "DEC-102")
+       • \`file_path\`: Relative target file path (e.g. "src/auth.js")
+       • \`code_payload\`: Full verified file content to write
+     Optional: \`agent_id\` (for lock lease), \`reasoning\` (technical rationale)
 
-5. Invalidation & Self-Correction:
+5. Invalidation & Act IV Revalidation:
    - If CAVDAX returns BLOCKED_DECISION_INVALIDATED or BLOCKED_SUPERSEDED_SOURCE:
      a. Do NOT attempt direct filesystem overrides.
-     b. Call \`revalidate_decision\` with the superseding ADR to refresh the dependency graph.
-     c. Refactor your code to align with the active architectural contract before re-requesting clearance.`;
+     b. Call \`revalidate_decision\` passing:
+        \`new_source_id\` (e.g. "ADR-002"), \`old_decision_id\` ("DEC-102"), \`new_decision_id\` ("DEC-103"), \`new_fact_id\` ("F-OAuth2"), and \`title\`.
+     c. Align code with the new architectural contract and re-request clearance.`;
 
 
 
@@ -1646,7 +1652,7 @@ EXECUTION WORKFLOW:
 
       {/* 4. Universal CLI Command Suite Bento with Container-Relative Slider Tracking */}
 
-      <section data-tour="mcp-guardrails" className="px-6 max-w-5xl mx-auto w-full mb-12">
+      <section id="mcp-cli-suite" data-tour="mcp-cli" className="px-6 max-w-5xl mx-auto w-full mb-12">
 
         <div className="neo-glass-card p-6 sm:p-8">
 
@@ -1773,7 +1779,7 @@ EXECUTION WORKFLOW:
 
       {/* 5. Agent Guardrails Rules File (.cursorrules / CLAUDE.md) */}
 
-      <section className="px-6 max-w-5xl mx-auto w-full mb-12">
+      <section id="mcp-guardrails" data-tour="mcp-guardrails" className="px-6 max-w-5xl mx-auto w-full mb-12">
 
         <div className="neo-glass-card p-6 sm:p-8">
 

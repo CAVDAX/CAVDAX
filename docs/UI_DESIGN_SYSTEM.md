@@ -9170,3 +9170,30 @@ Directory search inputs often lack visual affordances, render plain generic magn
    - Pressing `Escape` blurs the input.
 4. **One-Click Clear Button (`X`)**: Dynamically swaps the `/` keycap with an interactive `X` icon when `searchQuery.length > 0`, enabling instant query resets with haptic/click sound feedback.
 5. **Super-Ellipse Enclosure**: High-craft border (`border-slate-200/80 dark:border-white/10`) and subtle obsidian drop-shadow matching Gabriel Lamé $n=4.4$ curvature.
+
+
+---
+
+## 105. Verified Backer Directory Action Parity & Monochromatic Social Link Invariant
+
+### 105.1 Context & Problem Analysis
+In multi-tier backer directories (e.g. Core Patrons, 2 Cups of Coffee, Cookie Backers), cards often suffer from severe visual and functional asymmetry:
+1. Higher tiers receive full badges and links, while entry tiers (e.g. Cookie Backers) display only names and avatars with large hollow empty areas on the right.
+2. Backers who opted in and provided verified GitHub handles have their profile links omitted on lower tier cards.
+3. Social icon buttons lack visual unity when some cards render plain glyphs while others render arrows or text links.
+
+### 105.2 The Unified Backer Card Standard
+1. **Universal Dual-Glyph Action Button (`Github` + `ArrowUpRight`)**:
+   - Every backer card with a valid GitHub profile must feature a right-aligned monochromatic icon button:
+     - `<Github className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 group-hover/gh:scale-110" />`
+     - `<ArrowUpRight className="w-2.5 h-2.5 ml-0.5 opacity-60 group-hover/gh:opacity-100" />`
+   - Standardized touch target padding (`p-1.5` or `p-2` on larger cards) with subtle kinetic hover elevation (`scale-110`).
+2. **Defensive Metadata Sanitization (`getBackerGithubData`)**:
+   - Defensively extracts and cleans raw handles (`@handle` or `https://github.com/handle`).
+   - Strictly suppresses internal evaluation tokens (`evaluator-...`), test proxies (`community-backer`), and anonymous flags.
+   - Applies mandatory security attributes (`target="_blank" rel="noopener noreferrer"`) and URL encoding (`encodeURIComponent`).
+3. **Monochromatic Theme Integration**:
+   - Buttons utilize quiet monochromatic tones: `text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10`.
+   - Tooltip integration on every action button (`View @handle on GitHub`) providing immediate spatial context without layout jump.
+4. **Super-Ellipse Enclosure Parity**:
+   - Cards across all tiers maintain continuous curvature super-ellipses (`borderRadius: "24px"` for Core, `"20px"` for 2 Cups, `"16px"` for Cookie Backers).
