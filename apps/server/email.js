@@ -429,7 +429,7 @@ export async function sendSponsorThankYouEmail({
       </p>
       <div style="text-align: center; margin: 0 0 28px 0;">
         <a href="https://cavdax.sahnirmaan.live/sponsors" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-family: monospace; font-weight: 600; font-size: 13px; text-decoration: none; padding: 10px 24px; border-radius: 6px;">
-          View Backers Wall →
+          View Backer Sphere →
         </a>
       </div>
       <p style="font-size: 13px; line-height: 1.6; color: #71717A; margin: 0; border-top: 1px solid #27272A; padding-top: 16px;">
