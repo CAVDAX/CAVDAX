@@ -32,6 +32,7 @@ export default function ConfirmationDialog({
   requireMatch,
   confirmLabel = 'Confirm Action',
   severity = 'danger',
+  icon: CustomIcon
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -149,7 +150,7 @@ export default function ConfirmationDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="relative z-10 w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl"
+            className="relative z-10 w-full max-w-sm sm:max-w-md rounded-2xl bg-white dark:bg-[#0B0D11] border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl"
             style={{
               borderRadius: '24px', // Continuous Super-Ellipse optical curvature
             }}
@@ -162,29 +163,36 @@ export default function ConfirmationDialog({
                 onClose();
               }}
               disabled={isPending}
-              className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-white rounded-lg transition-colors cursor-pointer"
               aria-label="Cancel and close dialog"
             >
               <X className="w-4 h-4" />
             </button>
 
             {/* Header */}
-            <div className="flex items-start gap-3.5 mb-3.5">
+            <div className="flex items-start gap-3.5 mb-2">
               <div
-                className={`p-2.5 rounded-xl shrink-0 ${
-                  isDanger
-                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20'
-                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+                  CustomIcon || severity === 'neutral'
+                    ? 'bg-slate-100 dark:bg-white/[0.06] border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-slate-200'
+                    : isDanger
+                    ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
+                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
                 }`}
               >
-                {/* Clean Precision Icons (§1.9: No ShieldAlert) */}
-                {isDanger ? <AlertOctagon className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+                {CustomIcon ? (
+                  <CustomIcon className="w-4 h-4" />
+                ) : isDanger ? (
+                  <AlertOctagon className="w-4 h-4" />
+                ) : (
+                  <AlertTriangle className="w-4 h-4" />
+                )}
               </div>
-              <div className="pr-6">
-                <h2 id="confirm-dialog-title" className="text-base font-semibold text-slate-900 dark:text-white">
+              <div className="pr-6 min-w-0">
+                <h2 id="confirm-dialog-title" className="text-sm sm:text-base font-mono font-bold tracking-tight text-slate-950 dark:text-white truncate">
                   {title}
                 </h2>
-                <p id="confirm-dialog-desc" className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                <p id="confirm-dialog-desc" className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-sans text-balance">
                   {description}
                 </p>
               </div>
@@ -215,7 +223,7 @@ export default function ConfirmationDialog({
             )}
 
             {/* Action Buttons: Cancel is safely placed first in keyboard navigation */}
-            <div className="mt-6 flex items-center justify-end gap-3 pt-2">
+            <div className="mt-5 flex items-center justify-end gap-2.5 pt-1">
               <button
                 ref={cancelBtnRef}
                 type="button"
@@ -224,7 +232,7 @@ export default function ConfirmationDialog({
                   onClose();
                 }}
                 disabled={isPending}
-                className="px-4 py-2 text-xs font-medium rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-mono font-medium rounded-xl border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -233,12 +241,14 @@ export default function ConfirmationDialog({
                 type="button"
                 onClick={handleConfirmClick}
                 disabled={!canConfirm || isPending}
-                className={`px-4 py-2 text-xs font-medium rounded-xl transition-all flex items-center gap-1.5 ${
+                className={`px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-mono font-semibold rounded-xl transition-all flex items-center gap-1.5 ${
                   canConfirm && !isPending
                     ? isDanger
-                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-sm cursor-pointer'
-                      : 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm cursor-pointer'
-                    : 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed border border-transparent'
+                      ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer'
+                      : CustomIcon || severity === 'neutral'
+                      ? 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 shadow-xs cursor-pointer'
+                      : 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer'
+                    : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-transparent'
                 }`}
               >
                 {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

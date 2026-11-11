@@ -4561,9 +4561,13 @@ app.post('/api/billing/reset-evaluation-sponsor', (req, res) => {
  * GET /api/sponsors
  * Returns verified community backers and supporters with privacy invariants enforced.
  */
-app.get('/api/sponsors', (req, res) => {
+app.get(['/api/sponsors', '/api/billing/sponsors'], (req, res) => {
   const persistedSponsors = Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : [];
-  const effectivePersisted = globalHackathonMode ? persistedSponsors : persistedSponsors.filter(s => !s.is_evaluation);
+  const userLogin = req.session?.user?.login;
+  const isSessionEvalSponsor = req.session?.is_evaluation_sponsor;
+  const effectivePersisted = (globalHackathonMode || isSessionEvalSponsor)
+    ? persistedSponsors
+    : persistedSponsors.filter(s => !s.is_evaluation || (userLogin && s.github_handle === userLogin));
   const allSponsors = [...effectivePersisted];
   for (const seed of CANONICAL_SEED_SPONSORS) {
     if (!allSponsors.some(s => s.id === seed.id || (seed.github_handle && s.github_handle === seed.github_handle))) {

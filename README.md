@@ -1002,6 +1002,22 @@ CAVDAX/
 
 ---
 
+## Community Backers & 3D Supporter Galaxy
+
+CAVDAX provides a dedicated **Supporters & Backers Showcase Portal** (`/sponsors`) driven by an interactive **3D Revolving Fibonacci Supporter Galaxy**:
+
+* **Zero-WebGL Crash-Proof 3D Kinematics**: Projects a dynamic revolving Fibonacci image sphere using pure CSS 3D transforms (`preserve-3d`, `translate3d`, `scale`) with zero Three.js canvas overhead, eliminating browser context-loss crashes across mobile and desktop.
+* **1:1 Human Backer Invariant**: Strictly bans avatar cloning. When total active backers $N < 14$, discrete 0.4x scale celestial constellation waypoint nodes preserve spherical geometry without fabricating human identities.
+* **Tier-Proportional Node Sizing**:
+  * **Core Patron ($10)**: $1.6\times$ diameter ($64\text{px}$) with specular metallic underglow.
+  * **2 Cups ($4)**: $1.15\times$ diameter ($46\text{px}$).
+  * **Cookie ($2)**: $0.85\times$ diameter ($34\text{px}$).
+* **Tactile Search Architecture**: Monochromatic magnifying glass vector with optical reflection arc, $+12^\circ$ focus rotation, global `/` keyboard hotkey, and instant one-click `X` query reset.
+* **Portal-Mounted Spotlight Modal**: Clicking any backer node mounts a single-line inspect dialog via React Portal (`createPortal(..., document.body)`), featuring verified GitHub handles, quotes, and direct profile links.
+* **Privacy by Design**: Live directory automatically filters `private` contributors and sanitizes `anonymous` backers with masked identicons (`/api/sponsors`), ensuring mathematical symmetry without identity leakage.
+
+---
+
 ## Team & Attribution
 
 Architected with passion by the **CAVDAX Core Team**:

@@ -1663,6 +1663,7 @@ export default function App() {
             onOpenProfilePage={() => handleSelectTab('profile')}
             onOpenMcpPage={() => handleSelectTab('mcp')}
             isDarkTheme={isDarkTheme}
+            onToggleTheme={() => setIsDarkTheme((d) => !d)}
           />
         </SubsystemErrorBoundary>
       ) : activeTab === 'support' ? (
@@ -1681,6 +1682,8 @@ export default function App() {
         <SubsystemErrorBoundary name="Backers Wall & Sponsors">
           <SponsorsPage
             user={githubUser}
+            isDarkTheme={isDarkTheme}
+            onToggleTheme={() => setIsDarkTheme((d) => !d)}
             onNavigateToSupport={() => handleSelectTab('support')}
             onPrefetchTab={prefetchRoute}
           />

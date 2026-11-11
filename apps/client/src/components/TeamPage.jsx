@@ -6,12 +6,10 @@ import {
   ArrowUpRight, 
   Cpu, 
   Workflow, 
-  SlidersHorizontal,
   X,
   Code2,
   CheckCircle2,
-  Mail,
-  ExternalLink
+  Mail
 } from 'lucide-react';
 import CurvyArrow from './CurvyArrow';
 import ShimmerImage from './ui/ShimmerImage';
@@ -286,43 +284,34 @@ export default function TeamPage({ onLaunchConsole }) {
           </div>
         </div>
 
-        {/* 4. Inquiries & Support Strip */}
-        <div className="w-full max-w-xl mx-auto mt-10 mb-8 py-2.5 px-4 rounded-xl border border-slate-200/80 dark:border-white/10 bg-white/40 dark:bg-slate-950/40 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono shadow-xs">
+        {/* 4. Unified Technical Inquiries & Repository Architectural Strip */}
+        <div className="w-full max-w-2xl mx-auto mt-12 mb-4 py-3 px-4 sm:px-6 rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-slate-950/50 backdrop-blur-xl flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 text-xs font-mono shadow-xs">
+          {/* Left: Technical Inquiries / Support */}
           <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
             <Mail className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
-            <span>For technical inquiries or support:</span>
+            <span className="text-slate-500 dark:text-slate-400">Inquiries:</span>
+            <a
+              href="mailto:cavdax.dev@gmail.com"
+              className="inline-flex items-center gap-1 font-semibold text-slate-900 dark:text-white hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer group shrink-0"
+            >
+              <span>cavdax.dev@gmail.com</span>
+              <ArrowUpRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            </a>
           </div>
-          <a
-            href="mailto:cavdax.dev@gmail.com"
-            className="inline-flex items-center gap-1.5 font-semibold text-slate-900 dark:text-white hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer group shrink-0"
-          >
-            <span>cavdax.dev@gmail.com</span>
-            <ArrowUpRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-          </a>
-        </div>
 
-        {/* 5. Bottom Action CTA */}
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <button
-            onClick={() => {
-              playClick();
-              if (onLaunchConsole) onLaunchConsole();
-            }}
-            className="btn-primary group tactile-btn inline-flex items-center justify-center gap-2 text-xs"
-          >
-            <SlidersHorizontal size={14} />
-            <span>Launch Causal Verification Console</span>
-          </button>
-          
+          {/* Center Divider for Desktop */}
+          <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-white/10" />
+
+          {/* Right: Open-Source GitHub Repository */}
           <a
             href={TEAM_DETAILS.githubRepo}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-secondary group tactile-btn inline-flex items-center justify-center gap-2 text-xs"
+            className="inline-flex items-center gap-2 font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer group shrink-0"
           >
-            <Github size={14} />
-            <span>View GitHub Repository</span>
-            <ExternalLink size={12} className="opacity-60" />
+            <Github className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors shrink-0" />
+            <span>CAVDAX / CAVDAX</span>
+            <ArrowUpRight className="w-3 h-3 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
           </a>
         </div>
       </div>

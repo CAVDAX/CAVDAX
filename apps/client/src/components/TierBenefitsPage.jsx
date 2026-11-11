@@ -13,7 +13,9 @@ import {
   Building2,
   Terminal,
   Users,
-  Gem
+  Gem,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 
@@ -151,10 +153,24 @@ export default function TierBenefitsPage({
   onOpenProfilePage,
   onOpenMcpPage,
   onLaunchConsole,
-  isDarkTheme = true
+  isDarkTheme = true,
+  onToggleTheme
 }) {
   const [selectedTier, setSelectedTier] = useState(() => (tier === 'enterprise' ? 'enterprise' : (tier === 'pro' ? 'pro' : 'community')));
   const [isMutexHovered, setIsMutexHovered] = useState(false);
+  const [themeRotation, setThemeRotation] = useState(0);
+  const prevDarkThemeRef = useRef(isDarkTheme);
+  useEffect(() => {
+    if (prevDarkThemeRef.current !== isDarkTheme) {
+      setThemeRotation(prev => prev + 360);
+      prevDarkThemeRef.current = isDarkTheme;
+    }
+  }, [isDarkTheme]);
+
+  const handleToggleTheme = () => {
+    playClick();
+    if (onToggleTheme) onToggleTheme();
+  };
   const currentTierData = TIERS.find(t => t.id === selectedTier) || TIERS[1];
 
   // Client-mount state for pure root viewport Portal projection
@@ -406,6 +422,29 @@ export default function TierBenefitsPage({
                     })}
                   </div>
                 </LayoutGroup>
+
+                {/* Minimalist Divider */}
+                <div className="w-[1px] h-4 bg-slate-300 dark:bg-white/20 shrink-0" />
+
+                {/* Theme Toggle Button — Exact match to Header.jsx & SponsorsPage.jsx */}
+                <Tooltip content={isDarkTheme ? 'Switch to Light' : 'Switch to Dark'} position="bottom">
+                  <button
+                    type="button"
+                    onClick={handleToggleTheme}
+                    className="w-8 h-8 rounded-full flex items-center justify-center cursor-pointer border border-slate-200/80 dark:border-white/20 bg-slate-100/80 dark:bg-white/[0.08] hover:bg-slate-200/80 dark:hover:bg-white/15 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-all shadow-2xs backdrop-blur-md focus:outline-none group shrink-0"
+                    aria-label="Toggle theme"
+                  >
+                    <motion.div
+                      animate={{ rotate: themeRotation }}
+                      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                      className="flex items-center justify-center pointer-events-none"
+                    >
+                      {isDarkTheme
+                        ? <Sun className="w-3.5 h-3.5 text-current theme-toggle-icon" />
+                        : <Moon className="w-3.5 h-3.5 text-current theme-toggle-icon" />}
+                    </motion.div>
+                  </button>
+                </Tooltip>
               </nav>
             </motion.div>
           </div>
@@ -484,6 +523,29 @@ export default function TierBenefitsPage({
 
                 {/* Minimalist Divider */}
                 <div className="w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                {/* Theme Toggle Button — Sidebar Dock */}
+                <Tooltip content={isDarkTheme ? 'Switch to Light' : 'Switch to Dark'} position="left">
+                  <button
+                    type="button"
+                    onClick={handleToggleTheme}
+                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    aria-label="Toggle theme"
+                  >
+                    <motion.div
+                      animate={{ rotate: themeRotation }}
+                      transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+                      className="flex items-center justify-center pointer-events-none"
+                    >
+                      {isDarkTheme
+                        ? <Sun className="w-4 h-4 text-current theme-toggle-icon" />
+                        : <Moon className="w-4 h-4 text-current theme-toggle-icon" />}
+                    </motion.div>
+                  </button>
+                </Tooltip>
+
+                {/* Minimalist Divider */}
+                <div className="w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+
 
                 {/* Smooth Return to Top Cue */}
                 <Tooltip content="Return to Top" position="left">
