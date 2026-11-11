@@ -698,13 +698,10 @@ export default function TierBenefitsPage({
         <div className="absolute inset-0 backdrop-blur-md bg-slate-50/40 dark:backdrop-blur-[2.5px] dark:bg-slate-950/20 pointer-events-none z-1" />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-transparent to-transparent dark:from-slate-950 dark:via-transparent dark:to-transparent pointer-events-none z-1" />
 
-        {/* Center-Aligned Monumental Display Typography with Localized Optical Vignette */}
-        <div className="relative z-10 max-w-4xl mx-auto px-6 text-center flex flex-col items-center">
-          {/* Localized soft radial vignette: active strictly in dark mode */}
-          <div className="absolute inset-0 -inset-x-12 -inset-y-16 bg-[radial-gradient(ellipse_at_center,rgba(2,6,23,0.65)_0%,rgba(2,6,23,0.35)_45%,transparent_75%)] dark:block hidden pointer-events-none -z-1 rounded-3xl" />
-
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-slate-950 dark:text-white tracking-tight font-mono dark:drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]">
-            Tier Plans, Capabilities &amp; Benefits
+        {/* Center-Aligned Monumental Display Typography with Spacious Contour Atmosphere */}
+        <div className="relative z-10 max-w-5xl mx-auto px-6 sm:px-8 text-center flex flex-col items-center py-6">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-950 dark:text-white font-mono tracking-wide leading-[1.26] sm:leading-[1.3] lg:leading-[1.32] dark:[text-shadow:_0_0_8px_rgba(2,6,23,0.75),_0_2px_4px_rgba(0,0,0,0.85)] dark:drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+            Tier Plans, Capabilities<br className="hidden sm:inline" /> &amp; Benefits
           </h1>
         </div>
 

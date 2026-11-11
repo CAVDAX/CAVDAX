@@ -422,7 +422,6 @@ export default function SphereImageGrid({
         onMouseEnter={() => setHoveredIndex(index)}
         onMouseLeave={() => setHoveredIndex(null)}
         onClick={() => setSelectedImage(image)}
-        title={image.title || image.alt}
       >
         <div className={`relative w-full h-full rounded-full overflow-hidden shadow-md border group-hover:scale-105 transition-all bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-mono font-bold text-slate-700 dark:text-slate-200 select-none ${ringClass}`} style={{ fontSize: `${Math.max(10, imageSize * 0.35)}px` }}>
           <ShimmerImage
@@ -439,6 +438,50 @@ export default function SphereImageGrid({
       </div>
     );
   }, [worldPositions, baseImageSize, containerSize, hoveredIndex]);
+
+  const renderCustomTooltip = () => {
+    if (typeof document === 'undefined' || hoveredIndex === null || isDragging || selectedImage) return null;
+    const activeImage = images[hoveredIndex];
+    const activePos = worldPositions[hoveredIndex];
+    if (!activeImage || !activePos || !containerRef.current) return null;
+
+    const rect = containerRef.current.getBoundingClientRect();
+    const imageSize = baseImageSize * (activeImage.scaleMultiplier || 1) * activePos.scale;
+    const screenX = rect.left + containerSize / 2 + activePos.x;
+    const screenY = rect.top + containerSize / 2 + activePos.y - imageSize / 2 - 8;
+
+    const PADDING = 12;
+    const clampedX = Math.max(PADDING + 40, Math.min(screenX, window.innerWidth - PADDING - 40));
+    const clampedY = Math.max(PADDING + 20, screenY);
+
+    const titleText = activeImage.title || activeImage.alt || 'Backer';
+    const subtitleText = activeImage.subtitle;
+
+    return createPortal(
+      <div
+        style={{
+          position: 'fixed',
+          top: `${clampedY}px`,
+          left: `${clampedX}px`,
+          transform: 'translate(-50%, -100%)',
+          zIndex: 99999,
+          pointerEvents: 'none',
+          animation: 'tooltipFadeIn 110ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
+        }}
+        className="select-none pointer-events-none"
+      >
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#0B0D11] text-slate-100 text-xs font-mono font-medium tracking-tight border border-[#1E293B] shadow-2xl backdrop-blur-md whitespace-nowrap">
+          <span className="font-semibold text-slate-100">{titleText}</span>
+          {subtitleText && (
+            <span className="text-[10px] text-slate-400 font-mono font-normal">
+              • {subtitleText}
+            </span>
+          )}
+        </div>
+      </div>,
+      document.body
+    );
+  };
 
   const renderSpotlightModal = () => {
     if (typeof document === 'undefined') return null;
@@ -551,6 +594,7 @@ export default function SphereImageGrid({
         </div>
       </div>
 
+      {renderCustomTooltip()}
       {renderSpotlightModal()}
     </div>
   );

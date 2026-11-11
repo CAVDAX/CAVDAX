@@ -223,7 +223,13 @@ export function getActiveDevSession() {
       sessionStorage.removeItem(SESSION_VAULT_KEY);
       return null;
     }
-    return session;
+    const login = session.login || session.user || 'suneetchugh-dev';
+    return {
+      ...session,
+      login,
+      user: login,
+      name: session.name || (login === 'suneetchugh-dev' ? 'Suneet Chugh' : login)
+    };
   } catch {
     return null;
   }
@@ -266,9 +272,13 @@ export async function verifyDevPasskey(enteredKey, user) {
   }
 
   if (isValid) {
+    const login = user?.login || 'suneetchugh-dev';
+    const name = user?.name || (login === 'suneetchugh-dev' ? 'Suneet Chugh' : login);
     const sessionPayload = {
       authenticatedAt: Date.now(),
-      user: user?.login || 'authorized_dev',
+      user: login,
+      login: login,
+      name: name,
       role: 'CORE_DEV',
       token: `cavdax_token_${Math.random().toString(36).slice(2)}`,
     };

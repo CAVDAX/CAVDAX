@@ -250,7 +250,7 @@ const TIERS = [
     inrSub:   'approx $2 USD',
     paise:    16900,
     desc:     'Fueling daily causal engine dev.',
-    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Contributor Badge'],
+    perks:    ['Verified Backer Sphere', 'In-App Backer profile halo', 'Community Contributor Badge'],
     accent:   'bronze',
     popular:  false,
     icon:     CookieIcon,
@@ -280,7 +280,7 @@ const TIERS = [
     inrSub:   'approx $10 USD',
     paise:    84900,
     desc:     'Funds benchmark graph clusters.',
-    perks:    ['Featured 3D Sphere Node', 'Permanent Core Patron Badge', 'Personal Team Acknowledgment'],
+    perks:    ['Featured 3D Sphere Node', 'Permanent Core Patron Badge', 'Personal Acknowledgment'],
     accent:   'diamond',
     popular:  false,
     icon:     ShinyGemIcon,
@@ -603,7 +603,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
           localStorage.setItem('cavdax_backer_quote', consentData.quote || consentData.backer_message || '');
         }
       } catch {}
-      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
+      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Sphere');
       showToast(true, `Backer preference updated to ${visLabel}.`);
     } catch (err) {
       console.warn('[SupportPage] Failed to save consent:', err);
@@ -655,8 +655,17 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
 
   const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
   const [pendingDowngradeTier, setPendingDowngradeTier] = useState(null);
+  const [isOptOutModalOpen, setIsOptOutModalOpen] = useState(false);
+  const [isOptOutHovered, setIsOptOutHovered] = useState(false);
+  const [isOptedOut, setIsOptedOut] = useState(() => {
+    try {
+      return localStorage.getItem('cavdax_sponsor_opt_out') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
-  const currentActiveTierId = activeEvaluationTier || matchedSponsor?.tier_id || (() => {
+  const currentActiveTierId = isOptedOut ? null : (activeEvaluationTier || matchedSponsor?.tier_id || (() => {
     try {
       const stored = localStorage.getItem('cavdax_sponsor_tier');
       if (!stored) return null;
@@ -666,25 +675,27 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
       if (lower.includes('cookie')) return 1;
     } catch {}
     return null;
-  })();
+  })());
 
   const handleSelectTier = (tier) => {
     playClick();
 
-    // 1. If currently on a higher sponsor tier, ALWAYS open ConfirmationDialog first (exact same order as ProfilePage.jsx)
+    // 1. If clicking currently active tier, open the Opt Out confirmation dialog
+    if (currentActiveTierId && tier.id === currentActiveTierId) {
+      setIsOptOutModalOpen(true);
+      return;
+    }
+
+    // 2. If currently on a higher sponsor tier, ALWAYS open ConfirmationDialog first (exact same order as ProfilePage.jsx)
     if (currentActiveTierId && tier.id < currentActiveTierId) {
       setPendingDowngradeTier(tier);
       setIsDowngradeModalOpen(true);
       return;
     }
 
-    // 2. If clicking currently active tier in evaluation mode
-    if (currentActiveTierId && tier.id === currentActiveTierId) {
-      if (hasEvaluationPass || activeEvaluationTier) {
-        handleEvaluationSponsor(tier);
-      }
-      return;
-    }
+    // Reset opt-out flag when intentionally selecting a tier
+    setIsOptedOut(false);
+    try { localStorage.removeItem('cavdax_sponsor_opt_out'); } catch {}
 
     // 3. Evaluation mode / Dev pass bypass (avoids redirecting to external OAuth when testing)
     if (hasEvaluationPass || activeEvaluationTier || (typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true')) {
@@ -702,11 +713,36 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
     handleSponsor(tier);
   };
 
+  const executeOptOut = async () => {
+    setIsOptOutModalOpen(false);
+    try {
+      await fetch('/api/billing/reset-evaluation-sponsor', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch {}
+
+    setIsOptedOut(true);
+    setActiveEvaluationTier(null);
+    try {
+      localStorage.setItem('cavdax_sponsor_opt_out', 'true');
+      localStorage.removeItem('cavdax_is_sponsor');
+      localStorage.removeItem('cavdax_sponsor_tier');
+      localStorage.removeItem('cavdax_evaluation_sponsor_tier');
+      localStorage.removeItem('cavdax_sponsor_is_evaluation');
+      window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: null }));
+    } catch {}
+    showToast(true, 'Sponsorship paused. Returned to standard visitor mode.');
+    fetchSponsors();
+  };
+
   const executeSponsorDowngrade = async () => {
     if (!pendingDowngradeTier) return;
     const tier = pendingDowngradeTier;
     setIsDowngradeModalOpen(false);
     setPendingDowngradeTier(null);
+    setIsOptedOut(false);
+    try { localStorage.removeItem('cavdax_sponsor_opt_out'); } catch {}
 
     const currUser = user || getStoredUser() || getActiveDevSession();
     if (hasEvaluationPass || activeEvaluationTier || !currUser) {
@@ -837,28 +873,10 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
     playClick();
     setEvalLoadingTier(tier.id);
 
-    // If this tier is already active, toggle it OFF (reset back to standard visitor)
-    if (activeEvaluationTier === tier.id) {
-      try {
-        await fetch('/api/billing/reset-evaluation-sponsor', {
-          method: 'POST',
-          credentials: 'include'
-        });
-        setActiveEvaluationTier(null);
-        try {
-          localStorage.removeItem('cavdax_is_sponsor');
-          localStorage.removeItem('cavdax_sponsor_tier');
-          localStorage.removeItem('cavdax_evaluation_sponsor_tier');
-          localStorage.removeItem('cavdax_sponsor_is_evaluation');
-          window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: null }));
-        } catch {}
-        showToast(true, 'Reset sponsor status back to standard.');
-        fetchSponsors();
-      } catch (err) {
-        showToast(false, `Could not reset evaluation tier: ${err.message}`);
-      } finally {
-        setEvalLoadingTier(null);
-      }
+    // If this tier is already active, prompt opt-out confirmation dialog
+    if (activeEvaluationTier === tier.id || currentActiveTierId === tier.id) {
+      setEvalLoadingTier(null);
+      setIsOptOutModalOpen(true);
       return;
     }
 
@@ -899,6 +917,19 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         localStorage.setItem('cavdax_sponsor_tier', data.sponsor_tier || tier.tierName);
         localStorage.setItem('cavdax_evaluation_sponsor_tier', String(tier.id));
         localStorage.setItem('cavdax_sponsor_is_evaluation', 'true');
+        if (tier.id === 3 || tier.tierName.toLowerCase().includes('core')) {
+          localStorage.setItem('cavdax_has_core_patron', 'true');
+          localStorage.setItem('cavdax_core_patron_cohort', '2026');
+          localStorage.setItem('cavdax_sponsor_is_active', 'true');
+        } else {
+          // If downgrading to 2 Cups or Cookie, preserve lifetime Core Patron cohort if already earned
+          const hadCore = localStorage.getItem('cavdax_has_core_patron') === 'true' || activeUser?.login === 'suneetchugh-dev';
+          if (hadCore) {
+            localStorage.setItem('cavdax_has_core_patron', 'true');
+            localStorage.setItem('cavdax_core_patron_cohort', '2026');
+            localStorage.setItem('cavdax_sponsor_is_active', 'false');
+          }
+        }
         window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: data.backer }));
       } catch {}
 
@@ -1102,12 +1133,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 onTouchStart={handlePrefetchSponsors}
                 onMouseLeave={() => setIsExploreHovered(false)}
                 className="group flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/80 dark:hover:bg-white/10 text-xs font-mono text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-                title="Open dedicated community backers wall with 3D supporter galaxy"
+                title="Open dedicated community backer sphere with 3D supporter galaxy"
               >
                 <span>{sponsors.length} verified backers</span>
                 <span className="opacity-30">•</span>
                 <span className="font-semibold text-slate-900 dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)] transition-all">
-                  Explore Wall
+                  Explore Sphere
                 </span>
                 <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 text-slate-500 group-hover:text-slate-950 dark:text-slate-400 dark:group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
               </button>
@@ -1296,6 +1327,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                   onMouseEnter={() => setHoveredTier(tier.id)}
                   onMouseLeave={() => setHoveredTier(null)}
                   disabled={loadingTier !== null || evalLoadingTier !== null}
+                  title={isCurrentEvalTier ? 'Active sponsorship tier • Click to opt out or switch category' : undefined}
                   className={`relative overflow-hidden w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold cursor-pointer select-none transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
                     isCurrentEvalTier
                       ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 border-transparent shadow-xs'
@@ -1345,8 +1377,10 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                       <><Loader2 className="w-3.5 h-3.5 animate-spin" />Processing...</>
                     ) : isCurrentEvalTier ? (
                       <><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Active Sponsor Tier</>
-                    ) : (hasEvaluationPass || Boolean(currentActiveTierId)) ? (
+                    ) : currentActiveTierId ? (
                       <><TierIcon className="w-3 h-3 shrink-0" />Switch to {tier.tierName}</>
+                    ) : hasEvaluationPass ? (
+                      <><TierIcon className="w-3 h-3 shrink-0" />Activate {tier.tierName} (Dev)</>
                     ) : !activeUser ? (
                       <><Lock className="w-3 h-3 shrink-0" />Sign In to Sponsor</>
                     ) : (
@@ -1732,7 +1766,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 ? 'Private (Do Not List)'
                 : currentVisibility === 'anonymous'
                 ? 'Anonymous Patron'
-                : 'Public Backers Wall'}
+                : 'Public Backer Sphere'}
             </span>
             {currentVisibility === 'public' && activeUser?.login && (
               <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 hidden md:inline truncate">
@@ -1740,18 +1774,58 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
               </span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={handleOpenConsentPreferences}
-            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white bg-white hover:bg-slate-50 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-300/80 dark:border-white/10 shadow-2xs transition-all cursor-pointer shrink-0"
-          >
-            <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
-            <span>Edit Recognition</span>
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <button
+              type="button"
+              onClick={handleOpenConsentPreferences}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white bg-white hover:bg-slate-50 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-300/80 dark:border-white/10 shadow-2xs transition-all cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+              <span>Edit Recognition</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                playClick();
+                setIsOptOutModalOpen(true);
+              }}
+              onMouseEnter={() => setIsOptOutHovered(true)}
+              onMouseLeave={() => setIsOptOutHovered(false)}
+              className="relative overflow-hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-mono font-medium text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 border border-transparent transition-all cursor-pointer select-none"
+              title="Pause active sponsorship and return to standard visitor mode"
+            >
+              {/* Watery fluid wave fill layer matching sponsor button fill */}
+              <div
+                aria-hidden="true"
+                style={{
+                  transform:  isOptOutHovered ? 'translateY(0%)' : 'translateY(105%)',
+                  opacity:    isOptOutHovered ? 1 : 0,
+                  transition: isOptOutHovered
+                    ? 'transform 900ms cubic-bezier(0.2, 0.9, 0.3, 1), opacity 200ms ease-out'
+                    : 'opacity 250ms ease-out, transform 0s 250ms'
+                }}
+                className="absolute left-[-15%] right-[-15%] bottom-0 h-[260%] flex flex-col pointer-events-none z-0"
+              >
+                <svg
+                  viewBox="0 0 320 48"
+                  preserveAspectRatio="none"
+                  className="w-full h-4 shrink-0 fill-current block text-rose-500/20 dark:text-rose-500/25"
+                >
+                  <path d="M 0 24 Q 40 8, 80 20 T 160 15 T 240 22 T 320 12 L 320 48 L 0 48 Z" />
+                </svg>
+                <div className="flex-1 w-full bg-rose-500/15 dark:bg-rose-500/25" />
+              </div>
+
+              <span className="relative z-10 flex items-center gap-1">
+                <ArrowDownLeft className="w-3 h-3 shrink-0" />
+                <span>Opt Out</span>
+              </span>
+            </button>
+          </div>
         </div>
       )}
 
-      {/* ── 4. Verified Backers Wall ── */}
+      {/* ── 4. Verified Backers Sphere ── */}
       <section className="mb-10 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-white/15 bg-slate-900/[0.02] dark:bg-white/[0.02]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/60 dark:border-white/10">
           <div className="flex items-center gap-3">
@@ -1924,6 +1998,22 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
           <span>{toast.text}</span>
         </div>
       )}
+      {/* ── Opt Out of Sponsorship Confirmation Dialog ── */}
+      <ConfirmationDialog
+        isOpen={isOptOutModalOpen}
+        onClose={() => setIsOptOutModalOpen(false)}
+        onConfirm={executeOptOut}
+        title="Opt Out of Sponsorship?"
+        description={[
+          'Pauses active sponsorship perks and in-app profile halo.',
+          'Returns your account to standard visitor mode.'
+        ]}
+        confirmLabel="Confirm Opt Out"
+        severity="neutral"
+        icon={ArrowDownLeft}
+        confirmIcon={ArrowDownLeft}
+      />
+
       {/* ── Lower Sponsor Category Switch Confirmation Dialog ── */}
       <ConfirmationDialog
         isOpen={isDowngradeModalOpen}

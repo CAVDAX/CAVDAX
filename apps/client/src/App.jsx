@@ -1685,7 +1685,7 @@ export default function App() {
         </SubsystemErrorBoundary>
       ) : activeTab === 'sponsors' ? (
         /* Dedicated Community Backers & Sponsors Showcase Page */
-        <SubsystemErrorBoundary name="Backers Wall & Sponsors">
+        <SubsystemErrorBoundary name="Backer Sphere & Sponsors">
           <SponsorsPage
             user={githubUser}
             isDarkTheme={isDarkTheme}
