@@ -95,9 +95,12 @@ export default function BackerConsentModal({
     setIsPending(true);
     try {
       const payload = {
+        backer_id: backer?.id || backer?.sponsorId,
         sponsorId: backer?.id || backer?.sponsorId,
         visibility: finalVisibility,
+        display_name: displayName.trim() || backer?.name || 'Anonymous Patron',
         displayName: displayName.trim() || backer?.name || 'Anonymous Patron',
+        backer_message: quote.trim().slice(0, 60),
         quote: quote.trim().slice(0, 60),
       };
 

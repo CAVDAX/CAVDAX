@@ -1,3 +1,24 @@
+function ShinyGemIcon({ className = 'w-3.5 h-3.5' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M6 3h12l4 6-10 12L2 9z" />
+      <path d="M11 3v6" />
+      <path d="M13 3v6" />
+      <path d="M2 9h20" />
+      <path d="m10 9 2 12 2-12" />
+    </svg>
+  );
+}
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
@@ -11,6 +32,7 @@ import ShimmerImage from './ui/ShimmerImage';
 import DevPatLoginModal from './DevPatLoginModal';
 import Tooltip from './Tooltip';
 import ConfirmationDialog from './ConfirmationDialog';
+import BackerConsentModal from './BackerConsentModal';
 
 
 function getStoredUser() {
@@ -306,6 +328,7 @@ export default function ProfilePage({
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [isGithubHovered, setIsGithubHovered] = useState(false);
   const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isRotateConfirmOpen, setIsRotateConfirmOpen] = useState(false);
   const [isCorporateDomainModalOpen, setIsCorporateDomainModalOpen] = useState(false);
@@ -722,7 +745,7 @@ export default function ProfilePage({
 
   const [isSponsor, setIsSponsor] = useState(() => {
     try {
-      return localStorage.getItem('cavdax_is_sponsor') === 'true';
+      return localStorage.getItem('cavdax_is_sponsor') === 'true' || Boolean(user?.is_sponsor) || Boolean(localStorage.getItem('cavdax_sponsor_tier'));
     } catch {
       return false;
     }
@@ -957,6 +980,28 @@ export default function ProfilePage({
     }
   };
 
+    const handleSaveBackerConsent = async (consentData) => {
+    try {
+      const res = await fetch('/api/sponsors/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(consentData)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(data?.message || 'Failed to update recognition preference.');
+        return;
+      }
+      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
+      showToast(`Recognition preference updated to ${visLabel}.`);
+      window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: data.backer }));
+    } catch (err) {
+      console.warn('[ProfilePage] Failed to save consent:', err);
+      showToast('Network error saving preferences.');
+    }
+  };
+
   const handleLogout = async () => {
     playClick();
     try {
@@ -1134,6 +1179,23 @@ export default function ProfilePage({
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
             {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
           </p>
+          {isSponsor && (
+            <div className="mt-2 flex items-center justify-center gap-2">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-2xs">
+                <ShinyGemIcon className="w-2.5 h-2.5 text-slate-800 dark:text-slate-200" />
+                <span>{sponsorTierLabel || 'Core Supporter'}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setIsConsentModalOpen(true)}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                title="Edit recognition preference (Public, Anonymous, or Private)"
+              >
+                <Eye className="w-2.5 h-2.5" />
+                <span>Recognition Preferences</span>
+              </button>
+            </div>
+          )}
 
           
   
@@ -2205,6 +2267,23 @@ export default function ProfilePage({
         <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
           {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
         </p>
+        {isSponsor && (
+          <div className="mt-1.5 flex items-center justify-center gap-2">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold border border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-2xs">
+              <ShinyGemIcon className="w-2 h-2 text-slate-800 dark:text-slate-200" />
+              <span>{sponsorTierLabel || 'Core Supporter'}</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setIsConsentModalOpen(true)}
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
+              title="Edit recognition preference (Public, Anonymous, or Private)"
+            >
+              <Eye className="w-2 h-2" />
+              <span>Recognition</span>
+            </button>
+          </div>
+        )}
 
         
 
