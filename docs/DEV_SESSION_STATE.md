@@ -10,6 +10,79 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Eradication of Hero Background Mask & Spacious Typographic Breathing Room (`TierBenefitsPage.jsx`)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Any background mask div (whether wide or tight) introduced an artificial geometric boundary into the fluid Lightfall atmospheric tunnel.
+    - Furthermore, `tracking-tight` on monospace typography compressed characters together with negative letter-spacing (`-1.8px`), while default line-height (`line-height: 1`) caused 3 lines of 72px text to collide vertically with zero daylight between descenders and ascenders.
+  - **The High-Craft Architectural Resolution**:
+    - **Completely Eradicated Background Mask `div`**: Lightfall background flows seamlessly with zero artificial rectangles, ellipses, or haze patches.
+    - **Pure Glyph-Contour Silhouette & Filter Blur**: Relies strictly on multi-layer glyph text shadow and filter drop-shadow (`dark:[text-shadow:_0_0_8px_rgba(2,6,23,0.75),_0_2px_4px_rgba(0,0,0,0.85)] dark:drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]`) hugging character strokes.
+    - **Spacious Typographic Architecture**:
+      - Replaced cramped `tracking-tight` with relaxed `tracking-wide`.
+      - Expanded line-height from default `1.0` to generous `leading-[1.26] sm:leading-[1.3] lg:leading-[1.32]` (adding ~20px of elegant vertical daylight between lines).
+      - Structured intentional word wrapping (`Tier Plans, Capabilities<br class="hidden sm:inline" /> & Benefits`) across a generous `max-w-5xl` container with `py-6` vertical padding.
+  - **Empirical Visual Audit**:
+    - Captured `proof-tier-spacious-hero-dark.png` and `proof-tier-spacious-hero-light.png`.
+- **Tight Localized Text Occlusion on Tier Benefits Hero (`TierBenefitsPage.jsx`)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Previously, a massive radial vignette (`-inset-x-12 -inset-y-16 bg-[radial-gradient(ellipse_at_center,...)]`) was placed inside the `max-w-4xl` (896px) heading container. This created an expansive ~1,000px wide dark muddy oval blob across the background behind "Tier Plans, Capabilities & Benefits".
+  - **The High-Craft Architectural Resolution**:
+    - Replaced the wide container vignette with tight text-hugging occlusion: `max-w-fit mx-auto` with a restrained `-inset-x-4 -inset-y-2` localized gradient (`rgba(2,6,23,0.5)_0%,rgba(2,6,23,0.18)_55%,transparent_85%`).
+    - Added high-contrast multi-layer dark text-shadow directly to the `h1` glyphs: `dark:[text-shadow:_0_0_16px_rgba(2,6,23,0.95),_0_2px_8px_rgba(0,0,0,0.9)] dark:drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]`.
+    - Result: Crisp, high-contrast typography against Lightfall background streaks without any muddy smudge bleeding into the surrounding viewport.
+  - **Empirical Visual Audit**:
+    - Captured `proof-tier-heading-tight-dark.png`, `proof-tier-benefits-viewport-dark.png`, and `proof-tier-heading-tight-light.png`.
+- **Custom Obsidian Portal Tooltip in 3D Backer Sphere (`SphereImageGrid.jsx` & `SponsorsPage.jsx` Navbar Declutter)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Eradicated native unstyled browser `title` tooltip popups from 3D Fibonacci sphere backer nodes in favor of a portal-mounted obsidian (`#0B0D11`) tooltip at `z-[99999]` with real-time momentum kinematic tracking, viewport boundary clamping, and sub-tier attribution (`• Core Patron ($10)`).
+    - Removed the redundant duplicate `Become a Backer ↗` button on `/sponsors` navbar that routed to the same support view, restoring Dieter Rams minimalism with `[← Back to Support]` on the left and kinetic theme lamp toggle on the right.
+  - **Empirical Visual Audit**:
+    - Captured `proof-sponsors-clean-navbar-dark.png`, `proof-sponsors-clean-navbar-light.png`, `proof-sphere-custom-tooltip-dark.png`, and `proof-sphere-custom-tooltip-light.png`.
+- **Enterprise Upgrade: Suneet-Master-Skill-Creator with 4-Agent Research Swarm & The 10 Deadly Sins**:
+  - Refactored `Suneet-Master-Skill-Creator` to staff-engineer professional standards, transforming it from a static template into an autonomous multi-agent skill architecture engine.
+  - **The 4-Agent Coordinated Research Swarm**:
+    1. *Subagent Alpha (Forensic Code Archaeologist)*: Primary source investigator extracting verified ASTs, formulas, CSS classes, and git commit history.
+    2. *Subagent Beta (Adversarial Edge Prober / Devil's Advocate)*: Boundary attack specialist discovering negative constraints, failure modes, and compiling the Slop Matrix.
+    3. *Subagent Gamma (Lead Skill Synthesizer)*: Prompt architect enforcing the Suneet Specification Standard and deterministic execution state machines.
+    4. *Subagent Delta (Verification Harness Architect)*: Testing engineer writing standalone headless Chromium/Edge verification scripts (`scripts/audit-<skill>.mjs`).
+  - **Codified The 10 Deadly Sins of AI Skill Authoring**:
+    - Eradicated vague advisory prose, unscoped keyword triggering, context window bloat, missing anti-examples, incomplete stubs, and platform siloing.
+  - **Universal Global Synchronization**:
+    - Automatically compiled and deployed across all 8 host AI coding agents: `.gemini`, `.claude`, `.codex`, `.cursor`, `.agents`, `.cline`, `.roo`, and `.opencode`.
+- **Elimination of Clunky Underline Opt-Out Link & Backer Ribbon Relocation (`SupportPage.jsx`)**:
+  - **Adversarial Forensic Critique (/devils-advocate & /Suneet-Perfect-AI-Slop-Remover)**:
+    - Placing a raw browser-underlined text link (`className="... underline ..."`) directly below the primary action button violated Slop Pattern 9 (Raw Browser Text Underlines) and broke vertical rhythm across the 3 sibling tier cards.
+    - Sibling cards without active subscriptions had clean footers, while the active card had an awkward hanging 24px bottom row that looked amateurish and misaligned with enterprise pricing grids (Stripe, Linear, GitHub Sponsors).
+    - Furthermore, `Personal Team Acknowledgment` in the perks list truncated awkwardly into `Personal Team Acknowledgme...` due to narrow card width and strict `whitespace-nowrap`.
+  - **The High-Craft Architectural Resolution**:
+    1. *Eradicated the Hanging Link*: Completely removed the awkward text link from under the tier card CTA button, restoring clean baseline symmetry across all 3 cards in the grid.
+    2. *Action Gating on Active Button*: The primary button remains solid `[ ✓ Active Sponsor Tier ]` with an explicit `title` tooltip (`"Active sponsorship tier • Click to opt out or switch category"`). Clicking it safely triggers the `ConfirmationDialog` to opt out.
+    3. *Dedicated Backer Management Ribbon Integration*: Moved the secondary opt-out action into the dedicated **Monochromatic Backer Recognition Preferences Ribbon Strip** located immediately below the pricing grid. Sits alongside `[ SlidersHorizontal Edit Recognition ]` as a discrete, monochromatic action button: `[ ArrowDownLeft Opt Out ]` with:
+       - **Zero Outline by Default**: Clean `border border-transparent` (no box or outline around the text in resting state).
+       - **Default Rose Colorway**: `text-rose-600 dark:text-rose-400 font-mono font-medium`.
+       - **Watery Fluid Wave Fill Layer on Hover**: Incorporates the exact SVG wave crest (`viewBox="0 0 320 48"`) and rising cubic-bezier liquid body (`cubic-bezier(0.2, 0.9, 0.3, 1)`) matching the sponsor button fills, with `z-10` layered text and icon.
+    4. *Anti-Truncation Perk Copy*: Refined `'Personal Team Acknowledgment'` to `'Personal Acknowledgment'`, fitting comfortably within card margins with zero ellipsis clipping.
+  - **Headless Visual Audits Verified**:
+    - Captured `audit-clean-tier-cards-grid-dark.png`, `audit-clean-core-card-dark.png`, `audit-clean-core-card-light.png`, `audit-clean-backer-ribbon-dark.png`, and `audit-clean-backer-ribbon-light.png`.
+    - Zero console errors, 0 build warnings, 100% responsive equilibrium.
+- **Permanent Core Patron Badge Preservation Across Tier Switches (`ProfilePage.jsx`, `SupportPage.jsx`, `apps/server/index.js`)**:
+  - **Adversarial Forensic Discovery**:
+    - Discovered that when authorized developers (e.g. `suneetchugh-dev`) or founding Core Patrons switched tiers via dev passes or downgraded to `2 Cups Sponsor` / `Cookie Backer`, `sponsorTierLabel` was overwritten with the lower tier name. `getSponsorBadgeInfo` inspected only the active label without checking lifetime Core Patron entitlement, resulting in the Core Patron badge being replaced by `Supporter` or `Cookie Backer`.
+    - Furthermore, in fresh local sessions without GitHub OAuth, `ProfilePage` did not pass the dev session identity to `/api/user/quota`, causing `quotaData.is_sponsor` to evaluate to false.
+  - **The Permanent Core Patron Invariant**:
+    - Once a contributor earns Core Patron status (or is a founding Core Patron like `suneetchugh-dev`), their honorary vintage badge is **PERMANENT**.
+    - If currently renewing Core monthly: displays `[💎 Core Patron]` (`"Active Core Patron • Renewing monthly"`).
+    - If switched to a lower tier (2 Cups, Cookie) or Core renewal lapses: displays `[💎 Core Patron ’26]` (`"Core Patron Cohort of 2026 • Lifetime Contributor"` with sub-tier attribution).
+    - `/api/user/quota` now supports query parameter identification and returns `has_core_patron: true`, `core_cohort_year: 2026`, and `is_core_active_monthly`.
+    - Verified via Puppeteer visual audit: `audit-profile-permanent-core-initial-dark.png`, `audit-profile-permanent-core-after-2cups-dark.png`, and `audit-profile-permanent-core-after-2cups-light.png`.
+- **System-Wide Backer Sphere Terminology Unification (`BackerConsentModal.jsx`, `SupportPage.jsx`, `ProfilePage.jsx`, `App.jsx`, `email.js`)**:
+  - Replaced all legacy 2D "Backers Wall" copy with "Backer Sphere" across UI chrome, modals, error boundaries, and notification toasts:
+    - `Public Backers Wall` $\to$ `Public Backer Sphere`
+    - `Explore Wall` $\to$ `Explore Sphere`
+    - `Verified Backers Wall` $\to$ `Verified Backer Sphere`
+    - Subsystem error boundary: `Backers Wall & Sponsors` $\to$ `Backer Sphere & Sponsors`
+    - Modal guidance: `Display on the wall as...` $\to$ `Display on the 3D sphere as...`
+  - Zero legacy backer wall strings remain anywhere in the codebase.
 - **Lower Sponsor Category Switch Confirmation Dialog (`SupportPage.jsx` & `ConfirmationDialog.jsx`)**:
   - **Adversarial Forensic Discovery**:
     - Discovered root cause behind the dialog not displaying: when a visitor or evaluator clicked a lower tier without an existing authenticated GitHub session, `handleSelectTier` executed an unprompted top-level `window.location.href = '/api/auth/github'` redirect before the confirmation state could mount.
