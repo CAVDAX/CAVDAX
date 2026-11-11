@@ -482,21 +482,6 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </motion.div>
               </button>
             </Tooltip>
-
-            <button
-              type="button"
-              onClick={() => {
-                playClick();
-                if (onNavigateToSupport) onNavigateToSupport();
-              }}
-              onMouseEnter={handlePrefetchSupport}
-              onFocus={handlePrefetchSupport}
-              onTouchStart={handlePrefetchSupport}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 text-xs font-mono font-semibold transition-all cursor-pointer shadow-xs"
-            >
-              <span>Become a Backer</span>
-              <ArrowUpRight className="w-3.5 h-3.5 opacity-70" />
-            </button>
           </div>
         </header>
 
