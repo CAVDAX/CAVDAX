@@ -10,6 +10,24 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Permanent Core Patron Badge Preservation Across Tier Switches (`ProfilePage.jsx`, `SupportPage.jsx`, `apps/server/index.js`)**:
+  - **Adversarial Forensic Discovery**:
+    - Discovered that when authorized developers (e.g. `suneetchugh-dev`) or founding Core Patrons switched tiers via dev passes or downgraded to `2 Cups Sponsor` / `Cookie Backer`, `sponsorTierLabel` was overwritten with the lower tier name. `getSponsorBadgeInfo` inspected only the active label without checking lifetime Core Patron entitlement, resulting in the Core Patron badge being replaced by `Supporter` or `Cookie Backer`.
+    - Furthermore, in fresh local sessions without GitHub OAuth, `ProfilePage` did not pass the dev session identity to `/api/user/quota`, causing `quotaData.is_sponsor` to evaluate to false.
+  - **The Permanent Core Patron Invariant**:
+    - Once a contributor earns Core Patron status (or is a founding Core Patron like `suneetchugh-dev`), their honorary vintage badge is **PERMANENT**.
+    - If currently renewing Core monthly: displays `[💎 Core Patron]` (`"Active Core Patron • Renewing monthly"`).
+    - If switched to a lower tier (2 Cups, Cookie) or Core renewal lapses: displays `[💎 Core Patron ’26]` (`"Core Patron Cohort of 2026 • Lifetime Contributor"` with sub-tier attribution).
+    - `/api/user/quota` now supports query parameter identification and returns `has_core_patron: true`, `core_cohort_year: 2026`, and `is_core_active_monthly`.
+    - Verified via Puppeteer visual audit: `audit-profile-permanent-core-initial-dark.png`, `audit-profile-permanent-core-after-2cups-dark.png`, and `audit-profile-permanent-core-after-2cups-light.png`.
+- **System-Wide Backer Sphere Terminology Unification (`BackerConsentModal.jsx`, `SupportPage.jsx`, `ProfilePage.jsx`, `App.jsx`, `email.js`)**:
+  - Replaced all legacy 2D "Backers Wall" copy with "Backer Sphere" across UI chrome, modals, error boundaries, and notification toasts:
+    - `Public Backers Wall` $\to$ `Public Backer Sphere`
+    - `Explore Wall` $\to$ `Explore Sphere`
+    - `Verified Backers Wall` $\to$ `Verified Backer Sphere`
+    - Subsystem error boundary: `Backers Wall & Sponsors` $\to$ `Backer Sphere & Sponsors`
+    - Modal guidance: `Display on the wall as...` $\to$ `Display on the 3D sphere as...`
+  - Zero legacy backer wall strings remain anywhere in the codebase.
 - **Lower Sponsor Category Switch Confirmation Dialog (`SupportPage.jsx` & `ConfirmationDialog.jsx`)**:
   - **Adversarial Forensic Discovery**:
     - Discovered root cause behind the dialog not displaying: when a visitor or evaluator clicked a lower tier without an existing authenticated GitHub session, `handleSelectTier` executed an unprompted top-level `window.location.href = '/api/auth/github'` redirect before the confirmation state could mount.
