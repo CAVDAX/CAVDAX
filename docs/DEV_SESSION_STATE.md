@@ -46,6 +46,17 @@
 
 ## 1. Executive Summary of Complete Theme & Scroller Makeover
 
+## 1.1.18 Full-Stack Plan Limit Calibration: Pro Tier (500 Verifications, 5 Repos) & Team & Scale Pricing (₹2,999) (November 11, 2026)
+
+- **Pro Autonomous Tier Limits Calibrated**:
+  - Causal Verifications: Exactly **500** causal verifications per month (calibrated from 1,000) enforced across backend gate (`apps/server/index.js`), `/api/user/quota` endpoint, Profile Page meters, and Tier Benefits comparison tables.
+  - Connected Repositories: Exactly **5** connected repositories (calibrated from 10) enforced across server middleware (`repoLimit = 5`), client connect repository modal bounds, and tier specifications.
+- **Team & Scale Subscription Pricing Calibrated**:
+  - Calibrated monthly subscription price to **₹2,999 INR** ($35 USD) down from ₹4,999 ($59 USD).
+  - Canonical server payment ledger updated to **299900 paise** in `apps/server/index.js` (`CANONICAL_TIER_PRICES_PAISE`).
+  - Automated security regression test updated and verified in `apps/server/test/proTrialAndEnterpriseDomain.test.mjs`.
+  - Client SEO metadata, Profile Page cards, and Tier Benefits matrix updated with zero visual or semantic discrepancy.
+
 ## 1.1.14 Tier Benefits Sliding Pill Physics, Table Clearance Invariant & MCP Universal CLI v1.3.0 (November 10, 2026)
 
 - **Tier Benefits Sliding Pill Navigation & Cold-Mount Invariant**:
@@ -104,7 +115,7 @@
 - **Community 1-Branch Selection & Pro Multi-Branch Differentiation (ProfilePage.jsx)**:
   - **Resolution**: Updated tier feature matrices in `ProfilePage.jsx` across large and compact views:
     - Community Tier: `1 Connected repository (1 active branch)` — empowers developers to select and test any active working branch (`feat/auth`, `develop`, etc.) on their repository without being locked to `main`.
-    - Pro Autonomous Tier: `10 Connected repositories (Unlimited concurrent branches)` — unlocks concurrent multi-branch tracking and cross-branch causal drift detection.
+    - Pro Autonomous Tier: `5 Connected repositories (Unlimited concurrent branches)` — unlocks concurrent multi-branch tracking and cross-branch causal drift detection.
 
 - **Dynamic Enterprise Organization Domain Registry (apps/server/index.js)**:
   - **Resolution**:
