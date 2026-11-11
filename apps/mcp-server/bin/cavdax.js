@@ -16,7 +16,7 @@
  */
 
 import { parseArgs } from 'node:util';
-import { createRequire } from 'node:module';
+import fs from 'node:fs';
 import { startStdioServer } from '../src/stdioServer.js';
 import { runIngest } from '../src/ingestCommand.js';
 import { runCheck } from '../src/checkCommand.js';
@@ -26,8 +26,8 @@ import { runInit } from '../src/initCommand.js';
 import { runImpact } from '../src/impactCommand.js';
 import { runDecisions } from '../src/decisionsCommand.js';
 
-const require = createRequire(import.meta.url);
-const { version } = require('../package.json');
+const pkgJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const { version } = pkgJson;
 
 const rawArgs = process.argv.slice(2);
 

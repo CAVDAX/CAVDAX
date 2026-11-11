@@ -1895,6 +1895,27 @@ app.post('/api/mcp/call', requireAuthOrDemo, async (req, res) => {
           return res.status(409).json(conflictResp);
         }
 
+        const maxLocks = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 3 : -1);
+        if (maxLocks !== -1 && (!existingLock || existingLock.expires_at <= now)) {
+          let agentActiveCount = 0;
+          for (const [decId, lock] of activeDecisionLocks.entries()) {
+            if (decId !== args.decision_id && lock.agent_id === args.agent_id && lock.expires_at > now) {
+              agentActiveCount++;
+            }
+          }
+          if (agentActiveCount >= maxLocks) {
+            return res.status(429).json({
+              isError: true,
+              acquired: false,
+              simulated: true,
+              gate_verdict: 'BLOCKED_TIER_CONCURRENCY_LIMIT_EXCEEDED',
+              code: 'TIER_CONCURRENCY_LIMIT_EXCEEDED',
+              decision_id: args.decision_id,
+              message: `⛔ CONCURRENCY QUOTA EXCEEDED: ${effectiveTier === 'free' ? 'Community' : 'Pro'} tier allows up to ${maxLocks} concurrent decision lock(s). Upgrade to ${effectiveTier === 'free' ? 'Pro' : 'Team & Scale'} for increased parallel agent leases.`
+            });
+          }
+        }
+
         const expiresAt = now + ttl;
         const lockRecord = {
           agent_id: args.agent_id,
@@ -2906,6 +2927,9 @@ app.get('/api/auth/me', (req, res) => {
     effectiveTier = 'enterprise';
   } else if (req.session.user?.is_sponsor || req.session.user?.subscription_active) {
     effectiveTier = req.session.user?.tier || 'pro';
+  } else if (req.session.tier === 'free' || req.session.user?.tier === 'free') {
+    // Explicit user choice or downgrade to Community Free takes precedence over trial auto-elevation
+    effectiveTier = 'free';
   } else if (isTrialActive) {
     effectiveTier = 'pro';
   } else if (req.session.tier === 'pro' || req.session.user?.tier === 'pro') {
@@ -4299,9 +4323,12 @@ app.post('/api/billing/verify-payment', (req, res) => {
       ? currentUser.name.trim().slice(0, 60)
       : (sanitizedHandle || 'Community Backer');
     let sanitizedAvatar = null;
-    if (typeof currentUser.avatar_url === 'string') {
-      const cleanUrl = currentUser.avatar_url.trim();
-      if (cleanUrl.startsWith('https://avatars.githubusercontent.com/') || cleanUrl.startsWith('https://images.unsplash.com/')) {
+    const candidateAvatar = (typeof currentUser.avatar_url === 'string' && currentUser.avatar_url.trim())
+      || (typeof currentUser.avatarUrl === 'string' && currentUser.avatarUrl.trim())
+      || (sanitizedHandle ? `https://github.com/${sanitizedHandle}.png` : null);
+    if (candidateAvatar) {
+      const cleanUrl = candidateAvatar.trim();
+      if (cleanUrl.startsWith('https://avatars.githubusercontent.com/') || cleanUrl.startsWith('https://github.com/') || cleanUrl.startsWith('https://images.unsplash.com/')) {
         sanitizedAvatar = cleanUrl;
       }
     }
@@ -4588,7 +4615,14 @@ app.get(['/api/sponsors', '/api/billing/sponsors'], (req, res) => {
           backer_message: null
         };
       }
-      return s;
+      const cleanHandle = (typeof s.github_handle === 'string' && !s.github_handle.startsWith('evaluator-') && s.github_handle !== 'community-backer')
+        ? s.github_handle.replace(/^@/, '').trim()
+        : null;
+      const resolvedAvatar = s.avatar_url || (cleanHandle ? `https://github.com/${encodeURIComponent(cleanHandle)}.png` : null);
+      return {
+        ...s,
+        avatar_url: resolvedAvatar
+      };
     });
 
   res.json({
