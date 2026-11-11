@@ -10,6 +10,26 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Lower Sponsor Category Switch Confirmation Dialog (`SupportPage.jsx` & `ConfirmationDialog.jsx`)**:
+  - **The Requirement**: When active sponsors move down into a lower patronage category (e.g. Core Patron to 2 Cups, or 2 Cups to Cookie), intercept the transition with the accessible Murphy's Law Confirmation Dialog instead of executing immediate destructive capability shifts.
+  - **Strict Architectural Parity with Subscription Tier Downgrade**:
+    - Uses identical `ConfirmationDialog` component with continuous super-ellipse ($n=4.4$), solitary line SVG (`ArrowDownLeft`), and `severity="neutral"`.
+    - Enforces **Pattern 18 (Strict 2-Line Physical Cap)** with zero orphan wrapping:
+      - Core Patron to 2 Cups:
+        - Line 1: `Scales 3D sphere node to 1.15× standard radius.`
+        - Line 2: `Preserves honorary Core Patron vintage cohort.`
+      - Core Patron to Cookie Backer:
+        - Line 1: `Scales 3D sphere node to 0.85× standard radius.`
+        - Line 2: `Preserves honorary Core Patron vintage cohort.`
+      - 2 Cups to Cookie Backer:
+        - Line 1: `Scales 3D sphere node to 0.85× standard radius.`
+        - Line 2: `Transfers spotlight recognition to Cookie tier.`
+  - **Murphy's Law Safety**:
+    - Default keyboard/pointer focus directed to the safe `Cancel` button.
+    - Escape key or outside click safely dismisses the modal without altering tier state.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - Captured `sponsor-downgrade-dialog-dark.png`, `sponsor-downgrade-dialog-light.png`, and `sponsor-downgrade-cookie-dialog-dark.png`.
+    - Verified 0 build errors in 42.87s and 151/151 unit test passes.
 - **Option A: Dynamic Vintage Cohort Year for Historical Core Patrons (`ProfilePage.jsx`, `SupportPage.jsx`, `SponsorsPage.jsx`)**:
   - **The Principle**: Instead of pejorative labels like `(Old) Core Patron` or silently revoking the promised "Permanent Core Sponsor Badge", early supporters are celebrated with a dynamic vintage cohort year (e.g. `[💎 Core Patron ’26]`).
   - **Dynamic Year Invariant (Zero Hardcoding)**:
