@@ -381,6 +381,7 @@ const CANONICAL_SEED_SPONSORS = [
     avatar_url: 'https://avatars.githubusercontent.com/u/76564569?v=4',
     created_at: '2026-10-15T10:00:00.000Z',
     highlighted: true,
+    is_active: false,
     is_seed: true
   },
   {
@@ -2433,8 +2434,9 @@ app.get('/api/user/quota', async (req, res) => {
   const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
 
   const userLogin = req.session?.user?.login;
-  const matchingSponsor = userLogin && Array.isArray(savedSystemState.sponsors)
-    ? savedSystemState.sponsors.find(s => s.github_handle === userLogin)
+  const allKnownSponsors = [...(Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : []), ...CANONICAL_SEED_SPONSORS];
+  const matchingSponsor = userLogin
+    ? allKnownSponsors.find(s => s.github_handle && s.github_handle.toLowerCase().replace(/^@/, '') === userLogin.toLowerCase().replace(/^@/, ''))
     : null;
   let isSponsor = Boolean(req.session?.is_sponsor || req.session?.user?.is_sponsor || matchingSponsor);
   let sponsorTier = req.session?.sponsor_tier || req.session?.user?.sponsor_tier || matchingSponsor?.tier_label || null;
@@ -2474,6 +2476,8 @@ app.get('/api/user/quota', async (req, res) => {
     tier_label: config.label,
     is_sponsor: isSponsor,
     sponsor_tier: sponsorTier,
+    sponsor_is_active: matchingSponsor ? (matchingSponsor.is_active !== false) : true,
+    sponsor_created_at: matchingSponsor?.created_at || null,
     limits: {
       repositories: tier === 'free' ? 1 : (tier === 'pro' ? 5 : -1),
       decisions: tier === 'free' ? 50 : (tier === 'pro' ? 500 : -1),
@@ -4611,7 +4615,7 @@ app.get(['/api/sponsors', '/api/billing/sponsors'], (req, res) => {
   for (const seed of CANONICAL_SEED_SPONSORS) {
     const seedHandle = seed.github_handle ? seed.github_handle.toLowerCase().replace(/^@/, '') : null;
     const alreadyExists = allSponsors.some(s => {
-      if (s.id === seed.id) return true;
+      if (s.id === seed.id) { if (s.is_active === undefined && seed.is_active !== undefined) s.is_active = seed.is_active; return true; }
       const sHandle = s.github_handle ? s.github_handle.toLowerCase().replace(/^@/, '') : null;
       if (seedHandle && sHandle && seedHandle === sHandle) return true;
       return false;
