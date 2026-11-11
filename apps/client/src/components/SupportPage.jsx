@@ -250,7 +250,7 @@ const TIERS = [
     inrSub:   'approx $2 USD',
     paise:    16900,
     desc:     'Fueling daily causal engine dev.',
-    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Contributor Badge'],
+    perks:    ['Verified Backer Sphere', 'In-App Backer profile halo', 'Community Contributor Badge'],
     accent:   'bronze',
     popular:  false,
     icon:     CookieIcon,
@@ -603,7 +603,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
           localStorage.setItem('cavdax_backer_quote', consentData.quote || consentData.backer_message || '');
         }
       } catch {}
-      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
+      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Sphere');
       showToast(true, `Backer preference updated to ${visLabel}.`);
     } catch (err) {
       console.warn('[SupportPage] Failed to save consent:', err);
@@ -899,6 +899,19 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         localStorage.setItem('cavdax_sponsor_tier', data.sponsor_tier || tier.tierName);
         localStorage.setItem('cavdax_evaluation_sponsor_tier', String(tier.id));
         localStorage.setItem('cavdax_sponsor_is_evaluation', 'true');
+        if (tier.id === 3 || tier.tierName.toLowerCase().includes('core')) {
+          localStorage.setItem('cavdax_has_core_patron', 'true');
+          localStorage.setItem('cavdax_core_patron_cohort', '2026');
+          localStorage.setItem('cavdax_sponsor_is_active', 'true');
+        } else {
+          // If downgrading to 2 Cups or Cookie, preserve lifetime Core Patron cohort if already earned
+          const hadCore = localStorage.getItem('cavdax_has_core_patron') === 'true' || activeUser?.login === 'suneetchugh-dev';
+          if (hadCore) {
+            localStorage.setItem('cavdax_has_core_patron', 'true');
+            localStorage.setItem('cavdax_core_patron_cohort', '2026');
+            localStorage.setItem('cavdax_sponsor_is_active', 'false');
+          }
+        }
         window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: data.backer }));
       } catch {}
 
@@ -1102,12 +1115,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 onTouchStart={handlePrefetchSponsors}
                 onMouseLeave={() => setIsExploreHovered(false)}
                 className="group flex items-center gap-1.5 px-3 py-1 rounded-full border border-slate-200 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.04] hover:bg-slate-200/80 dark:hover:bg-white/10 text-xs font-mono text-slate-600 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white transition-all cursor-pointer shadow-2xs"
-                title="Open dedicated community backers wall with 3D supporter galaxy"
+                title="Open dedicated community backer sphere with 3D supporter galaxy"
               >
                 <span>{sponsors.length} verified backers</span>
                 <span className="opacity-30">•</span>
                 <span className="font-semibold text-slate-900 dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)] transition-all">
-                  Explore Wall
+                  Explore Sphere
                 </span>
                 <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:opacity-100 text-slate-500 group-hover:text-slate-950 dark:text-slate-400 dark:group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
               </button>
@@ -1732,7 +1745,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 ? 'Private (Do Not List)'
                 : currentVisibility === 'anonymous'
                 ? 'Anonymous Patron'
-                : 'Public Backers Wall'}
+                : 'Public Backer Sphere'}
             </span>
             {currentVisibility === 'public' && activeUser?.login && (
               <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 hidden md:inline truncate">
@@ -1751,7 +1764,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         </div>
       )}
 
-      {/* ── 4. Verified Backers Wall ── */}
+      {/* ── 4. Verified Backers Sphere ── */}
       <section className="mb-10 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-white/15 bg-slate-900/[0.02] dark:bg-white/[0.02]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/60 dark:border-white/10">
           <div className="flex items-center gap-3">

@@ -56,33 +56,71 @@ function CookieIcon({ className = "w-3.5 h-3.5" }) {
   );
 }
 
-function getSponsorBadgeInfo(tierLabel, createdAt, isActiveMonthly = true) {
+function getSponsorBadgeInfo(tierLabelOrObj, createdAt, isActiveMonthly = true) {
+  let tierLabel = tierLabelOrObj;
+  let hasCorePatron = false;
+  let coreCohortYear = null;
+
+  if (typeof tierLabelOrObj === 'object' && tierLabelOrObj !== null) {
+    tierLabel = tierLabelOrObj.tierLabel;
+    createdAt = tierLabelOrObj.createdAt;
+    isActiveMonthly = tierLabelOrObj.isActiveMonthly ?? true;
+    hasCorePatron = Boolean(tierLabelOrObj.hasCorePatron);
+    coreCohortYear = tierLabelOrObj.coreCohortYear;
+  }
+
   const label = (tierLabel || '').toLowerCase();
   const d = createdAt ? new Date(createdAt) : new Date();
-  const fullYear = isNaN(d.getTime()) ? new Date().getFullYear() : d.getFullYear();
-  const cohortYearShort = `’${String(fullYear).slice(-2)}`;
+  const currentYear = isNaN(d.getTime()) ? new Date().getFullYear() : d.getFullYear();
+  const effectiveCohortYear = coreCohortYear || currentYear;
+  const cohortYearShort = `’${String(effectiveCohortYear).slice(-2)}`;
 
-  if (label.includes('core')) {
-    const isPast = isActiveMonthly === false;
+  // Priority 1: Active monthly renewing Core Patron
+  if (label.includes('core') && isActiveMonthly !== false) {
     return {
-      title: isPast ? `Core Patron ${cohortYearShort}` : 'Core Patron',
-      tooltip: isPast
-        ? `Core Patron Cohort of ${fullYear} • Lifetime Contributor`
-        : 'Active Core Patron • Renewing monthly',
-      cohortYear: fullYear,
+      title: 'Core Patron',
+      tooltip: 'Active Core Patron • Renewing monthly',
+      cohortYear: effectiveCohortYear,
       cohortYearShort,
-      isPast,
+      isPast: false,
+      isCore: true,
       icon: ShinyGemIcon,
       iconColor: 'text-slate-800 dark:text-slate-200'
     };
   }
+
+  // Priority 2: Lifetime Honorary Core Patron Cohort
+  // Once a user has ever achieved Core Patron status (including authorized dev suneetchugh-dev,
+  // canonical seed sponsor, or someone who downgraded to 2 Cups/Cookie), their honorary Core Patron vintage
+  // badge is PERMANENT. If they are currently supporting via 2 Cups or Cookie, or if their Core renewal
+  // is paused/inactive, their primary honorary badge is Core Patron ’YY!
+  if (hasCorePatron || label.includes('core')) {
+    const subSupport = label.includes('cup') || label.includes('coffee')
+      ? ' • Active 2 Cups Sponsor'
+      : (label.includes('cookie') ? ' • Active Cookie Backer' : '');
+
+    return {
+      title: `Core Patron ${cohortYearShort}`,
+      tooltip: `Core Patron Cohort of ${effectiveCohortYear} • Lifetime Contributor${subSupport}`,
+      cohortYear: effectiveCohortYear,
+      cohortYearShort,
+      isPast: true,
+      isCore: true,
+      currentTierLabel: tierLabel,
+      icon: ShinyGemIcon,
+      iconColor: 'text-slate-800 dark:text-slate-200'
+    };
+  }
+
+  // Priority 3: Non-Core Active Tiers (users who have NEVER been Core Patron)
   if (label.includes('cup') || label.includes('coffee')) {
     return {
       title: 'Supporter',
       tooltip: 'Verified Supporter • Powering daily causal graph passes',
-      cohortYear: fullYear,
-      cohortYearShort,
+      cohortYear: currentYear,
+      cohortYearShort: `’${String(currentYear).slice(-2)}`,
       isPast: false,
+      isCore: false,
       icon: Coffee,
       iconColor: 'text-amber-500 dark:text-amber-400'
     };
@@ -91,9 +129,10 @@ function getSponsorBadgeInfo(tierLabel, createdAt, isActiveMonthly = true) {
     return {
       title: 'Cookie Backer',
       tooltip: 'Verified Backer • Fueling independent innovation',
-      cohortYear: fullYear,
-      cohortYearShort,
+      cohortYear: currentYear,
+      cohortYearShort: `’${String(currentYear).slice(-2)}`,
       isPast: false,
+      isCore: false,
       icon: CookieIcon,
       iconColor: 'text-amber-700 dark:text-amber-500'
     };
@@ -101,9 +140,10 @@ function getSponsorBadgeInfo(tierLabel, createdAt, isActiveMonthly = true) {
   return {
     title: 'Verified Backer',
     tooltip: 'Verified Community Champion',
-    cohortYear: fullYear,
-    cohortYearShort,
+    cohortYear: currentYear,
+    cohortYearShort: `’${String(currentYear).slice(-2)}`,
     isPast: false,
+    isCore: false,
     icon: ShinyGemIcon,
     iconColor: 'text-slate-800 dark:text-slate-200'
   };
@@ -806,7 +846,9 @@ export default function ProfilePage({
 
     const fetchQuota = async () => {
       try {
-        const res = await fetch(`/api/user/quota?tier=${currentTier}`, { credentials: 'include' });
+        const effectiveLogin = user?.login || getStoredUser()?.login || getActiveDevSession()?.login || getActiveDevSession()?.user;
+        const userQuery = effectiveLogin ? `&user=${encodeURIComponent(effectiveLogin)}` : '';
+        const res = await fetch(`/api/user/quota?tier=${currentTier}${userQuery}`, { credentials: 'include' });
         if (res.ok) {
           const data = await res.json();
           setQuotaData(data);
@@ -819,9 +861,33 @@ export default function ProfilePage({
     fetchQuota();
   }, [currentTier, user?.login]);
 
+  const [hasCorePatron, setHasCorePatron] = useState(() => {
+    try {
+      const activeLogin = (user?.login || getStoredUser()?.login || getActiveDevSession()?.login || getActiveDevSession()?.user || '').toLowerCase().replace(/^@/, '');
+      if (activeLogin === 'suneetchugh-dev') return true;
+      if (localStorage.getItem('cavdax_has_core_patron') === 'true') return true;
+      const tier = localStorage.getItem('cavdax_sponsor_tier') || '';
+      return tier.toLowerCase().includes('core');
+    } catch {
+      return false;
+    }
+  });
+  const [coreCohortYear, setCoreCohortYear] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cavdax_core_patron_cohort');
+      return stored ? parseInt(stored, 10) : 2026;
+    } catch {
+      return 2026;
+    }
+  });
   const [isSponsor, setIsSponsor] = useState(() => {
     try {
-      return localStorage.getItem('cavdax_is_sponsor') === 'true' || Boolean(user?.is_sponsor) || Boolean(localStorage.getItem('cavdax_sponsor_tier'));
+      const activeLogin = (user?.login || getStoredUser()?.login || getActiveDevSession()?.login || getActiveDevSession()?.user || '').toLowerCase().replace(/^@/, '');
+      if (activeLogin === 'suneetchugh-dev') return true;
+      return localStorage.getItem('cavdax_has_core_patron') === 'true' ||
+        localStorage.getItem('cavdax_is_sponsor') === 'true' ||
+        Boolean(user?.is_sponsor) ||
+        Boolean(localStorage.getItem('cavdax_sponsor_tier'));
     } catch {
       return false;
     }
@@ -849,7 +915,16 @@ export default function ProfilePage({
   });
 
   useEffect(() => {
-    if (quotaData?.is_sponsor || user?.is_sponsor) {
+    if (quotaData?.has_core_patron) {
+      setHasCorePatron(true);
+      try { localStorage.setItem('cavdax_has_core_patron', 'true'); } catch {}
+    }
+    if (quotaData?.core_cohort_year) {
+      setCoreCohortYear(quotaData.core_cohort_year);
+      try { localStorage.setItem('cavdax_core_patron_cohort', String(quotaData.core_cohort_year)); } catch {}
+    }
+
+    if (quotaData?.is_sponsor || user?.is_sponsor || hasCorePatron) {
       setIsSponsor(true);
       if (quotaData?.sponsor_tier || user?.sponsor_tier) {
         setSponsorTierLabel(quotaData?.sponsor_tier || user?.sponsor_tier);
@@ -865,13 +940,13 @@ export default function ProfilePage({
     }
 
     // Match this identity against /api/sponsors to resolve dynamic enrollment timestamp & active status
-    const activeHandle = user?.login || getStoredUser()?.login;
+    const activeHandle = (user?.login || getStoredUser()?.login || getActiveDevSession()?.login || getActiveDevSession()?.user || '').toLowerCase().replace(/^@/, '');
     if (activeHandle) {
       fetch('/api/sponsors')
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data?.sponsors)) {
-            const clean = activeHandle.toLowerCase().replace(/^@/, '');
+            const clean = activeHandle;
             const match = data.sponsors.find(s => s.github_handle?.toLowerCase().replace(/^@/, '') === clean);
             if (match) {
               if (match.created_at) {
@@ -884,6 +959,13 @@ export default function ProfilePage({
               }
               if (match.tier_label) {
                 setSponsorTierLabel(match.tier_label);
+              }
+              if (match.tier_id === 3 || match.tier_label?.toLowerCase().includes('core')) {
+                setHasCorePatron(true);
+                try { localStorage.setItem('cavdax_has_core_patron', 'true'); } catch {}
+                const yr = match.created_at ? new Date(match.created_at).getFullYear() : 2026;
+                setCoreCohortYear(yr);
+                try { localStorage.setItem('cavdax_core_patron_cohort', String(yr)); } catch {}
               }
             }
           }
@@ -904,14 +986,29 @@ export default function ProfilePage({
         setIsSponsorActiveMonthly(Boolean(e.detail.is_active));
         try { localStorage.setItem('cavdax_sponsor_is_active', String(e.detail.is_active)); } catch {}
       }
+      if (e.detail?.tier_id === 3 || e.detail?.tier_label?.toLowerCase().includes('core')) {
+        setHasCorePatron(true);
+        try { localStorage.setItem('cavdax_has_core_patron', 'true'); } catch {}
+        const yr = e.detail?.created_at ? new Date(e.detail.created_at).getFullYear() : 2026;
+        setCoreCohortYear(yr);
+        try { localStorage.setItem('cavdax_core_patron_cohort', String(yr)); } catch {}
+      }
     };
     window.addEventListener('cavdax:sponsor-registered', handleSponsorRegistered);
     return () => window.removeEventListener('cavdax:sponsor-registered', handleSponsorRegistered);
-  }, [quotaData, user]);
+  }, [quotaData, user, hasCorePatron]);
 
   // Check if current user is an authorized devteam member or has active dev enclave session
   const activeUser = user || getStoredUser() || getActiveDevSession();
-  const sponsorBadge = getSponsorBadgeInfo(sponsorTierLabel, sponsorCreatedAt, isSponsorActiveMonthly);
+  const activeHandle = (user?.login || getStoredUser()?.login || getActiveDevSession()?.login || getActiveDevSession()?.user || '').toLowerCase().replace(/^@/, '');
+  const isFoundingDevCore = activeHandle === 'suneetchugh-dev';
+  const sponsorBadge = getSponsorBadgeInfo({
+    tierLabel: sponsorTierLabel,
+    createdAt: sponsorCreatedAt,
+    isActiveMonthly: isSponsorActiveMonthly,
+    hasCorePatron: hasCorePatron || isFoundingDevCore,
+    coreCohortYear: coreCohortYear
+  });
   const SponsorBadgeIcon = sponsorBadge.icon;
   const isAuthorizedDev = Boolean(
     isUserAuthorized(activeUser) || getActiveDevSession()
@@ -1137,7 +1234,7 @@ export default function ProfilePage({
           localStorage.setItem('cavdax_backer_quote', consentData.quote || consentData.backer_message || '');
         }
       } catch {}
-      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
+      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Sphere');
       showToast(`Recognition preference updated to ${visLabel}.`);
       window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: data.backer }));
     } catch (err) {
@@ -1322,7 +1419,7 @@ export default function ProfilePage({
           </h1>
           <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono flex items-center justify-center gap-2 flex-wrap">
             <span>{activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}</span>
-            {isSponsor && (
+            {(isSponsor || hasCorePatron || isFoundingDevCore) && (
               <>
                 <span className="text-slate-300 dark:text-slate-700 hidden sm:inline" aria-hidden="true">•</span>
                 <button

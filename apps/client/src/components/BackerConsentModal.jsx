@@ -16,7 +16,7 @@ import { playClick } from '../utils/soundFx';
  * - §14: Continuous Super-Ellipse Geometry (Gabriel Lamé n=4.4 feel)
  *
  * Enforces explicit patron consent (GDPR / DPDP compliance) before
- * featuring backer profiles or quotes on the public Backers Wall.
+ * featuring backer profiles or quotes on the public Backer Sphere.
  */
 export default function BackerConsentModal({
   isOpen,
@@ -213,14 +213,14 @@ export default function BackerConsentModal({
                     <div className="flex items-center gap-2">
                       <Eye className="w-3.5 h-3.5 text-slate-900 dark:text-white shrink-0" />
                       <span className="text-xs font-mono font-semibold text-slate-950 dark:text-white">
-                        Public Backers Wall
+                        Public Backer Sphere
                       </span>
                       <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300">
                         Recommended
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-normal font-sans">
-                      Display your name, avatar, and optional note on our verified backers showcase.
+                      Display your name, avatar, and optional note on our verified 3D backer sphere showcase.
                     </p>
 
                     {/* Expandable fields for Public profile */}
@@ -299,7 +299,7 @@ export default function BackerConsentModal({
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-normal font-sans">
-                      Display on the wall as "Anonymous Patron" with your tier badge. Avatar and identity remain hidden.
+                      Display on the 3D sphere as "Anonymous Patron" with your tier badge. Avatar and identity remain hidden.
                     </p>
                   </div>
                 </div>
@@ -337,7 +337,7 @@ export default function BackerConsentModal({
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-normal font-sans">
-                      Completely unlisted from the public wall. In-app features and tier access remain fully active.
+                      Completely unlisted from the public 3D sphere. In-app features and tier access remain fully active.
                     </p>
                   </div>
                 </div>
