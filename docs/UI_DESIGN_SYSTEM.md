@@ -9203,3 +9203,35 @@ In multi-tier backer directories (e.g. Core Patrons, 2 Cups of Coffee, Cookie Ba
    - Tooltip integration on every action button (`View @handle on GitHub`) providing immediate spatial context without layout jump.
 4. **Super-Ellipse Enclosure Parity**:
    - Cards across all tiers maintain continuous curvature super-ellipses (`borderRadius: "24px"` for Core, `"20px"` for 2 Cups, `"16px"` for Cookie Backers).
+
+
+---
+
+## 106. Symmetrical Tier Card Baselines & Dedicated Backer Management Ribbon
+
+### 106.1 Context & Problem Analysis
+Pricing and patronage tier cards frequently suffer from footer clutter and baseline breakage when destructive or secondary actions (such as "Opt Out" or "Cancel Subscription") are appended directly below the primary action button on active cards. This creates three severe visual flaws:
+1. **Vertical Baseline Asymmetry**: The active card sags by +24px to accommodate the extra link, while sibling cards without active plans have clean bottom margins.
+2. **Raw Hyperlink Slop (Pattern 9)**: Implementing opt-out links with raw browser underlines (`className="underline"`) degrades the premium neo-glass aesthetic into an unstyled anchor tag.
+3. **Ellipsis Truncation on Perks**: Overly verbose perk items (e.g. "Personal Team Acknowledgment") get clipped into "Personal Team Acknowledgme..." on standard 3-column card widths.
+
+### 106.2 The Symmetrical Backer Ribbon Architecture
+1. **Pristine Card Grid Baselines**:
+   - Strictly zero hanging text links or auxiliary buttons under card CTA buttons.
+   - Sibling tier cards share identical vertical heights, equal padding, and consistent button alignment.
+2. **Active Status Button Anchor**:
+   - Active tier card renders solid status: `[ ✓ Active Sponsor Tier ]`.
+   - Tooltip integration: `Active sponsorship tier • Click to opt out or switch category`.
+   - Direct click triggers Murphy's Law Confirmation Dialog with safe Cancel focus.
+3. **Dedicated Backer Management Ribbon Strip**:
+   - Active patron controls live in the dedicated management ribbon strip directly beneath the pricing grid.
+   - Hosts discrete monochromatic actions:
+     - `[ SlidersHorizontal Edit Recognition ]`
+     - `[ ArrowDownLeft Opt Out ]`
+4. **Watery Fluid Wave Hover Fill on Opt Out Button**:
+   - **Zero Outline by Default**: Clean `border border-transparent` with zero outline box in resting state.
+   - **Default Monochromatic Rose Tone**: Rendered in crisp rose (`text-rose-600 dark:text-rose-400 font-mono font-medium`).
+   - **Parametric Fluid Wave Fill**: Incorporates the exact SVG wave crest (`viewBox="0 0 320 48"`) with a rising cubic-bezier liquid body (`cubic-bezier(0.2, 0.9, 0.3, 1)` over 900ms) matching the tier cards.
+   - **Layering Isolation**: Text and `ArrowDownLeft` icon are preserved at `z-10` above the rising wave so legibility remains crisp.
+5. **Anti-Truncation Perk Copy Standard**:
+   - All card perk strings are constrained to fit cleanly on narrow mobile and desktop cards without triggering ellipsis clipping (e.g. "Personal Acknowledgment").
