@@ -24,11 +24,12 @@
 
 import readline from 'readline';
 import path from 'path';
-import { createRequire } from 'module';
+import fs from 'fs';
 import { connectGraph, loadCore, falkorConfig, describeConnectError } from './runtime.js';
 import { SimulationEngine } from './simulation.js';
 
-const { version: PACKAGE_VERSION } = createRequire(import.meta.url)('../package.json');
+const pkgJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const PACKAGE_VERSION = pkgJson.version || '1.3.1';
 const log = (msg) => process.stderr.write(`[cavdax] ${msg}\n`);
 
 // Needed so the holder of a decision lock is not blocked by its own lock.

@@ -20,7 +20,7 @@ export class DecisionLockManager {
    * @param {string} [reason=''] - Rationale for locking this decision branch
    * @returns {object} Status object indicating acquired (true/false)
    */
-  acquireLock(decisionId, agentId, ttlMs = 60000, reason = '') {
+  acquireLock(decisionId, agentId, ttlMs = 60000, reason = '', tier = 'free') {
     const now = Date.now();
     const existing = this.locks.get(decisionId);
 
@@ -36,6 +36,29 @@ export class DecisionLockManager {
         reason: existing.reason || 'Active agent transaction in progress',
         message: `⛔ CONCURRENCY REFUSAL: Decision '${decisionId}' is actively locked by agent '${existing.agentId}' (${Math.ceil(remainingMs / 1000)}s remaining). Concurrent mutation blocked to prevent DAG divergence.`
       };
+    }
+
+    // Enforce tier concurrency limits if not renewing own lock
+    if (!existing || existing.expiresAt <= now) {
+      const normalizedTier = String(tier || 'free').toLowerCase();
+      const maxLocks = normalizedTier === 'free' ? 1 : (normalizedTier === 'pro' ? 3 : -1);
+      if (maxLocks !== -1) {
+        let activeCount = 0;
+        for (const [id, lock] of this.locks.entries()) {
+          if (id !== decisionId && lock.agentId === agentId && lock.expiresAt > now) {
+            activeCount++;
+          }
+        }
+        if (activeCount >= maxLocks) {
+          return {
+            acquired: false,
+            gate_verdict: 'BLOCKED_TIER_CONCURRENCY_LIMIT_EXCEEDED',
+            code: 'TIER_CONCURRENCY_LIMIT_EXCEEDED',
+            decision_id: decisionId,
+            message: `⛔ CONCURRENCY QUOTA EXCEEDED: ${normalizedTier === 'free' ? 'Community' : 'Pro'} tier allows up to ${maxLocks} concurrent decision lease(s). Upgrade plan to acquire additional parallel agent locks.`
+          };
+        }
+      }
     }
 
     const expiresAt = now + Math.min(Math.max(ttlMs, 5000), 300000); // Bounds: 5s to 5min
