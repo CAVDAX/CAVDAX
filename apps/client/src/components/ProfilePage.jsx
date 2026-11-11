@@ -24,7 +24,7 @@ import { createPortal } from 'react-dom';
 import {
   Compass, User, Copy, Check, CheckCircle2, Lock, Terminal, Building2,
   SlidersHorizontal, Key, HardDrive, AlertTriangle, RefreshCw, Heart, ExternalLink, LogOut, Github, Eye, EyeOff,
-  Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight, ArrowDownLeft
+  Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight, ArrowDownLeft, Coffee
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
@@ -33,6 +33,81 @@ import DevPatLoginModal from './DevPatLoginModal';
 import Tooltip from './Tooltip';
 import ConfirmationDialog from './ConfirmationDialog';
 import BackerConsentModal from './BackerConsentModal';
+
+/** Bespoke artisanal chocolate chip cookie SVG glyph — authentic tier aesthetic matching SupportPage */
+function CookieIcon({ className = "w-3.5 h-3.5" }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5" />
+      <path d="M8.5 8.5h.01" strokeWidth="2.5" />
+      <path d="M12 12h.01" strokeWidth="2.5" />
+      <path d="M8 15.5h.01" strokeWidth="2.5" />
+      <path d="M15 15h.01" strokeWidth="2.5" />
+      <path d="M16 11h.01" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
+function getSponsorBadgeInfo(tierLabel, createdAt, isActiveMonthly = true) {
+  const label = (tierLabel || '').toLowerCase();
+  const d = createdAt ? new Date(createdAt) : new Date();
+  const fullYear = isNaN(d.getTime()) ? new Date().getFullYear() : d.getFullYear();
+  const cohortYearShort = `’${String(fullYear).slice(-2)}`;
+
+  if (label.includes('core')) {
+    const isPast = isActiveMonthly === false;
+    return {
+      title: isPast ? `Core Patron ${cohortYearShort}` : 'Core Patron',
+      tooltip: isPast
+        ? `Core Patron Cohort of ${fullYear} • Lifetime Contributor`
+        : 'Active Core Patron • Renewing monthly',
+      cohortYear: fullYear,
+      cohortYearShort,
+      isPast,
+      icon: ShinyGemIcon,
+      iconColor: 'text-slate-800 dark:text-slate-200'
+    };
+  }
+  if (label.includes('cup') || label.includes('coffee')) {
+    return {
+      title: 'Supporter',
+      tooltip: 'Verified Supporter • Powering daily causal graph passes',
+      cohortYear: fullYear,
+      cohortYearShort,
+      isPast: false,
+      icon: Coffee,
+      iconColor: 'text-amber-500 dark:text-amber-400'
+    };
+  }
+  if (label.includes('cookie')) {
+    return {
+      title: 'Cookie Backer',
+      tooltip: 'Verified Backer • Fueling independent innovation',
+      cohortYear: fullYear,
+      cohortYearShort,
+      isPast: false,
+      icon: CookieIcon,
+      iconColor: 'text-amber-700 dark:text-amber-500'
+    };
+  }
+  return {
+    title: 'Verified Backer',
+    tooltip: 'Verified Community Champion',
+    cohortYear: fullYear,
+    cohortYearShort,
+    isPast: false,
+    icon: ShinyGemIcon,
+    iconColor: 'text-slate-800 dark:text-slate-200'
+  };
+}
 
 
 function getStoredUser() {
@@ -758,6 +833,20 @@ export default function ProfilePage({
       return null;
     }
   });
+  const [sponsorCreatedAt, setSponsorCreatedAt] = useState(() => {
+    try {
+      return localStorage.getItem('cavdax_sponsor_created_at') || null;
+    } catch {
+      return null;
+    }
+  });
+  const [isSponsorActiveMonthly, setIsSponsorActiveMonthly] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cavdax_sponsor_is_active');
+      if (stored !== null) return stored !== 'false';
+    } catch {}
+    return true;
+  });
 
   useEffect(() => {
     if (quotaData?.is_sponsor || user?.is_sponsor) {
@@ -765,11 +854,55 @@ export default function ProfilePage({
       if (quotaData?.sponsor_tier || user?.sponsor_tier) {
         setSponsorTierLabel(quotaData?.sponsor_tier || user?.sponsor_tier);
       }
+      if (quotaData?.sponsor_created_at || user?.sponsor_created_at) {
+        setSponsorCreatedAt(quotaData?.sponsor_created_at || user?.sponsor_created_at);
+      }
+      if (quotaData?.sponsor_is_active !== undefined) {
+        setIsSponsorActiveMonthly(Boolean(quotaData.sponsor_is_active));
+      } else if (user?.sponsor_is_active !== undefined) {
+        setIsSponsorActiveMonthly(Boolean(user.sponsor_is_active));
+      }
     }
+
+    // Match this identity against /api/sponsors to resolve dynamic enrollment timestamp & active status
+    const activeHandle = user?.login || getStoredUser()?.login;
+    if (activeHandle) {
+      fetch('/api/sponsors')
+        .then(res => res.json())
+        .then(data => {
+          if (Array.isArray(data?.sponsors)) {
+            const clean = activeHandle.toLowerCase().replace(/^@/, '');
+            const match = data.sponsors.find(s => s.github_handle?.toLowerCase().replace(/^@/, '') === clean);
+            if (match) {
+              if (match.created_at) {
+                setSponsorCreatedAt(match.created_at);
+                try { localStorage.setItem('cavdax_sponsor_created_at', match.created_at); } catch {}
+              }
+              if (match.is_active !== undefined) {
+                setIsSponsorActiveMonthly(Boolean(match.is_active));
+                try { localStorage.setItem('cavdax_sponsor_is_active', String(match.is_active)); } catch {}
+              }
+              if (match.tier_label) {
+                setSponsorTierLabel(match.tier_label);
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+
     const handleSponsorRegistered = (e) => {
       setIsSponsor(true);
       if (e.detail?.tier_label) {
         setSponsorTierLabel(e.detail.tier_label);
+      }
+      if (e.detail?.created_at) {
+        setSponsorCreatedAt(e.detail.created_at);
+        try { localStorage.setItem('cavdax_sponsor_created_at', e.detail.created_at); } catch {}
+      }
+      if (e.detail?.is_active !== undefined) {
+        setIsSponsorActiveMonthly(Boolean(e.detail.is_active));
+        try { localStorage.setItem('cavdax_sponsor_is_active', String(e.detail.is_active)); } catch {}
       }
     };
     window.addEventListener('cavdax:sponsor-registered', handleSponsorRegistered);
@@ -778,6 +911,8 @@ export default function ProfilePage({
 
   // Check if current user is an authorized devteam member or has active dev enclave session
   const activeUser = user || getStoredUser() || getActiveDevSession();
+  const sponsorBadge = getSponsorBadgeInfo(sponsorTierLabel, sponsorCreatedAt, isSponsorActiveMonthly);
+  const SponsorBadgeIcon = sponsorBadge.icon;
   const isAuthorizedDev = Boolean(
     isUserAuthorized(activeUser) || getActiveDevSession()
   );
@@ -994,6 +1129,14 @@ export default function ProfilePage({
         showToast(data?.message || 'Failed to update recognition preference.');
         return;
       }
+      try {
+        if (consentData.visibility) {
+          localStorage.setItem('cavdax_backer_visibility', consentData.visibility);
+        }
+        if (consentData.quote !== undefined || consentData.backer_message !== undefined) {
+          localStorage.setItem('cavdax_backer_quote', consentData.quote || consentData.backer_message || '');
+        }
+      } catch {}
       const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
       showToast(`Recognition preference updated to ${visLabel}.`);
       window.dispatchEvent(new CustomEvent('cavdax:sponsor-registered', { detail: data.backer }));
@@ -1177,26 +1320,26 @@ export default function ProfilePage({
           <h1 className="text-base sm:text-lg font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-tight">
             {activeUser?.name || activeUser?.login || 'Local Contributor'}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-            {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
-          </p>
-          {isSponsor && (
-            <div className="mt-2 flex items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-2xs">
-                <ShinyGemIcon className="w-2.5 h-2.5 text-slate-800 dark:text-slate-200" />
-                <span>{sponsorTierLabel || 'Core Supporter'}</span>
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsConsentModalOpen(true)}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                title="Edit recognition preference (Public, Anonymous, or Private)"
-              >
-                <Eye className="w-2.5 h-2.5" />
-                <span>Recognition Preferences</span>
-              </button>
-            </div>
-          )}
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-mono flex items-center justify-center gap-2 flex-wrap">
+            <span>{activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}</span>
+            {isSponsor && (
+              <>
+                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline" aria-hidden="true">•</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    playClick();
+                    if (onOpenSupportPage) onOpenSupportPage();
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-slate-200/50 hover:bg-slate-200/80 dark:bg-white/[0.08] dark:hover:bg-white/15 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+                  title={sponsorBadge.tooltip}
+                >
+                  <SponsorBadgeIcon className={`w-3 h-3 ${sponsorBadge.iconColor} shrink-0`} />
+                  <span>{sponsorBadge.title}</span>
+                </button>
+              </>
+            )}
+          </div>
 
           
   
@@ -2189,6 +2332,22 @@ export default function ProfilePage({
           domain={corporateDomain}
           setDomain={setCorporateDomain}
         />
+
+        {/* Backer Recognition & Consent Modal */}
+        <BackerConsentModal
+          isOpen={isConsentModalOpen}
+          onClose={() => setIsConsentModalOpen(false)}
+          onSave={handleSaveBackerConsent}
+          backer={{
+            id: activeUser?.login || 'self',
+            sponsorId: activeUser?.login || 'self',
+            name: activeUser?.name || activeUser?.login || 'Backer',
+            backer_name: activeUser?.name || activeUser?.login || 'Backer',
+            tierName: sponsorBadge.title,
+            visibility: (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_visibility') : null) || 'public',
+            quote: (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_quote') : null) || ''
+          }}
+        />
       </div>
     );
   }
@@ -2265,26 +2424,26 @@ export default function ProfilePage({
         <h1 className="text-sm sm:text-base font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-tight">
           {activeUser?.name || activeUser?.login || 'Local Contributor'}
         </h1>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono">
-          {activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}
-        </p>
-        {isSponsor && (
-          <div className="mt-1.5 flex items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold border border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-2xs">
-              <ShinyGemIcon className="w-2 h-2 text-slate-800 dark:text-slate-200" />
-              <span>{sponsorTierLabel || 'Core Supporter'}</span>
-            </span>
-            <button
-              type="button"
-              onClick={() => setIsConsentModalOpen(true)}
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              title="Edit recognition preference (Public, Anonymous, or Private)"
-            >
-              <Eye className="w-2 h-2" />
-              <span>Recognition</span>
-            </button>
-          </div>
-        )}
+        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-mono flex items-center justify-center gap-1.5 flex-wrap">
+          <span>{activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}</span>
+          {isSponsor && (
+            <>
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline" aria-hidden="true">•</span>
+              <button
+                type="button"
+                onClick={() => {
+                  playClick();
+                  if (onOpenSupportPage) onOpenSupportPage();
+                }}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-mono font-medium bg-slate-200/50 hover:bg-slate-200/80 dark:bg-white/[0.08] dark:hover:bg-white/15 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+                title={sponsorBadge.tooltip}
+              >
+                <SponsorBadgeIcon className={`w-2.5 h-2.5 ${sponsorBadge.iconColor} shrink-0`} />
+                <span>{sponsorBadge.title}</span>
+              </button>
+            </>
+          )}
+        </div>
 
         
 
@@ -3262,6 +3421,22 @@ export default function ProfilePage({
         setOrgName={setCorporateOrgName}
         domain={corporateDomain}
         setDomain={setCorporateDomain}
+      />
+
+      {/* Backer Recognition & Consent Modal */}
+      <BackerConsentModal
+        isOpen={isConsentModalOpen}
+        onClose={() => setIsConsentModalOpen(false)}
+        onSave={handleSaveBackerConsent}
+        backer={{
+          id: activeUser?.login || 'self',
+          sponsorId: activeUser?.login || 'self',
+          name: activeUser?.name || activeUser?.login || 'Backer',
+          backer_name: activeUser?.name || activeUser?.login || 'Backer',
+          tierName: sponsorBadge.title,
+          visibility: (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_visibility') : null) || 'public',
+          quote: (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_quote') : null) || ''
+        }}
       />
 
     </div>

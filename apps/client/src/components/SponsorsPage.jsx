@@ -698,10 +698,24 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                                 {gh.name}
                               </h3>
                               <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/15">
-                                  <ShinyGemIcon className="w-2.5 h-2.5" />
-                                  Core Patron
-                                </span>
+                                {(() => {
+                                  const isPastCore = backer.is_active === false;
+                                  const backerYear = backer.created_at ? new Date(backer.created_at).getFullYear() : new Date().getFullYear();
+                                  const backerShortYear = `’${String(backerYear).slice(-2)}`;
+                                  const badgeLabel = isPastCore ? `Core Patron ${backerShortYear}` : 'Core Patron';
+                                  const badgeTooltip = isPastCore
+                                    ? `Core Patron Cohort of ${backerYear} • Lifetime Contributor`
+                                    : 'Active Core Patron • Renewing monthly';
+                                  return (
+                                    <span
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/15"
+                                      title={badgeTooltip}
+                                    >
+                                      <ShinyGemIcon className="w-2.5 h-2.5" />
+                                      {badgeLabel}
+                                    </span>
+                                  );
+                                })()}
                                 {gh.url && (
                                   <Tooltip content={`View @${gh.handle} on GitHub`} position="top">
                                     <a
