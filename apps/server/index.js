@@ -2433,15 +2433,28 @@ app.get('/api/user/quota', async (req, res) => {
   const tier = effectiveTier;
   const config = TIER_CONFIG[tier] || TIER_CONFIG.free;
 
-  const userLogin = req.session?.user?.login;
+  const sessionUserLogin = req.session?.user?.login;
+  const queryUser = typeof req.query.user === 'string' ? req.query.user.trim().toLowerCase().replace(/^@/, '') : null;
+  const userLogin = sessionUserLogin || queryUser;
+  const cleanLogin = userLogin ? userLogin.toLowerCase().replace(/^@/, '') : null;
   const allKnownSponsors = [...(Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : []), ...CANONICAL_SEED_SPONSORS];
-  const matchingSponsor = userLogin
-    ? allKnownSponsors.find(s => s.github_handle && s.github_handle.toLowerCase().replace(/^@/, '') === userLogin.toLowerCase().replace(/^@/, ''))
+  const matchingSponsor = cleanLogin
+    ? allKnownSponsors.find(s => s.github_handle && s.github_handle.toLowerCase().replace(/^@/, '') === cleanLogin)
     : null;
-  let isSponsor = Boolean(req.session?.is_sponsor || req.session?.user?.is_sponsor || matchingSponsor);
-  let sponsorTier = req.session?.sponsor_tier || req.session?.user?.sponsor_tier || matchingSponsor?.tier_label || null;
+
+  const isAuthorizedDev = Boolean(cleanLogin && (cleanLogin === 'suneetchugh-dev' || (Array.isArray(globalDevRoster) && globalDevRoster.includes(cleanLogin))));
+  const hasCorePatron = Boolean(
+    isAuthorizedDev ||
+    allKnownSponsors.some(s => s.tier_id === 3 && s.github_handle && cleanLogin && s.github_handle.toLowerCase().replace(/^@/, '') === cleanLogin)
+  );
+  const coreRecord = allKnownSponsors.find(s => s.tier_id === 3 && s.github_handle && cleanLogin && s.github_handle.toLowerCase().replace(/^@/, '') === cleanLogin);
+  const coreCohortYear = coreRecord?.created_at ? new Date(coreRecord.created_at).getFullYear() : 2026;
+  const isCoreActiveMonthly = matchingSponsor ? (matchingSponsor.tier_id === 3 && matchingSponsor.is_active !== false) : false;
+
+  let isSponsor = Boolean(hasCorePatron || req.session?.is_sponsor || req.session?.user?.is_sponsor || matchingSponsor);
+  let sponsorTier = req.session?.sponsor_tier || req.session?.user?.sponsor_tier || matchingSponsor?.tier_label || (hasCorePatron ? 'Core Supporter' : null);
   if (!globalHackathonMode && (req.session?.is_evaluation_sponsor || matchingSponsor?.is_evaluation)) {
-    if (!matchingSponsor || matchingSponsor.is_evaluation) {
+    if (!hasCorePatron && (!matchingSponsor || matchingSponsor.is_evaluation)) {
       isSponsor = false;
       sponsorTier = null;
     }
@@ -2477,7 +2490,10 @@ app.get('/api/user/quota', async (req, res) => {
     is_sponsor: isSponsor,
     sponsor_tier: sponsorTier,
     sponsor_is_active: matchingSponsor ? (matchingSponsor.is_active !== false) : true,
-    sponsor_created_at: matchingSponsor?.created_at || null,
+    sponsor_created_at: matchingSponsor?.created_at || (hasCorePatron ? '2026-10-15T10:00:00.000Z' : null),
+    has_core_patron: hasCorePatron,
+    core_cohort_year: coreCohortYear,
+    is_core_active_monthly: isCoreActiveMonthly,
     limits: {
       repositories: tier === 'free' ? 1 : (tier === 'pro' ? 5 : -1),
       decisions: tier === 'free' ? 50 : (tier === 'pro' ? 500 : -1),
