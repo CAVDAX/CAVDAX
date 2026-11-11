@@ -17,7 +17,13 @@ const FULL_FORM_WORDS = [
 export default function SplashLoader({ isDarkTheme }) {
   // CAVDAX Architecture: All visitors see the choreographed splash cycle on boot
   // while the React tree mounts and warms behind it with zero layout flash.
-  const [isVisible, setIsVisible] = useState(true);
+  const [isVisible, setIsVisible] = useState(() => {
+    if (typeof window !== 'undefined' && sessionStorage.getItem('cavdax_splash_shown') === 'true') {
+      isInitialSplashFinished = true;
+      return false;
+    }
+    return true;
+  });
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [progress, setProgress] = useState(0);
 
@@ -43,6 +49,7 @@ export default function SplashLoader({ isDarkTheme }) {
   };
 
   useEffect(() => {
+    if (!isVisible) return;
     // Snappy, high-performance animation cycle (~1.8s) so page is interactive immediately
     const drawDuration = 1800;
     const fadeDuration = 500;

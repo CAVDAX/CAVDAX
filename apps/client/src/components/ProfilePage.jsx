@@ -120,6 +120,12 @@ export default function ProfilePage({
       onPrefetchTab('benefits');
     }
   }, [onPrefetchTab]);
+
+  const handlePrefetchSupport = useCallback(() => {
+    if (onPrefetchTab) {
+      onPrefetchTab('support');
+    }
+  }, [onPrefetchTab]);
   useEffect(() => {
     if (tier && tier !== currentTier) {
       setCurrentTier(tier);
@@ -858,7 +864,9 @@ export default function ProfilePage({
                 playClick();
                 if (onOpenSupportPage) onOpenSupportPage();
               }}
-              onMouseEnter={() => setIsSponsorHovered(true)}
+              onMouseEnter={() => { setIsSponsorHovered(true); handlePrefetchSupport(); }}
+              onFocus={handlePrefetchSupport}
+              onTouchStart={handlePrefetchSupport}
               onMouseLeave={() => setIsSponsorHovered(false)}
               className={`relative overflow-hidden group h-9 min-w-[140px] px-5 flex items-center justify-center gap-2 rounded-lg border text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none ${
                 isSponsorHovered
@@ -1789,6 +1797,61 @@ export default function ProfilePage({
           </div>
         )}
 
+        {/* Downgrade Confirmation Modal */}
+        {isDowngradeModalOpen && (
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="downgrade-modal-title-large"
+          >
+            <div className="relative w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#111116] shadow-2xl space-y-4">
+              <div className="flex items-center gap-2.5 text-amber-500">
+                <AlertTriangle className="w-5 h-5 shrink-0" />
+                <h3 id="downgrade-modal-title-large" className="text-base font-bold font-mono text-slate-950 dark:text-white">
+                  Downgrade to Community Tier?
+                </h3>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
+                Downgrading to Community enforces the 1-repository limit, pauses secondary branch causal graphs, and deactivates CI/CD intercept gates.
+              </p>
+              {isTrialActive && (
+                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-mono">
+                  Your remaining trial window ({trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left) will remain preserved and can be reactivated anytime before expiration.
+                </div>
+              )}
+              <div className="pt-2 flex items-center justify-end gap-3 font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => setIsDowngradeModalOpen(false)}
+                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition-colors cursor-pointer"
+                >
+                  Keep {currentTier === 'enterprise' ? 'Team & Scale' : 'Pro'}
+                </button>
+                <button
+                  type="button"
+                  onClick={executeDowngradeToFree}
+                  className="px-3 py-2 text-rose-500 hover:text-rose-400 dark:text-rose-400 dark:hover:text-rose-300 transition-colors cursor-pointer font-medium"
+                >
+                  Confirm Downgrade
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cryptographic Key Rotation Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isRotateConfirmOpen}
+          onClose={() => setIsRotateConfirmOpen(false)}
+          onConfirm={handleRotateKey}
+          title="Rotate API Key"
+          description="Existing tokens will be revoked immediately across connected agent sessions and pipelines."
+          confirmLabel="Rotate Key"
+          severity="neutral"
+          icon={RefreshCw}
+        />
+
         {/* Unified GitHub Authentication Modal */}
         <DevPatLoginModal
           isOpen={isDevPatModalOpen}
@@ -1886,7 +1949,9 @@ export default function ProfilePage({
               playClick();
               if (onOpenSupportPage) onOpenSupportPage();
             }}
-            onMouseEnter={() => setIsSponsorHovered(true)}
+            onMouseEnter={() => { setIsSponsorHovered(true); handlePrefetchSupport(); }}
+            onFocus={handlePrefetchSupport}
+            onTouchStart={handlePrefetchSupport}
             onMouseLeave={() => setIsSponsorHovered(false)}
             className={`relative overflow-hidden group h-8 sm:h-8.5 min-w-[125px] sm:min-w-[135px] px-3.5 sm:px-4 flex items-center justify-center gap-2 rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-500 cursor-pointer tactile-btn shadow-xs select-none ${
               isSponsorHovered
@@ -2851,10 +2916,11 @@ export default function ProfilePage({
         isOpen={isRotateConfirmOpen}
         onClose={() => setIsRotateConfirmOpen(false)}
         onConfirm={handleRotateKey}
-        title="Rotate Cryptographic API Key?"
-        description="Rotating your API key immediately revokes your existing token across all connected agent IDEs (Cursor, Claude Code, Windsurf) and CI/CD pipelines. Any active background agent sessions will be severed until updated with the new key."
-        confirmLabel="Rotate API Key"
-        severity="warning"
+        title="Rotate API Key"
+        description="Existing tokens will be revoked immediately across connected agent sessions and pipelines."
+        confirmLabel="Rotate Key"
+        severity="neutral"
+        icon={RefreshCw}
       />
 
       {/* Dev PAT Login Modal for Local Development Authentication */}

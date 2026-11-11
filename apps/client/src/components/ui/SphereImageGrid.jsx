@@ -423,11 +423,14 @@ export default function SphereImageGrid({
         onClick={() => setSelectedImage(image)}
         title={image.title || image.alt}
       >
-        <div className={`relative w-full h-full rounded-full overflow-hidden shadow-md border group-hover:scale-105 transition-all bg-slate-100 dark:bg-slate-900 ${ringClass}`}>
+        <div className={`relative w-full h-full rounded-full overflow-hidden shadow-md border group-hover:scale-105 transition-all bg-slate-200 dark:bg-slate-800 flex items-center justify-center font-mono font-bold text-slate-700 dark:text-slate-200 select-none ${ringClass}`} style={{ fontSize: `${Math.max(10, imageSize * 0.35)}px` }}>
+          <span className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+            {(image.title || image.alt || 'B').charAt(0).toUpperCase()}
+          </span>
           <img
             src={image.src}
             alt={image.alt || 'Backer Avatar'}
-            className="w-full h-full object-cover pointer-events-none"
+            className="relative z-10 w-full h-full object-cover pointer-events-none"
             draggable={false}
             loading={index < 6 ? 'eager' : 'lazy'}
             onError={(e) => {
@@ -471,11 +474,17 @@ export default function SphereImageGrid({
                 <X className="w-4 h-4" />
               </button>
 
-              <div className="w-20 h-20 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-white/15 shadow-sm mb-4">
+              <div className="relative w-20 h-20 mx-auto rounded-full overflow-hidden border border-slate-200 dark:border-white/15 shadow-sm mb-4 bg-slate-100 dark:bg-white/10 flex items-center justify-center font-mono font-bold text-2xl text-slate-700 dark:text-white">
+                <span className="absolute inset-0 flex items-center justify-center pointer-events-none select-none">
+                  {(selectedImage.title || selectedImage.alt || 'B').charAt(0).toUpperCase()}
+                </span>
                 <img
                   src={selectedImage.src}
                   alt={selectedImage.alt}
-                  className="w-full h-full object-cover"
+                  className="relative z-10 w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
                 />
               </div>
 

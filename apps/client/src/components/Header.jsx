@@ -288,7 +288,7 @@ export default function Header({
           className="flex items-center justify-end space-x-1.5 sm:space-x-2.5 min-w-0"
         >
           {/* Profile Button with Uniform 1px Outline & Distinct Tier Dot */}
-          <Tooltip content={user?.login ? `@${user.login} (${(tier || 'free').toUpperCase()} Tier)` : `Profile & Account (${(tier || 'free').toUpperCase()} Tier)`} position="bottom">
+          <Tooltip content={user?.login ? `@${user.login} (${tier === 'enterprise' ? 'Team & Scale' : tier === 'pro' ? 'Pro' : 'Community'})` : `Profile & Account (${tier === 'enterprise' ? 'Team & Scale' : tier === 'pro' ? 'Pro' : 'Community'})`} position="bottom">
             <button
               onClick={() => {
                 playClick();
@@ -299,12 +299,12 @@ export default function Header({
                   ? (tier === 'pro'
                       ? 'border border-amber-400 bg-amber-400 text-slate-950 shadow-xs'
                       : tier === 'enterprise'
-                      ? 'border border-purple-600 dark:border-purple-500 bg-[#150a26] dark:bg-[#0f051d] text-purple-200 shadow-xs'
+                      ? 'border-2 border-slate-950 dark:border-white bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-[0_0_10px_rgba(255,255,255,0.25)]'
                       : 'border border-slate-950 dark:border-white bg-slate-950 text-white dark:bg-white dark:text-slate-950 shadow-xs')
                   : (tier === 'pro'
                       ? 'border border-amber-400/90 bg-amber-400/10 text-amber-600 dark:text-amber-400 hover:bg-amber-400/20'
                       : tier === 'enterprise'
-                      ? 'border border-purple-600/90 bg-purple-950/20 text-purple-600 dark:text-purple-300 hover:border-purple-500 hover:bg-purple-950/30'
+                      ? 'border border-slate-900/90 dark:border-white/90 bg-slate-100/90 dark:bg-white/10 text-slate-900 dark:text-white shadow-[0_0_8px_rgba(255,255,255,0.2)] hover:border-slate-950 dark:hover:border-white hover:bg-slate-200/90 dark:hover:bg-white/20'
                       : 'border border-slate-200/80 dark:border-white/20 bg-slate-100/80 dark:bg-white/[0.08] hover:bg-slate-200/80 dark:hover:bg-white/15 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white')
               }`}
               aria-label="User Profile and Account"
@@ -325,7 +325,7 @@ export default function Header({
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white dark:ring-slate-950 z-20 pointer-events-none" />
               )}
               {tier === 'enterprise' && (
-                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-purple-600 dark:bg-purple-500 ring-2 ring-white dark:ring-slate-950 z-20 pointer-events-none" />
+                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-slate-950 dark:bg-white ring-2 ring-white dark:ring-slate-950 z-20 pointer-events-none shadow-xs" />
               )}
             </button>
           </Tooltip>
