@@ -163,10 +163,10 @@ export const EmptyState = forwardRef(
         },
         error: {
           light:
-            'bg-white border border-red-200 bg-red-50/50 hover:bg-red-50/80',
-          dark: 'bg-neutral-900 border border-red-800 bg-red-950/50 hover:bg-red-950/80',
+            'bg-white border border-slate-200 hover:border-slate-300',
+          dark: 'bg-[#0B0D11] border border-white/10 hover:border-white/20',
           neutral:
-            'bg-stone-50 border border-red-300 bg-red-50/50 hover:bg-red-50/80',
+            'bg-stone-50 border border-stone-200 hover:border-stone-300',
         },
       };
       return (variants[v] && variants[v][th]) || variants.default[th] || variants.default.light;

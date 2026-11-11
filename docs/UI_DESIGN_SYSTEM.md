@@ -9137,6 +9137,12 @@ Amateur confirmation modals feature saturated yellow/amber warning badges and wo
    - **Strict Zero Decorative Clipart**: Confirmation dialogs are high-gravity operational barriers. Never insert generic 3D illustrations, cartoon characters, or floating clipart in the dialog body.
    - **Tactile Micro-Action SVGs**: Primary confirmation/destructive buttons must pair with an authentic 14px (`w-3.5 h-3.5 shrink-0`) Lucide line SVG (e.g., `ArrowDownLeft` for tier downgrades, `RefreshCw` for key rotation, `Unlink2` for disconnecting repositories).
    - **Zero Layout-Jitter Pending Transition**: When an async action executes, the micro-SVG cleanly transitions into `<Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />` with zero button width jump.
+10. **Human-Outcome Translation Standard (Anti-Robotic Math & Multiplier Invariant)**:
+    - **Strict Ban on Technical Formulas & Scalar Numbers in Copy**: Never leak internal code multipliers, radius scalars, or technical variable math into user-facing dialog copy (e.g., strictly forbid `"Scales 3D sphere node to 0.85× standard radius."` or `"Matrix scale 1.15x"`).
+    - **Human-Centric Real-World Meaning**: Always state the tangible, real-world visual outcome in clear, natural human phrasing:
+      - e.g. `"Sets your 3D sphere profile picture to small size."`
+      - e.g. `"Sets your 3D sphere profile picture to medium size."`
+    - **Strict Single-Line Physical Cap**: Every sentence must remain under 55 characters, fitting comfortably on a single horizontal line inside the 480px dialog container with zero wrapping and zero ellipsis clipping.
 
 ---
 
