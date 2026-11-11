@@ -10,6 +10,19 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Elimination of Clunky Underline Opt-Out Link & Backer Ribbon Relocation (`SupportPage.jsx`)**:
+  - **Adversarial Forensic Critique (/devils-advocate & /Suneet-Perfect-AI-Slop-Remover)**:
+    - Placing a raw browser-underlined text link (`className="... underline ..."`) directly below the primary action button violated Slop Pattern 9 (Raw Browser Text Underlines) and broke vertical rhythm across the 3 sibling tier cards.
+    - Sibling cards without active subscriptions had clean footers, while the active card had an awkward hanging 24px bottom row that looked amateurish and misaligned with enterprise pricing grids (Stripe, Linear, GitHub Sponsors).
+    - Furthermore, `Personal Team Acknowledgment` in the perks list truncated awkwardly into `Personal Team Acknowledgme...` due to narrow card width and strict `whitespace-nowrap`.
+  - **The High-Craft Architectural Resolution**:
+    1. *Eradicated the Hanging Link*: Completely removed the awkward text link from under the tier card CTA button, restoring clean baseline symmetry across all 3 cards in the grid.
+    2. *Action Gating on Active Button*: The primary button remains solid `[ ✓ Active Sponsor Tier ]` with an explicit `title` tooltip (`"Active sponsorship tier • Click to opt out or switch category"`). Clicking it safely triggers the `ConfirmationDialog` to opt out.
+    3. *Dedicated Backer Management Ribbon Integration*: Moved the secondary opt-out action into the dedicated **Monochromatic Backer Recognition Preferences Ribbon Strip** located immediately below the pricing grid. Sits alongside `[ SlidersHorizontal Edit Recognition ]` as a discrete, monochromatic action button: `[ ArrowDownLeft Opt Out ]` with hover rose tint and subtle micro-borders.
+    4. *Anti-Truncation Perk Copy*: Refined `'Personal Team Acknowledgment'` to `'Personal Acknowledgment'`, fitting comfortably within card margins with zero ellipsis clipping.
+  - **Headless Visual Audits Verified**:
+    - Captured `audit-clean-tier-cards-grid-dark.png`, `audit-clean-core-card-dark.png`, `audit-clean-core-card-light.png`, `audit-clean-backer-ribbon-dark.png`, and `audit-clean-backer-ribbon-light.png`.
+    - Zero console errors, 0 build warnings, 100% responsive equilibrium.
 - **Permanent Core Patron Badge Preservation Across Tier Switches (`ProfilePage.jsx`, `SupportPage.jsx`, `apps/server/index.js`)**:
   - **Adversarial Forensic Discovery**:
     - Discovered that when authorized developers (e.g. `suneetchugh-dev`) or founding Core Patrons switched tiers via dev passes or downgraded to `2 Cups Sponsor` / `Cookie Backer`, `sponsorTierLabel` was overwritten with the lower tier name. `getSponsorBadgeInfo` inspected only the active label without checking lifetime Core Patron entitlement, resulting in the Core Patron badge being replaced by `Supporter` or `Cookie Backer`.
