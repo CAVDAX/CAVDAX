@@ -1663,7 +1663,7 @@ app.post('/api/mcp/call', requireAuthOrDemo, async (req, res) => {
   // --- Plan Quota Enforcement (Causal Verification Gate) ---
   const sessionTier = req.session?.tier || req.session?.user?.tier;
   const effectiveTier = globalHackathonMode ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
-  const decisionLimit = effectiveTier === 'free' ? 50 : (effectiveTier === 'pro' ? 1000 : -1);
+  const decisionLimit = effectiveTier === 'free' ? 50 : (effectiveTier === 'pro' ? 500 : -1);
 
   if (decisionLimit !== -1 && (toolName === 'apply_code_change' || toolName === 'revalidate_decision')) {
     let currentDecisions = 0;
@@ -2454,8 +2454,8 @@ app.get('/api/user/quota', async (req, res) => {
     is_sponsor: isSponsor,
     sponsor_tier: sponsorTier,
     limits: {
-      repositories: tier === 'free' ? 1 : (tier === 'pro' ? 10 : -1),
-      decisions: tier === 'free' ? 50 : (tier === 'pro' ? 1000 : -1),
+      repositories: tier === 'free' ? 1 : (tier === 'pro' ? 5 : -1),
+      decisions: tier === 'free' ? 50 : (tier === 'pro' ? 500 : -1),
       nodes: config.node_limit,
       rate_limit_per_min: config.rate_limit_per_min,
       mcp_rate_limit_per_min: config.mcp_rate_limit_per_min
@@ -3542,7 +3542,7 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const isDevMaintainer = Boolean(sessionUserLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(sessionUserLogin));
   const sessionTier = isDevMaintainer ? 'enterprise' : (req.session?.tier || req.session?.user?.tier || authUser?.tier);
   const effectiveTier = (globalHackathonMode || isDevMaintainer) ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
-  const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 10 : -1);
+  const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 5 : -1);
 
   const requestedBranch = sanitizeBranchName(req.query.branch, null);
   try {
@@ -3961,7 +3961,7 @@ if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
 // Canonical server-side tier pricing table (paise: ₹1 = 100 paise)
 const CANONICAL_TIER_PRICES_PAISE = Object.freeze({
   pro: 29900,         // ₹299 / mo ($4/mo)
-  enterprise: 499900  // ₹4,999 / mo ($59/mo)
+  enterprise: 299900  // ₹2,999 / mo ($35/mo)
 });
 
 // In-memory order tracking to prevent tier tampering (OWASP A04 Hardening)
@@ -4598,14 +4598,24 @@ app.get(['/api/sponsors', '/api/billing/sponsors'], (req, res) => {
   });
 });
 
+// Strict limiter — Backer Recognition Consent (OWASP API4 Resource Exhaustion Defense)
+const consentLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,                  // max 30 consent updates per 15 minutes per IP
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { success: false, error: 'RATE_LIMIT_EXCEEDED', message: 'Too many consent preference updates. Please wait 15 minutes.' }
+});
+
 /**
  * POST /api/sponsors/consent
  * Updates a backer's public recognition and visibility preferences.
+ * Protected by BOLA/IDOR ownership validation (OWASP API1 / A01 Access Control).
  * Body: { backer_id, visibility: 'public' | 'anonymous' | 'private', display_name, backer_message }
  */
-app.post('/api/sponsors/consent', (req, res) => {
+app.post('/api/sponsors/consent', consentLimiter, (req, res) => {
   const { backer_id, visibility, display_name, backer_message } = req.body || {};
-  if (!backer_id) {
+  if (!backer_id || typeof backer_id !== 'string') {
     return res.status(400).json({ success: false, error: 'backer_id is required' });
   }
 
@@ -4614,20 +4624,46 @@ app.post('/api/sponsors/consent', (req, res) => {
   }
 
   const sponsor = savedSystemState.sponsors.find(s => s.id === backer_id);
-  if (sponsor) {
-    sponsor.visibility = visibility || 'public';
-    if (visibility === 'public') {
-      if (display_name) sponsor.name = String(display_name).slice(0, 40);
-      if (backer_message !== undefined) sponsor.backer_message = String(backer_message).slice(0, 60);
-    } else if (visibility === 'anonymous') {
-      sponsor.name = 'Anonymous Backer';
-      sponsor.backer_message = null;
-    }
-    syncSystemStateToDisk();
-    return res.json({ success: true, backer: sponsor });
+  if (!sponsor) {
+    return res.status(404).json({ success: false, error: 'BACKER_NOT_FOUND', message: 'Backer record not found.' });
   }
 
-  return res.json({ success: true, message: 'Preference acknowledged' });
+  // BOLA / IDOR Verification: Verify caller is owner of this backer record
+  const sessionUser = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
+  const sponsorHandle = (sponsor.github_handle || '').toLowerCase().replace(/^@/, '');
+  const isRecentPayer = req.session?.recentPaymentId === backer_id;
+  const isDevMaintainer = Boolean(sessionUser && globalDevRoster.includes(sessionUser));
+  const isEvaluationModeActive = Boolean(globalHackathonMode || sponsor.is_evaluation);
+
+  const isAuthorized = isRecentPayer || isDevMaintainer || (sponsorHandle && sessionUser && sponsorHandle === sessionUser) || isEvaluationModeActive;
+
+  if (!isAuthorized) {
+    return res.status(403).json({
+      success: false,
+      error: 'FORBIDDEN_BACKER_ACCESS',
+      message: 'Access denied: You are not authorized to update recognition preferences for this sponsor.'
+    });
+  }
+
+  // Validate and sanitize inputs (strip control characters and angle brackets)
+  const sanitizeText = (str, maxLen) => {
+    if (!str) return '';
+    return String(str)
+      .replace(/[\x00-\x1F\x7F-\x9F<>]/g, '')
+      .trim()
+      .slice(0, maxLen);
+  };
+
+  sponsor.visibility = ['public', 'anonymous', 'private'].includes(visibility) ? visibility : 'public';
+  if (sponsor.visibility === 'public') {
+    if (display_name !== undefined) sponsor.name = sanitizeText(display_name, 40) || sponsor.name;
+    if (backer_message !== undefined) sponsor.backer_message = sanitizeText(backer_message, 60);
+  } else if (sponsor.visibility === 'anonymous') {
+    sponsor.name = 'Anonymous Backer';
+    sponsor.backer_message = null;
+  }
+  syncSystemStateToDisk();
+  return res.json({ success: true, backer: sponsor });
 });
 
 /**
