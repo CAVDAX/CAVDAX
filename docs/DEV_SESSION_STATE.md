@@ -16,7 +16,7 @@
     - Furthermore, `tracking-tight` on monospace typography compressed characters together with negative letter-spacing (`-1.8px`), while default line-height (`line-height: 1`) caused 3 lines of 72px text to collide vertically with zero daylight between descenders and ascenders.
   - **The High-Craft Architectural Resolution**:
     - **Completely Eradicated Background Mask `div`**: Lightfall background flows seamlessly with zero artificial rectangles, ellipses, or haze patches.
-    - **Pure Glyph-Contour Silhouette & Filter Blur**: Relies strictly on multi-layer glyph text shadow and filter drop-shadow (`dark:[text-shadow:_0_0_12px_rgba(2,6,23,0.95),_0_0_28px_rgba(2,6,23,0.85),_0_2px_6px_rgba(0,0,0,1)] dark:drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]`) hugging character strokes.
+    - **Pure Glyph-Contour Silhouette & Filter Blur**: Relies strictly on multi-layer glyph text shadow and filter drop-shadow (`dark:[text-shadow:_0_0_8px_rgba(2,6,23,0.75),_0_2px_4px_rgba(0,0,0,0.85)] dark:drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]`) hugging character strokes.
     - **Spacious Typographic Architecture**:
       - Replaced cramped `tracking-tight` with relaxed `tracking-wide`.
       - Expanded line-height from default `1.0` to generous `leading-[1.26] sm:leading-[1.3] lg:leading-[1.32]` (adding ~20px of elegant vertical daylight between lines).
