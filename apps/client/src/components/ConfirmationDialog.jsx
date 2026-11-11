@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertTriangle, AlertOctagon, Loader2, X } from 'lucide-react';
+import { AlertCircle, Info, Loader2, X } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 
 /**
@@ -176,19 +176,17 @@ export default function ConfirmationDialog({
             <div className="flex items-start gap-3.5 mb-2">
               <div
                 className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
-                  CustomIcon || severity === 'neutral'
-                    ? 'bg-slate-100 dark:bg-white/[0.06] border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-slate-200'
-                    : isDanger
+                  isDanger
                     ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
-                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                    : 'bg-slate-100 dark:bg-white/[0.06] border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-slate-200'
                 }`}
               >
                 {CustomIcon ? (
                   <CustomIcon className="w-4 h-4" />
                 ) : isDanger ? (
-                  <AlertOctagon className="w-4 h-4" />
+                  <AlertCircle className="w-4 h-4" />
                 ) : (
-                  <AlertTriangle className="w-4 h-4" />
+                  <Info className="w-4 h-4" />
                 )}
               </div>
               <div className="pr-6 min-w-0">
@@ -262,9 +260,7 @@ export default function ConfirmationDialog({
                   canConfirm && !isPending
                     ? isDanger
                       ? 'bg-rose-600 hover:bg-rose-700 text-white shadow-xs cursor-pointer'
-                      : CustomIcon || severity === 'neutral'
-                      ? 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 shadow-xs cursor-pointer'
-                      : 'bg-amber-600 hover:bg-amber-700 text-white shadow-xs cursor-pointer'
+                      : 'bg-slate-950 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-950 dark:hover:bg-slate-100 shadow-xs cursor-pointer'
                     : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-transparent'
                 }`}
               >

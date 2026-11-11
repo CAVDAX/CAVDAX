@@ -2316,6 +2316,7 @@ jobs:
         confirmLabel="Disconnect Repository"
         requireMatch={repo.name || repo.full_name?.split('/')[1] || 'disconnect'}
         severity="danger"
+        icon={Unlink2}
         confirmIcon={Unlink2}
       />
 

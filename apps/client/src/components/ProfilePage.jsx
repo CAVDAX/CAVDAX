@@ -2037,8 +2037,8 @@ export default function ProfilePage({
                 ]
           }
           confirmLabel={pendingDowngradeTier === 'pro' ? 'Confirm Switch' : 'Confirm Downgrade'}
-          severity="warning"
-          icon={AlertTriangle}
+          severity="neutral"
+          icon={ArrowDownLeft}
           confirmIcon={ArrowDownLeft}
         />
 
@@ -3109,8 +3109,8 @@ export default function ProfilePage({
               ]
         }
         confirmLabel={pendingDowngradeTier === 'pro' ? 'Confirm Switch' : 'Confirm Downgrade'}
-        severity="warning"
-        icon={AlertTriangle}
+        severity="neutral"
+        icon={ArrowDownLeft}
         confirmIcon={ArrowDownLeft}
       />
 
