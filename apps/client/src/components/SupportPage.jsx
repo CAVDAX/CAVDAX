@@ -248,8 +248,8 @@ const TIERS = [
     usdSub:   'approx ₹169 INR',
     inrSub:   'approx $2 USD',
     paise:    16900,
-    desc:     'Fueling daily causal engine development.',
-    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Contributor Recognition'],
+    desc:     'Fueling daily causal engine dev.',
+    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Contributor Badge'],
     accent:   'bronze',
     popular:  false,
     icon:     CookieIcon,
@@ -263,7 +263,7 @@ const TIERS = [
     usdSub:   'approx ₹339 INR',
     inrSub:   'approx $4 USD',
     paise:    33900,
-    desc:     'Powers automated graph fuzzing passes.',
+    desc:     'Powers automated graph fuzzing.',
     perks:    ['Everything in $2 tier', 'Public Backer Spotlight', 'Early access MCP tool specs'],
     accent:   'amber',
     popular:  true,
@@ -278,8 +278,8 @@ const TIERS = [
     usdSub:   'approx ₹849 INR',
     inrSub:   'approx $10 USD',
     paise:    84900,
-    desc:     'Funds FalkorDB benchmark instances.',
-    perks:    ['Featured 3D Backer Sphere Node', 'Permanent Core Sponsor badge', 'Direct Team Acknowledgment'],
+    desc:     'Funds benchmark graph clusters.',
+    perks:    ['Featured 3D Sphere Node', 'Permanent Core Patron Badge', 'Personal Team Acknowledgment'],
     accent:   'diamond',
     popular:  false,
     icon:     ShinyGemIcon,
@@ -564,16 +564,23 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
 
   const handleSaveConsent = async (consentData) => {
     try {
-      await fetch('/api/sponsors/consent', {
+      const res = await fetch('/api/sponsors/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(consentData)
       });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        showToast(false, data?.message || 'Failed to update visibility preference.');
+        return;
+      }
       fetchSponsors();
-      showToast(true, 'Backer visibility preference updated.');
+      const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
+      showToast(true, `Backer preference updated to ${visLabel}.`);
     } catch (err) {
       console.warn('[SupportPage] Failed to save consent:', err);
+      showToast(false, 'Network error saving recognition preference.');
     }
   };
 
@@ -1160,7 +1167,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                           ? 'text-amber-500 dark:text-amber-400'
                           : 'text-amber-700 dark:text-amber-400'
                       }`} />
-                      <span>{perk}</span>
+                      <span className="whitespace-nowrap overflow-hidden text-ellipsis">{perk}</span>
                     </li>
                   ))}
                 </ul>

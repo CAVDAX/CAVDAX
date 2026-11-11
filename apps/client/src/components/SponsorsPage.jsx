@@ -1,3 +1,48 @@
+// Identity Deduplication Helper (§1:1 Entity Mapping Invariant & Highest Honor Principle)
+function deduplicateBackersList(rawList) {
+  if (!Array.isArray(rawList)) return [];
+  const map = new Map();
+  for (const s of rawList) {
+    const cleanHandle = s.github_handle && s.github_handle !== 'community-backer' && s.github_handle !== 'evaluator-pass'
+      ? String(s.github_handle).toLowerCase().replace(/^@/, '').trim()
+      : null;
+    const cleanName = s.name ? String(s.name).toLowerCase().trim() : null;
+    const key = cleanHandle
+      ? `gh:${cleanHandle}`
+      : (cleanName && cleanName !== 'anonymous backer' && cleanName !== 'community patron'
+        ? `name:${cleanName}`
+        : `id:${s.id || Math.random()}`);
+
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(s);
+  }
+
+  const result = [];
+  for (const group of map.values()) {
+    if (group.length === 1) {
+      result.push(group[0]);
+      continue;
+    }
+    const highestTier = Math.max(...group.map(r => Number(r.tier_id) || 1));
+    const sorted = [...group].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    const newest = sorted[0];
+    const hasPrivate = group.some(r => r.visibility === 'private');
+    const hasAnonymous = group.some(r => r.visibility === 'anonymous');
+    const effectiveVisibility = hasPrivate ? 'private' : (hasAnonymous ? 'anonymous' : (newest.visibility || 'public'));
+
+    result.push({
+      ...newest,
+      tier_id: highestTier,
+      tier_label: highestTier === 3 ? 'Core Supporter' : (highestTier === 2 ? '2 Cups Sponsor' : 'Cookie Backer'),
+      highlighted: highestTier === 3,
+      visibility: effectiveVisibility,
+      backer_message: newest.backer_message || group.find(r => r.backer_message)?.backer_message || null,
+      quote: newest.quote || group.find(r => r.quote)?.quote || null
+    });
+  }
+  return result;
+}
+
 import React, { useState, useEffect, useRef, useMemo, useLayoutEffect, useCallback } from 'react';
 import { motion, useScroll, useSpring } from 'framer-motion';
 import {
@@ -237,7 +282,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       if (isMounted && data.success && Array.isArray(data.sponsors)) {
-        setSponsors(data.sponsors);
+        setSponsors(deduplicateBackersList(data.sponsors));
       }
     } catch (err) {
       console.warn('[SponsorsPage] Fallback to demo sponsors on fetch failure:', err.message);
@@ -307,7 +352,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
 
   // Format Backers for 3D Sphere Galaxy: Unique Backers strictly ONCE, sized proportionally by Tier
   const sphereImages = useMemo(() => {
-    const uniqueBackers = sponsors.filter((s) => s.visibility !== 'private');
+    const uniqueBackers = deduplicateBackersList(sponsors).filter((s) => s.visibility !== 'private');
     if (uniqueBackers.length === 0) return [];
 
     const formatted = uniqueBackers.map((s) => {
@@ -351,13 +396,13 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
     return formatted;
   }, [sponsors]);
 
-  const coreBackers = useMemo(() => sponsors.filter(s => (s.tier_id === 3 || s.tier_id === '3' || s.highlighted) && s.visibility !== 'private'), [sponsors]);
-  const twoCupsBackers = useMemo(() => sponsors.filter(s => (s.tier_id === 2 || s.tier_id === '2') && s.visibility !== 'private'), [sponsors]);
-  const cookieBackers = useMemo(() => sponsors.filter(s => (s.tier_id === 1 || s.tier_id === '1') && s.visibility !== 'private'), [sponsors]);
+  const coreBackers = useMemo(() => deduplicateBackersList(sponsors).filter(s => (s.tier_id === 3 || s.tier_id === '3' || s.highlighted) && s.visibility !== 'private'), [sponsors]);
+  const twoCupsBackers = useMemo(() => deduplicateBackersList(sponsors).filter(s => (s.tier_id === 2 || s.tier_id === '2') && s.visibility !== 'private'), [sponsors]);
+  const cookieBackers = useMemo(() => deduplicateBackersList(sponsors).filter(s => (s.tier_id === 1 || s.tier_id === '1') && s.visibility !== 'private'), [sponsors]);
 
   // Search filtering
   const filteredSponsors = useMemo(() => {
-    let list = sponsors.filter(s => s.visibility !== 'private');
+    let list = deduplicateBackersList(sponsors).filter(s => s.visibility !== 'private');
     if (activeFilter === 'core') list = list.filter(s => s.tier_id === 3 || s.tier_id === '3' || s.highlighted);
     if (activeFilter === 'two_cups') list = list.filter(s => s.tier_id === 2 || s.tier_id === '2');
     if (activeFilter === 'cookie') list = list.filter(s => s.tier_id === 1 || s.tier_id === '1');
