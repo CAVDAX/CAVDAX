@@ -330,7 +330,7 @@ export default function App() {
       return (targetKey && key === targetKey) || (r.id && newRepo.id && String(r.id) === String(newRepo.id));
     });
 
-    const repoLimit = activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 10 : -1);
+    const repoLimit = activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 5 : -1);
     if (!existingMatch && repoLimit !== -1 && connectedRepos.length >= repoLimit) {
       setIsConnectRepoModalOpen(false);
       setActiveTab('profile');
@@ -2031,7 +2031,7 @@ export default function App() {
         onDisconnectRepo={handleDisconnectRepo}
         returnTo={TAB_TO_PATH[activeTab] || "/console"}
         connectedRepoCount={connectedRepos.length}
-        repoLimit={activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 10 : -1)}
+        repoLimit={activeTierKey === 'free' ? 1 : (activeTierKey === 'pro' ? 5 : -1)}
         tier={activeTierKey}
         onUpgrade={() => {
           setIsConnectRepoModalOpen(false);

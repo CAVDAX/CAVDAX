@@ -112,7 +112,7 @@ const TIERS = [
     btnLabel: 'Start 7-Day Free Trial',
     specs: {
       graphblas: '< 1.5ms (Hosted In-Memory)',
-      repos: '10 Repositories (All branches)',
+      repos: '5 Repositories (All branches)',
       branches: 'Full Multi-Branch Tracking',
       mutex: 'Up to 3 Concurrent Agents',
       crossProcess: 'Hosted Remote SSE MCP',
@@ -128,8 +128,8 @@ const TIERS = [
     label: 'Team & Scale',
     icon: TeamScaleIcon,
     tag: 'Team Multi-Tenancy',
-    price: '₹4,999',
-    period: '/ mo ($59 USD)',
+    price: '₹2,999',
+    period: '/ mo ($35 USD)',
     desc: 'For high-velocity engineering teams requiring strict CI/CD merge blockers.',
     btnLabel: 'Activate Team & Scale',
     specs: {
@@ -1032,7 +1032,7 @@ export default function TierBenefitsPage({
                     name: 'Connected Repositories & Workspaces',
                     desc: 'Active repositories tracked concurrently with AST links.',
                     community: { base: '1 Active Repo', vsPro: 'Capped 1', vsEnterprise: 'Single' },
-                    pro: { base: '10 Repositories', vsEnterprise: 'Capped 10' },
+                    pro: { base: '5 Repositories', vsEnterprise: 'Capped 5' },
                     enterprise: { base: 'Unlimited Repos' }
                   },
                   {

@@ -446,7 +446,7 @@ export default function ProfilePage({
         amount: orderData.amount,
         currency: orderData.currency,
         name: 'CAVDAX',
-        description: targetTier === 'enterprise' ? 'Team & Scale Tier ($59 / ₹4,999/mo) — Multi-Agent Causal Mesh' : 'Pro Autonomous Tier ($4 / ₹299/mo) — Causal Verification Engine',
+        description: targetTier === 'enterprise' ? 'Team & Scale Tier ($35 / ₹2,999/mo) — Multi-Agent Causal Mesh' : 'Pro Autonomous Tier ($4 / ₹299/mo) — Causal Verification Engine',
         image: `${window.location.origin}/cavdax-brand-logo.jpg`,
         order_id: orderData.order_id,
         theme: { color: targetTier === 'enterprise' ? '#A855F7' : '#F59E0B' },
@@ -769,12 +769,12 @@ export default function ProfilePage({
   const resetsOn = quotaData?.cycle?.resets_on ?? defaultResetsOn;
   // Count user-created / connected ADR decisions (strictly excluding the canonical 4-Act demo graph)
   const userDecisionsCount = quotaData?.usage?.user_decisions ?? 0;
-  const decisionsCapacity = currentTier === 'free' ? 50 : (currentTier === 'pro' ? 1000 : -1);
+  const decisionsCapacity = currentTier === 'free' ? 50 : (currentTier === 'pro' ? 500 : -1);
   const capacityPct = decisionsCapacity === -1 
     ? 0 
     : Math.min(100, Math.round((userDecisionsCount / decisionsCapacity) * 100));
 
-  const repoLimit = currentTier === 'free' ? '1' : (currentTier === 'pro' ? '10' : 'Unlimited');
+  const repoLimit = currentTier === 'free' ? '1' : (currentTier === 'pro' ? '5' : 'Unlimited');
   const mcpRateLimit = currentTier === 'free' ? '30 rpm' : (currentTier === 'pro' ? '100 rpm' : 'Unlimited');
 
   const isLargeDisplay = useIsLargeDisplay();
@@ -1362,11 +1362,11 @@ export default function ProfilePage({
               <ul className="text-xs font-mono space-y-2 mb-6 text-slate-600 dark:text-slate-300">
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>10 Connected repositories (All branches)</span>
+                  <span>5 Connected repositories (All branches)</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                  <span>1,000 Causal verifications / mo</span>
+                  <span>500 Causal verifications / mo</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -1515,7 +1515,7 @@ export default function ProfilePage({
               <div className={`text-2xl font-bold font-mono mb-1 ${
                 currentTier === 'enterprise' ? 'text-white' : 'text-slate-950 dark:text-white'
               }`}>
-                {currency === 'INR' ? '₹4,999' : '$59'} <span className={`text-xs font-normal font-sans ${
+                {currency === 'INR' ? '₹2,999' : '$35'} <span className={`text-xs font-normal font-sans ${
                   currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-500'
                 }`}>/ mo</span>
               </div>
@@ -1603,7 +1603,7 @@ export default function ProfilePage({
                           : (!activeUser ? 'Sign In to Activate'
                               : (isUpgrading
                                   ? 'Connecting...'
-                                  : `Upgrade (${currency === 'INR' ? '₹4,999' : '$59'}/mo)`)))}
+                                  : `Upgrade (${currency === 'INR' ? '₹2,999' : '$35'}/mo)`)))}
                   </span>
                 </span>
               </button>
@@ -2432,11 +2432,11 @@ export default function ProfilePage({
             <ul className="text-[11px] sm:text-xs font-mono space-y-1 sm:space-y-1.5 mb-3 sm:mb-4 text-slate-600 dark:text-slate-300 flex-1">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>10 Connected repositories (All branches)</span>
+                <span>5 Connected repositories (All branches)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
-                <span>1,000 Causal verifications / mo</span>
+                <span>500 Causal verifications / mo</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -2585,7 +2585,7 @@ export default function ProfilePage({
             <div className={`text-xl sm:text-2xl font-bold font-mono mb-0.5 ${
               currentTier === 'enterprise' ? 'text-white' : 'text-slate-950 dark:text-white'
             }`}>
-              {currency === 'INR' ? '₹4,999' : '$59'} <span className={`text-xs font-normal font-sans ${
+              {currency === 'INR' ? '₹2,999' : '$35'} <span className={`text-xs font-normal font-sans ${
                 currentTier === 'enterprise' ? 'text-slate-300' : 'text-slate-500'
               }`}>/ mo</span>
             </div>
@@ -2673,7 +2673,7 @@ export default function ProfilePage({
                         : (!activeUser ? 'Sign In to Activate'
                             : (isUpgrading
                                 ? 'Connecting...'
-                                : `Upgrade (${currency === 'INR' ? '₹4,999' : '$59'}/mo)`)))}
+                                : `Upgrade (${currency === 'INR' ? '₹2,999' : '$35'}/mo)`)))}
                 </span>
               </span>
             </button>
