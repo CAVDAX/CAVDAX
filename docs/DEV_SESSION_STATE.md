@@ -11801,3 +11801,24 @@ A complete visual and architectural transformation has been executed across the 
 - **Forensic Verification & Gate Attestation**:
   - Automated client production build (`npm run build`) passing cleanly in 16.82s with zero bundle regressions.
   - Backend automated test suite passing with 151/151 tests passed, 0 failures.
+
+
+### Milestone 2026-11-11: Subsystem Error Boundary Redesign & Anti-AI Slop Craft Overhaul
+
+- **Root Cause Forensic Diagnosis**:
+  - Identified severe AI-slop visual failures in `SubsystemErrorBoundary.jsx` and `EmptyState.jsx`: hardcoded `bg-red-50/50` / `bg-red-950/50` washes created a muddy mauve/brown slab in both light and dark themes with failing WCAG text contrast (<1.8:1).
+  - Eliminated the 3 overlapping black poker cards with mismatched red, yellow, and blue icons (Trope #13: carnival dashboard overload).
+
+- **Architectural & Design System Craft Overhaul**:
+  - Replaced the third-party empty state with a bespoke, solitary-elevation hardware bench-instrument card:
+    - Pure monochromatic Obsidian (`dark:bg-[#0B0D11]`, border `dark:border-white/10`) and crisp white substrate (`bg-white/95`, border `border-slate-200/90`).
+    - Solitary warm-amber status badge with dual-concentric bezel and pulsating status node.
+    - Balanced, high-contrast monospace typography (`Tier Capabilities & Governance Temporarily Unavailable`) and legible description text (`text-slate-600 dark:text-slate-400`).
+    - Tactile monochromatic recovery button (`Restore Subsystem`) with hover icon rotation and `playClick()` audio feedback.
+    - Discreet, collapsible Technical Diagnostics accordion revealing sanitized error metadata without breaking the card's visual geometry.
+  - Neutralized `variant="error"` in `EmptyState.jsx` to clean slate/obsidian tokens, eliminating muddy wash leaks repo-wide.
+
+- **Forensic Verification & Gate Attestation**:
+  - Automated client production build (`npm run build`) passing cleanly in 24.83s with zero bundle regressions.
+  - Backend automated test suite passing with 151/151 tests passed, 0 failures.
+  - Captured Headless Puppeteer visual audits for both themes: `boundary-card-dark.png`, `boundary-card-light.png`, `boundary-card-dark-diagnostics.png`, `boundary-card-light-diagnostics.png`.
