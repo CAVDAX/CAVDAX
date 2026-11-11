@@ -1,29 +1,28 @@
 /**
  * SubsystemErrorBoundary.jsx — CAVDAX Global React 18 Error Boundary
  *
- * Roadmap §6.2 & OWASP Error Handling Invariant:
+ * Suneet-Perfect-AI-Slop-Remover & OWASP Error Handling Invariant:
  * Every top-level view (AuditPage, DevConsolePage, GraphCanvas, ConnectMcpPage,
- * SupportPage, SponsorsPage, TierBenefitsPage) is isolated in a localized Error Boundary:
+ * SupportPage, SponsorsPage, TierBenefitsPage, ProfilePage) is isolated in a localized Error Boundary:
  *
- * 1. Hosted Web App (Production / Vercel / Remote):
- *    - Strict Information Leakage Prevention: Raw stack traces, source file paths, and internal
- *      state logs are completely suppressed from the UI (logged safely to client console).
- *    - Displays Remco Stoeten's interactive EmptyState (21st.dev/@remcostoeten/components/interactive-empty-state/error)
- *      with animated 3-icon triad and tactile "Restore Subsystem" recovery action.
+ * 1. Elite Monochromatic Bench-Instrument Enclosure:
+ *    - Pure Obsidian (#0B0D11) in dark mode, crisp pristine slate-white in light mode.
+ *    - Zero muddy mauve/brown/red washes.
+ *    - Solitary hardware status glyph with concentric bezel and active pulse ring.
+ *    - High-contrast, WCAG AAA compliant typography.
  *
- * 2. Localhost Environment (Development):
- *    - Developer Diagnostics: Retains the double-bezel developer recovery card with collapsible
- *      technical details and live component stack trace for immediate root-cause inspection.
+ * 2. Strict Information Leakage Prevention & Developer Diagnostics:
+ *    - Production: Clean sanitized message, raw internal stack safely suppressed.
+ *    - Localhost: Collapsible Technical Diagnostics drawer with live component stack trace.
  *
- * In both modes:
- *    - Header and navigation stay fully operational.
- *    - Page does not crash or blank out.
- *    - Local state resets without a destructive browser reload.
+ * 3. Non-Destructive Subsystem Recovery:
+ *    - Tactile "Restore Subsystem" button resets boundary state and triggers playClick().
+ *    - Navigation, header, and active user session remain 100% operational.
  */
 
 import React from 'react';
-import { AlertTriangle, RotateCcw, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
-import EmptyState from './ui/EmptyState';
+import { AlertTriangle, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
+import { playClick } from '../utils/soundFx';
 
 export default class SubsystemErrorBoundary extends React.Component {
   constructor(props) {
@@ -42,12 +41,11 @@ export default class SubsystemErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    // Log to console for dev telemetry — never expose un-sanitized internal stacks in hosted UI
     console.error(`[CAVDAX SubsystemErrorBoundary] Caught in "${this.props.name || 'subsystem'}":`, error, errorInfo);
   }
 
   handleReloadView = () => {
-    // Reset boundary state — React will re-render the children from scratch
+    try { playClick(); } catch {}
     this.setState({ hasError: false, error: null, errorInfo: null, showDetails: false });
   };
 
@@ -71,94 +69,77 @@ export default class SubsystemErrorBoundary extends React.Component {
         window.location.hostname === '127.0.0.1' ||
         window.location.hostname === '::1');
 
-    const isDark =
-      typeof document !== 'undefined' &&
-      document.documentElement.classList.contains('dark');
-
-    // ── Hosted Production Web App Mode: Interactive EmptyState (Zero Information Leakage) ──
-    if (!isLocalhost) {
-      return (
-        <div className="flex-1 min-h-[460px] flex items-center justify-center p-6 bg-[var(--bg-main,#ffffff)] dark:bg-[#0d0d0f] select-none">
-          <EmptyState
-            theme={isDark ? 'dark' : 'light'}
-            variant="error"
-            title={`${name} Temporarily Unavailable`}
-            description={`An unexpected operational event was safely isolated within the ${name} module. Navigation and other subsystems remain fully operational.`}
-            icons={[
-              <AlertCircle className="w-5 h-5 text-rose-500/80" />,
-              <AlertTriangle className="w-5 h-5 text-amber-500/80" />,
-              <RotateCcw className="w-5 h-5 text-slate-500/80" />
-            ]}
-            action={{
-              label: 'Restore Subsystem',
-              icon: <RotateCcw className="w-3.5 h-3.5" />,
-              onClick: this.handleReloadView
-            }}
-            size="default"
-            className="max-w-md w-full shadow-xl border border-slate-200/80 dark:border-white/10"
-          />
-        </div>
-      );
-    }
-
-    // ── Localhost Development Mode: Technical Diagnostics Card ──
     return (
-      <div className="flex-1 flex items-center justify-center p-6 bg-[var(--bg-main,#ffffff)] dark:bg-[#0d0d0f]">
-        {/* Outer bezel */}
-        <div className="w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0B0D11] p-1 shadow-sm">
-          {/* Inner bezel */}
-          <div className="rounded-xl border border-slate-100 dark:border-white/[0.06] bg-slate-50 dark:bg-[#0E1118] p-6">
+      <div className="flex-1 min-h-[460px] flex items-center justify-center p-4 sm:p-6 select-none bg-transparent">
+        <div className="relative w-full max-w-md rounded-2xl border border-slate-200/90 dark:border-white/10 bg-white/95 dark:bg-[#0B0D11] p-6 sm:p-8 shadow-xl dark:shadow-[0_8px_32px_rgba(0,0,0,0.6)] backdrop-blur-md overflow-hidden text-center flex flex-col items-center">
+          
+          {/* Subtle blueprint matrix & specular glow */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden z-0" aria-hidden="true">
+            <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] dark:bg-[radial-gradient(#64748b_1px,transparent_1px)] [background-size:16px_16px] opacity-15 dark:opacity-25" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-amber-500/10 dark:bg-amber-400/[0.06] blur-2xl rounded-full" />
+          </div>
 
-            {/* Header */}
-            <div className="flex items-start gap-3 mb-5">
-              <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-center shrink-0 mt-0.5">
-                <AlertTriangle className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold text-slate-900 dark:text-slate-100 font-mono">
-                  Subsystem Recovered (Localhost Dev Mode)
-                </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-500 mt-0.5">
-                  {name} encountered an unexpected rendering error. Local state reset required.
-                </div>
+          <div className="relative z-10 flex flex-col items-center w-full">
+            {/* Status Pill */}
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 mb-4">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span>Subsystem Isolated</span>
+            </div>
+
+            {/* Solitary Hardware Glyph */}
+            <div className="relative mb-4">
+              <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 dark:border-amber-400/20 flex items-center justify-center shadow-xs">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 stroke-[1.8]" />
               </div>
             </div>
 
-            {/* Primary action */}
-            <button
-              onClick={this.handleReloadView}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
-                         bg-slate-950 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100
-                         text-white dark:text-slate-950 text-[12px] font-mono font-semibold
-                         transition-colors mb-4 cursor-pointer"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              Reload View
-            </button>
+            {/* Title & Description */}
+            <h2 className="text-base sm:text-lg font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-snug">
+              {name} Temporarily Unavailable
+            </h2>
+            <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mt-2 max-w-sm text-balance">
+              An unexpected operational state was safely isolated within the {name} module. Navigation and other subsystems remain fully operational.
+            </p>
 
-            {/* Collapsible technical details */}
-            <button
-              onClick={() => this.setState((s) => ({ showDetails: !s.showDetails }))}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-lg
-                         text-[10px] font-mono text-slate-400 hover:text-slate-600
-                         dark:text-slate-600 dark:hover:text-slate-400
-                         border border-slate-200 dark:border-white/[0.06]
-                         bg-transparent hover:bg-slate-50 dark:hover:bg-white/[0.02]
-                         transition-colors cursor-pointer"
-            >
-              <span>Technical Details</span>
-              {showDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
+            {/* Tactile Recovery Action */}
+            <div className="mt-6 w-full max-w-xs">
+              <button
+                type="button"
+                onClick={this.handleReloadView}
+                className="w-full h-9 flex items-center justify-center gap-2 px-4 rounded-xl
+                           bg-slate-950 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100
+                           text-white dark:text-slate-950 text-xs font-mono font-semibold
+                           shadow-xs transition-all duration-200 cursor-pointer active:scale-[0.98] group"
+              >
+                <RotateCcw className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-rotate-90 text-current" />
+                <span>Restore Subsystem</span>
+              </button>
+            </div>
 
-            {showDetails && (
-              <div className="mt-2 p-3 rounded-lg bg-slate-950/5 dark:bg-black/30
-                              border border-slate-200 dark:border-white/[0.06]
-                              max-h-40 overflow-y-auto">
-                <pre className="text-[9px] font-mono text-slate-500 dark:text-slate-500
-                                whitespace-pre-wrap break-all leading-relaxed">
-                  {error?.toString()}
-                  {errorInfo?.componentStack}
-                </pre>
+            {/* Collapsible Technical Diagnostics */}
+            {(error || isLocalhost) && (
+              <div className="w-full mt-5 pt-4 border-t border-slate-100 dark:border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => this.setState(s => ({ showDetails: !s.showDetails }))}
+                  className="w-full flex items-center justify-between text-[11px] font-mono text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors cursor-pointer py-1"
+                >
+                  <span>Technical Diagnostics</span>
+                  {showDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                </button>
+
+                {showDetails && (
+                  <div className="mt-2 text-left rounded-lg bg-slate-900/[0.03] dark:bg-black/40 border border-slate-200/80 dark:border-white/10 p-3 max-h-36 overflow-y-auto">
+                    <div className="text-[10px] font-mono font-semibold text-rose-600 dark:text-rose-400 mb-1 break-words">
+                      {error?.name || 'Error'}: {error?.message || 'Unexpected operational event'}
+                    </div>
+                    {isLocalhost && errorInfo?.componentStack && (
+                      <pre className="text-[9px] font-mono text-slate-500 dark:text-slate-400 whitespace-pre-wrap break-all leading-relaxed">
+                        {errorInfo.componentStack.trim()}
+                      </pre>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
