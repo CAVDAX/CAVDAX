@@ -1663,7 +1663,7 @@ app.post('/api/mcp/call', requireAuthOrDemo, async (req, res) => {
   // --- Plan Quota Enforcement (Causal Verification Gate) ---
   const sessionTier = req.session?.tier || req.session?.user?.tier;
   const effectiveTier = globalHackathonMode ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
-  const decisionLimit = effectiveTier === 'free' ? 50 : (effectiveTier === 'pro' ? 1000 : -1);
+  const decisionLimit = effectiveTier === 'free' ? 50 : (effectiveTier === 'pro' ? 500 : -1);
 
   if (decisionLimit !== -1 && (toolName === 'apply_code_change' || toolName === 'revalidate_decision')) {
     let currentDecisions = 0;
@@ -2454,8 +2454,8 @@ app.get('/api/user/quota', async (req, res) => {
     is_sponsor: isSponsor,
     sponsor_tier: sponsorTier,
     limits: {
-      repositories: tier === 'free' ? 1 : (tier === 'pro' ? 10 : -1),
-      decisions: tier === 'free' ? 50 : (tier === 'pro' ? 1000 : -1),
+      repositories: tier === 'free' ? 1 : (tier === 'pro' ? 5 : -1),
+      decisions: tier === 'free' ? 50 : (tier === 'pro' ? 500 : -1),
       nodes: config.node_limit,
       rate_limit_per_min: config.rate_limit_per_min,
       mcp_rate_limit_per_min: config.mcp_rate_limit_per_min
@@ -3542,7 +3542,7 @@ app.get('/api/github/repos/:owner/:repo/adrs', async (req, res) => {
   const isDevMaintainer = Boolean(sessionUserLogin && typeof globalDevRoster !== 'undefined' && Array.isArray(globalDevRoster) && globalDevRoster.map(r => r.toLowerCase()).includes(sessionUserLogin));
   const sessionTier = isDevMaintainer ? 'enterprise' : (req.session?.tier || req.session?.user?.tier || authUser?.tier);
   const effectiveTier = (globalHackathonMode || isDevMaintainer) ? 'enterprise' : (sessionTier || CAVDAX_TIER || 'free').toLowerCase();
-  const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 10 : -1);
+  const repoLimit = effectiveTier === 'free' ? 1 : (effectiveTier === 'pro' ? 5 : -1);
 
   const requestedBranch = sanitizeBranchName(req.query.branch, null);
   try {
@@ -3961,7 +3961,7 @@ if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
 // Canonical server-side tier pricing table (paise: ₹1 = 100 paise)
 const CANONICAL_TIER_PRICES_PAISE = Object.freeze({
   pro: 29900,         // ₹299 / mo ($4/mo)
-  enterprise: 499900  // ₹4,999 / mo ($59/mo)
+  enterprise: 299900  // ₹2,999 / mo ($35/mo)
 });
 
 // In-memory order tracking to prevent tier tampering (OWASP A04 Hardening)
