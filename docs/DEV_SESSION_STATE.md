@@ -10,6 +10,15 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Tight Localized Text Occlusion on Tier Benefits Hero (`TierBenefitsPage.jsx`)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Previously, a massive radial vignette (`-inset-x-12 -inset-y-16 bg-[radial-gradient(ellipse_at_center,...)]`) was placed inside the `max-w-4xl` (896px) heading container. This created an expansive ~1,000px wide dark muddy oval blob across the background behind "Tier Plans, Capabilities & Benefits".
+  - **The High-Craft Architectural Resolution**:
+    - Replaced the wide container vignette with tight text-hugging occlusion: `max-w-fit mx-auto` with a restrained `-inset-x-4 -inset-y-2` localized gradient (`rgba(2,6,23,0.5)_0%,rgba(2,6,23,0.18)_55%,transparent_85%`).
+    - Added high-contrast multi-layer dark text-shadow directly to the `h1` glyphs: `dark:[text-shadow:_0_0_16px_rgba(2,6,23,0.95),_0_2px_8px_rgba(0,0,0,0.9)] dark:drop-shadow-[0_4px_16px_rgba(0,0,0,0.7)]`.
+    - Result: Crisp, high-contrast typography against Lightfall background streaks without any muddy smudge bleeding into the surrounding viewport.
+  - **Empirical Visual Audit**:
+    - Captured `proof-tier-heading-tight-dark.png`, `proof-tier-benefits-viewport-dark.png`, and `proof-tier-heading-tight-light.png`.
 - **Custom Obsidian Portal Tooltip in 3D Backer Sphere (`SphereImageGrid.jsx` & `SponsorsPage.jsx` Navbar Declutter)**:
   - **Adversarial Forensic Discovery (/devils-advocate)**:
     - Eradicated native unstyled browser `title` tooltip popups from 3D Fibonacci sphere backer nodes in favor of a portal-mounted obsidian (`#0B0D11`) tooltip at `z-[99999]` with real-time momentum kinematic tracking, viewport boundary clamping, and sub-tier attribution (`• Core Patron ($10)`).
