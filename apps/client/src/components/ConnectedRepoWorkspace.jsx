@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GitBranch, FolderGit2, ArrowUpRight, FileText, RefreshCw, Terminal, GitPullRequest,
-  CheckCircle2, AlertTriangle, ExternalLink, Unlink, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
+  CheckCircle2, AlertTriangle, ExternalLink, Unlink, Unlink2, Loader2, ChevronDown, Check, Search, Plus, Copy, X, Code2, Cpu, PanelLeftClose } from 'lucide-react';
 import GraphCanvas from './GraphCanvas';
 import Tooltip from './Tooltip.jsx';
 import SubsystemErrorBoundary from './SubsystemErrorBoundary';
@@ -2309,10 +2309,14 @@ jobs:
           if (onDisconnectRepo) onDisconnectRepo(repo.id);
         }}
         title="Disconnect Repository?"
-        description={`Are you sure you want to disconnect ${repo.full_name || 'this repository'}? This will sever real-time causal graph synchronization and remove local workspace cache.`}
+        description={[
+        `Disconnects ${repo.name || repo.full_name || 'repo'} from causal sync.`,
+        'Removes local cache; source files are kept.'
+      ]}
         confirmLabel="Disconnect Repository"
         requireMatch={repo.name || repo.full_name?.split('/')[1] || 'disconnect'}
         severity="danger"
+        confirmIcon={Unlink2}
       />
 
       {/* Activity log for the empty and error states */}

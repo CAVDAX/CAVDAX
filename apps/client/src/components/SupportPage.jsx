@@ -249,7 +249,7 @@ const TIERS = [
     inrSub:   'approx $2 USD',
     paise:    16900,
     desc:     'Fueling daily causal engine development.',
-    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Discord backer'],
+    perks:    ['Verified Backers Wall', 'In-App Backer profile halo', 'Community Contributor Recognition'],
     accent:   'bronze',
     popular:  false,
     icon:     CookieIcon,
@@ -264,7 +264,7 @@ const TIERS = [
     inrSub:   'approx $4 USD',
     paise:    33900,
     desc:     'Powers automated graph fuzzing passes.',
-    perks:    ['Everything in $2 tier', 'Priority issue triage queue', 'Early access MCP tool specs'],
+    perks:    ['Everything in $2 tier', 'Public Backer Spotlight', 'Early access MCP tool specs'],
     accent:   'amber',
     popular:  true,
     icon:     Coffee,
@@ -279,7 +279,7 @@ const TIERS = [
     inrSub:   'approx $10 USD',
     paise:    84900,
     desc:     'Funds FalkorDB benchmark instances.',
-    perks:    ['Featured Backers Wall', 'Architectural RFC access', 'Permanent Sponsor badge'],
+    perks:    ['Featured 3D Backer Sphere Node', 'Permanent Core Sponsor badge', 'Direct Team Acknowledgment'],
     accent:   'diamond',
     popular:  false,
     icon:     ShinyGemIcon,
@@ -333,7 +333,11 @@ function BackerCard({ backer }) {
   const [hovered, setHovered] = useState(false);
   const isHighlight = backer.highlighted || backer.tier_id === 3;
   const isCups = backer.tier_id === 2;
-  const canLink = backer.github_handle && backer.github_handle !== 'community-backer' && backer.github_handle !== 'evaluator-pass' && (!backer.is_seed || backer.github_handle === 'suneetchugh-dev');
+  const cleanHandle = backer.github_handle && backer.github_handle !== 'community-backer' && backer.github_handle !== 'evaluator-pass'
+    ? String(backer.github_handle).replace(/^@/, '').trim()
+    : null;
+  const canLink = Boolean(cleanHandle && (!backer.is_seed || cleanHandle === 'suneetchugh-dev'));
+  const displayAvatar = backer.avatar_url || backer.avatarUrl || (cleanHandle ? `https://github.com/${cleanHandle}.png` : null);
 
   return (
     <div
@@ -358,7 +362,7 @@ function BackerCard({ backer }) {
             className="block cursor-pointer hover:ring-2 hover:ring-slate-400 dark:hover:ring-white/40 rounded-full transition-all focus:outline-hidden"
           >
             <ShimmerImage
-              src={backer.avatar_url}
+              src={displayAvatar}
               alt={backer.name}
               containerClassName={`w-9 h-9 rounded-full border shrink-0 transition-transform duration-300 group-hover:scale-105 ${
                 isHighlight
@@ -391,7 +395,7 @@ function BackerCard({ backer }) {
           </a>
         ) : (
           <ShimmerImage
-            src={backer.avatar_url}
+              src={displayAvatar}
             alt={backer.name}
             containerClassName={`w-9 h-9 rounded-full border shrink-0 transition-transform duration-300 group-hover:scale-105 ${
               isHighlight
@@ -945,12 +949,18 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         {sponsors.length > 0 && (
           <div className="mt-4 flex items-center justify-center gap-3">
             <AnimatedAvatarGroup
-              avatars={sponsors.map((s) => ({
-                id: s.id,
-                name: s.name,
-                src: s.avatar_url,
-                tier: s.tier_id === 3 ? 'Core Patron' : s.tier_id === 2 ? '2 Cups' : 'Cookie',
-              }))}
+              avatars={sponsors.map((s) => {
+                const cleanHandle = s.github_handle && s.github_handle !== 'community-backer' && s.github_handle !== 'evaluator-pass'
+                  ? String(s.github_handle).replace(/^@/, '').trim()
+                  : null;
+                return {
+                  id: s.id,
+                  name: s.name,
+                  github_handle: cleanHandle,
+                  src: s.avatar_url || s.avatarUrl || (cleanHandle ? `https://github.com/${cleanHandle}.png` : null),
+                  tier: s.tier_id === 3 ? 'Core Patron' : s.tier_id === 2 ? '2 Cups' : 'Cookie',
+                };
+              })}
               max={6}
               size={30}
               overlap={8}

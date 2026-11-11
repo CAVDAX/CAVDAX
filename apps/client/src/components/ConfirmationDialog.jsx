@@ -22,6 +22,8 @@ import { playClick } from '../utils/soundFx';
  * @param {string} [requireMatch] - Optional string user must type to enable confirm
  * @param {string} [confirmLabel='Confirm Action'] - Label for destructive button
  * @param {'danger' | 'warning' | 'neutral'} [severity='danger'] - Visual tone
+ * @param {React.ComponentType} [icon] - Header icon component
+ * @param {React.ComponentType} [confirmIcon] - Optional action icon inside the primary confirm button
  */
 export default function ConfirmationDialog({
   isOpen,
@@ -32,7 +34,8 @@ export default function ConfirmationDialog({
   requireMatch,
   confirmLabel = 'Confirm Action',
   severity = 'danger',
-  icon: CustomIcon
+  icon: CustomIcon,
+  confirmIcon: ConfirmIcon
 }) {
   const [inputValue, setInputValue] = useState('');
   const [isPending, setIsPending] = useState(false);
@@ -150,7 +153,7 @@ export default function ConfirmationDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 12 }}
             transition={{ type: 'spring', damping: 28, stiffness: 350 }}
-            className="relative z-10 w-full max-w-sm sm:max-w-md rounded-2xl bg-white dark:bg-[#0B0D11] border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl"
+            className="relative z-10 w-full max-w-md sm:max-w-[480px] rounded-2xl bg-white dark:bg-[#0B0D11] border border-slate-200/80 dark:border-white/10 p-5 sm:p-6 shadow-2xl backdrop-blur-2xl"
             style={{
               borderRadius: '24px', // Continuous Super-Ellipse optical curvature
             }}
@@ -192,9 +195,23 @@ export default function ConfirmationDialog({
                 <h2 id="confirm-dialog-title" className="text-sm sm:text-base font-mono font-bold tracking-tight text-slate-950 dark:text-white truncate">
                   {title}
                 </h2>
-                <p id="confirm-dialog-desc" className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed font-sans text-balance">
-                  {description}
-                </p>
+                <div id="confirm-dialog-desc" className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 font-sans flex flex-col gap-1">
+                  {Array.isArray(description) ? (
+                    description.filter(Boolean).slice(0, 2).map((line, idx) => (
+                      <span key={idx} className="block whitespace-nowrap overflow-hidden text-ellipsis leading-snug">
+                        {line}
+                      </span>
+                    ))
+                  ) : typeof description === 'string' && description.includes('\n') ? (
+                    description.split('\n').filter(Boolean).slice(0, 2).map((line, idx) => (
+                      <span key={idx} className="block whitespace-nowrap overflow-hidden text-ellipsis leading-snug">
+                        {line}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="block whitespace-nowrap overflow-hidden text-ellipsis leading-snug">{description}</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -251,7 +268,11 @@ export default function ConfirmationDialog({
                     : 'bg-slate-100 dark:bg-white/5 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-transparent'
                 }`}
               >
-                {isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isPending ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                ) : ConfirmIcon ? (
+                  <ConfirmIcon className="w-3.5 h-3.5 shrink-0" />
+                ) : null}
                 <span>{confirmLabel}</span>
               </button>
             </div>

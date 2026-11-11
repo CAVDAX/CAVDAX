@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Compass, User, Copy, Check, CheckCircle2, Lock, Terminal, Building2,
   SlidersHorizontal, Key, HardDrive, AlertTriangle, RefreshCw, Heart, ExternalLink, LogOut, Github, Eye, EyeOff,
-  Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight
+  Award, Gauge, KeyRound, Cable, Sparkles, CreditCard, ChevronRight, ArrowUpRight, ArrowDownLeft
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
@@ -103,6 +104,139 @@ function useIsLargeDisplay() {
   return isLarge;
 }
 
+/**
+ * Corporate Domain Provisioning Modal (Team & Scale Institutional Seat Federation)
+ * Enforces Suneet-Perfect-AI-Slop-Remover & UI_DESIGN_SYSTEM.md:
+ * - Portal isolation via createPortal(..., document.body)
+ * - Pure monochromatic obsidian (#090A0C, border-white/10)
+ * - Single-line disciplined text layout with ellipsis
+ * - Escape key dismissal & outside click dismissal
+ * - Focus trapping with initial input auto-focus
+ */
+function CorporateDomainModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  isRegistering,
+  orgName,
+  setOrgName,
+  domain,
+  setDomain
+}) {
+  const orgInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const timer = setTimeout(() => {
+      orgInputRef.current?.focus();
+    }, 50);
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isRegistering) {
+        e.preventDefault();
+        playClick();
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+      clearTimeout(timer);
+    };
+  }, [isOpen, isRegistering, onClose]);
+
+  if (!isOpen || typeof document === 'undefined') return null;
+
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="corp-domain-modal-title"
+      className="fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200 select-none"
+      onClick={() => !isRegistering && onClose()}
+    >
+      <div
+        className="relative w-full max-w-md p-6 rounded-2xl bg-[#090A0C] border border-white/10 text-white shadow-2xl flex flex-col gap-4 z-10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white shrink-0">
+            <Building2 className="w-5 h-5 text-current" strokeWidth={1.5} />
+          </div>
+          <div className="min-w-0">
+            <h3 id="corp-domain-modal-title" className="text-sm font-mono font-bold uppercase tracking-wider text-white whitespace-nowrap overflow-hidden text-ellipsis">
+              Corporate Domain Provisioning
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+              Automatic seat federation for your engineering team
+            </p>
+          </div>
+        </div>
+
+        <p className="text-xs font-mono text-slate-300 leading-relaxed bg-white/[0.03] p-3 rounded-lg border border-white/5">
+          Any engineer authenticating via GitHub with an email matching your verified corporate domain will automatically inherit full <strong>Team &amp; Scale</strong> access.
+        </p>
+
+        <form onSubmit={onSubmit} className="flex flex-col gap-3">
+          <div>
+            <label className="block text-[11px] font-mono text-slate-400 mb-1">
+              Organization / Company Name
+            </label>
+            <input
+              ref={orgInputRef}
+              type="text"
+              required
+              placeholder="e.g. Acme Systems"
+              value={orgName}
+              onChange={(e) => setOrgName(e.target.value)}
+              className="w-full h-9 px-3 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-white/30"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-mono text-slate-400 mb-1">
+              Corporate Email Domain
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-500 font-mono text-xs">@</span>
+              <input
+                type="text"
+                required
+                placeholder="acme.corp"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value.replace(/^@/, ''))}
+                className="w-full h-9 pl-7 pr-3 rounded-lg bg-black/40 border border-white/10 text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-white/30"
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-end gap-2.5 mt-2">
+            <button
+              type="button"
+              disabled={isRegistering}
+              onClick={onClose}
+              className="px-3.5 py-2 rounded-lg text-xs font-mono text-slate-400 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              Configure Later
+            </button>
+            <button
+              type="submit"
+              disabled={isRegistering}
+              className="px-4 py-2 rounded-lg bg-white text-slate-950 font-mono text-xs font-bold hover:bg-slate-200 transition-colors shadow-xs cursor-pointer flex items-center gap-1.5"
+            >
+              {isRegistering ? 'Provisioning...' : 'Provision Domain'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function ProfilePage({
   user,
   tier = 'free',
@@ -130,7 +264,16 @@ export default function ProfilePage({
     if (tier && tier !== currentTier) {
       setCurrentTier(tier);
     }
-  }, [tier]);
+    // Cleanly synchronize trial state: If user is verified on free tier without active server trial, reset local trial artifact
+    if (user && !user.trial && tier === 'free') {
+      setTrialState(null);
+      try {
+        localStorage.removeItem('cavdax_pro_trial');
+      } catch {}
+    } else if (user?.trial && user.trial.claimed && user.trial.expiresAt > Date.now()) {
+      setTrialState(user.trial);
+    }
+  }, [tier, user]);
 
   const syncTierWithServer = async (targetTier) => {
     try {
@@ -151,6 +294,17 @@ export default function ProfilePage({
   const [isDevPatModalOpen, setIsDevPatModalOpen] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
   const [isRotateConfirmOpen, setIsRotateConfirmOpen] = useState(false);
+  const [isCorporateDomainModalOpen, setIsCorporateDomainModalOpen] = useState(false);
+  const [corporateOrgName, setCorporateOrgName] = useState('');
+  const [corporateDomain, setCorporateDomain] = useState('');
+  const [isRegisteringDomain, setIsRegisteringDomain] = useState(false);
+  const [registeredDomain, setRegisteredDomain] = useState(() => {
+    try {
+      return localStorage.getItem('cavdax_corporate_domain') || '';
+    } catch {
+      return '';
+    }
+  });
   const [isHackathonMode, setIsHackathonMode] = useState(() => {
     return typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true';
   });
@@ -183,6 +337,28 @@ export default function ProfilePage({
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
+  const [pendingDowngradeTier, setPendingDowngradeTier] = useState(null);
+
+  const executeDowngrade = async () => {
+    const targetTier = pendingDowngradeTier || 'free';
+    playClick();
+    setCurrentTier(targetTier);
+    try {
+      localStorage.setItem('cavdax_tier', targetTier);
+      const raw = localStorage.getItem('cavdax_user_session');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        parsed.tier = targetTier;
+        localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+      }
+      window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: targetTier } }));
+    } catch {}
+    await syncTierWithServer(targetTier);
+    if (onSelectTier) onSelectTier(targetTier);
+    showToast(targetTier === 'free' ? 'Plan changed: Community Free' : 'Plan changed: Pro Autonomous');
+    setIsDowngradeModalOpen(false);
+    setPendingDowngradeTier(null);
+  };
   const [trialState, setTrialState] = useState(() => {
     try {
       const saved = localStorage.getItem('cavdax_pro_trial');
@@ -377,13 +553,16 @@ export default function ProfilePage({
         return;
       }
 
+      const isEnterprise = targetTier === 'enterprise';
+      const orderPaise = isEnterprise ? 299900 : 29900; // ₹2,999 Enterprise vs ₹299 Pro
       const orderRes = await fetch('/api/billing/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          amount_paise: 33900, // ₹339 = $4/mo
-          receipt: `cavdax_pro_${Date.now()}`
+          tier: isEnterprise ? 'enterprise' : 'pro',
+          amount_paise: orderPaise,
+          receipt: `cavdax_${targetTier}_${Date.now()}`
         })
       });
       const orderData = await orderRes.json();
@@ -411,7 +590,7 @@ export default function ProfilePage({
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature,
-              tier: 'pro'
+              tier: targetTier
             })
           });
           const verifyData = await verifyRes.json();
@@ -431,6 +610,9 @@ export default function ProfilePage({
             syncTierWithServer(targetTier);
             if (onSelectTier) onSelectTier(targetTier);
             showToast(targetTier === 'enterprise' ? 'Payment verified! Welcome to Team & Scale tier.' : 'Payment verified! Welcome to Pro Autonomous tier.');
+            if (targetTier === 'enterprise') {
+              setIsCorporateDomainModalOpen(true);
+            }
           } else {
             showToast('Signature verification failed. Contact support with payment ID.');
           }
@@ -449,7 +631,7 @@ export default function ProfilePage({
         description: targetTier === 'enterprise' ? 'Team & Scale Tier ($35 / ₹2,999/mo) — Multi-Agent Causal Mesh' : 'Pro Autonomous Tier ($4 / ₹299/mo) — Causal Verification Engine',
         image: `${window.location.origin}/cavdax-brand-logo.jpg`,
         order_id: orderData.order_id,
-        theme: { color: targetTier === 'enterprise' ? '#A855F7' : '#F59E0B' },
+        theme: { color: targetTier === 'enterprise' ? '#0B0D11' : '#F59E0B' },
         modal: {
           ondismiss: () => setIsUpgrading(false)
         },
@@ -602,24 +784,59 @@ export default function ProfilePage({
     }
   }, [isHackathonMode]);
 
+
+  const handleRegisterCorporateDomain = async (e) => {
+    if (e) e.preventDefault();
+    if (!corporateDomain.trim() || !corporateOrgName.trim()) {
+      showToast('Please provide both Organization Name and Domain.');
+      return;
+    }
+    setIsRegisteringDomain(true);
+    playClick();
+    try {
+      const res = await fetch('/api/enterprise/register-domain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          domain: corporateDomain.trim().toLowerCase(),
+          orgName: corporateOrgName.trim()
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        const cleanDom = corporateDomain.trim().toLowerCase();
+        setRegisteredDomain(cleanDom);
+        try {
+          localStorage.setItem('cavdax_corporate_domain', cleanDom);
+        } catch {}
+        setIsCorporateDomainModalOpen(false);
+        showToast(`Corporate domain @${cleanDom} provisioned! Team members inherit Team & Scale.`);
+      } else {
+        showToast(data?.error?.message || 'Domain provisioning failed.');
+      }
+    } catch {
+      showToast('Network error during domain provisioning.');
+    } finally {
+      setIsRegisteringDomain(false);
+    }
+  };
+
   const handleTierSwitch = (newTier) => {
     playClick();
 
     if (newTier === 'free') {
-      setCurrentTier('free');
-      try {
-        localStorage.setItem('cavdax_tier', 'free');
-        const raw = localStorage.getItem('cavdax_user_session');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          parsed.tier = 'free';
-          localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
-        }
-        window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'free' } }));
-      } catch {}
-      syncTierWithServer('free');
-      if (onSelectTier) onSelectTier('free');
-      showToast('Active Plan: COMMUNITY Tier');
+      if (currentTier !== 'free') {
+        setPendingDowngradeTier('free');
+        setIsDowngradeModalOpen(true);
+        return;
+      }
+      return;
+    }
+
+    if (newTier === 'pro' && currentTier === 'enterprise') {
+      setPendingDowngradeTier('pro');
+      setIsDowngradeModalOpen(true);
       return;
     }
 
@@ -1539,7 +1756,7 @@ export default function ProfilePage({
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                  <span>Priority GraphBLAS invalidation</span>
+                  <span>Dedicated FalkorDB KeySpace</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
@@ -1799,48 +2016,31 @@ export default function ProfilePage({
           </div>
         )}
 
-        {/* Downgrade Confirmation Modal */}
-        {isDowngradeModalOpen && (
-          <div
-            className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="downgrade-modal-title-large"
-          >
-            <div className="relative w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#111116] shadow-2xl space-y-4">
-              <div className="flex items-center gap-2.5 text-amber-500">
-                <AlertTriangle className="w-5 h-5 shrink-0" />
-                <h3 id="downgrade-modal-title-large" className="text-base font-bold font-mono text-slate-950 dark:text-white">
-                  Downgrade to Community Tier?
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
-                Downgrading to Community enforces the 1-repository limit, pauses secondary branch causal graphs, and deactivates CI/CD intercept gates.
-              </p>
-              {isTrialActive && (
-                <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-mono">
-                  Your remaining trial window ({trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left) will remain preserved and can be reactivated anytime before expiration.
-                </div>
-              )}
-              <div className="pt-2 flex items-center justify-end gap-3 font-mono text-xs">
-                <button
-                  type="button"
-                  onClick={() => setIsDowngradeModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition-colors cursor-pointer"
-                >
-                  Keep {currentTier === 'enterprise' ? 'Team & Scale' : 'Pro'}
-                </button>
-                <button
-                  type="button"
-                  onClick={executeDowngradeToFree}
-                  className="px-3 py-2 text-rose-500 hover:text-rose-400 dark:text-rose-400 dark:hover:text-rose-300 transition-colors cursor-pointer font-medium"
-                >
-                  Confirm Downgrade
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Downgrade Confirmation Dialog */}
+        <ConfirmationDialog
+          isOpen={isDowngradeModalOpen}
+          onClose={() => {
+            setIsDowngradeModalOpen(false);
+            setPendingDowngradeTier(null);
+          }}
+          onConfirm={executeDowngrade}
+          title={pendingDowngradeTier === 'pro' ? 'Switch to Pro Tier?' : 'Downgrade to Community Tier?'}
+          description={
+            pendingDowngradeTier === 'pro'
+              ? [
+                  'Enforces 5-repo quota & 3 agent leases.',
+                  'Switches to shared cluster infrastructure.'
+                ]
+              : [
+                  'Enforces 1 active repo & 1 decision lock.',
+                  'Pauses secondary branch DAG tracking.'
+                ]
+          }
+          confirmLabel={pendingDowngradeTier === 'pro' ? 'Confirm Switch' : 'Confirm Downgrade'}
+          severity="warning"
+          icon={AlertTriangle}
+          confirmIcon={ArrowDownLeft}
+        />
 
         {/* Cryptographic Key Rotation Confirmation Dialog */}
         <ConfirmationDialog
@@ -1848,10 +2048,14 @@ export default function ProfilePage({
           onClose={() => setIsRotateConfirmOpen(false)}
           onConfirm={handleRotateKey}
           title="Rotate API Key"
-          description="Existing tokens will be revoked immediately across connected agent sessions and pipelines."
+          description={[
+            'Immediately revokes active API tokens.',
+            'Requires re-authenticating agent sessions.'
+          ]}
           confirmLabel="Rotate Key"
           severity="neutral"
           icon={RefreshCw}
+          confirmIcon={RefreshCw}
         />
 
         {/* Unified GitHub Authentication Modal */}
@@ -1862,6 +2066,18 @@ export default function ProfilePage({
             setIsDevPatModalOpen(false);
             showToast(`Signed in as ${userData.name || userData.login || 'Local Contributor'} via Dev PAT`);
           }}
+        />
+
+        {/* Corporate Domain Provisioning Modal (Team & Scale Institutional Seat Federation) */}
+        <CorporateDomainModal
+          isOpen={isCorporateDomainModalOpen}
+          onClose={() => setIsCorporateDomainModalOpen(false)}
+          onSubmit={handleRegisterCorporateDomain}
+          isRegistering={isRegisteringDomain}
+          orgName={corporateOrgName}
+          setOrgName={setCorporateOrgName}
+          domain={corporateDomain}
+          setDomain={setCorporateDomain}
         />
       </div>
     );
@@ -2611,7 +2827,7 @@ export default function ProfilePage({
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                <span>Priority GraphBLAS invalidation</span>
+                <span>Dedicated FalkorDB KeySpace</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${currentTier === 'enterprise' ? 'text-white' : 'text-slate-500 dark:text-slate-400'}`} />
@@ -2872,48 +3088,31 @@ export default function ProfilePage({
           <span>{toastMsg}</span>
         </div>
       )}
-          {/* Downgrade Confirmation Modal */}
-      {isDowngradeModalOpen && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="downgrade-modal-title"
-        >
-          <div className="relative w-full max-w-md p-6 rounded-2xl border border-slate-200 dark:border-white/15 bg-white dark:bg-[#111116] shadow-2xl space-y-4">
-            <div className="flex items-center gap-2.5 text-amber-500">
-              <AlertTriangle className="w-5 h-5 shrink-0" />
-              <h3 id="downgrade-modal-title" className="text-base font-bold font-mono text-slate-950 dark:text-white">
-                Downgrade to Community Tier?
-              </h3>
-            </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-mono">
-              Downgrading to Community enforces the 1-repository limit, pauses secondary branch causal graphs, and deactivates CI/CD intercept gates.
-            </p>
-            {isTrialActive && (
-              <div className="p-3 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-mono">
-                Your remaining trial window ({trialDaysRemaining} day{trialDaysRemaining === 1 ? '' : 's'} left) will remain preserved and can be reactivated anytime before expiration.
-              </div>
-            )}
-            <div className="pt-2 flex items-center justify-end gap-3 font-mono text-xs">
-              <button
-                type="button"
-                onClick={() => setIsDowngradeModalOpen(false)}
-                className="px-4 py-2 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition-colors cursor-pointer"
-              >
-                Keep {currentTier === 'enterprise' ? 'Team & Scale' : 'Pro'}
-              </button>
-              <button
-                type="button"
-                onClick={executeDowngradeToFree}
-                className="px-3 py-2 text-rose-500 hover:text-rose-400 dark:text-rose-400 dark:hover:text-rose-300 transition-colors cursor-pointer font-medium"
-              >
-                Confirm Downgrade
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Downgrade Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={isDowngradeModalOpen}
+        onClose={() => {
+          setIsDowngradeModalOpen(false);
+          setPendingDowngradeTier(null);
+        }}
+        onConfirm={executeDowngrade}
+        title={pendingDowngradeTier === 'pro' ? 'Switch to Pro Tier?' : 'Downgrade to Community Tier?'}
+        description={
+          pendingDowngradeTier === 'pro'
+            ? [
+                'Enforces 5-repo quota & 3 agent leases.',
+                'Switches to shared cluster infrastructure.'
+              ]
+            : [
+                'Enforces 1 active repo & 1 decision lock.',
+                'Pauses secondary branch DAG tracking.'
+              ]
+        }
+        confirmLabel={pendingDowngradeTier === 'pro' ? 'Confirm Switch' : 'Confirm Downgrade'}
+        severity="warning"
+        icon={AlertTriangle}
+        confirmIcon={ArrowDownLeft}
+      />
 
       {/* Cryptographic Key Rotation Confirmation Dialog */}
       <ConfirmationDialog
@@ -2921,10 +3120,14 @@ export default function ProfilePage({
         onClose={() => setIsRotateConfirmOpen(false)}
         onConfirm={handleRotateKey}
         title="Rotate API Key"
-        description="Existing tokens will be revoked immediately across connected agent sessions and pipelines."
+        description={[
+          'Immediately revokes active API tokens.',
+          'Requires re-authenticating agent sessions.'
+        ]}
         confirmLabel="Rotate Key"
         severity="neutral"
         icon={RefreshCw}
+        confirmIcon={RefreshCw}
       />
 
       {/* Dev PAT Login Modal for Local Development Authentication */}
@@ -2936,6 +3139,19 @@ export default function ProfilePage({
           showToast(`Signed in as ${userData.name || userData.login || 'Local Contributor'} via Dev PAT`);
         }}
       />
+
+      {/* Corporate Domain Provisioning Modal (Team & Scale Institutional Seat Federation) */}
+      <CorporateDomainModal
+        isOpen={isCorporateDomainModalOpen}
+        onClose={() => setIsCorporateDomainModalOpen(false)}
+        onSubmit={handleRegisterCorporateDomain}
+        isRegistering={isRegisteringDomain}
+        orgName={corporateOrgName}
+        setOrgName={setCorporateOrgName}
+        domain={corporateDomain}
+        setDomain={setCorporateDomain}
+      />
+
     </div>
   );
 }

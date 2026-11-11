@@ -1534,18 +1534,20 @@ export default function App() {
 
       {/* 1. Monochromatic Portfolio Header (Icon mark only - NO WORDMARK) */}
       {activeTab !== 'benefits' && activeTab !== 'sponsors' && (
-      <Header
-        status={{ falkorLive, latestLatency }}
-        activeTab={activeTab}
-        landingTarget={landingTarget}
-        onSelectTab={handleSelectTab}
-        onPrefetchTab={prefetchRoute}
-        onOpenPreferences={() => setIsPreferencesOpen(true)}
-        isDarkTheme={isDarkTheme}
-        onToggleTheme={() => setIsDarkTheme((d) => !d)}
-        tier={activeTierKey}
-        user={githubUser}
-      />
+      <SubsystemErrorBoundary name="Application Header">
+        <Header
+          status={{ falkorLive, latestLatency }}
+          activeTab={activeTab}
+          landingTarget={landingTarget}
+          onSelectTab={handleSelectTab}
+          onPrefetchTab={prefetchRoute}
+          onOpenPreferences={() => setIsPreferencesOpen(true)}
+          isDarkTheme={isDarkTheme}
+          onToggleTheme={() => setIsDarkTheme((d) => !d)}
+          tier={activeTierKey}
+          user={githubUser}
+        />
+      </SubsystemErrorBoundary>
       )}
 
       {/* 2. Main Viewport Switcher with Fluid Page Ascent */}
@@ -2013,7 +2015,11 @@ export default function App() {
       />
 
       {/* Universal Scroll Cue & Architectural Rail Scrubber — present wherever there is vertical scroll */}
-      {activeTab !== 'benefits' && activeTab !== 'sponsors' && <ArchitecturalRailScrubber activeTab={activeTab} />}
+      {activeTab !== 'benefits' && activeTab !== 'sponsors' && (
+        <SubsystemErrorBoundary name="Architectural Rail Scrubber" silentFallback>
+          <ArchitecturalRailScrubber activeTab={activeTab} />
+        </SubsystemErrorBoundary>
+      )}
 
       {/* 4. MCP Agent Connection Configuration Modal */}
       <McpConnectModal

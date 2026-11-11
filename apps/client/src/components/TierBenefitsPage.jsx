@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence, useScroll, useSpring, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform, LayoutGroup } from 'framer-motion';
 import Lightfall from './Lightfall';
 import HairlineFigure from './ui/HairlineFigure';
 import Tooltip from './Tooltip';
@@ -92,7 +92,7 @@ const TIERS = [
       graphblas: '< 1.0ms (Local In-Memory)',
       repos: '1 Repository (Active branch)',
       branches: 'Main / Default Branch only',
-      mutex: 'Single Agent (No concurrency)',
+      mutex: 'Single Agent (1 lease max)',
       crossProcess: 'Local Stdio MCP only',
       preflight: '100 req/min (30 tools/min)',
       cicd: 'Manual CLI (npx cavdax check)',
@@ -114,7 +114,7 @@ const TIERS = [
       graphblas: '< 1.5ms (Hosted In-Memory)',
       repos: '5 Repositories (All branches)',
       branches: 'Full Multi-Branch Tracking',
-      mutex: 'Up to 3 Concurrent Agents',
+      mutex: 'Up to 3 Concurrent Agent Leases',
       crossProcess: 'Hosted Remote SSE MCP',
       preflight: '300 req/min (100 tools/min)',
       cicd: 'Automated GitHub Action Gate',
@@ -133,7 +133,7 @@ const TIERS = [
     desc: 'For high-velocity engineering teams requiring strict CI/CD merge blockers.',
     btnLabel: 'Activate Team & Scale',
     specs: {
-      graphblas: '< 0.8ms (Dedicated Cluster)',
+      graphblas: 'Uncapped Invalidation Engine',
       repos: 'Unlimited Repositories',
       branches: 'Tenant-Isolated Multi-Branch',
       mutex: 'Unlimited Agent Leases',
@@ -142,7 +142,7 @@ const TIERS = [
       cicd: 'Enforced Merge Blocker Gate',
       provisioning: 'Auto-Provision (@yourcompany.com)',
       audit: 'Signed Full Compliance Ledger',
-      deployment: 'Isolated VPC / Air-Gapped'
+      deployment: 'Dedicated KeySpace & Self-Hosted Mesh'
     }
   }
 ];
@@ -232,6 +232,46 @@ export default function TierBenefitsPage({
     damping: 24,
     restDelta: 0.001
   });
+
+  // ── Kinetic Perimeter Scroll Circuit for Floating Right Sidebar Dock ──
+  const { scrollYProgress: globalScrollYProgress } = useScroll();
+  const dockProgress = useTransform(globalScrollYProgress, [0.12, 0.98], [0, 1], { clamp: true });
+  const dockPerimeterSpring = useSpring(dockProgress, {
+    stiffness: 140,
+    damping: 26,
+    restDelta: 0.001
+  });
+  const dockNavRef = useRef(null);
+  const [dockBounds, setDockBounds] = useState({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    if (!dockNavRef.current) return;
+    const updateBounds = () => {
+      if (dockNavRef.current) {
+        const el = dockNavRef.current;
+        // CRITICAL INVARIANT: Use offsetWidth & offsetHeight instead of getBoundingClientRect().
+        // getBoundingClientRect() measures the visual box AFTER CSS transform: scale() is applied.
+        // During Framer Motion scale transitions (e.g. scale: 0.95), getBoundingClientRect()
+        // returns 0.95x the real height (e.g. 361px instead of 380px), causing the border to cut off 19px early!
+        // offsetWidth and offsetHeight return the true untransformed CSS layout box geometry.
+        const w = el.offsetWidth;
+        const h = el.offsetHeight;
+        if (w > 0 && h > 0) {
+          setDockBounds({ width: w, height: h });
+        }
+      }
+    };
+    updateBounds();
+    const frame = requestAnimationFrame(updateBounds);
+    const ro = new ResizeObserver(updateBounds);
+    ro.observe(dockNavRef.current);
+    window.addEventListener('resize', updateBounds);
+    return () => {
+      cancelAnimationFrame(frame);
+      ro.disconnect();
+      window.removeEventListener('resize', updateBounds);
+    };
+  }, [isBelowHero]);
 
   // ── High-Precision Lenis & Wheel Scroll Snap between Fullscreen Hero and Content Theater ──
   useEffect(() => {
@@ -453,14 +493,69 @@ export default function TierBenefitsPage({
           <div className="fixed right-3 sm:right-6 xl:right-6 2xl:right-8 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <motion.aside
               key="tier-sidebar-dock"
-              initial={{ opacity: 0, x: 30, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, scale: 0.95 }}
-              transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 24 }}
+              transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
               className="pointer-events-auto"
               aria-label="Tier Quick Dock"
             >
-              <nav className="bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.08)] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center gap-2.5 sm:gap-3 transition-colors duration-300">
+              <nav
+                ref={dockNavRef}
+                className="relative bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.08)] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center gap-2.5 sm:gap-3 transition-colors duration-300"
+              >
+                {/* ── Kinetic Scroll-Linked Perimeter Circuit (Suneet Option A Standard) ── */}
+                {dockBounds.width > 0 && dockBounds.height > 0 && (
+                  <svg
+                    className="absolute inset-0 pointer-events-none overflow-visible rounded-2xl"
+                    width={dockBounds.width}
+                    height={dockBounds.height}
+                    aria-hidden="true"
+                    style={{ zIndex: 0 }}
+                  >
+                    {/* Baseline Track */}
+                    <rect
+                      x="0.75"
+                      y="0.75"
+                      width={dockBounds.width - 1.5}
+                      height={dockBounds.height - 1.5}
+                      rx="16"
+                      fill="none"
+                      className="stroke-slate-300/40 dark:stroke-white/10"
+                      strokeWidth="1"
+                    />
+
+                    {/* Ambient Diffuse Underglow Track */}
+                    <motion.rect
+                      x="0.75"
+                      y="0.75"
+                      width={dockBounds.width - 1.5}
+                      height={dockBounds.height - 1.5}
+                      rx="16"
+                      fill="none"
+                      stroke="#d9a353"
+                      strokeWidth="3.5"
+                      strokeLinecap="round"
+                      className="blur-[2px] opacity-25 dark:opacity-40"
+                      style={{ pathLength: dockPerimeterSpring }}
+                    />
+
+                    {/* Crisp Precision Amber Hairline Stroke */}
+                    <motion.rect
+                      x="0.75"
+                      y="0.75"
+                      width={dockBounds.width - 1.5}
+                      height={dockBounds.height - 1.5}
+                      rx="16"
+                      fill="none"
+                      stroke="#d9a353"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      style={{ pathLength: dockPerimeterSpring }}
+                    />
+                  </svg>
+                )}
+
                 {/* Back to Account & Quotas */}
                 <Tooltip content="Back to Account & Quotas" position="left">
                   <button
@@ -468,7 +563,7 @@ export default function TierBenefitsPage({
                       playClick();
                       if (onOpenProfilePage) onOpenProfilePage();
                     }}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Back to Account & Quotas"
                   >
                     <ArrowLeft className="w-4 h-4 shrink-0" />
@@ -476,11 +571,11 @@ export default function TierBenefitsPage({
                 </Tooltip>
 
                 {/* Minimalist Divider */}
-                <div className="w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
 
                 {/* Vertical Track for Tier SVGs with Pure Declarative Spring-Animated Sliding Pill */}
                 <LayoutGroup id="tier-sidebar-nav">
-                  <div className="relative flex flex-col items-center gap-2 p-1 rounded-xl bg-slate-100/50 dark:bg-white/[0.03]">
+                  <div className="relative z-10 flex flex-col items-center gap-2 p-1 rounded-xl bg-slate-100/50 dark:bg-white/[0.03]">
                     {TIERS.map(t => {
                       const Icon = t.icon;
                       const isActive = selectedTier === t.id;
@@ -522,13 +617,13 @@ export default function TierBenefitsPage({
                 </LayoutGroup>
 
                 {/* Minimalist Divider */}
-                <div className="w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
                 {/* Theme Toggle Button — Sidebar Dock */}
                 <Tooltip content={isDarkTheme ? 'Switch to Light' : 'Switch to Dark'} position="left">
                   <button
                     type="button"
                     onClick={handleToggleTheme}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Toggle theme"
                   >
                     <motion.div
@@ -544,7 +639,7 @@ export default function TierBenefitsPage({
                 </Tooltip>
 
                 {/* Minimalist Divider */}
-                <div className="w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
 
 
                 {/* Smooth Return to Top Cue */}
@@ -562,7 +657,7 @@ export default function TierBenefitsPage({
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }
                     }}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Return to Top"
                   >
                     <ChevronUp className="w-4 h-4 shrink-0" />
@@ -1024,79 +1119,79 @@ export default function TierBenefitsPage({
                   {
                     name: 'FalkorDB GraphBLAS Invalidation',
                     desc: 'Sparse algebraic semiring sweeps computing multi-hop causality.',
-                    community: { base: '< 1.0ms Local', vsPro: 'Local Only', vsEnterprise: 'Self-Hosted' },
-                    pro: { base: '< 1.5ms Hosted', vsEnterprise: 'Shared Cluster' },
-                    enterprise: { base: '< 0.8ms Dedicated' }
+                    community: { base: '< 1.0ms Local' },
+                    pro: { base: '< 1.5ms Hosted' },
+                    enterprise: { base: 'Uncapped Throughput' }
                   },
                   {
                     name: 'Connected Repositories & Workspaces',
                     desc: 'Active repositories tracked concurrently with AST links.',
-                    community: { base: '1 Active Repo', vsPro: 'Capped 1', vsEnterprise: 'Single' },
-                    pro: { base: '5 Repositories', vsEnterprise: 'Capped 5' },
+                    community: { base: '1 Active Repo' },
+                    pro: { base: '5 Repositories' },
                     enterprise: { base: 'Unlimited Repos' }
                   },
                   {
                     name: 'Secondary Branch Causal Isolation',
                     desc: 'Per-branch DAGs preventing staging edits from corrupting ADRs.',
-                    community: { base: 'Main Branch only', vsPro: 'No Branches', vsEnterprise: 'Single Branch' },
-                    pro: { base: 'Multi-Branch DAG', vsEnterprise: 'Shared Graph' },
+                    community: { base: 'Main Branch only', vsPro: 'Main Only', vsEnterprise: 'Main Only' },
+                    pro: { base: 'Multi-Branch DAG' },
                     enterprise: { base: 'Tenant Multi-Branch' }
                   },
                   {
                     name: 'Distributed Mutex Lock Engine',
                     desc: 'Exclusive leases preventing parallel agent mutate conflicts.',
-                    community: { base: 'Single Agent', vsPro: 'No Concurrency', vsEnterprise: 'Single Agent' },
-                    pro: { base: '3 Agent Leases', vsEnterprise: 'Capped 3' },
+                    community: { base: '1 Active Lease' },
+                    pro: { base: '3 Agent Leases' },
                     enterprise: { base: 'Unlimited Leases' }
                   },
                   {
                     name: 'MCP Transport & Network Protocol',
                     desc: 'Agent connection transport across Cursor, Claude Code, and CLI.',
-                    community: { base: 'Local Stdio MCP', vsPro: 'Local Stdio', vsEnterprise: 'No Remote SSE' },
-                    pro: { base: 'Hosted Remote SSE', vsEnterprise: 'Shared SSE' },
+                    community: { base: 'Local Stdio MCP', vsPro: 'Stdio Only', vsEnterprise: 'Stdio Only' },
+                    pro: { base: 'Hosted Remote SSE' },
                     enterprise: { base: 'Dedicated SSE Mesh' }
                   },
                   {
                     name: 'API & Tool Execution Rate Limits',
                     desc: 'Throughput bounds protecting FalkorDB from runaway agent loops.',
-                    community: { base: '100 req/min (30 tools)', vsPro: '100/min Cap', vsEnterprise: 'Throttled' },
-                    pro: { base: '300 req/min (100 tools)', vsEnterprise: '300/min Cap' },
+                    community: { base: '100 req/min (30 tools)' },
+                    pro: { base: '300 req/min (100 tools)' },
                     enterprise: { base: 'Unlimited Rate' }
                   },
                   {
                     name: 'Graph Storage & Node Quota',
                     desc: 'Maximum architectural nodes before write rejection.',
-                    community: { base: '500 Nodes Max', vsPro: '500 Node Cap', vsEnterprise: 'Storage Cap' },
-                    pro: { base: '10,000 Nodes Max', vsEnterprise: 'Capped 10k' },
+                    community: { base: '500 Nodes Max' },
+                    pro: { base: '10,000 Nodes Max' },
                     enterprise: { base: 'Unlimited Nodes' }
                   },
                   {
                     name: 'CI/CD Invariant Blocking Gate',
                     desc: 'Pull request status check verifying commit SHAs against ADRs.',
-                    community: { base: 'Manual CLI Check', vsPro: 'Manual Only', vsEnterprise: 'No Action' },
-                    pro: { base: 'GitHub Action Gate', vsEnterprise: 'Advisory' },
+                    community: { base: 'Manual CLI Check', vsPro: 'Manual Only', vsEnterprise: 'Manual Only' },
+                    pro: { base: 'GitHub Action Gate', vsEnterprise: 'Advisory Only' },
                     enterprise: { base: 'Enforced Blocker' }
                   },
                   {
                     name: 'Corporate Domain Provisioning',
                     desc: 'Automatic seat federation via corporate email domains.',
-                    community: { base: 'Individual PAT', vsPro: 'Personal PAT', vsEnterprise: 'No Org SSO' },
-                    pro: { base: 'GitHub OAuth', vsEnterprise: 'Manual Seats' },
+                    community: { base: 'Individual PAT', vsEnterprise: 'No Org SSO' },
+                    pro: { base: 'GitHub OAuth', vsEnterprise: 'No Org SSO' },
                     enterprise: { base: 'Corporate Domain' }
                   },
                   {
                     name: 'Audit Trail Retention Depth',
                     desc: 'Execution trail retention for governance and compliance.',
-                    community: { base: '10 Entries Depth', vsPro: '10 Max', vsEnterprise: 'Short Window' },
-                    pro: { base: '1,000 Entries Depth', vsEnterprise: 'Capped 1k' },
+                    community: { base: '10 Entries Depth' },
+                    pro: { base: '1,000 Entries Depth' },
                     enterprise: { base: 'Full Compliance Log' }
                   },
                   {
                     name: 'Deployment & Tenancy Topology',
                     desc: 'Hosting topology, tenancy model, and isolation level.',
-                    community: { base: 'Local Docker Mesh', vsPro: 'Self-Managed', vsEnterprise: 'No Cloud' },
-                    pro: { base: 'Managed Cloud Cluster', vsEnterprise: 'Multi-Tenant' },
-                    enterprise: { base: 'Dedicated VPC / Air-Gap' }
+                    community: { base: 'Local Docker Mesh' },
+                    pro: { base: 'Managed Cloud Cluster' },
+                    enterprise: { base: 'Dedicated KeySpace' }
                   }
                 ].map((row, idx) => (
                   <tr
@@ -1122,12 +1217,16 @@ export default function TierBenefitsPage({
                       ) : selectedTier === 'pro' ? (
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                           <span>{row.community.base}</span>
-                          <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.community.vsPro})</span>
+                          {row.community.vsPro && (
+                            <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.community.vsPro})</span>
+                          )}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                           <span>{row.community.base}</span>
-                          <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.community.vsEnterprise})</span>
+                          {row.community.vsEnterprise && (
+                            <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.community.vsEnterprise})</span>
+                          )}
                         </span>
                       )}
                     </td>
@@ -1146,7 +1245,9 @@ export default function TierBenefitsPage({
                       ) : selectedTier === 'enterprise' ? (
                         <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
                           <span>{row.pro.base}</span>
-                          <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.pro.vsEnterprise})</span>
+                          {row.pro.vsEnterprise && (
+                            <span className="text-rose-500/90 dark:text-rose-400/90 font-medium text-[11px]">({row.pro.vsEnterprise})</span>
+                          )}
                         </span>
                       ) : (
                         <span className="whitespace-nowrap">{row.pro.base}</span>

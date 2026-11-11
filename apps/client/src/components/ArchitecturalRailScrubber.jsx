@@ -68,6 +68,7 @@ export default function ArchitecturalRailScrubber({ activeTab = 'landing' }) {
   const [activeSection, setActiveSection] = useState('');
   const [isRadarSection, setIsRadarSection] = useState(false);
   const [isCausalSection, setIsCausalSection] = useState(false);
+  const [isFooterSection, setIsFooterSection] = useState(false);
 
   const containerRef = useRef(null);
   const isHoldingRef = useRef(false);
@@ -81,6 +82,7 @@ export default function ArchitecturalRailScrubber({ activeTab = 'landing' }) {
   // 1. Detect scroll availability across any view
   useEffect(() => {
     const updateScrollMetrics = () => {
+      try {
       const scrollHeight = document.documentElement.scrollHeight;
       const clientHeight = window.innerHeight;
       const maxScroll = Math.max(0, scrollHeight - clientHeight);
@@ -124,6 +126,22 @@ export default function ArchitecturalRailScrubber({ activeTab = 'landing' }) {
         setIsCausalSection(inCausalOrEnclave);
       } else {
         setIsCausalSection(false);
+      }
+
+      // Check proximity to footer landmark to smoothly fade out vertical scroll cue
+      const footerEl = document.querySelector('footer') || document.getElementById('footer');
+      let inFooter = false;
+      if (footerEl) {
+        const fRect = footerEl.getBoundingClientRect();
+        if (fRect.top <= clientHeight * 0.82) {
+          inFooter = true;
+        }
+      } else if (maxScroll > 0 && currentScrollY / maxScroll >= 0.94) {
+        inFooter = true;
+      }
+      setIsFooterSection(inFooter);
+      } catch (err) {
+        console.warn("[ArchitecturalRailScrubber] Scroll metrics evaluation bypassed:", err);
       }
     };
 
@@ -295,7 +313,7 @@ export default function ArchitecturalRailScrubber({ activeTab = 'landing' }) {
 
   // During causal loop section: hide the vertical scroll cue entirely (only horizontal cue is present)
   // During radar section: only scroll cue is visible, kept very dimmed (0.20) as requested
-  const isHidden = isWordmarkIntro || isCausalSection;
+  const isHidden = isWordmarkIntro || isCausalSection || isFooterSection;
   const currentOpacity = isHidden 
     ? 0 
     : (isRadarSection ? (hoveredSection || isHolding ? 0.6 : 0.20) : 1);
