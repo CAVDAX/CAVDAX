@@ -371,7 +371,8 @@ export default function ProfilePage({
   const [hoveredTierBtn, setHoveredTierBtn] = useState(null);
   const [quotaData, setQuotaData] = useState(null);
   const [connectedRepoCount, setConnectedRepoCount] = useState(0);
-  const [isUpgrading, setIsUpgrading] = useState(false);
+  const [upgradingTier, setUpgradingTier] = useState(null); // null | 'pro' | 'enterprise'
+  const isUpgrading = Boolean(upgradingTier);
   const [isStartingTrial, setIsStartingTrial] = useState(false);
   const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
   const [pendingDowngradeTier, setPendingDowngradeTier] = useState(null);
@@ -595,14 +596,14 @@ export default function ProfilePage({
       showToast("Live subscription payments are disabled on localhost to prevent stranded funds. Upgrade on our production platform: https://cavdax.sahnirmaan.live/profile");
       return;
     }
-    if (isUpgrading) return;
-    setIsUpgrading(true);
+    if (upgradingTier) return;
+    setUpgradingTier(targetTier);
 
     try {
       const loaded = await loadRazorpayScript();
       if (!loaded) {
         showToast('Could not load payment gateway. Check your connection.');
-        setIsUpgrading(false);
+        setUpgradingTier(null);
         return;
       }
 
@@ -622,14 +623,14 @@ export default function ProfilePage({
 
       if (!orderRes.ok || !orderData.success) {
         showToast(orderData?.error?.message || 'Failed to create subscription order.');
-        setIsUpgrading(false);
+        setUpgradingTier(null);
         return;
       }
 
       const keyId = orderData.key_id || import.meta.env.VITE_RAZORPAY_KEY_ID || '';
       if (!keyId) {
         showToast('Payment gateway key is not configured.');
-        setIsUpgrading(false);
+        setUpgradingTier(null);
         return;
       }
 
@@ -672,7 +673,7 @@ export default function ProfilePage({
         } catch {
           showToast('Verification request failed. Contact support.');
         } finally {
-          setIsUpgrading(false);
+          setUpgradingTier(null);
         }
       };
 
@@ -686,7 +687,7 @@ export default function ProfilePage({
         order_id: orderData.order_id,
         theme: { color: targetTier === 'enterprise' ? '#0B0D11' : '#F59E0B' },
         modal: {
-          ondismiss: () => setIsUpgrading(false)
+          ondismiss: () => setUpgradingTier(null)
         },
         handler: handleRazorpayPaymentVerify
       };
@@ -694,12 +695,12 @@ export default function ProfilePage({
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', function (resp) {
         showToast(`Payment failed: ${resp.error?.description || 'Transaction declined'}`);
-        setIsUpgrading(false);
+        setUpgradingTier(null);
       });
       rzp.open();
     } catch (err) {
       showToast('Payment initiation failed. Please try again.');
-      setIsUpgrading(false);
+      setUpgradingTier(null);
     }
   };
 
@@ -789,7 +790,7 @@ export default function ProfilePage({
         : 'Current Plan';
     }
     if (isStartingTrial) return 'Activating Trial...';
-    if (isUpgrading) return 'Connecting...';
+    if (upgradingTier === 'pro') return 'Connecting...';
     if (hasEvaluationPass) return isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)';
     if (!activeUser) return 'Sign In to Activate';
     if (isTrialActive) return `Resume Pro Trial (${trialDaysRemaining}d left)`;
@@ -1551,7 +1552,7 @@ export default function ProfilePage({
               <div className="relative z-10">
               <button
                 onClick={() => handleTierSwitch('free')}
-                disabled={currentTier === 'free'}
+                disabled={currentTier === 'free' || isUpgrading || isStartingTrial}
                 onMouseEnter={() => setHoveredTierBtn('free')}
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
@@ -1724,7 +1725,7 @@ export default function ProfilePage({
               <div className="relative z-10">
               <button
                 onClick={() => handleTierSwitch('pro')}
-                disabled={currentTier === 'pro'}
+                disabled={currentTier === 'pro' || isUpgrading || isStartingTrial}
                 onMouseEnter={() => setHoveredTierBtn('pro')}
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
@@ -1877,7 +1878,7 @@ export default function ProfilePage({
               <div className="relative z-10">
               <button
                 onClick={() => handleTierSwitch('enterprise')}
-                disabled={currentTier === 'enterprise'}
+                disabled={currentTier === 'enterprise' || isUpgrading || isStartingTrial}
                 onMouseEnter={() => setHoveredTierBtn('enterprise')}
                 onMouseLeave={() => setHoveredTierBtn(null)}
                 className={`relative overflow-hidden group w-full h-9 flex items-center justify-center rounded-lg border text-xs font-mono font-semibold transition-all duration-300 ${
@@ -1929,7 +1930,7 @@ export default function ProfilePage({
                       : (hasEvaluationPass
                           ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                           : (!activeUser ? 'Sign In to Activate'
-                              : (isUpgrading
+                              : (upgradingTier === 'enterprise'
                                   ? 'Connecting...'
                                   : `Upgrade (${currency === 'INR' ? '₹2,999' : '$35'}/mo)`)))}
                   </span>
@@ -2624,7 +2625,7 @@ export default function ProfilePage({
             <div className="relative z-10">
             <button
               onClick={() => handleTierSwitch('free')}
-              disabled={currentTier === 'free'}
+              disabled={currentTier === 'free' || isUpgrading || isStartingTrial}
               onMouseEnter={() => setHoveredTierBtn('free')}
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
@@ -2797,7 +2798,7 @@ export default function ProfilePage({
             <div className="relative z-10">
             <button
               onClick={() => handleTierSwitch('pro')}
-              disabled={currentTier === 'pro'}
+              disabled={currentTier === 'pro' || isUpgrading || isStartingTrial}
               onMouseEnter={() => setHoveredTierBtn('pro')}
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
@@ -2950,7 +2951,7 @@ export default function ProfilePage({
             <div className="relative z-10">
             <button
               onClick={() => handleTierSwitch('enterprise')}
-              disabled={currentTier === 'enterprise'}
+              disabled={currentTier === 'enterprise' || isUpgrading || isStartingTrial}
               onMouseEnter={() => setHoveredTierBtn('enterprise')}
               onMouseLeave={() => setHoveredTierBtn(null)}
               className={`relative overflow-hidden group w-full h-8 flex items-center justify-center rounded-lg border text-[11px] sm:text-xs font-mono font-semibold transition-all duration-300 ${
@@ -3002,7 +3003,7 @@ export default function ProfilePage({
                     : (hasEvaluationPass
                         ? (isHackathonMode ? 'Switch to Team & Scale' : 'Switch (Dev)')
                         : (!activeUser ? 'Sign In to Activate'
-                            : (isUpgrading
+                            : (upgradingTier === 'enterprise'
                                 ? 'Connecting...'
                                 : `Upgrade (${currency === 'INR' ? '₹2,999' : '$35'}/mo)`)))}
                 </span>
