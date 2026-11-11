@@ -11,6 +11,11 @@
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
 - **Lower Sponsor Category Switch Confirmation Dialog (`SupportPage.jsx` & `ConfirmationDialog.jsx`)**:
+  - **Adversarial Forensic Discovery**:
+    - Discovered root cause behind the dialog not displaying: when a visitor or evaluator clicked a lower tier without an existing authenticated GitHub session, `handleSelectTier` executed an unprompted top-level `window.location.href = '/api/auth/github'` redirect before the confirmation state could mount.
+    - Fixed empty string false positive (`userHandle === ''` matching `github_handle: null` on anonymous seed backers).
+    - Prioritized downgrade interception: `ConfirmationDialog` mounts client-side immediately upon clicking any lower category regardless of auth state, matching the exact order of `ProfilePage.jsx`.
+    - Added evaluator pass fallback in `handleEvaluationSponsor` allowing local testing with zero external OAuth disruptions.
   - **The Requirement**: When active sponsors move down into a lower patronage category (e.g. Core Patron to 2 Cups, or 2 Cups to Cookie), intercept the transition with the accessible Murphy's Law Confirmation Dialog instead of executing immediate destructive capability shifts.
   - **Strict Architectural Parity with Subscription Tier Downgrade**:
     - Uses identical `ConfirmationDialog` component with continuous super-ellipse ($n=4.4$), solitary line SVG (`ArrowDownLeft`), and `severity="neutral"`.
