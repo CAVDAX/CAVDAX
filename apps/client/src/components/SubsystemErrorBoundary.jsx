@@ -54,6 +54,14 @@ export default class SubsystemErrorBoundary extends React.Component {
   render() {
     if (!this.state.hasError) return this.props.children;
 
+    if (this.props.silentFallback) {
+      return null;
+    }
+
+    if (this.props.fallback) {
+      return typeof this.props.fallback === 'function' ? this.props.fallback(this.state.error, this.handleReloadView) : this.props.fallback;
+    }
+
     const { name = 'Subsystem' } = this.props;
     const { error, errorInfo, showDetails } = this.state;
 

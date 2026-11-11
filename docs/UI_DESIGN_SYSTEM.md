@@ -9123,9 +9123,20 @@ Amateur confirmation modals feature saturated yellow/amber warning badges and wo
 ### 102.2 The Murphy's Law Confirmation Standard
 1. **Monochromatic Obsidian Styling**: Pure `#0B0D11` obsidian card surface with `border border-slate-200/80 dark:border-white/10`.
 2. **Neutral Precision Badge**: Replaces saturated amber warnings with a monochromatic slate/obsidian pill (`bg-slate-100 dark:bg-white/[0.06] text-slate-800 dark:text-white`) with contextual line SVGs (e.g. `RefreshCw` with micro-rotation).
-3. **11-Word Text Discipline**: Prompts are constrained to concise technical copy: Title: `Rotate API Key`; Description: `"Existing tokens will be revoked immediately across connected agent sessions and pipelines."` (Under 12 words).
+3. **The 2-Line Semantic Split Standard (Anti-Orphan & Anti-Hyphen Discipline)**: Strictly limits confirmation dialog descriptions to a maximum of 2 distinct lines rendered as individual `<span className="block whitespace-nowrap overflow-hidden text-ellipsis leading-snug">` inside a `flex flex-col gap-1` container.
+   - **Line 1 (Direct Consequence)**: e.g. `Enforces 1 active repo & 1 decision lock.`
+   - **Line 2 (Secondary Scope & State)**: e.g. `Pauses secondary branch DAG tracking.`
+   - **Zero Hyphenated Noun Clutter**: Ban numbers hyphenated to nouns (never write `1-repository`; write `1 active repo`).
+   - **Spacious 480px Modal Track**: Modal container enforces `max-w-md sm:max-w-[480px]`, guaranteeing sufficient horizontal track space (~370px) so neither sentence wraps onto extra lines or clips awkwardly.
 4. **Multi-Layout Mount Parity**: Destructive confirmation dialogs must be rendered across all responsive layout branches (`isLargeDisplay` $\ge 1537\text{px}$ and standard viewports alike), ensuring clicks execute consistently regardless of monitor resolution.
-5. **Murphy's Law Defenses**: Enforces `role="alertdialog"`, `aria-modal="true"`, focus trapping, escape key dismiss, and body scroll lock.
+5. **Murphy's Law Defenses**: Enforces `role="alertdialog"`, `aria-modal="true"`, focus trapping, escape key dismiss, and body scroll lock. Initial focus MUST automatically bind to the Cancel / Keep Plan button on mount—never the destructive confirmation button.
+6. **Zero Ghost Modals & Mandatory Downgrade Interception**: Every plan transition that strips capabilities or limits quotas (e.g., downgrading from Pro or Team & Scale to Community Free, or Enterprise to Pro) MUST intercept the user click and mount `<ConfirmationDialog>`. Direct state mutation from the trigger button without confirmation is strictly forbidden.
+7. **Zero Orphan Action Handlers**: Every confirm button inside a dialog MUST bind to a declared, tested execution handler (e.g., `executeDowngrade`). Never leave undeclared stubs or mock identifiers that trigger `ReferenceError`.
+8. **Universal Portal Isolation (`createPortal`)**: Modals and confirmation dialogs must project into `document.body` at `z-[99999]`, breaking free from containing block perspective, transforms, and overflow clipping.
+9. **Tactile Micro-Action SVGs (`confirmIcon`) & Anti-AI-Slop Clipart Guard**:
+   - **Strict Zero Decorative Clipart**: Confirmation dialogs are high-gravity operational barriers. Never insert generic 3D illustrations, cartoon characters, or floating clipart in the dialog body.
+   - **Tactile Micro-Action SVGs**: Primary confirmation/destructive buttons must pair with an authentic 14px (`w-3.5 h-3.5 shrink-0`) Lucide line SVG (e.g., `ArrowDownLeft` for tier downgrades, `RefreshCw` for key rotation, `Unlink2` for disconnecting repositories).
+   - **Zero Layout-Jitter Pending Transition**: When an async action executes, the micro-SVG cleanly transitions into `<Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />` with zero button width jump.
 
 ---
 

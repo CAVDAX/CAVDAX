@@ -9,6 +9,74 @@
 
 ## 🏆 Completed Milestones & Architectural Landings
 
+### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Tactile Confirmation Action Micro-SVGs (`confirmIcon`) & Anti-AI-Slop Clipart Guard**:
+  - Enforced the distinction between tacky AI slop (inserting large cartoon clipart, 3D floating exclamation marks, or crying mascots into alert dialogs) and elite high-craft engineering (pairing primary confirmation buttons with precision 14px Lucide action line SVGs).
+  - Enhanced `ConfirmationDialog.jsx` with an optional `confirmIcon` prop:
+    - Renders `{isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" /> : ConfirmIcon ? <ConfirmIcon className="w-3.5 h-3.5 shrink-0" /> : null}`.
+    - Guaranteed zero layout jitter or button jumping when toggling into async mutation states.
+  - Wired contextual micro-SVGs across all dialog invocations:
+    - `ProfilePage.jsx`: `<ArrowDownLeft className="w-3.5 h-3.5" />` on Downgrade Confirmations (`Confirm Downgrade` / `Confirm Switch`).
+    - `ProfilePage.jsx`: `<RefreshCw className="w-3.5 h-3.5" />` on Cryptographic Key Rotation (`Rotate Key`).
+    - `ConnectedRepoWorkspace.jsx`: `<Unlink2 className="w-3.5 h-3.5" />` on Disconnect Repository Dialog (`Disconnect Repository`).
+  - Documented in `docs/UI_DESIGN_SYSTEM.md` (§102.3) and synchronized `Suneet-Perfect-AI-Slop-Remover` across all 8 AI agent platforms.
+- **Universal GitHub Avatar Fallback & Dynamic Endpoint Resolution**:
+  - Resolved production backer avatar blanking where req.session.user camelCase avatarUrl caused verify-payment to save avatar_url: null.
+  - Added dynamic fallback in GET /api/sponsors: automatically derives https://github.com/{handle}.png for any past or present backer with a valid GitHub handle.
+  - Added client-side fallback across SupportPage.jsx, SponsorsPage.jsx, and AnimatedAvatarGroup.jsx, ensuring authentic GitHub profile photos render worldwide with zero external Dicebear dependencies.
+- **Strict 2-Line Physical Cap on All Confirmation Dialogs (`ConfirmationDialog.jsx` & `ProfilePage.jsx`)**:
+  - Addressed the regression where two sentences each wrapped onto line 2, producing 4 total lines of cluttered text in the downgrade dialog.
+  - **The Strict 2-Line Invariant**:
+    1. Enforced `.slice(0, 2)` on all array and newline line parsers in `ConfirmationDialog.jsx`.
+    2. Enforced `whitespace-nowrap overflow-hidden text-ellipsis` on each description line, making it mathematically impossible to wrap into 3 or 4 lines.
+    3. Calibrated all dialog copy under 42 characters per line:
+       - Community Downgrade: `Enforces 1 active repo & 1 decision lock.` / `Pauses secondary branch DAG tracking.`
+       - Pro Switch: `Enforces 5-repo quota & 3 agent leases.` / `Switches to shared cluster infrastructure.`
+       - Key Rotation: `Immediately revokes active API tokens.` / `Requires re-authenticating agent sessions.`
+       - Disconnect Repo: `Disconnects repo from causal sync.` / `Removes local cache; source files are kept.`
+    4. Expanded modal container to `max-w-md sm:max-w-[480px]` so text breathes with zero truncation.
+  - Codified Pattern 18 in `Suneet-Perfect-AI-Slop-Remover` and deployed globally across all 8 AI agent platforms.
+- **Perimeter Circuit Untransformed Layout Box Standard (`TierBenefitsPage.jsx`)**:
+  - Diagnosed and resolved the 19px bottom premature border cutoff where the amber SVG perimeter stroke curved inward above the bottom of the floating dock card.
+  - **The Root Cause**: Measuring geometry via `getBoundingClientRect()` while `<motion.aside>` was executing an entrance scale transition (`initial={{ scale: 0.95 }}`) returned $0.95 \times 380\text{px} = 361\text{px}$ (19px shorter). Because CSS transform matrix changes do NOT re-trigger `ResizeObserver`, the SVG boundary remained frozen at 361px while the card expanded to 380px.
+  - **The Fix**: Replaced `getBoundingClientRect()` with untransformed CSS box geometry (`el.offsetWidth` and `el.offsetHeight`), added `requestAnimationFrame` double-checks on mount, and sanitized dock entrance transitions to pure horizontal translations (`initial={{ opacity: 0, x: 24 }}`).
+  - Codified Pattern 19 in `Suneet-Perfect-AI-Slop-Remover` and deployed globally across all 8 AI agent platforms.
+- **Kinetic Scroll-Linked Perimeter Circuit on Tier Dock (TierBenefitsPage.jsx)**:
+  - Implemented high-craft Option A perimeter telemetry: pure SVG vector path dynamically tracing the floating right dock super-ellipse boundary.
+  - Powered by Framer Motion useScroll and useSpring dampening (stiffness: 140, damping: 26).
+  - Traces from 0% at hero exit to a 100% sealed perimeter boundary as the user reaches the end of the page / comparison matrix.
+  - Replaced tacky AI-slop star/sparkle animations with dual-stroke engineering vectors (diffuse underglow + 1.5px amber #d9a353 precision hairline) with ResizeObserver pixel alignment.
+- **Architectural Invariant Matrix Anti-Empty-Parenthesis Guard & De-Slopping (`TierBenefitsPage.jsx`)**:
+  - Identified and eradicated the React JSX undefined expression trap where `({row.community.vsPro})` rendered literal empty red rose parentheses `"()"` across rows where contrast modifiers were undefined.
+  - Implemented strict truthy guards: `{row.community.vsPro && <span ...>({row.community.vsPro})</span>}` across all matrix cells.
+  - Calibrated the matrix to feature only 4 genuine architectural workflow decision gates (`Secondary Branch Causal Isolation: (Main Only)`, `MCP Transport: (Stdio Only)`, `CI/CD Gate: (Manual Only) / (Advisory Only)`, `Corporate Domain: (No Org SSO)`), eliminating all alert fatigue from standard quantitative quotas.
+- **New Suneet Skills Authored & Universally Deployed across All 8 AI Agents**:
+  - `Suneet-Architectural-Invariant-Matrix`: Covers Framer Motion LayoutGroup dynamic column tracking (`layoutId="matrixActiveArrowIndicator"`), anti-empty-parenthesis guards, and non-punitive aesthetic standards.
+  - `Suneet-Architectural-Rail-Scrubber`: Codifies physics-damped custom scroll indicators, dynamic section telemetry, and programmatic auto-scroll engines.
+  - `Suneet-Subsystem-Error-Boundary`: Codifies multi-tier silent fallback error boundaries, Remco Stoeten interactive empty-state recovery cards, and localhost vs production error isolation.
+  - All 3 skills installed globally across `.gemini`, `.claude`, `.codex`, `.cursor`, `.agents`, `.cline`, `.roo`, `.opencode` and synced to the central prompt vault.
+- **Universal Shimmer & Error Fallback Skeleton (`ShimmerImage.jsx`)**:
+  - Replaced bare `<img>` elements across all user avatars and sponsor cards (`ProfilePage`, `Header`, `SponsorsPage`, `SupportPage`, `SphereImageGrid`, `AnimatedAvatarGroup`, `ConnectMcpPage`).
+  - Added instant memory-cache bypass (`complete && naturalWidth > 0`) to eliminate 1-frame skeleton flashes on cached avatars.
+  - Added `fallbackText` (uppercase initial monograms) and semantic SVG fallbacks on image failure or network timeout.
+- **Mutex Concurrency Tier Enforcement (`apps/server/index.js` & `core/mcp/lockManager.js`)**:
+  - Eliminated the gap between marketing claims and backend enforcement.
+  - Enforced active lease limits: **Community tier = 1 active lock**, **Pro Autonomous = 3 concurrent locks**, **Team & Scale = unlimited**.
+  - Attempting to acquire more concurrent locks than permitted returns `429 BLOCKED_TIER_CONCURRENCY_LIMIT_EXCEEDED`.
+- **Truth-in-Engineering Tier Copy Calibration (`TierBenefitsPage.jsx` & `ProfilePage.jsx`)**:
+  - Eradicated fictitious marketing claims: replaced `"Dedicated VPC / Air-Gapped"` with `"Dedicated KeySpace & Self-Hosted Mesh"`.
+  - Replaced artificial latency tiers (`"Priority GraphBLAS < 0.8ms"`) with `"Uncapped Invalidation Throughput"` and `"Dedicated FalkorDB KeySpace"`.
+  - Calibrated sponsor perks in `SupportPage.jsx` to authentic open deliverables (Public Backer Spotlight, 3D Sphere Node, Direct Team Acknowledgment).
+- **Murphy's Law Downgrade Confirmation Standard & Modal Portal Hoisting (`ProfilePage.jsx`)**:
+  - Intercepted all destructive plan downgrades (`handleTierSwitch` to Community or Pro) with `<ConfirmationDialog>`.
+  - Eradicated ghost modal bypass and resolved missing handler `executeDowngrade` with verified state synchronization (`syncTierWithServer`).
+  - Hoisted `CorporateDomainModal` via `createPortal(..., document.body)` with auto-focus and Escape listener across both desktop and compact responsive layouts.
+  - Codified Pattern 17 in `Suneet-Perfect-AI-Slop-Remover` and Attack Vectors 1 & 6 in `devils-advocate`.
+- **Socket.dev Supply Chain Security Forensic Audit**:
+  - Proved that the 79 score on `@cavdax/mcp-server` is dominated by the `Unpopular package` cold-start heuristic (~20-point penalty for new packages with 0 downloads).
+  - Confirmed `Uses eval` is 100% transitive from upstream `falkordb` -> `lodash@4.18.1` (`template.js`). Root CAVDAX codebase contains zero dynamic code execution.
+  - Enriched master prompt vault: `##NPM-Package-Distribution-Sigstore-Provenance-And-Supply-Chain-Auditing.md`.
+
 ### 1. Dedicated Supporters Showcase & 3D Fibonacci Galaxy (`SponsorsPage.jsx` & `SphereImageGrid.jsx`)
 - Built dedicated `/sponsors` portal driven by the **3D Revolving Fibonacci Supporter Galaxy**.
 - Enforced `Suneet-3D-Revolving-Image-Sphere` standard: 100% crash-proof CSS 3D transforms (`preserve-3d`, `translate3d`, `scale`) with **zero WebGL contexts**.

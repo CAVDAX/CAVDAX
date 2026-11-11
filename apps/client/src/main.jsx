@@ -3,9 +3,13 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './index.css';
 
+import SubsystemErrorBoundary from './components/SubsystemErrorBoundary.jsx';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <SubsystemErrorBoundary name="CAVDAX Application Gateway">
+      <App />
+    </SubsystemErrorBoundary>
   </React.StrictMode>
 );
 

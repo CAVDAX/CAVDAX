@@ -298,7 +298,10 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
       const isTwoCups = s.tier_id === 2 || s.tier_id === '2';
       const scaleMultiplier = isCore ? 1.6 : isTwoCups ? 1.15 : 0.85;
 
-      const rawAvatar = s.avatar_url || s.avatarUrl || s.avatar;
+      const cleanHandle = s.github_handle && s.github_handle !== 'community-backer' && s.github_handle !== 'evaluator-pass'
+        ? String(s.github_handle).replace(/^@/, '').trim()
+        : null;
+      const rawAvatar = s.avatar_url || s.avatarUrl || s.avatar || (cleanHandle ? `https://github.com/${cleanHandle}.png` : null);
       const backerName = s.name || s.backer_name || (s.github_handle ? `@${s.github_handle}` : 'Backer');
 
       return {
@@ -604,7 +607,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                     >
                       <div className="flex items-start gap-4">
                         <ShimmerImage
-                          src={backer.avatar_url || backer.avatarUrl}
+                          src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
                           alt={backer.name || backer.backer_name || 'Core Patron'}
                           containerClassName="w-12 h-12 rounded-xl shrink-0 ring-1 ring-slate-400/30 dark:ring-white/20"
                           className="w-full h-full object-cover"
@@ -674,7 +677,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                     >
                       <div className="flex items-center gap-3">
                         <ShimmerImage
-                          src={backer.avatar_url || backer.avatarUrl}
+                          src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
                           alt={backer.name || backer.backer_name || '2 Cups Backer'}
                           containerClassName="w-9 h-9 rounded-lg shrink-0 ring-1 ring-slate-300/40 dark:ring-white/15"
                           className="w-full h-full object-cover"
@@ -732,7 +735,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                       }}
                     >
                       <ShimmerImage
-                        src={backer.avatar_url || backer.avatarUrl}
+                        src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
                         alt={backer.name || backer.backer_name || 'Cookie Backer'}
                         containerClassName="w-7 h-7 rounded-md shrink-0"
                         className="w-full h-full object-cover"

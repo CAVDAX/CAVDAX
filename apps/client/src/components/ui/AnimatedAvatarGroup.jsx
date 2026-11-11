@@ -77,7 +77,7 @@ export default function AnimatedAvatarGroup({
                 style={{ width: `${size}px`, height: `${size}px` }}
               >
                 <ShimmerImage
-                  src={avatar.src || avatar.avatar_url}
+                  src={avatar.src || avatar.avatar_url || avatar.avatarUrl || (avatar.github_handle ? `https://github.com/${String(avatar.github_handle).replace(/^@/, '').trim()}.png` : null)}
                   alt={avatar.name || avatar.alt || 'Contributor'}
                   containerClassName="w-full h-full rounded-full"
                   className="w-full h-full object-cover pointer-events-none"
