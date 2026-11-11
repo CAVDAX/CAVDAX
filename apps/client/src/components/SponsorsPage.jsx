@@ -172,7 +172,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
   // Global '/' hotkey to focus search bar, 'Escape' to blur
   useEffect(() => {
     const handleGlobalKeyDown = (e) => {
-      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA' && !document.activeElement?.isContentEditable) {
         e.preventDefault();
         searchInputRef.current?.focus();
       } else if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
@@ -358,6 +358,19 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
     return list;
   }, [sponsors, activeFilter, searchQuery]);
 
+  const visibleCoreBackers = useMemo(() =>
+    filteredSponsors.filter(s => (s.tier_id === 3 || s.tier_id === '3' || s.highlighted)),
+    [filteredSponsors]
+  );
+  const visibleTwoCupsBackers = useMemo(() =>
+    filteredSponsors.filter(s => (s.tier_id === 2 || s.tier_id === '2')),
+    [filteredSponsors]
+  );
+  const visibleCookieBackers = useMemo(() =>
+    filteredSponsors.filter(s => (s.tier_id === 1 || s.tier_id === '1')),
+    [filteredSponsors]
+  );
+
   return (
     <div ref={containerRef} className="relative min-h-screen bg-slate-50 dark:bg-[#07090D] text-slate-900 dark:text-slate-100 font-sans selection:bg-slate-950/20 dark:selection:bg-white/20 selection:text-slate-950 dark:selection:text-white">
       {/* Background Ambience & Clean Monochromatic Grid */}
@@ -477,12 +490,12 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
               const isActive = activeFilter === tab.id;
               const count =
                 tab.id === 'all'
-                  ? sponsors.length
+                  ? (searchQuery.trim() ? filteredSponsors.length : sponsors.length)
                   : tab.id === 'core'
-                  ? coreBackers.length
+                  ? (searchQuery.trim() ? visibleCoreBackers.length : coreBackers.length)
                   : tab.id === 'two_cups'
-                  ? twoCupsBackers.length
-                  : cookieBackers.length;
+                  ? (searchQuery.trim() ? visibleTwoCupsBackers.length : twoCupsBackers.length)
+                  : (searchQuery.trim() ? visibleCookieBackers.length : cookieBackers.length);
 
               return (
                 <button
@@ -508,7 +521,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
 
           {/* Search Input with Monochromatic Magnifier & Micro-Kinetics */}
           <div
-            className={`relative w-full sm:w-72 flex items-center transition-all duration-300 rounded-xl bg-white/80 dark:bg-white/[0.03] border backdrop-blur-xl group ${
+            className={`relative w-full sm:w-72 flex items-center transition-all duration-300 rounded-xl bg-white/80 dark:bg-white/[0.03] border backdrop-blur-xl group overflow-hidden ${
               isSearchFocused
                 ? 'border-slate-900/90 dark:border-white/50 ring-2 ring-slate-950/5 dark:ring-white/10 shadow-sm'
                 : 'border-slate-200/80 dark:border-white/10 hover:border-slate-300 dark:hover:border-white/20'
@@ -536,7 +549,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setIsSearchFocused(false)}
               placeholder="Search by name or quote..."
-              className="w-full py-2 pr-8 text-xs bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-sans focus:outline-none"
+              className="w-full py-2 pl-0.5 pr-9 text-xs bg-transparent text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 font-sans focus:outline-none focus:ring-0"
               aria-label="Search verified backers"
             />
 
@@ -582,7 +595,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
           <div className="space-y-12">
             
             {/* 1. Core Patrons Showcase ($10 Tier) */}
-            {(activeFilter === 'all' || activeFilter === 'core') && coreBackers.length > 0 && (
+            {(activeFilter === 'all' || activeFilter === 'core') && visibleCoreBackers.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-5">
                   <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/[0.08] text-slate-800 dark:text-white border border-slate-200 dark:border-white/15">
@@ -597,7 +610,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {coreBackers.map((backer) => (
+                  {visibleCoreBackers.map((backer) => (
                     <div
                       key={backer.id}
                       className="group relative p-5 rounded-2xl bg-white/80 dark:bg-white/[0.03] border border-slate-300/80 dark:border-white/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-white/5 hover:border-slate-400 dark:hover:border-white/25"
@@ -652,7 +665,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
             )}
 
             {/* 2. 2 Cups of Coffee Backers ($4 Tier - Popular) */}
-            {(activeFilter === 'all' || activeFilter === 'two_cups') && twoCupsBackers.length > 0 && (
+            {(activeFilter === 'all' || activeFilter === 'two_cups') && visibleTwoCupsBackers.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-5">
                   <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10">
@@ -667,7 +680,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {twoCupsBackers.map((backer) => (
+                  {visibleTwoCupsBackers.map((backer) => (
                     <div
                       key={backer.id}
                       className="p-4 rounded-2xl bg-white/60 dark:bg-white/[0.025] border border-slate-200/80 dark:border-white/10 backdrop-blur-xl transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20"
@@ -711,7 +724,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
             )}
 
             {/* 3. Cookie Backers ($2 Tier) */}
-            {(activeFilter === 'all' || activeFilter === 'cookie') && cookieBackers.length > 0 && (
+            {(activeFilter === 'all' || activeFilter === 'cookie') && visibleCookieBackers.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-5">
                   <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-white/[0.04] text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-white/10">
@@ -726,7 +739,7 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {cookieBackers.map((backer) => (
+                  {visibleCookieBackers.map((backer) => (
                     <div
                       key={backer.id}
                       className="p-3 rounded-xl bg-white/50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/10 backdrop-blur-lg flex items-center gap-2.5 transition-all hover:border-slate-300 dark:hover:border-white/20"
