@@ -10,6 +10,19 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Eradication of Hero Background Mask & Spacious Typographic Breathing Room (`TierBenefitsPage.jsx`)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Any background mask div (whether wide or tight) introduced an artificial geometric boundary into the fluid Lightfall atmospheric tunnel.
+    - Furthermore, `tracking-tight` on monospace typography compressed characters together with negative letter-spacing (`-1.8px`), while default line-height (`line-height: 1`) caused 3 lines of 72px text to collide vertically with zero daylight between descenders and ascenders.
+  - **The High-Craft Architectural Resolution**:
+    - **Completely Eradicated Background Mask `div`**: Lightfall background flows seamlessly with zero artificial rectangles, ellipses, or haze patches.
+    - **Pure Glyph-Contour Silhouette & Filter Blur**: Relies strictly on multi-layer glyph text shadow and filter drop-shadow (`dark:[text-shadow:_0_0_12px_rgba(2,6,23,0.95),_0_0_28px_rgba(2,6,23,0.85),_0_2px_6px_rgba(0,0,0,1)] dark:drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]`) hugging character strokes.
+    - **Spacious Typographic Architecture**:
+      - Replaced cramped `tracking-tight` with relaxed `tracking-wide`.
+      - Expanded line-height from default `1.0` to generous `leading-[1.26] sm:leading-[1.3] lg:leading-[1.32]` (adding ~20px of elegant vertical daylight between lines).
+      - Structured intentional word wrapping (`Tier Plans, Capabilities<br class="hidden sm:inline" /> & Benefits`) across a generous `max-w-5xl` container with `py-6` vertical padding.
+  - **Empirical Visual Audit**:
+    - Captured `proof-tier-spacious-hero-dark.png` and `proof-tier-spacious-hero-light.png`.
 - **Tight Localized Text Occlusion on Tier Benefits Hero (`TierBenefitsPage.jsx`)**:
   - **Adversarial Forensic Discovery (/devils-advocate)**:
     - Previously, a massive radial vignette (`-inset-x-12 -inset-y-16 bg-[radial-gradient(ellipse_at_center,...)]`) was placed inside the `max-w-4xl` (896px) heading container. This created an expansive ~1,000px wide dark muddy oval blob across the background behind "Tier Plans, Capabilities & Benefits".
