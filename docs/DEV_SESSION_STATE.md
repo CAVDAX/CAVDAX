@@ -21,13 +21,13 @@
     - Uses identical `ConfirmationDialog` component with continuous super-ellipse ($n=4.4$), solitary line SVG (`ArrowDownLeft`), and `severity="neutral"`.
     - Enforces **Pattern 18 (Strict 2-Line Physical Cap)** with zero orphan wrapping:
       - Core Patron to 2 Cups:
-        - Line 1: `Scales 3D sphere node to 1.15× standard radius.`
+        - Line 1: `Sets your 3D sphere profile picture to medium size.`
         - Line 2: `Preserves honorary Core Patron vintage cohort.`
       - Core Patron to Cookie Backer:
-        - Line 1: `Scales 3D sphere node to 0.85× standard radius.`
+        - Line 1: `Sets your 3D sphere profile picture to small size.`
         - Line 2: `Preserves honorary Core Patron vintage cohort.`
       - 2 Cups to Cookie Backer:
-        - Line 1: `Scales 3D sphere node to 0.85× standard radius.`
+        - Line 1: `Sets your 3D sphere profile picture to small size.`
         - Line 2: `Transfers spotlight recognition to Cookie tier.`
   - **Murphy's Law Safety**:
     - Default keyboard/pointer focus directed to the safe `Cancel` button.
