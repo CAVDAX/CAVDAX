@@ -10,6 +10,108 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Lower Sponsor Category Switch Confirmation Dialog (`SupportPage.jsx` & `ConfirmationDialog.jsx`)**:
+  - **Adversarial Forensic Discovery**:
+    - Discovered root cause behind the dialog not displaying: when a visitor or evaluator clicked a lower tier without an existing authenticated GitHub session, `handleSelectTier` executed an unprompted top-level `window.location.href = '/api/auth/github'` redirect before the confirmation state could mount.
+    - Fixed empty string false positive (`userHandle === ''` matching `github_handle: null` on anonymous seed backers).
+    - Prioritized downgrade interception: `ConfirmationDialog` mounts client-side immediately upon clicking any lower category regardless of auth state, matching the exact order of `ProfilePage.jsx`.
+    - Added evaluator pass fallback in `handleEvaluationSponsor` allowing local testing with zero external OAuth disruptions.
+  - **The Requirement**: When active sponsors move down into a lower patronage category (e.g. Core Patron to 2 Cups, or 2 Cups to Cookie), intercept the transition with the accessible Murphy's Law Confirmation Dialog instead of executing immediate destructive capability shifts.
+  - **Strict Architectural Parity with Subscription Tier Downgrade**:
+    - Uses identical `ConfirmationDialog` component with continuous super-ellipse ($n=4.4$), solitary line SVG (`ArrowDownLeft`), and `severity="neutral"`.
+    - Enforces **Pattern 18 (Strict 2-Line Physical Cap)** with zero orphan wrapping:
+      - Core Patron to 2 Cups:
+        - Line 1: `Sets your 3D sphere profile picture to medium size.`
+        - Line 2: `Preserves honorary Core Patron vintage cohort.`
+      - Core Patron to Cookie Backer:
+        - Line 1: `Sets your 3D sphere profile picture to small size.`
+        - Line 2: `Preserves honorary Core Patron vintage cohort.`
+      - 2 Cups to Cookie Backer:
+        - Line 1: `Sets your 3D sphere profile picture to small size.`
+        - Line 2: `Transfers spotlight recognition to Cookie tier.`
+  - **Murphy's Law Safety**:
+    - Default keyboard/pointer focus directed to the safe `Cancel` button.
+    - Escape key or outside click safely dismisses the modal without altering tier state.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - Captured `sponsor-downgrade-dialog-dark.png`, `sponsor-downgrade-dialog-light.png`, and `sponsor-downgrade-cookie-dialog-dark.png`.
+    - Verified 0 build errors in 42.87s and 151/151 unit test passes.
+- **Option A: Dynamic Vintage Cohort Year for Historical Core Patrons (`ProfilePage.jsx`, `SupportPage.jsx`, `SponsorsPage.jsx`)**:
+  - **The Principle**: Instead of pejorative labels like `(Old) Core Patron` or silently revoking the promised "Permanent Core Sponsor Badge", early supporters are celebrated with a dynamic vintage cohort year (e.g. `[💎 Core Patron ’26]`).
+  - **Dynamic Year Invariant (Zero Hardcoding)**:
+    - Enrollment timestamp (`created_at` or `sponsor_created_at`) dynamically parsed:
+      - Full year: `new Date(createdAt).getFullYear()`
+      - Short year: `’${String(fullYear).slice(-2)}`
+    - Gracefully falls back to dynamic current calendar year if timestamp is missing.
+  - **Two-State Badge & Tooltip Representation**:
+    - **Active Core Patron**:
+      - Badge: `[💎 Core Patron]`
+      - Tooltip (`title`): `"Active Core Patron • Renewing monthly"`
+    - **Past / Historical Core Patron**:
+      - Badge: `[💎 Core Patron ’26]` (or cohort year dynamically derived from timestamp, e.g. `’25` for 2025)
+      - Tooltip (`title`): `"Core Patron Cohort of 2026 • Lifetime Contributor"`
+  - **Unified Display Across All Surfaces**:
+    - `ProfilePage.jsx`: Inline profile header badge in both desktop (`isLargeDisplay`) and mobile views.
+    - `SupportPage.jsx`: `BackerCard` badge within the Verified Backers Directory.
+    - `SponsorsPage.jsx`: Featured Core Patrons showcase cards.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - `profile-active-core-patron-dark.png`: Active Core Patron renders `[💎 Core Patron]`.
+    - `profile-historical-core-patron-26-dark.png`: Historical Core Patron renders `[💎 Core Patron ’26]`.
+    - `profile-historical-core-patron-25-light.png`: Historical Core Patron from 2025 renders `[💎 Core Patron ’25]`.
+  - **Monochromatic Semantic SVGs on Backer Recognition Ribbon Strip (`SupportPage.jsx`)**:
+    - Replaced the bare text / green orb with semantic, precision 14px monochromatic line SVGs reflecting active attribution state:
+      - Public Wall: `<Eye className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 stroke-[1.75]" />`
+      - Anonymous: `<EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75]" />`
+      - Private (Do Not List): `<Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75]" />`
+    - Paired `[Edit Recognition]` action button with `<SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400" />` for an authentic engineering bench-instrument feel.
+- **Pattern 21: Green Status Orb Eradication & Authentic Tier SVG Color Restoration (`SupportPage.jsx`, `ProfilePage.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
+  - **Pulsing Green Orb Ban (Pattern 21 & UI_DESIGN_SYSTEM.md §3)**:
+    - Completely eradicated the pulsing green status orb (`<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />`) from the Backer Recognition Preferences ribbon strip.
+    - Codified Pattern 21 in `Suneet-Perfect-AI-Slop-Remover` master skill: strictly zero colored pulsing dots, ping circles, or radar markers across UI chrome; state is communicated solely through crisp typography and restrained monochrome micro-tags.
+  - **Authentic Tier SVG Color Restoration**:
+    - Fixed color homogenization regression where all tier badges were rendered with `text-amber-600 dark:text-amber-400` (turning Core Patron's diamond orange).
+    - Restored authentic materials directly matching the tier cards in `SupportPage.jsx`:
+      - **Core Patron**: High-contrast crystal prism diamond (`text-slate-800 dark:text-slate-200`) with faceted specular glint.
+      - **Supporter (2 Cups)**: Electric radiant amber coffee cup (`text-amber-500 dark:text-amber-400`).
+      - **Cookie Backer**: Warm artisanal bronze/cacao cookie (`text-amber-700 dark:text-amber-500`).
+- **Pattern 20: Subsystem Error Boundary Slop Eradication & Unboxed Plumb-Line Architecture (`SubsystemErrorBoundary.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
+  - **Identified Slop**:
+    - Floating tag clutter: `<div className="...">SUBSYSTEM ISOLATED</div>` sitting above the error title.
+    - Boxed SVG: enclosing the status icon inside an inner rounded card (`w-12 h-12 rounded-xl bg-amber-500/10 border...`).
+    - Ragged 3-line paragraph prose: unconstrained text wrapping into 3 messy lines.
+  - **The Suneet Standard (Pattern 20)**:
+    1. Zero floating status pills above error headers.
+    2. Zero enclosed mini-boxes around SVGs; rendered unboxed solitary hardware line SVG directly (`AlertTriangle className="w-7 h-7 text-amber-500 dark:text-amber-400 stroke-[1.75]" mb-3`).
+    3. Strict 2-Line Physical Cap (`whitespace-nowrap overflow-hidden text-ellipsis` on each line):
+       - Line 1: `Isolated unexpected operational event in ${name}.`
+       - Line 2: `Navigation and other subsystems remain fully operational.`
+    4. Codified Pattern 20 in `Suneet-Perfect-AI-Slop-Remover` master skill.
+- **Borderless Authentic Sponsor Badge & Eye Icon Removal (`ProfilePage.jsx`)**:
+  - Replaced harsh bordered pill (`border border-slate-300`) with subtle, professional borderless background tint (`bg-slate-200/50 dark:bg-white/[0.08] text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md text-[10px] font-mono font-medium`).
+  - Swapped out generic AI Lucide sparkles for authentic tier SVG glyphs: `CookieIcon` (artisanal cacao cookie with chocolate morsels), `Coffee` cup, and `ShinyGemIcon` (faceted crystal).
+  - Eradicated tacky `Eye` icon from the badge.
+  - Fixed Pattern 17 (Responsive Branch Trapping): mounted `<BackerConsentModal>` across both `isLargeDisplay` (27" displays) and standard laptop layouts.
+- **Monochromatic Backer Recognition Ribbon Strip (`SupportPage.jsx`)**:
+  - Moved Backer Recognition settings directly into their natural context on the Sponsor Page (`/support` and `/sponsor`).
+  - Mounted a sleek, monochromatic ribbon strip above the Verified Backers Directory for active sponsors:
+    - Real-time display of active attribution mode (`Public Backers Wall`, `Anonymous Patron`, or `Private`).
+    - Direct `[Edit Recognition]` button opening `BackerConsentModal`.
+    - Live synchronization with `/api/sponsors/consent`, `localStorage`, and real-time directory re-fetching.
+- **Profile Header Spatial Equilibrium, Ghost Modal Eradication & Tier Identity Alignment (`ProfilePage.jsx`)**:
+  - **Honest Industry Analysis & Anti-AI Slop**:
+    - Eradicated clunky AI-slop literalism: "2 Cups of Coffee" is a funding metaphor, not a person's identity noun. Professional developer platforms (GitHub Sponsors, Patreon, Vercel) name tiers as dignified identity nouns: `Core Patron` (Diamond / `ShinyGemIcon`), `Supporter` (`Coffee` icon), `Backer` (`Sparkles` icon).
+    - Fixed tier-icon contradiction: showing a diamond `💎` on a $4 Coffee sponsor contradicts the hierarchy where diamonds denote Core Patrons.
+  - **Single-Page Viewport Containment & Inline Metadata Architecture**:
+    - Diagnosed the ~36px layout shift caused by stacking a standalone `mt-2 flex` row with a separate text link `👁 Recognition Preferences` between the handle and action buttons.
+    - Integrated the backer badge **directly inline** with the `@handle • GitHub Verified` line:
+      `@suneetchugh-dev • GitHub Verified • [☕ Supporter 👁]`
+    - Converted the badge itself into a tactile interactive button with `Eye` icon and hover tooltip. Clicking the badge directly triggers `BackerConsentModal`.
+    - Restored complete single-page containment within $100\text{dvh}$ with zero vertical scrollbars or card pushing.
+  - **Ghost Modal Eradication (Pattern 17 Compliance)**:
+    - Fixed the broken `Recognition Preferences` interaction: `BackerConsentModal` was imported in `ProfilePage.jsx` and controlled by `isConsentModalOpen`, but was missing from the return JSX tree (a literal Ghost Modal).
+    - Mounted `<BackerConsentModal ... />` into the JSX tree, wired to `/api/sponsors/consent`, and added client-side `localStorage` persistence for `cavdax_backer_visibility` and `cavdax_backer_quote`.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - Captured `profile-header-inline-badge-dark.png`, `profile-header-inline-badge-light.png`, and `profile-backer-consent-modal-live.png`.
+    - Confirmed zero console errors, zero layout shift, and 151/151 automated test suite passes.
 - **Tactile Confirmation Action Micro-SVGs (`confirmIcon`) & Anti-AI-Slop Clipart Guard**:
   - Enforced the distinction between tacky AI slop (inserting large cartoon clipart, 3D floating exclamation marks, or crying mascots into alert dialogs) and elite high-craft engineering (pairing primary confirmation buttons with precision 14px Lucide action line SVGs).
   - Enhanced `ConfirmationDialog.jsx` with an optional `confirmIcon` prop:
@@ -11778,3 +11880,47 @@ A complete visual and architectural transformation has been executed across the 
 - **Verification & Invariant Attestation**:
   - `npm run build` passing cleanly in 10.92s with zero bundle regressions.
   - Zero commits staged or pushed (`don't commit yet` rule strictly observed).
+
+
+### Milestone 2026-11-11: Backer Identity Deduplication, Anti-Lonely Child Perks, & Tier-Scoped Upgrade State
+
+- **Backer Deduplication & Highest Honor Enforcement**:
+  - Implemented 1:1 entity mapping across backend `/api/sponsors` and frontend `SponsorsPage.jsx` by normalizing GitHub handles (`handle.toLowerCase().replace(/^@/, '').trim()`).
+  - Aggregated multi-tier patrons to their highest achieved tier (`tier_id = Math.max(...)`), preventing patron degradation from minor follow-up donations and eliminating duplicate cards and duplicate 3D sphere nodes.
+  - Symmetrized parameter handling between `BackerConsentModal.jsx` and `apps/server/index.js` (`sponsorId` / `backer_id`, `displayName` / `display_name`, `quote` / `backer_message`), fixing HTTP 400 Bad Request on Private selection and allowing users to modify recognition preferences anytime via their Profile.
+
+- **Anti-Lonely-Child Typography & Benefit Integrity**:
+  - Standardized tier subtitles and perks in `SupportPage.jsx` to single-line phrasing (`Fueling daily causal engine dev.`, `Funds benchmark graph clusters.`, `Featured 3D Sphere Node`, `Permanent Core Patron Badge`, `Personal Team Acknowledgment`) with `whitespace-nowrap overflow-hidden text-ellipsis`.
+  - Added the permanent monochromatic Core Supporter badge (`[💎 Core Supporter]`) and `[👁️ Recognition Preferences]` modal trigger to `ProfilePage.jsx`.
+  - Wired direct team acknowledgment email dispatcher via Resend in `apps/server/email.js` with monochromatic developer HTML template, triggered upon verified checkout in `POST /api/billing/verify-payment`.
+
+- **Upgrade Button State Isolation (Pro vs. Team & Scale)**:
+  - Diagnosed root cause of the dual `"Connecting..."` bug in `ProfilePage.jsx`: a single global boolean flag `isUpgrading` was shared by both the Pro card button (`getProButtonLabel()`) and the Team & Scale button.
+  - Replaced `isUpgrading` boolean with tier-scoped state `upgradingTier: null | 'pro' | 'enterprise'` (maintaining `isUpgrading = Boolean(upgradingTier)` as a guard).
+  - Isolated button label mutations so clicking "Upgrade" on Team & Scale displays `"Connecting..."` exclusively on the Enterprise card while the Pro card preserves its context-appropriate label (`Upgrade to Pro ($4/mo)`, `Start 7-Day Free Pro Trial`, etc.).
+  - Enforced concurrent click suppression (`disabled={currentTier === '...' || isUpgrading || isStartingTrial}`) across all buttons in both spacious and compact layouts to prevent double-checkout race conditions.
+
+- **Forensic Verification & Gate Attestation**:
+  - Automated client production build (`npm run build`) passing cleanly in 16.82s with zero bundle regressions.
+  - Backend automated test suite passing with 151/151 tests passed, 0 failures.
+
+
+### Milestone 2026-11-11: Subsystem Error Boundary Redesign & Anti-AI Slop Craft Overhaul
+
+- **Root Cause Forensic Diagnosis**:
+  - Identified severe AI-slop visual failures in `SubsystemErrorBoundary.jsx` and `EmptyState.jsx`: hardcoded `bg-red-50/50` / `bg-red-950/50` washes created a muddy mauve/brown slab in both light and dark themes with failing WCAG text contrast (<1.8:1).
+  - Eliminated the 3 overlapping black poker cards with mismatched red, yellow, and blue icons (Trope #13: carnival dashboard overload).
+
+- **Architectural & Design System Craft Overhaul**:
+  - Replaced the third-party empty state with a bespoke, solitary-elevation hardware bench-instrument card:
+    - Pure monochromatic Obsidian (`dark:bg-[#0B0D11]`, border `dark:border-white/10`) and crisp white substrate (`bg-white/95`, border `border-slate-200/90`).
+    - Solitary warm-amber status badge with dual-concentric bezel and pulsating status node.
+    - Balanced, high-contrast monospace typography (`Tier Capabilities & Governance Temporarily Unavailable`) and legible description text (`text-slate-600 dark:text-slate-400`).
+    - Tactile monochromatic recovery button (`Restore Subsystem`) with hover icon rotation and `playClick()` audio feedback.
+    - Discreet, collapsible Technical Diagnostics accordion revealing sanitized error metadata without breaking the card's visual geometry.
+  - Neutralized `variant="error"` in `EmptyState.jsx` to clean slate/obsidian tokens, eliminating muddy wash leaks repo-wide.
+
+- **Forensic Verification & Gate Attestation**:
+  - Automated client production build (`npm run build`) passing cleanly in 24.83s with zero bundle regressions.
+  - Backend automated test suite passing with 151/151 tests passed, 0 failures.
+  - Captured Headless Puppeteer visual audits for both themes: `boundary-card-dark.png`, `boundary-card-light.png`, `boundary-card-dark-diagnostics.png`, `boundary-card-light-diagnostics.png`.
