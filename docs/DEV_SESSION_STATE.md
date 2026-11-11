@@ -10,6 +10,28 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Option A: Dynamic Vintage Cohort Year for Historical Core Patrons (`ProfilePage.jsx`, `SupportPage.jsx`, `SponsorsPage.jsx`)**:
+  - **The Principle**: Instead of pejorative labels like `(Old) Core Patron` or silently revoking the promised "Permanent Core Sponsor Badge", early supporters are celebrated with a dynamic vintage cohort year (e.g. `[💎 Core Patron ’26]`).
+  - **Dynamic Year Invariant (Zero Hardcoding)**:
+    - Enrollment timestamp (`created_at` or `sponsor_created_at`) dynamically parsed:
+      - Full year: `new Date(createdAt).getFullYear()`
+      - Short year: `’${String(fullYear).slice(-2)}`
+    - Gracefully falls back to dynamic current calendar year if timestamp is missing.
+  - **Two-State Badge & Tooltip Representation**:
+    - **Active Core Patron**:
+      - Badge: `[💎 Core Patron]`
+      - Tooltip (`title`): `"Active Core Patron • Renewing monthly"`
+    - **Past / Historical Core Patron**:
+      - Badge: `[💎 Core Patron ’26]` (or cohort year dynamically derived from timestamp, e.g. `’25` for 2025)
+      - Tooltip (`title`): `"Core Patron Cohort of 2026 • Lifetime Contributor"`
+  - **Unified Display Across All Surfaces**:
+    - `ProfilePage.jsx`: Inline profile header badge in both desktop (`isLargeDisplay`) and mobile views.
+    - `SupportPage.jsx`: `BackerCard` badge within the Verified Backers Directory.
+    - `SponsorsPage.jsx`: Featured Core Patrons showcase cards.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - `profile-active-core-patron-dark.png`: Active Core Patron renders `[💎 Core Patron]`.
+    - `profile-historical-core-patron-26-dark.png`: Historical Core Patron renders `[💎 Core Patron ’26]`.
+    - `profile-historical-core-patron-25-light.png`: Historical Core Patron from 2025 renders `[💎 Core Patron ’25]`.
   - **Monochromatic Semantic SVGs on Backer Recognition Ribbon Strip (`SupportPage.jsx`)**:
     - Replaced the bare text / green orb with semantic, precision 14px monochromatic line SVGs reflecting active attribution state:
       - Public Wall: `<Eye className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 stroke-[1.75]" />`
