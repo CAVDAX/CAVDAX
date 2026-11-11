@@ -11778,3 +11778,26 @@ A complete visual and architectural transformation has been executed across the 
 - **Verification & Invariant Attestation**:
   - `npm run build` passing cleanly in 10.92s with zero bundle regressions.
   - Zero commits staged or pushed (`don't commit yet` rule strictly observed).
+
+
+### Milestone 2026-11-11: Backer Identity Deduplication, Anti-Lonely Child Perks, & Tier-Scoped Upgrade State
+
+- **Backer Deduplication & Highest Honor Enforcement**:
+  - Implemented 1:1 entity mapping across backend `/api/sponsors` and frontend `SponsorsPage.jsx` by normalizing GitHub handles (`handle.toLowerCase().replace(/^@/, '').trim()`).
+  - Aggregated multi-tier patrons to their highest achieved tier (`tier_id = Math.max(...)`), preventing patron degradation from minor follow-up donations and eliminating duplicate cards and duplicate 3D sphere nodes.
+  - Symmetrized parameter handling between `BackerConsentModal.jsx` and `apps/server/index.js` (`sponsorId` / `backer_id`, `displayName` / `display_name`, `quote` / `backer_message`), fixing HTTP 400 Bad Request on Private selection and allowing users to modify recognition preferences anytime via their Profile.
+
+- **Anti-Lonely-Child Typography & Benefit Integrity**:
+  - Standardized tier subtitles and perks in `SupportPage.jsx` to single-line phrasing (`Fueling daily causal engine dev.`, `Funds benchmark graph clusters.`, `Featured 3D Sphere Node`, `Permanent Core Patron Badge`, `Personal Team Acknowledgment`) with `whitespace-nowrap overflow-hidden text-ellipsis`.
+  - Added the permanent monochromatic Core Supporter badge (`[💎 Core Supporter]`) and `[👁️ Recognition Preferences]` modal trigger to `ProfilePage.jsx`.
+  - Wired direct team acknowledgment email dispatcher via Resend in `apps/server/email.js` with monochromatic developer HTML template, triggered upon verified checkout in `POST /api/billing/verify-payment`.
+
+- **Upgrade Button State Isolation (Pro vs. Team & Scale)**:
+  - Diagnosed root cause of the dual `"Connecting..."` bug in `ProfilePage.jsx`: a single global boolean flag `isUpgrading` was shared by both the Pro card button (`getProButtonLabel()`) and the Team & Scale button.
+  - Replaced `isUpgrading` boolean with tier-scoped state `upgradingTier: null | 'pro' | 'enterprise'` (maintaining `isUpgrading = Boolean(upgradingTier)` as a guard).
+  - Isolated button label mutations so clicking "Upgrade" on Team & Scale displays `"Connecting..."` exclusively on the Enterprise card while the Pro card preserves its context-appropriate label (`Upgrade to Pro ($4/mo)`, `Start 7-Day Free Pro Trial`, etc.).
+  - Enforced concurrent click suppression (`disabled={currentTier === '...' || isUpgrading || isStartingTrial}`) across all buttons in both spacious and compact layouts to prevent double-checkout race conditions.
+
+- **Forensic Verification & Gate Attestation**:
+  - Automated client production build (`npm run build`) passing cleanly in 16.82s with zero bundle regressions.
+  - Backend automated test suite passing with 151/151 tests passed, 0 failures.
