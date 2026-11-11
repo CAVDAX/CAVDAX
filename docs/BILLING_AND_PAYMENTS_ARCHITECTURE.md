@@ -59,9 +59,9 @@ CAVDAX defines three distinct architectural tiers, visually communicated via the
 | Dimension | Tier 1: Free Community | Tier 2: Pro Autonomous | Tier 3: Team & Scale |
 |---|---|---|---|
 | **Tier Ring Hue** | Platinum / Titanium (`ring-slate-400` / `ring-white/30`) | Golden Amber (`ring-amber-400` with specular glow) | Deep Iris / Violet (`ring-violet-400` with aura) |
-| **Price (Simulated)** | $0 / month (Free forever) | $29 / month (₹2,499 / mo) | Custom / Air-gapped deployment |
-| **AST Tool Checks** | 100 verifications / 24-hour window | 10,000 verifications / 24-hour window | Unlimited / Hardware-constrained |
-| **Connected Repos** | 1 Active GitHub repository | Unlimited connected repositories | Unlimited / Self-hosted GitHub Enterprise |
+| **Price (Simulated)** | $0 / month (Free forever) | $4 / month (₹299 / mo) | $35 / month (₹2,999 / mo) |
+| **AST Tool Checks** | 50 verifications / month | 500 verifications / month | Unlimited / Hardware-constrained |
+| **Connected Repos** | 1 Active GitHub repository | 5 Connected repositories | Unlimited / Self-hosted GitHub Enterprise |
 | **Reachability Engine** | Standard DFS/BFS traversal | FalkorDB GraphBLAS matrix semirings (< 2.1ms) | Dedicated on-premise FalkorDB cluster |
 | **Webhook Ingestion** | Polling & manual refresh | Live real-time webhook streaming | Sub-millisecond direct socket bus |
 | **Audit Log History** | 24-Hour ephemeral window | 90-Day cryptographic signed audit ledger | Immutable append-only audit trail |
