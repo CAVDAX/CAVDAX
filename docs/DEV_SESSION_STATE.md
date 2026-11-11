@@ -10,6 +10,12 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+  - **Monochromatic Semantic SVGs on Backer Recognition Ribbon Strip (`SupportPage.jsx`)**:
+    - Replaced the bare text / green orb with semantic, precision 14px monochromatic line SVGs reflecting active attribution state:
+      - Public Wall: `<Eye className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 stroke-[1.75]" />`
+      - Anonymous: `<EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75]" />`
+      - Private (Do Not List): `<Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75]" />`
+    - Paired `[Edit Recognition]` action button with `<SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400" />` for an authentic engineering bench-instrument feel.
 - **Pattern 21: Green Status Orb Eradication & Authentic Tier SVG Color Restoration (`SupportPage.jsx`, `ProfilePage.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
   - **Pulsing Green Orb Ban (Pattern 21 & UI_DESIGN_SYSTEM.md §3)**:
     - Completely eradicated the pulsing green status orb (`<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />`) from the Backer Recognition Preferences ribbon strip.
