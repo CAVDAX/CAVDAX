@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 
 import { motion } from 'framer-motion';
+import ShimmerImage from './ui/ShimmerImage';
 
 import { 
 
@@ -969,13 +970,19 @@ EXECUTION WORKFLOW:
 
                 {githubUser.avatarUrl && (
 
-                  <img
+                  <ShimmerImage
 
                     src={githubUser.avatarUrl}
 
                     alt={githubUser.login}
 
-                    className="w-6 h-6 rounded-full border border-white/10"
+                    containerClassName="w-6 h-6 rounded-full border border-white/10 overflow-hidden"
+
+                    className="w-full h-full object-cover"
+
+                    fallbackText={githubUser.login?.charAt(0).toUpperCase()}
+
+                    fallbackClassName="w-full h-full flex items-center justify-center font-mono text-[10px] text-white/70 select-none"
 
                   />
 

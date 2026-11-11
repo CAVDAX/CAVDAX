@@ -5,6 +5,7 @@ import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 import BackerConsentModal from './BackerConsentModal';
 import AnimatedAvatarGroup from './ui/AnimatedAvatarGroup';
+import ShimmerImage from './ui/ShimmerImage';
 
 /**
  * SupportPage.jsx — Razorpay-powered Community Sponsor Portal
@@ -356,29 +357,58 @@ function BackerCard({ backer }) {
             title={`View @${backer.github_handle} on GitHub`}
             className="block cursor-pointer hover:ring-2 hover:ring-slate-400 dark:hover:ring-white/40 rounded-full transition-all focus:outline-hidden"
           >
-            {backer.avatar_url ? (
-              <img
-                src={backer.avatar_url}
-                alt={backer.name}
-                className={`w-9 h-9 rounded-full border object-cover transition-transform duration-300 group-hover:scale-105 ${
-                  isHighlight
-                    ? 'border-slate-300 dark:border-white/30 group-hover:border-slate-400 dark:group-hover:border-white/50'
-                    : isCups
-                    ? 'border-amber-400/40 group-hover:border-amber-400'
-                    : 'border-slate-200 dark:border-white/15 group-hover:border-amber-700/40'
-                }`}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                }}
-              />
-            ) : (
+            <ShimmerImage
+              src={backer.avatar_url}
+              alt={backer.name}
+              containerClassName={`w-9 h-9 rounded-full border shrink-0 transition-transform duration-300 group-hover:scale-105 ${
+                isHighlight
+                  ? 'border-slate-300 dark:border-white/30 group-hover:border-slate-400 dark:group-hover:border-white/50'
+                  : isCups
+                  ? 'border-amber-400/40 group-hover:border-amber-400'
+                  : 'border-slate-200 dark:border-white/15 group-hover:border-amber-700/40'
+              }`}
+              className="w-full h-full object-cover"
+              fallback={
+                <div
+                  className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-mono font-bold ${
+                    isHighlight
+                      ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
+                      : isCups
+                      ? 'bg-amber-400/10 text-amber-500'
+                      : 'bg-amber-950/10 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500'
+                  }`}
+                >
+                  {isHighlight ? (
+                    <ShinyGemIcon className="w-4 h-4 text-slate-800 dark:text-slate-200" />
+                  ) : isCups ? (
+                    <Coffee className="w-4 h-4 text-amber-500" />
+                  ) : (
+                    <CookieIcon className="w-4 h-4 text-amber-700 dark:text-amber-500" />
+                  )}
+                </div>
+              }
+            />
+          </a>
+        ) : (
+          <ShimmerImage
+            src={backer.avatar_url}
+            alt={backer.name}
+            containerClassName={`w-9 h-9 rounded-full border shrink-0 transition-transform duration-300 group-hover:scale-105 ${
+              isHighlight
+                ? 'border-slate-300 dark:border-white/30 group-hover:border-slate-400 dark:group-hover:border-white/50'
+                : isCups
+                ? 'border-amber-400/40 group-hover:border-amber-400'
+                : 'border-slate-200 dark:border-white/15 group-hover:border-amber-700/40'
+            }`}
+            className="w-full h-full object-cover"
+            fallback={
               <div
-                className={`w-9 h-9 rounded-full border flex items-center justify-center text-[11px] font-mono font-bold transition-transform duration-300 group-hover:scale-105 ${
+                className={`w-full h-full rounded-full flex items-center justify-center text-[11px] font-mono font-bold ${
                   isHighlight
-                    ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
+                    ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
                     : isCups
-                    ? 'border-amber-400/30 bg-amber-400/10 text-amber-500'
-                    : 'border-amber-800/25 bg-amber-950/10 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500'
+                    ? 'bg-amber-400/10 text-amber-500'
+                    : 'bg-amber-950/10 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500'
                 }`}
               >
                 {isHighlight ? (
@@ -389,43 +419,8 @@ function BackerCard({ backer }) {
                   <CookieIcon className="w-4 h-4 text-amber-700 dark:text-amber-500" />
                 )}
               </div>
-            )}
-          </a>
-        ) : (
-          backer.avatar_url ? (
-            <img
-              src={backer.avatar_url}
-              alt={backer.name}
-              className={`w-9 h-9 rounded-full border object-cover transition-transform duration-300 group-hover:scale-105 ${
-                isHighlight
-                  ? 'border-slate-300 dark:border-white/30 group-hover:border-slate-400 dark:group-hover:border-white/50'
-                  : isCups
-                  ? 'border-amber-400/40 group-hover:border-amber-400'
-                  : 'border-slate-200 dark:border-white/15 group-hover:border-amber-700/40'
-              }`}
-              onError={(e) => {
-                e.target.style.display = 'none';
-              }}
-            />
-          ) : (
-            <div
-              className={`w-9 h-9 rounded-full border flex items-center justify-center text-[11px] font-mono font-bold transition-transform duration-300 group-hover:scale-105 ${
-                isHighlight
-                  ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
-                : isCups
-                ? 'border-amber-400/30 bg-amber-400/10 text-amber-500'
-                : 'border-amber-800/25 bg-amber-950/10 dark:bg-amber-900/20 text-amber-700 dark:text-amber-500'
-              }`}
-            >
-              {isHighlight ? (
-                <ShinyGemIcon className="w-4 h-4 text-slate-800 dark:text-slate-200" />
-              ) : isCups ? (
-                <Coffee className="w-4 h-4 text-amber-500" />
-              ) : (
-                <CookieIcon className="w-4 h-4 text-amber-700 dark:text-amber-500" />
-              )}
-            </div>
-          )
+            }
+          />
         )}
 
         {/* Themed Tier badge icon corner */}
