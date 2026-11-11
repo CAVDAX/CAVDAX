@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, AlertTriangle, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ArrowUpRight } from 'lucide-react';
+import { Coffee, CheckCircle2, Heart, HandHeart, Loader2, ExternalLink, AlertTriangle, Users, Lock, LayoutGrid, PieChart, BarChartHorizontal, ArrowUpRight, Eye, EyeOff, SlidersHorizontal, ArrowDownLeft } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import { isUserAuthorized, getActiveDevSession } from '../services/devAuth';
 import BackerConsentModal from './BackerConsentModal';
+import ConfirmationDialog from './ConfirmationDialog';
 import AnimatedAvatarGroup from './ui/AnimatedAvatarGroup';
 import ShimmerImage from './ui/ShimmerImage';
 
@@ -479,18 +480,36 @@ function BackerCard({ backer }) {
         </div>
 
         <div className="flex items-center justify-between gap-1">
-          <span
-            className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${
-              isHighlight
-                ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
-                : isCups
-                ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                : 'border-amber-800/25 bg-amber-950/10 dark:bg-amber-900/20 text-amber-800 dark:text-amber-500'
-            }`}
-          >
-            {isHighlight && <ShinyGemIcon className="w-2.5 h-2.5 shrink-0" />}
-            {backer.tier_label || 'Verified Backer'}
-          </span>
+          {(() => {
+            const isPastCore = isHighlight && backer.is_active === false;
+            const backerYear = backer.created_at ? new Date(backer.created_at).getFullYear() : new Date().getFullYear();
+            const backerShortYear = `’${String(backerYear).slice(-2)}`;
+            const cardBadgeLabel = isPastCore
+              ? `Core Patron ${backerShortYear}`
+              : (backer.tier_label || (isHighlight ? 'Core Patron' : isCups ? '2 Cups' : 'Cookie Backer'));
+            const cardBadgeTooltip = isHighlight
+              ? (isPastCore
+                  ? `Core Patron Cohort of ${backerYear} • Lifetime Contributor`
+                  : 'Active Core Patron • Renewing monthly')
+              : (isCups
+                  ? 'Verified Supporter • Powering daily causal graph passes'
+                  : 'Verified Backer • Fueling independent innovation');
+            return (
+              <span
+                className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border flex items-center gap-1 ${
+                  isHighlight
+                    ? 'border-slate-300 dark:border-white/20 bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white shadow-xs'
+                    : isCups
+                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                    : 'border-amber-800/25 bg-amber-950/10 dark:bg-amber-900/20 text-amber-800 dark:text-amber-500'
+                }`}
+                title={cardBadgeTooltip}
+              >
+                {isHighlight && <ShinyGemIcon className="w-2.5 h-2.5 shrink-0" />}
+                {cardBadgeLabel}
+              </span>
+            );
+          })()}
           <span className="text-[9px] font-mono text-slate-400">
             {backer.created_at ? new Date(backer.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Recent'}
           </span>
@@ -576,6 +595,14 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         return;
       }
       fetchSponsors();
+      try {
+        if (consentData.visibility) {
+          localStorage.setItem('cavdax_backer_visibility', consentData.visibility);
+        }
+        if (consentData.quote !== undefined || consentData.backer_message !== undefined) {
+          localStorage.setItem('cavdax_backer_quote', consentData.quote || consentData.backer_message || '');
+        }
+      } catch {}
       const visLabel = consentData.visibility === 'private' ? 'Private (Unlisted)' : (consentData.visibility === 'anonymous' ? 'Anonymous Patron' : 'Public Wall');
       showToast(true, `Backer preference updated to ${visLabel}.`);
     } catch (err) {
@@ -592,6 +619,32 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
   const isAuthorizedDev = Boolean(isUserAuthorized(user) || getActiveDevSession());
   const hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)));
 
+  const userHandle = activeUser?.login ? activeUser.login.toLowerCase().replace(/^@/, '').trim() : null;
+  const matchedSponsor = userHandle
+    ? (sponsors.find(s => s.github_handle && s.github_handle.toLowerCase().replace(/^@/, '').trim() === userHandle) || null)
+    : null;
+  const isUserSponsor = Boolean(
+    (typeof window !== 'undefined' && localStorage.getItem('cavdax_is_sponsor') === 'true') ||
+    matchedSponsor ||
+    (typeof window !== 'undefined' && localStorage.getItem('cavdax_evaluation_sponsor_tier'))
+  );
+  const currentVisibility = matchedSponsor?.visibility || (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_visibility') : null) || 'public';
+  const currentQuote = matchedSponsor?.backer_message || (typeof window !== 'undefined' ? localStorage.getItem('cavdax_backer_quote') : null) || '';
+
+  const handleOpenConsentPreferences = () => {
+    playClick();
+    setConsentBacker({
+      id: matchedSponsor?.id || activeUser?.login || 'self',
+      sponsorId: matchedSponsor?.id || activeUser?.login || 'self',
+      name: activeUser?.name || activeUser?.login || 'Backer',
+      backer_name: activeUser?.name || activeUser?.login || 'Backer',
+      tierName: matchedSponsor?.tier_label || (typeof window !== 'undefined' ? localStorage.getItem('cavdax_sponsor_tier') : null) || 'Verified Backer',
+      visibility: currentVisibility,
+      quote: currentQuote
+    });
+    setIsConsentModalOpen(true);
+  };
+
   const [activeEvaluationTier, setActiveEvaluationTier] = useState(() => {
     try {
       return parseInt(localStorage.getItem('cavdax_evaluation_sponsor_tier'), 10) || null;
@@ -599,6 +652,69 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
       return null;
     }
   });
+
+  const [isDowngradeModalOpen, setIsDowngradeModalOpen] = useState(false);
+  const [pendingDowngradeTier, setPendingDowngradeTier] = useState(null);
+
+  const currentActiveTierId = activeEvaluationTier || matchedSponsor?.tier_id || (() => {
+    try {
+      const stored = localStorage.getItem('cavdax_sponsor_tier');
+      if (!stored) return null;
+      const lower = stored.toLowerCase();
+      if (lower.includes('core')) return 3;
+      if (lower.includes('cup') || lower.includes('coffee')) return 2;
+      if (lower.includes('cookie')) return 1;
+    } catch {}
+    return null;
+  })();
+
+  const handleSelectTier = (tier) => {
+    playClick();
+
+    // 1. If currently on a higher sponsor tier, ALWAYS open ConfirmationDialog first (exact same order as ProfilePage.jsx)
+    if (currentActiveTierId && tier.id < currentActiveTierId) {
+      setPendingDowngradeTier(tier);
+      setIsDowngradeModalOpen(true);
+      return;
+    }
+
+    // 2. If clicking currently active tier in evaluation mode
+    if (currentActiveTierId && tier.id === currentActiveTierId) {
+      if (hasEvaluationPass || activeEvaluationTier) {
+        handleEvaluationSponsor(tier);
+      }
+      return;
+    }
+
+    // 3. Evaluation mode / Dev pass bypass (avoids redirecting to external OAuth when testing)
+    if (hasEvaluationPass || activeEvaluationTier || (typeof window !== 'undefined' && localStorage.getItem('cavdax_hackathon_mode') === 'true')) {
+      handleEvaluationSponsor(tier);
+      return;
+    }
+
+    // 4. Live Razorpay Sponsor Flow (requires user session)
+    const currUser = user || getStoredUser() || getActiveDevSession();
+    if (!currUser) {
+      window.location.href = '/api/auth/github?returnTo=/support';
+      return;
+    }
+
+    handleSponsor(tier);
+  };
+
+  const executeSponsorDowngrade = async () => {
+    if (!pendingDowngradeTier) return;
+    const tier = pendingDowngradeTier;
+    setIsDowngradeModalOpen(false);
+    setPendingDowngradeTier(null);
+
+    const currUser = user || getStoredUser() || getActiveDevSession();
+    if (hasEvaluationPass || activeEvaluationTier || !currUser) {
+      await handleEvaluationSponsor(tier);
+      return;
+    }
+    handleSponsor(tier);
+  };
 
   const fetchSponsors = useCallback(async () => {
     try {
@@ -746,13 +862,12 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
       return;
     }
 
-    const activeUser = user || getStoredUser() || getActiveDevSession();
-    if (!activeUser) {
-      setEvalLoadingTier(null);
-      playClick();
-      window.location.href = '/api/auth/github?returnTo=/support';
-      return;
-    }
+    const activeUser = user || getStoredUser() || getActiveDevSession() || {
+      id: 'evaluator-pass',
+      login: 'evaluator-pass',
+      name: 'Hackathon Evaluator',
+      avatar_url: null
+    };
 
     const userOverride = {
       id: activeUser.id,
@@ -1065,7 +1180,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
           const isEvalLoading = evalLoadingTier === tier.id;
           const isHovered = hoveredTier === tier.id;
           const TierIcon = tier.icon || CookieIcon;
-          const isCurrentEvalTier = activeEvaluationTier === tier.id;
+          const isCurrentEvalTier = (activeEvaluationTier === tier.id) || (currentActiveTierId === tier.id);
 
           const isBronze = tier.accent === 'bronze';
           const isAmber = tier.accent === 'amber';
@@ -1177,23 +1292,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 {/* Single Unified Action Button (Strict ProfilePage Tier Card Parity) */}
                 <button
                   type="button"
-                  onClick={() => {
-                    const activeUser = user || getStoredUser() || getActiveDevSession();
-                    if (!activeUser) {
-                      playClick();
-                      window.location.href = '/api/auth/github?returnTo=/support';
-                      return;
-                    }
-                    if (isCurrentEvalTier) {
-                      handleEvaluationSponsor(tier);
-                      return;
-                    }
-                    if (hasEvaluationPass) {
-                      handleEvaluationSponsor(tier);
-                      return;
-                    }
-                    handleSponsor(tier);
-                  }}
+                  onClick={() => handleSelectTier(tier)}
                   onMouseEnter={() => setHoveredTier(tier.id)}
                   onMouseLeave={() => setHoveredTier(null)}
                   disabled={loadingTier !== null || evalLoadingTier !== null}
@@ -1246,7 +1345,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                       <><Loader2 className="w-3.5 h-3.5 animate-spin" />Processing...</>
                     ) : isCurrentEvalTier ? (
                       <><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Active Sponsor Tier</>
-                    ) : hasEvaluationPass ? (
+                    ) : (hasEvaluationPass || Boolean(currentActiveTierId)) ? (
                       <><TierIcon className="w-3 h-3 shrink-0" />Switch to {tier.tierName}</>
                     ) : !activeUser ? (
                       <><Lock className="w-3 h-3 shrink-0" />Sign In to Sponsor</>
@@ -1616,6 +1715,42 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
         </AnimatePresence>
       </section>
 
+      {/* ── 3.5. Monochromatic Backer Recognition Preferences Ribbon Strip ── */}
+      {isUserSponsor && (
+        <div className="mb-6 px-4 py-2.5 rounded-xl border border-slate-200/90 dark:border-white/10 bg-slate-100/70 dark:bg-white/[0.03] backdrop-blur-md flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {currentVisibility === 'private' ? (
+              <Lock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75] shrink-0" />
+            ) : currentVisibility === 'anonymous' ? (
+              <EyeOff className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 stroke-[1.75] shrink-0" />
+            ) : (
+              <Eye className="w-3.5 h-3.5 text-slate-700 dark:text-slate-300 stroke-[1.75] shrink-0" />
+            )}
+            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase tracking-wider shrink-0">Recognition Preference:</span>
+            <span className="text-xs font-mono font-semibold text-slate-900 dark:text-white truncate">
+              {currentVisibility === 'private'
+                ? 'Private (Do Not List)'
+                : currentVisibility === 'anonymous'
+                ? 'Anonymous Patron'
+                : 'Public Backers Wall'}
+            </span>
+            {currentVisibility === 'public' && activeUser?.login && (
+              <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500 hidden md:inline truncate">
+                (@{activeUser.login})
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={handleOpenConsentPreferences}
+            className="self-start sm:self-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-mono font-medium text-slate-800 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white bg-white hover:bg-slate-50 dark:bg-white/10 dark:hover:bg-white/20 border border-slate-300/80 dark:border-white/10 shadow-2xs transition-all cursor-pointer shrink-0"
+          >
+            <SlidersHorizontal className="w-3 h-3 text-slate-500 dark:text-slate-400 shrink-0" />
+            <span>Edit Recognition</span>
+          </button>
+        </div>
+      )}
+
       {/* ── 4. Verified Backers Wall ── */}
       <section className="mb-10 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-white/15 bg-slate-900/[0.02] dark:bg-white/[0.02]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-200/60 dark:border-white/10">
@@ -1766,7 +1901,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                   onMouseLeave={() => setIsExploreHovered(false)}
                   className="group inline-flex items-center gap-1 text-slate-700 hover:text-slate-950 dark:text-slate-300 dark:hover:text-white transition-colors cursor-pointer font-medium"
                 >
-                  <span>Explore 3D Backers Wall</span>
+                  <span>Explore 3D Backer Sphere</span>
                   <ArrowUpRight className="w-3.5 h-3.5 opacity-60 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               </div>
@@ -1789,6 +1924,34 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
           <span>{toast.text}</span>
         </div>
       )}
+      {/* ── Lower Sponsor Category Switch Confirmation Dialog ── */}
+      <ConfirmationDialog
+        isOpen={isDowngradeModalOpen}
+        onClose={() => {
+          setIsDowngradeModalOpen(false);
+          setPendingDowngradeTier(null);
+        }}
+        onConfirm={executeSponsorDowngrade}
+        title={pendingDowngradeTier ? `Switch to ${pendingDowngradeTier.tierName}?` : 'Switch Sponsor Category?'}
+        description={
+          pendingDowngradeTier?.id === 2
+            ? [
+                'Sets your 3D sphere profile picture to medium size.',
+                'Preserves honorary Core Patron vintage cohort.'
+              ]
+            : [
+                'Sets your 3D sphere profile picture to small size.',
+                currentActiveTierId === 3
+                  ? 'Preserves honorary Core Patron vintage cohort.'
+                  : 'Transfers spotlight recognition to Cookie tier.'
+              ]
+        }
+        confirmLabel="Confirm Switch"
+        severity="neutral"
+        icon={ArrowDownLeft}
+        confirmIcon={ArrowDownLeft}
+      />
+
       {/* ── Post-Sponsorship Recognition & Consent Modal ── */}
       <BackerConsentModal
         isOpen={isConsentModalOpen}

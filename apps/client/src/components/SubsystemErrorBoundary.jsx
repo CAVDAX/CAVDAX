@@ -80,26 +80,23 @@ export default class SubsystemErrorBoundary extends React.Component {
           </div>
 
           <div className="relative z-10 flex flex-col items-center w-full">
-            {/* Status Pill */}
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold uppercase tracking-wider bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-white/10 mb-4">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span>Subsystem Isolated</span>
+            {/* Unboxed Solitary Hardware Glyph */}
+            <div className="relative mb-3 flex items-center justify-center">
+              <AlertTriangle className="w-7 h-7 text-amber-500 dark:text-amber-400 stroke-[1.75]" />
             </div>
 
-            {/* Solitary Hardware Glyph */}
-            <div className="relative mb-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 border border-amber-500/20 dark:border-amber-400/20 flex items-center justify-center shadow-xs">
-                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 stroke-[1.8]" />
-              </div>
-            </div>
-
-            {/* Title & Description */}
+            {/* Title & Strict 2-Line Non-Wrapping Subtext */}
             <h2 className="text-base sm:text-lg font-bold font-mono tracking-tight text-slate-950 dark:text-white leading-snug">
               {name} Temporarily Unavailable
             </h2>
-            <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-400 font-sans leading-relaxed mt-2 max-w-sm text-balance">
-              An unexpected operational state was safely isolated within the {name} module. Navigation and other subsystems remain fully operational.
-            </p>
+            <div className="flex flex-col gap-1 text-xs text-slate-500 dark:text-slate-400 font-mono mt-2 w-full max-w-sm">
+              <span className="block whitespace-nowrap overflow-hidden text-ellipsis">
+                Isolated operational event safely contained.
+              </span>
+              <span className="block whitespace-nowrap overflow-hidden text-ellipsis text-slate-400 dark:text-slate-500 text-[11px]">
+                Navigation and other subsystems remain fully operational.
+              </span>
+            </div>
 
             {/* Tactile Recovery Action */}
             <div className="mt-6 w-full max-w-xs">
