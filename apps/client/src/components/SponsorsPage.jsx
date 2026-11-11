@@ -663,10 +663,11 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                                       href={gh.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 group/gh"
+                                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 group/gh"
                                       aria-label={`View @${gh.handle} on GitHub`}
                                     >
                                       <Github className="w-3.5 h-3.5 transition-transform duration-200 group-hover/gh:scale-110" />
+                                      <ArrowUpRight className="w-2.5 h-2.5 ml-0.5 opacity-60 group-hover/gh:opacity-100" />
                                     </a>
                                   </Tooltip>
                                 )}
