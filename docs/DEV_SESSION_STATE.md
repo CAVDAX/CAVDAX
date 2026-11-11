@@ -10,6 +10,12 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Custom Obsidian Portal Tooltip in 3D Backer Sphere (`SphereImageGrid.jsx` & `SponsorsPage.jsx` Navbar Declutter)**:
+  - **Adversarial Forensic Discovery (/devils-advocate)**:
+    - Eradicated native unstyled browser `title` tooltip popups from 3D Fibonacci sphere backer nodes in favor of a portal-mounted obsidian (`#0B0D11`) tooltip at `z-[99999]` with real-time momentum kinematic tracking, viewport boundary clamping, and sub-tier attribution (`• Core Patron ($10)`).
+    - Removed the redundant duplicate `Become a Backer ↗` button on `/sponsors` navbar that routed to the same support view, restoring Dieter Rams minimalism with `[← Back to Support]` on the left and kinetic theme lamp toggle on the right.
+  - **Empirical Visual Audit**:
+    - Captured `proof-sponsors-clean-navbar-dark.png`, `proof-sponsors-clean-navbar-light.png`, `proof-sphere-custom-tooltip-dark.png`, and `proof-sphere-custom-tooltip-light.png`.
 - **Enterprise Upgrade: Suneet-Master-Skill-Creator with 4-Agent Research Swarm & The 10 Deadly Sins**:
   - Refactored `Suneet-Master-Skill-Creator` to staff-engineer professional standards, transforming it from a static template into an autonomous multi-agent skill architecture engine.
   - **The 4-Agent Coordinated Research Swarm**:
