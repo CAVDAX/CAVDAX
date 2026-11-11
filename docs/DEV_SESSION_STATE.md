@@ -10,6 +10,22 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Profile Header Spatial Equilibrium, Ghost Modal Eradication & Tier Identity Alignment (`ProfilePage.jsx`)**:
+  - **Honest Industry Analysis & Anti-AI Slop**:
+    - Eradicated clunky AI-slop literalism: "2 Cups of Coffee" is a funding metaphor, not a person's identity noun. Professional developer platforms (GitHub Sponsors, Patreon, Vercel) name tiers as dignified identity nouns: `Core Patron` (Diamond / `ShinyGemIcon`), `Supporter` (`Coffee` icon), `Backer` (`Sparkles` icon).
+    - Fixed tier-icon contradiction: showing a diamond `💎` on a $4 Coffee sponsor contradicts the hierarchy where diamonds denote Core Patrons.
+  - **Single-Page Viewport Containment & Inline Metadata Architecture**:
+    - Diagnosed the ~36px layout shift caused by stacking a standalone `mt-2 flex` row with a separate text link `👁 Recognition Preferences` between the handle and action buttons.
+    - Integrated the backer badge **directly inline** with the `@handle • GitHub Verified` line:
+      `@suneetchugh-dev • GitHub Verified • [☕ Supporter 👁]`
+    - Converted the badge itself into a tactile interactive button with `Eye` icon and hover tooltip. Clicking the badge directly triggers `BackerConsentModal`.
+    - Restored complete single-page containment within $100\text{dvh}$ with zero vertical scrollbars or card pushing.
+  - **Ghost Modal Eradication (Pattern 17 Compliance)**:
+    - Fixed the broken `Recognition Preferences` interaction: `BackerConsentModal` was imported in `ProfilePage.jsx` and controlled by `isConsentModalOpen`, but was missing from the return JSX tree (a literal Ghost Modal).
+    - Mounted `<BackerConsentModal ... />` into the JSX tree, wired to `/api/sponsors/consent`, and added client-side `localStorage` persistence for `cavdax_backer_visibility` and `cavdax_backer_quote`.
+  - **Verified via Puppeteer Visual Audit Protocol**:
+    - Captured `profile-header-inline-badge-dark.png`, `profile-header-inline-badge-light.png`, and `profile-backer-consent-modal-live.png`.
+    - Confirmed zero console errors, zero layout shift, and 151/151 automated test suite passes.
 - **Tactile Confirmation Action Micro-SVGs (`confirmIcon`) & Anti-AI-Slop Clipart Guard**:
   - Enforced the distinction between tacky AI slop (inserting large cartoon clipart, 3D floating exclamation marks, or crying mascots into alert dialogs) and elite high-craft engineering (pairing primary confirmation buttons with precision 14px Lucide action line SVGs).
   - Enhanced `ConfirmationDialog.jsx` with an optional `confirmIcon` prop:
