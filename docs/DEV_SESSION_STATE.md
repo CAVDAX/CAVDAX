@@ -18,7 +18,10 @@
   - **The High-Craft Architectural Resolution**:
     1. *Eradicated the Hanging Link*: Completely removed the awkward text link from under the tier card CTA button, restoring clean baseline symmetry across all 3 cards in the grid.
     2. *Action Gating on Active Button*: The primary button remains solid `[ ✓ Active Sponsor Tier ]` with an explicit `title` tooltip (`"Active sponsorship tier • Click to opt out or switch category"`). Clicking it safely triggers the `ConfirmationDialog` to opt out.
-    3. *Dedicated Backer Management Ribbon Integration*: Moved the secondary opt-out action into the dedicated **Monochromatic Backer Recognition Preferences Ribbon Strip** located immediately below the pricing grid. Sits alongside `[ SlidersHorizontal Edit Recognition ]` as a discrete, monochromatic action button: `[ ArrowDownLeft Opt Out ]` with hover rose tint and subtle micro-borders.
+    3. *Dedicated Backer Management Ribbon Integration*: Moved the secondary opt-out action into the dedicated **Monochromatic Backer Recognition Preferences Ribbon Strip** located immediately below the pricing grid. Sits alongside `[ SlidersHorizontal Edit Recognition ]` as a discrete, monochromatic action button: `[ ArrowDownLeft Opt Out ]` with:
+       - **Zero Outline by Default**: Clean `border border-transparent` (no box or outline around the text in resting state).
+       - **Default Rose Colorway**: `text-rose-600 dark:text-rose-400 font-mono font-medium`.
+       - **Watery Fluid Wave Fill Layer on Hover**: Incorporates the exact SVG wave crest (`viewBox="0 0 320 48"`) and rising cubic-bezier liquid body (`cubic-bezier(0.2, 0.9, 0.3, 1)`) matching the sponsor button fills, with `z-10` layered text and icon.
     4. *Anti-Truncation Perk Copy*: Refined `'Personal Team Acknowledgment'` to `'Personal Acknowledgment'`, fitting comfortably within card margins with zero ellipsis clipping.
   - **Headless Visual Audits Verified**:
     - Captured `audit-clean-tier-cards-grid-dark.png`, `audit-clean-core-card-dark.png`, `audit-clean-core-card-light.png`, `audit-clean-backer-ribbon-dark.png`, and `audit-clean-backer-ribbon-light.png`.
