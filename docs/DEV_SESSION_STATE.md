@@ -10,6 +10,16 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
+- **Pattern 21: Green Status Orb Eradication & Authentic Tier SVG Color Restoration (`SupportPage.jsx`, `ProfilePage.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
+  - **Pulsing Green Orb Ban (Pattern 21 & UI_DESIGN_SYSTEM.md §3)**:
+    - Completely eradicated the pulsing green status orb (`<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />`) from the Backer Recognition Preferences ribbon strip.
+    - Codified Pattern 21 in `Suneet-Perfect-AI-Slop-Remover` master skill: strictly zero colored pulsing dots, ping circles, or radar markers across UI chrome; state is communicated solely through crisp typography and restrained monochrome micro-tags.
+  - **Authentic Tier SVG Color Restoration**:
+    - Fixed color homogenization regression where all tier badges were rendered with `text-amber-600 dark:text-amber-400` (turning Core Patron's diamond orange).
+    - Restored authentic materials directly matching the tier cards in `SupportPage.jsx`:
+      - **Core Patron**: High-contrast crystal prism diamond (`text-slate-800 dark:text-slate-200`) with faceted specular glint.
+      - **Supporter (2 Cups)**: Electric radiant amber coffee cup (`text-amber-500 dark:text-amber-400`).
+      - **Cookie Backer**: Warm artisanal bronze/cacao cookie (`text-amber-700 dark:text-amber-500`).
 - **Pattern 20: Subsystem Error Boundary Slop Eradication & Unboxed Plumb-Line Architecture (`SubsystemErrorBoundary.jsx` & `Suneet-Perfect-AI-Slop-Remover`)**:
   - **Identified Slop**:
     - Floating tag clutter: `<div className="...">SUBSYSTEM ISOLATED</div>` sitting above the error title.
