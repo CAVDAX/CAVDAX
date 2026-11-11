@@ -36,7 +36,7 @@ import { scanRepoAdrs, createAdrPullRequest, syncSupersededAdrPullRequest, listR
 import { CavdaxMcpServer } from '../../core/mcp/server.js';
 import { renderGraphToSvg, computeBlastRadius } from '../../core/graph/renderSvg.js';
 import { loadSystemState, saveSystemState } from './systemState.js';
-import { sendInvalidationEmail } from './email.js';
+import { sendInvalidationEmail, sendSponsorThankYouEmail } from './email.js';
 import { getVapidPublicKey, savePushSubscription, broadcastWebPushAlert, isValidPushEndpoint } from './webPush.js';
 import { isAdrPath } from '../../core/ingestion/adrPaths.js';
 import { dispatchOutgoingWebhook, isSafeWebhookUrl } from './webhookDispatcher.js';
@@ -4357,6 +4357,17 @@ app.post('/api/billing/verify-payment', (req, res) => {
     syncSystemStateToDisk();
     broadcastEvent('SPONSOR_REGISTERED', backerRecord);
     console.log(`[CAVDAX Sponsors] Backer registered: ${backerRecord.name} (${backerRecord.tier_label})`);
+    // Direct Team Acknowledgment & Thank-You Email Dispatch
+    const recipientEmail = req.session?.user?.email || req.body?.email || null;
+    if (recipientEmail) {
+      sendSponsorThankYouEmail({
+        to: recipientEmail,
+        name: backerRecord.name,
+        tierName: backerRecord.tier_label,
+        amountPaise: backerRecord.amount_paise,
+        currency: backerRecord.currency
+      }).catch(err => console.warn('[CAVDAX Email] Non-blocking thank-you email dispatch error:', err.message));
+    }
   }
 
   // Record persistent paid tier entitlement for this GitHub identity
@@ -4590,20 +4601,85 @@ app.post('/api/billing/reset-evaluation-sponsor', (req, res) => {
  */
 app.get(['/api/sponsors', '/api/billing/sponsors'], (req, res) => {
   const persistedSponsors = Array.isArray(savedSystemState.sponsors) ? savedSystemState.sponsors : [];
-  const userLogin = req.session?.user?.login;
+  const userLogin = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
   const isSessionEvalSponsor = req.session?.is_evaluation_sponsor;
   const effectivePersisted = (globalHackathonMode || isSessionEvalSponsor)
     ? persistedSponsors
-    : persistedSponsors.filter(s => !s.is_evaluation || (userLogin && s.github_handle === userLogin));
+    : persistedSponsors.filter(s => !s.is_evaluation || (userLogin && s.github_handle?.toLowerCase().replace(/^@/, '') === userLogin));
+
   const allSponsors = [...effectivePersisted];
   for (const seed of CANONICAL_SEED_SPONSORS) {
-    if (!allSponsors.some(s => s.id === seed.id || (seed.github_handle && s.github_handle === seed.github_handle))) {
+    const seedHandle = seed.github_handle ? seed.github_handle.toLowerCase().replace(/^@/, '') : null;
+    const alreadyExists = allSponsors.some(s => {
+      if (s.id === seed.id) return true;
+      const sHandle = s.github_handle ? s.github_handle.toLowerCase().replace(/^@/, '') : null;
+      if (seedHandle && sHandle && seedHandle === sHandle) return true;
+      return false;
+    });
+    if (!alreadyExists) {
       allSponsors.push(seed);
     }
   }
 
+  // Identity Deduplication Engine: Highest Honor Principle (§1:1 Entity Mapping Invariant)
+  // Each backer identity is recognized ONCE with their highest tier achieved.
+  const identityMap = new Map();
+  for (const s of allSponsors) {
+    const cleanHandle = (typeof s.github_handle === 'string' && !s.github_handle.startsWith('evaluator-') && s.github_handle !== 'community-backer')
+      ? s.github_handle.toLowerCase().replace(/^@/, '').trim()
+      : null;
+    const cleanName = (typeof s.name === 'string' && s.name.trim())
+      ? s.name.toLowerCase().trim()
+      : null;
+
+    const identityKey = cleanHandle
+      ? `gh:${cleanHandle}`
+      : (cleanName && cleanName !== 'anonymous backer' && cleanName !== 'community patron'
+        ? `name:${cleanName}`
+        : `id:${s.id || Math.random()}`);
+
+    if (!identityMap.has(identityKey)) {
+      identityMap.set(identityKey, [s]);
+    } else {
+      identityMap.get(identityKey).push(s);
+    }
+  }
+
+  const tierMap = {
+    3: { label: 'Core Supporter', highlighted: true },
+    2: { label: '2 Cups Sponsor', highlighted: false },
+    1: { label: 'Cookie Backer', highlighted: false }
+  };
+
+  const deduplicatedSponsors = [];
+  for (const records of identityMap.values()) {
+    if (records.length === 1) {
+      deduplicatedSponsors.push(records[0]);
+      continue;
+    }
+    // Highest tier achieved wins
+    const highestTierId = Math.max(...records.map(r => Number(r.tier_id) || 1));
+    // Newest record provides recent avatar, message, and visibility
+    const sortedByDate = [...records].sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime());
+    const newest = sortedByDate[0];
+    const hasPrivate = records.some(r => r.visibility === 'private');
+    const hasAnonymous = records.some(r => r.visibility === 'anonymous');
+    const effectiveVisibility = hasPrivate ? 'private' : (hasAnonymous ? 'anonymous' : (newest.visibility || 'public'));
+
+    const aggregated = {
+      ...newest,
+      tier_id: highestTierId,
+      tier_label: tierMap[highestTierId]?.label || newest.tier_label || 'Verified Backer',
+      highlighted: highestTierId === 3,
+      visibility: effectiveVisibility,
+      backer_message: newest.backer_message || records.find(r => r.backer_message)?.backer_message || null,
+      quote: newest.quote || records.find(r => r.quote)?.quote || null
+    };
+    deduplicatedSponsors.push(aggregated);
+  }
+
   // Enforce Privacy Invariant: Filter 'private' and sanitize 'anonymous'
-  const publicSponsors = allSponsors
+  const publicSponsors = deduplicatedSponsors
     .filter(s => s.visibility !== 'private')
     .map(s => {
       if (s.visibility === 'anonymous') {
@@ -4645,29 +4721,48 @@ const consentLimiter = rateLimit({
  * POST /api/sponsors/consent
  * Updates a backer's public recognition and visibility preferences.
  * Protected by BOLA/IDOR ownership validation (OWASP API1 / A01 Access Control).
- * Body: { backer_id, visibility: 'public' | 'anonymous' | 'private', display_name, backer_message }
+ * Accepts both snake_case and camelCase parameters for frontend parity.
+ * Synchronizes preference across all transaction records for the same human identity.
  */
 app.post('/api/sponsors/consent', consentLimiter, (req, res) => {
-  const { backer_id, visibility, display_name, backer_message } = req.body || {};
-  if (!backer_id || typeof backer_id !== 'string') {
-    return res.status(400).json({ success: false, error: 'backer_id is required' });
-  }
+  const { backer_id, sponsorId, visibility, display_name, displayName, backer_message, quote } = req.body || {};
+  const effectiveBackerId = backer_id || sponsorId;
+  const effectiveName = display_name !== undefined ? display_name : displayName;
+  const effectiveMessage = backer_message !== undefined ? backer_message : quote;
 
   if (!Array.isArray(savedSystemState.sponsors)) {
     savedSystemState.sponsors = [];
   }
 
-  const sponsor = savedSystemState.sponsors.find(s => s.id === backer_id);
-  if (!sponsor) {
+  const sessionUser = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
+
+  // Find matching sponsor either by id OR by session user handle
+  let matchingSponsors = [];
+  if (effectiveBackerId) {
+    matchingSponsors = savedSystemState.sponsors.filter(s => s.id === effectiveBackerId);
+  }
+  if (matchingSponsors.length === 0 && sessionUser) {
+    matchingSponsors = savedSystemState.sponsors.filter(s => (s.github_handle || '').toLowerCase().replace(/^@/, '') === sessionUser);
+  }
+
+  if (matchingSponsors.length === 0) {
+    const matchingSeed = CANONICAL_SEED_SPONSORS.find(s => s.id === effectiveBackerId || (sessionUser && (s.github_handle || '').toLowerCase().replace(/^@/, '') === sessionUser));
+    if (matchingSeed) {
+      const cloned = { ...matchingSeed, id: effectiveBackerId || matchingSeed.id };
+      savedSystemState.sponsors.push(cloned);
+      matchingSponsors = [cloned];
+    }
+  }
+
+  if (matchingSponsors.length === 0) {
     return res.status(404).json({ success: false, error: 'BACKER_NOT_FOUND', message: 'Backer record not found.' });
   }
 
-  // BOLA / IDOR Verification: Verify caller is owner of this backer record
-  const sessionUser = req.session?.user?.login?.toLowerCase().replace(/^@/, '');
-  const sponsorHandle = (sponsor.github_handle || '').toLowerCase().replace(/^@/, '');
-  const isRecentPayer = req.session?.recentPaymentId === backer_id;
+  const primarySponsor = matchingSponsors[0];
+  const sponsorHandle = (primarySponsor.github_handle || '').toLowerCase().replace(/^@/, '');
+  const isRecentPayer = req.session?.recentPaymentId === effectiveBackerId;
   const isDevMaintainer = Boolean(sessionUser && globalDevRoster.includes(sessionUser));
-  const isEvaluationModeActive = Boolean(globalHackathonMode || sponsor.is_evaluation);
+  const isEvaluationModeActive = Boolean(globalHackathonMode || primarySponsor.is_evaluation || checkEvaluationPassAuthorized(req));
 
   const isAuthorized = isRecentPayer || isDevMaintainer || (sponsorHandle && sessionUser && sponsorHandle === sessionUser) || isEvaluationModeActive;
 
@@ -4688,29 +4783,30 @@ app.post('/api/sponsors/consent', consentLimiter, (req, res) => {
       .slice(0, maxLen);
   };
 
-  sponsor.visibility = ['public', 'anonymous', 'private'].includes(visibility) ? visibility : 'public';
-  if (sponsor.visibility === 'public') {
-    if (display_name !== undefined) sponsor.name = sanitizeText(display_name, 40) || sponsor.name;
-    if (backer_message !== undefined) sponsor.backer_message = sanitizeText(backer_message, 60);
-  } else if (sponsor.visibility === 'anonymous') {
-    sponsor.name = 'Anonymous Backer';
-    sponsor.backer_message = null;
+  const targetVisibility = ['public', 'anonymous', 'private'].includes(visibility) ? visibility : 'public';
+
+  // Synchronize preference across all records for this human identity
+  for (const sp of matchingSponsors) {
+    sp.visibility = targetVisibility;
+    if (targetVisibility === 'public') {
+      if (effectiveName !== undefined) sp.name = sanitizeText(effectiveName, 40) || sp.name;
+      if (effectiveMessage !== undefined) sp.backer_message = sanitizeText(effectiveMessage, 60);
+    } else if (targetVisibility === 'anonymous') {
+      sp.name = 'Anonymous Backer';
+      sp.backer_message = null;
+    }
   }
+
   syncSystemStateToDisk();
-  return res.json({ success: true, backer: sponsor });
+  broadcastEvent('SPONSOR_VISIBILITY_CHANGED', {
+    backer_id: primarySponsor.id,
+    visibility: targetVisibility,
+    github_handle: primarySponsor.github_handle
+  });
+
+  return res.json({ success: true, backer: primarySponsor, visibility: targetVisibility });
 });
 
-/**
- * POST /api/billing/webhook
- * Receives asynchronous Razorpay events (payment.captured, payment.failed, etc.).
- * Validates the X-Razorpay-Signature header before trusting the payload.
- *
- * Register this URL in the Razorpay Dashboard → Webhooks:
- *   https://cavdax.sahnirmaan.live/api/billing/webhook
- *
- * Webhook secret: set RAZORPAY_WEBHOOK_SECRET in .env (separate from KEY_SECRET).
- * If RAZORPAY_WEBHOOK_SECRET is not set, the endpoint logs but does not validate.
- */
 app.post('/api/billing/webhook', (req, res) => {
   const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature     = req.headers['x-razorpay-signature'];
