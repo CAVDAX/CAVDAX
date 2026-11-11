@@ -796,6 +796,8 @@ export default function ProfilePage({
                     alt={user.login || 'User Avatar'}
                     containerClassName="h-full w-full rounded-full"
                     className="h-full w-full object-cover"
+                    fallbackText={userInitial}
+                    fallbackClassName="w-full h-full flex items-center justify-center font-mono font-bold text-slate-400 text-2xl sm:text-3xl select-none"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center font-mono font-bold text-slate-400 text-2xl sm:text-3xl">
@@ -1881,6 +1883,8 @@ export default function ProfilePage({
                   alt={user.login || 'User Avatar'}
                   containerClassName="h-full w-full rounded-full"
                   className="h-full w-full object-cover"
+                  fallbackText={userInitial}
+                  fallbackClassName="w-full h-full flex items-center justify-center font-mono font-bold text-slate-400 text-xl sm:text-2xl select-none"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center font-mono font-bold text-slate-400 text-2xl sm:text-3xl">

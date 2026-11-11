@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import CavdaxBrandLoader from './CavdaxBrandLoader';
 import Tooltip from './Tooltip';
 import { playClick } from '../utils/soundFx';
+import ShimmerImage from './ui/ShimmerImage';
 
 /**
  * Header — Monochromatic Portfolio Morphing Navbar.
@@ -309,17 +310,17 @@ export default function Header({
               }`}
               aria-label="User Profile and Account"
             >
-              {user?.avatar_url || user?.avatarUrl || user?.avatar ? (
-                <img
-                  src={user?.avatar_url || user?.avatarUrl || user?.avatar}
-                  alt={user.login || user.name || 'User'}
-                  className="w-full h-full rounded-full object-cover relative z-10"
-                />
-              ) : (
-                <div className="w-full h-full rounded-full flex items-center justify-center relative z-10">
-                  <User className="w-3.5 h-3.5 text-current" />
-                </div>
-              )}
+              <ShimmerImage
+                src={user?.avatar_url || user?.avatarUrl || user?.avatar}
+                alt={user?.login || user?.name || 'User'}
+                containerClassName="w-full h-full rounded-full relative z-10"
+                className="w-full h-full rounded-full object-cover"
+                fallback={
+                  <div className="w-full h-full rounded-full flex items-center justify-center relative z-10">
+                    <User className="w-3.5 h-3.5 text-current" />
+                  </div>
+                }
+              />
 
               {tier === 'pro' && (
                 <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-white dark:ring-slate-950 z-20 pointer-events-none" />

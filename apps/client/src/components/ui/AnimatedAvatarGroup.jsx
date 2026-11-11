@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
+import ShimmerImage from './ShimmerImage';
 
 /**
  * AnimatedAvatarGroup - Production-grade Overlapping Animated Avatar Stack
@@ -75,21 +76,15 @@ export default function AnimatedAvatarGroup({
                 className="rounded-full overflow-hidden border-2 border-slate-50 dark:border-slate-950 shadow-sm ring-1 ring-slate-900/10 dark:ring-white/10 transition-colors bg-slate-200 dark:bg-slate-800"
                 style={{ width: `${size}px`, height: `${size}px` }}
               >
-                {avatar.src || avatar.avatar_url ? (
-                  <img
-                    src={avatar.src || avatar.avatar_url}
-                    alt={avatar.name || avatar.alt || 'Contributor'}
-                    className="w-full h-full object-cover pointer-events-none"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-slate-300">
-                    {(avatar.name || 'U').charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <ShimmerImage
+                  src={avatar.src || avatar.avatar_url}
+                  alt={avatar.name || avatar.alt || 'Contributor'}
+                  containerClassName="w-full h-full rounded-full"
+                  className="w-full h-full object-cover pointer-events-none"
+                  loading="lazy"
+                  fallbackText={(avatar.name || 'U').charAt(0).toUpperCase()}
+                  fallbackClassName="w-full h-full flex items-center justify-center font-mono font-bold text-xs text-slate-700 dark:text-slate-300 select-none"
+                />
               </div>
 
               {/* Tooltip on Hover */}

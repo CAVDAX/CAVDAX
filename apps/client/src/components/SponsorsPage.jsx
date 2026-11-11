@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import SphereImageGrid from './ui/SphereImageGrid';
+import ShimmerImage from './ui/ShimmerImage';
 import Tooltip from './Tooltip';
 
 // Custom Minimalist Icons for Tiers matching SupportPage.jsx
@@ -602,17 +603,14 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                       }}
                     >
                       <div className="flex items-start gap-4">
-                        {backer.avatar_url || backer.avatarUrl ? (
-                          <img
-                            src={backer.avatar_url || backer.avatarUrl}
-                            alt={backer.name || backer.backer_name || 'Core Patron'}
-                            className="w-12 h-12 rounded-xl object-cover ring-1 ring-slate-400/30 dark:ring-white/20 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-mono font-bold text-base shrink-0 ring-1 ring-slate-300 dark:ring-white/15">
-                            {(backer.name || backer.backer_name || backer.github_handle || 'C').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <ShimmerImage
+                          src={backer.avatar_url || backer.avatarUrl}
+                          alt={backer.name || backer.backer_name || 'Core Patron'}
+                          containerClassName="w-12 h-12 rounded-xl shrink-0 ring-1 ring-slate-400/30 dark:ring-white/20"
+                          className="w-full h-full object-cover"
+                          fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'C').charAt(0).toUpperCase()}
+                          fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-mono font-bold text-base select-none"
+                        />
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
@@ -675,17 +673,14 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                       }}
                     >
                       <div className="flex items-center gap-3">
-                        {backer.avatar_url || backer.avatarUrl ? (
-                          <img
-                            src={backer.avatar_url || backer.avatarUrl}
-                            alt={backer.name || backer.backer_name || '2 Cups Backer'}
-                            className="w-9 h-9 rounded-lg object-cover ring-1 ring-slate-300/40 dark:ring-white/15 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 flex items-center justify-center font-mono font-bold text-xs shrink-0">
-                            {(backer.name || backer.backer_name || backer.github_handle || '2C').charAt(0).toUpperCase()}
-                          </div>
-                        )}
+                        <ShimmerImage
+                          src={backer.avatar_url || backer.avatarUrl}
+                          alt={backer.name || backer.backer_name || '2 Cups Backer'}
+                          containerClassName="w-9 h-9 rounded-lg shrink-0 ring-1 ring-slate-300/40 dark:ring-white/15"
+                          className="w-full h-full object-cover"
+                          fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'B').charAt(0).toUpperCase()}
+                          fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 flex items-center justify-center font-mono font-bold text-xs select-none"
+                        />
                         <div className="min-w-0 flex-1">
                           <h4 className="text-xs font-medium text-slate-900 dark:text-white truncate">
                             {backer.name || backer.backer_name || (backer.github_handle ? `@${backer.github_handle}` : 'Backer')}
@@ -736,17 +731,14 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                         borderRadius: '16px', // Super-Ellipse
                       }}
                     >
-                      {backer.avatar_url || backer.avatarUrl ? (
-                        <img
-                          src={backer.avatar_url || backer.avatarUrl}
-                          alt={backer.name || backer.backer_name || 'Cookie Backer'}
-                          className="w-7 h-7 rounded-md object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="w-7 h-7 rounded-md bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono font-bold text-[10px] shrink-0">
-                          {(backer.name || backer.backer_name || backer.github_handle || 'B').charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <ShimmerImage
+                        src={backer.avatar_url || backer.avatarUrl}
+                        alt={backer.name || backer.backer_name || 'Cookie Backer'}
+                        containerClassName="w-7 h-7 rounded-md shrink-0"
+                        className="w-full h-full object-cover"
+                        fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'B').charAt(0).toUpperCase()}
+                        fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono font-bold text-[10px] select-none"
+                      />
                       <div className="min-w-0 flex-1">
                         <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate block">
                           {backer.name || backer.backer_name || (backer.github_handle ? `@${backer.github_handle}` : 'Backer')}
