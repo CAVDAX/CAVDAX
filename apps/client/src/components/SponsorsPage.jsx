@@ -13,7 +13,8 @@ import {
   Loader2,
   Sun,
   Moon,
-  X
+  X,
+  Github
 } from 'lucide-react';
 import { playClick } from '../utils/soundFx';
 import SphereImageGrid from './ui/SphereImageGrid';
@@ -160,6 +161,22 @@ const FILTER_TABS = [
  * - §90: Universal Modal Portal Isolation
  * - §91: Anti-Orphan Heading Typography
  */
+
+/**
+ * Resolves verified GitHub metadata and clean display credentials for backer directory.
+ * Defends against spoofed handles, internal evaluation tokens, and anonymous backers.
+ */
+function getBackerGithubData(backer) {
+  if (!backer) return { handle: null, url: null, name: 'Backer' };
+  const rawHandle = backer.github_handle || backer.githubHandle || backer.github || '';
+  const trimmed = typeof rawHandle === 'string' ? rawHandle.trim() : '';
+  const isExcluded = !trimmed || trimmed.startsWith('evaluator-') || trimmed === 'community-backer' || trimmed === 'anonymous';
+  const cleanHandle = isExcluded ? null : trimmed.replace(/^@/, '').replace(/^https?:\/\/github\.com\//, '').replace(/\/$/, '');
+  const url = cleanHandle ? `https://github.com/${encodeURIComponent(cleanHandle)}` : null;
+  const name = backer.name || backer.backer_name || (cleanHandle ? `@${cleanHandle}` : 'Backer');
+  return { handle: cleanHandle, url, name };
+}
+
 export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user, isDarkTheme = true, onToggleTheme }) {
   const [sponsors, setSponsors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -610,56 +627,74 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {visibleCoreBackers.map((backer) => (
-                    <div
-                      key={backer.id}
-                      className="group relative p-5 rounded-2xl bg-white/80 dark:bg-white/[0.03] border border-slate-300/80 dark:border-white/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-white/5 hover:border-slate-400 dark:hover:border-white/25"
-                      style={{
-                        borderRadius: '24px', // Continuous Super-Ellipse Curvature
-                      }}
-                    >
-                      <div className="flex items-start gap-4">
-                        <ShimmerImage
-                          src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
-                          alt={backer.name || backer.backer_name || 'Core Patron'}
-                          containerClassName="w-12 h-12 rounded-xl shrink-0 ring-1 ring-slate-400/30 dark:ring-white/20"
-                          className="w-full h-full object-cover"
-                          fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'C').charAt(0).toUpperCase()}
-                          fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-mono font-bold text-base select-none"
-                        />
+                  {visibleCoreBackers.map((backer) => {
+                    const gh = getBackerGithubData(backer);
+                    return (
+                      <div
+                        key={backer.id}
+                        className="group relative p-5 rounded-2xl bg-white/80 dark:bg-white/[0.03] border border-slate-300/80 dark:border-white/10 backdrop-blur-2xl transition-all duration-300 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-white/5 hover:border-slate-400 dark:hover:border-white/25"
+                        style={{
+                          borderRadius: '24px', // Continuous Super-Ellipse Curvature
+                        }}
+                      >
+                        <div className="flex items-start gap-4">
+                          <ShimmerImage
+                            src={backer.avatar_url || backer.avatarUrl || (gh.handle ? `https://github.com/${gh.handle}.png` : null)}
+                            alt={gh.name}
+                            containerClassName="w-12 h-12 rounded-xl shrink-0 ring-1 ring-slate-400/30 dark:ring-white/20"
+                            className="w-full h-full object-cover"
+                            fallbackText={gh.name.charAt(0).toUpperCase()}
+                            fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center font-mono font-bold text-base select-none"
+                          />
 
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                              {backer.name || backer.backer_name || (backer.github_handle ? `@${backer.github_handle}` : 'Backer')}
-                            </h3>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/15 shrink-0">
-                              <ShinyGemIcon className="w-2.5 h-2.5" />
-                              Core Patron
-                            </span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h3 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                                {gh.name}
+                              </h3>
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/15">
+                                  <ShinyGemIcon className="w-2.5 h-2.5" />
+                                  Core Patron
+                                </span>
+                                {gh.url && (
+                                  <Tooltip content={`View @${gh.handle} on GitHub`} position="top">
+                                    <a
+                                      href={gh.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="p-1 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 group/gh"
+                                      aria-label={`View @${gh.handle} on GitHub`}
+                                    >
+                                      <Github className="w-3.5 h-3.5 transition-transform duration-200 group-hover/gh:scale-110" />
+                                    </a>
+                                  </Tooltip>
+                                )}
+                              </div>
+                            </div>
+
+                            {gh.url && (
+                              <a
+                                href={gh.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors mt-0.5"
+                              >
+                                <span>@{gh.handle}</span>
+                                <ArrowUpRight className="w-2.5 h-2.5 opacity-60" />
+                              </a>
+                            )}
+
+                            {(backer.backer_message || backer.quote) && (
+                              <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-300 italic font-sans border-l-2 border-slate-300 dark:border-white/30 pl-2.5 py-0.5">
+                                "{backer.backer_message || backer.quote}"
+                              </p>
+                            )}
                           </div>
-
-                          {backer.github_handle && (
-                            <a
-                              href={`https://github.com/${encodeURIComponent(String(backer.github_handle).replace(/^@/, ''))}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500 hover:text-slate-950 dark:hover:text-white transition-colors mt-0.5"
-                            >
-                              <span>@{String(backer.github_handle).replace(/^@/, '')}</span>
-                              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
-                            </a>
-                          )}
-
-                          {(backer.backer_message || backer.quote) && (
-                            <p className="mt-2.5 text-xs text-slate-600 dark:text-slate-300 italic font-sans border-l-2 border-slate-300 dark:border-white/30 pl-2.5 py-0.5">
-                              "{backer.backer_message || backer.quote}"
-                            </p>
-                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -680,45 +715,63 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {visibleTwoCupsBackers.map((backer) => (
-                    <div
-                      key={backer.id}
-                      className="p-4 rounded-2xl bg-white/60 dark:bg-white/[0.025] border border-slate-200/80 dark:border-white/10 backdrop-blur-xl transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20"
-                      style={{
-                        borderRadius: '20px', // Super-Ellipse
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <ShimmerImage
-                          src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
-                          alt={backer.name || backer.backer_name || '2 Cups Backer'}
-                          containerClassName="w-9 h-9 rounded-lg shrink-0 ring-1 ring-slate-300/40 dark:ring-white/15"
-                          className="w-full h-full object-cover"
-                          fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'B').charAt(0).toUpperCase()}
-                          fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 flex items-center justify-center font-mono font-bold text-xs select-none"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-medium text-slate-900 dark:text-white truncate">
-                            {backer.name || backer.backer_name || (backer.github_handle ? `@${backer.github_handle}` : 'Backer')}
-                          </h4>
-                          {backer.github_handle ? (
+                  {visibleTwoCupsBackers.map((backer) => {
+                    const gh = getBackerGithubData(backer);
+                    return (
+                      <div
+                        key={backer.id}
+                        className="p-4 rounded-2xl bg-white/60 dark:bg-white/[0.025] border border-slate-200/80 dark:border-white/10 backdrop-blur-xl transition-all duration-200 hover:border-slate-300 dark:hover:border-white/20 flex items-center justify-between gap-3"
+                        style={{
+                          borderRadius: '20px', // Super-Ellipse
+                        }}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <ShimmerImage
+                            src={backer.avatar_url || backer.avatarUrl || (gh.handle ? `https://github.com/${gh.handle}.png` : null)}
+                            alt={gh.name}
+                            containerClassName="w-9 h-9 rounded-lg shrink-0 ring-1 ring-slate-300/40 dark:ring-white/15"
+                            className="w-full h-full object-cover"
+                            fallbackText={gh.name.charAt(0).toUpperCase()}
+                            fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-slate-200 flex items-center justify-center font-mono font-bold text-xs select-none"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <h4 className="text-xs font-medium text-slate-900 dark:text-white truncate">
+                              {gh.name}
+                            </h4>
+                            {gh.handle ? (
+                              <a
+                                href={gh.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[10px] font-mono text-slate-500 hover:text-slate-900 dark:hover:text-white truncate block transition-colors"
+                              >
+                                @{gh.handle}
+                              </a>
+                            ) : (
+                              <span className="text-[10px] font-mono text-slate-400">
+                                Backer
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {gh.url && (
+                          <Tooltip content={`View @${gh.handle} on GitHub`} position="left">
                             <a
-                              href={`https://github.com/${encodeURIComponent(String(backer.github_handle).replace(/^@/, ''))}`}
+                              href={gh.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-[10px] font-mono text-slate-500 hover:text-slate-900 dark:hover:text-white truncate block"
+                              className="p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 group/gh"
+                              aria-label={`View @${gh.handle} on GitHub`}
                             >
-                              @{String(backer.github_handle).replace(/^@/, '')}
+                              <Github className="w-4 h-4 transition-transform duration-200 group-hover/gh:scale-110" />
+                              <ArrowUpRight className="w-2.5 h-2.5 ml-0.5 opacity-60 group-hover/gh:opacity-100" />
                             </a>
-                          ) : (
-                            <span className="text-[10px] font-mono text-slate-400">
-                              Backer
-                            </span>
-                          )}
-                        </div>
+                          </Tooltip>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
@@ -739,29 +792,54 @@ export default function SponsorsPage({ onNavigateToSupport, onPrefetchTab, user,
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {visibleCookieBackers.map((backer) => (
-                    <div
-                      key={backer.id}
-                      className="p-3 rounded-xl bg-white/50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/10 backdrop-blur-lg flex items-center gap-2.5 transition-all hover:border-slate-300 dark:hover:border-white/20"
-                      style={{
-                        borderRadius: '16px', // Super-Ellipse
-                      }}
-                    >
-                      <ShimmerImage
-                        src={backer.avatar_url || backer.avatarUrl || (backer.github_handle && !String(backer.github_handle).startsWith('evaluator-') ? `https://github.com/${String(backer.github_handle).replace(/^@/, '').trim()}.png` : null)}
-                        alt={backer.name || backer.backer_name || 'Cookie Backer'}
-                        containerClassName="w-7 h-7 rounded-md shrink-0"
-                        className="w-full h-full object-cover"
-                        fallbackText={(backer.name || backer.backer_name || backer.github_handle || 'B').charAt(0).toUpperCase()}
-                        fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono font-bold text-[10px] select-none"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate block">
-                          {backer.name || backer.backer_name || (backer.github_handle ? `@${backer.github_handle}` : 'Backer')}
-                        </span>
+                  {visibleCookieBackers.map((backer) => {
+                    const gh = getBackerGithubData(backer);
+                    return (
+                      <div
+                        key={backer.id}
+                        className="group/card p-3 rounded-xl bg-white/50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/10 backdrop-blur-lg flex items-center justify-between gap-2.5 transition-all hover:border-slate-300 dark:hover:border-white/20"
+                        style={{
+                          borderRadius: '16px', // Super-Ellipse
+                        }}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                          <ShimmerImage
+                            src={backer.avatar_url || backer.avatarUrl || (gh.handle ? `https://github.com/${gh.handle}.png` : null)}
+                            alt={gh.name}
+                            containerClassName="w-7 h-7 rounded-md shrink-0"
+                            className="w-full h-full object-cover"
+                            fallbackText={gh.name.charAt(0).toUpperCase()}
+                            fallbackClassName="w-full h-full bg-slate-100 dark:bg-white/10 text-slate-600 dark:text-slate-300 flex items-center justify-center font-mono font-bold text-[10px] select-none"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate block">
+                              {gh.name}
+                            </span>
+                            {gh.handle && backer.name && (
+                              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 truncate block">
+                                @{gh.handle}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {gh.url && (
+                          <Tooltip content={`View @${gh.handle} on GitHub`} position="left">
+                            <a
+                              href={gh.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors flex items-center justify-center shrink-0 group/gh"
+                              aria-label={`View @${gh.handle} on GitHub`}
+                            >
+                              <Github className="w-3.5 h-3.5 transition-transform duration-200 group-hover/gh:scale-110" />
+                              <ArrowUpRight className="w-2.5 h-2.5 ml-0.5 opacity-60 group-hover/gh:opacity-100" />
+                            </a>
+                          </Tooltip>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </section>
             )}
