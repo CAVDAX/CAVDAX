@@ -886,10 +886,13 @@ export default function App() {
       .then(d => {
         if (d?.authenticated && d?.user) {
           const u = {
+            ...d.user,
             login: d.user.login,
             name: d.user.name || d.user.login,
             avatarUrl: d.user.avatarUrl || d.user.avatar_url || '',
-            role: 'user'
+            role: 'user',
+            tier: d.user.tier || 'free',
+            trial: d.user.trial || null
           };
           setGithubUser(u);
           if (d.user.tier) {
@@ -902,6 +905,7 @@ export default function App() {
               name: u.name,
               avatarUrl: u.avatarUrl,
               tier: d.user.tier || 'free',
+              trial: d.user.trial || null,
               connectedAt: new Date().toISOString()
             }));
           } catch {}

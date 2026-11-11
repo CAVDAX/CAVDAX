@@ -264,14 +264,28 @@ export default function ProfilePage({
     if (tier && tier !== currentTier) {
       setCurrentTier(tier);
     }
-    // Cleanly synchronize trial state: If user is verified on free tier without active server trial, reset local trial artifact
-    if (user && !user.trial && tier === 'free') {
+    // Cleanly synchronize trial state from verified server user
+    if (user?.trial && user.trial.claimed) {
+      setTrialState(user.trial);
+      try {
+        localStorage.setItem('cavdax_pro_trial', JSON.stringify(user.trial));
+      } catch {}
+    } else if (user && !user.trial && tier === 'free') {
+      // Only clear if local storage does not hold a recorded claimed trial
+      try {
+        const local = localStorage.getItem('cavdax_pro_trial');
+        if (local) {
+          const parsed = JSON.parse(local);
+          if (parsed?.claimed) {
+            setTrialState(parsed);
+            return;
+          }
+        }
+      } catch {}
       setTrialState(null);
       try {
         localStorage.removeItem('cavdax_pro_trial');
       } catch {}
-    } else if (user?.trial && user.trial.claimed && user.trial.expiresAt > Date.now()) {
-      setTrialState(user.trial);
     }
   }, [tier, user]);
 
@@ -503,7 +517,23 @@ export default function ProfilePage({
         if (onSelectTier) onSelectTier('pro');
         showToast('7-Day Free Pro Trial activated! All Pro features unlocked.');
       } else {
-        showToast(data?.error?.message || 'Pro Trial could not be started.');
+        if (data?.error?.code === 'TRIAL_ALREADY_USED') {
+          const usedTrialObj = { claimed: true, expiresAt: 0, isActive: false };
+          setTrialState(usedTrialObj);
+          try {
+            localStorage.setItem('cavdax_pro_trial', JSON.stringify(usedTrialObj));
+            const raw = localStorage.getItem('cavdax_user_session');
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              parsed.trial = usedTrialObj;
+              localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+            }
+          } catch {}
+          showToast('Trial has already been consumed for this account. Opening upgrade options...');
+          handleRazorpayUpgrade('pro');
+        } else {
+          showToast(data?.error?.message || 'Pro Trial could not be started.');
+        }
       }
     } catch {
       // Offline fallback: simulate local trial activation
@@ -729,6 +759,20 @@ export default function ProfilePage({
   );
   // Full unrestricted access granted for core developers or global Hackathon Evaluation Mode
   const hasEvaluationPass = Boolean(isAuthorizedDev || (isHackathonMode && Boolean(activeUser)));
+  const getProButtonLabel = () => {
+    if (currentTier === 'pro') {
+      return isTrialActive
+        ? `Trial Active · Upgrade (${currency === 'INR' ? '₹299' : '$4'})`
+        : 'Current Plan';
+    }
+    if (isStartingTrial) return 'Activating Trial...';
+    if (isUpgrading) return 'Connecting...';
+    if (hasEvaluationPass) return isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)';
+    if (!activeUser) return 'Sign In to Activate';
+    if (isTrialActive) return `Resume Pro Trial (${trialDaysRemaining}d left)`;
+    if (!hasUsedTrial) return 'Start 7-Day Free Pro Trial';
+    return `Upgrade to Pro (${currency === 'INR' ? '₹299' : '$4'}/mo)`;
+  };
   
   // Set default flagship tier (Enterprise) when Hackathon Mode transitions, allowing free tier exploration
   const prevHackathonModeRef = React.useRef(isHackathonMode);
@@ -882,6 +926,24 @@ export default function ProfilePage({
     }
 
     if (newTier === 'pro') {
+      if (isTrialActive && currentTier !== 'pro') {
+        playClick();
+        setCurrentTier('pro');
+        try {
+          localStorage.setItem('cavdax_tier', 'pro');
+          const raw = localStorage.getItem('cavdax_user_session');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            parsed.tier = 'pro';
+            localStorage.setItem('cavdax_user_session', JSON.stringify(parsed));
+          }
+          window.dispatchEvent(new CustomEvent('cavdax:tier-changed', { detail: { tier: 'pro', trial: trialState } }));
+        } catch {}
+        syncTierWithServer('pro');
+        if (onSelectTier) onSelectTier('pro');
+        showToast(`Resumed Pro Autonomous plan (${trialDaysRemaining} days remaining in trial)`);
+        return;
+      }
       if (!isTrialActive && !hasUsedTrial) {
         handleStartTrial();
         return;
@@ -1572,7 +1634,7 @@ export default function ProfilePage({
                   </span>
                 ) : hasUsedTrial ? (
                   <span className="text-slate-500 dark:text-slate-400">
-                    Pro Trial Expired · Upgrade to continue
+                    Trial Consumed · Upgrade to continue
                   </span>
                 ) : (
                   <span>Includes 7-Day Free Pro Trial</span>
@@ -1639,23 +1701,8 @@ export default function ProfilePage({
                   </div>
                 )}
                 <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                  {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
-                  <span>
-                    {currentTier === 'pro'
-                      ? (isTrialActive
-                          ? `Trial Active · Upgrade (${currency === 'INR' ? '₹299' : '$4'})`
-                          : 'Current Plan')
-                      : (isStartingTrial
-                          ? 'Activating Trial...'
-                          : (isUpgrading
-                          ? 'Connecting...'
-                          : (hasEvaluationPass
-                              ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
-                              : (!activeUser ? 'Sign In to Activate'
-                                  : (!hasUsedTrial
-                                      ? 'Start 7-Day Free Pro Trial'
-                                      : `Upgrade (${currency === 'INR' ? '₹299' : '$4'}/mo)`)))))}
-                  </span>
+                  {(!activeUser || (!hasEvaluationPass && !isTrialActive)) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
+                  <span>{getProButtonLabel()}</span>
                 </span>
               </button>
               </div>
@@ -2643,7 +2690,7 @@ export default function ProfilePage({
                 </span>
               ) : hasUsedTrial ? (
                 <span className="text-slate-500 dark:text-slate-400">
-                  Pro Trial Expired · Upgrade to continue
+                  Trial Consumed · Upgrade to continue
                 </span>
               ) : (
                 <span>Includes 7-Day Free Pro Trial</span>
@@ -2710,23 +2757,8 @@ export default function ProfilePage({
                 </div>
               )}
               <span className="relative z-10 transition-colors duration-300 flex items-center gap-1.5">
-                {(!activeUser || !hasEvaluationPass) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
-                <span>
-                  {currentTier === 'pro'
-                    ? (isTrialActive
-                        ? `Trial Active · Upgrade (${currency === 'INR' ? '₹299' : '$4'})`
-                        : 'Current Plan')
-                    : (isStartingTrial
-                        ? 'Activating Trial...'
-                        : (isUpgrading
-                        ? 'Connecting...'
-                        : (hasEvaluationPass
-                            ? (isHackathonMode ? 'Switch to Pro' : 'Switch (Dev)')
-                            : (!activeUser ? 'Sign In to Activate'
-                                : (!hasUsedTrial
-                                    ? 'Start 7-Day Free Pro Trial'
-                                    : `Upgrade (${currency === 'INR' ? '₹299' : '$4'}/mo)`)))))}
-                </span>
+                {(!activeUser || (!hasEvaluationPass && !isTrialActive)) && currentTier !== 'pro' && <Lock className="w-3 h-3" />}
+                <span>{getProButtonLabel()}</span>
               </span>
             </button>
             </div>

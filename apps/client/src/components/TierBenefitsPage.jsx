@@ -820,6 +820,21 @@ export default function TierBenefitsPage({
                 } else if (!isLoggedIn) {
                   ctaLabel = 'Sign In to Activate';
                   showLock = true;
+                } else if (selectedTier === 'pro') {
+                  const hasClaimedTrial = Boolean(
+                    user?.trial?.claimed ||
+                    (typeof window !== 'undefined' && localStorage.getItem('cavdax_pro_trial'))
+                  );
+                  const isTrialActive = Boolean(
+                    user?.trial?.claimed &&
+                    user?.trial?.expiresAt &&
+                    user.trial.expiresAt > Date.now()
+                  );
+                  if (isTrialActive) {
+                    ctaLabel = 'Resume Pro Trial';
+                  } else if (hasClaimedTrial) {
+                    ctaLabel = 'Upgrade to Pro';
+                  }
                 }
 
                 const handleCtaClick = () => {
