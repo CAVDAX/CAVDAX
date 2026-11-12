@@ -628,7 +628,7 @@ export default function ProfilePage({
       showToast("Please connect your GitHub account to activate your 7-Day Free Pro Trial.");
       return;
     }
-    if (isStartingTrial) return;
+    if (isStartingTrial || upgradingTier) return;
     setIsStartingTrial(true);
 
     try {
@@ -669,7 +669,7 @@ export default function ProfilePage({
             }
           } catch {}
           showToast('Trial has already been consumed for this account. Opening upgrade options...');
-          handleRazorpayUpgrade('pro');
+          handleRazorpayUpgrade('pro', { fromTrialFallback: true });
         } else {
           showToast(data?.error?.message || 'Pro Trial could not be started.');
         }
@@ -696,7 +696,7 @@ export default function ProfilePage({
     }
   };
 
-  const handleRazorpayUpgrade = async (targetTier = 'pro') => {
+  const handleRazorpayUpgrade = async (targetTier = 'pro', opts = {}) => {
     if (!user) {
       showToast("Please connect your GitHub account to proceed — we’ll bind your tier to your verified identity.");
       return;
@@ -711,7 +711,7 @@ export default function ProfilePage({
       showToast("Live subscription payments are disabled on localhost to prevent stranded funds. Upgrade on our production platform: https://cavdax.sahnirmaan.live/profile");
       return;
     }
-    if (upgradingTier) return;
+    if (upgradingTier || (isStartingTrial && !opts?.fromTrialFallback)) return;
     setUpgradingTier(targetTier);
 
     try {
