@@ -7,17 +7,56 @@ on:
 
 jobs:
   publish:
+    name: Verify & Publish to npm
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write # Required for npm OIDC Trusted Publishing and Sigstore provenance
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - run: npm install -g npm@latest
-      - run: npm install
-        working-directory: apps/mcp-server
-      - run: npm publish --access public --provenance
+
+      - name: Install dependencies
+        run: |
+          npm install -g npm@latest
+          cd apps/server && npm install
+          cd ../mcp-server && npm install
+
+      - name: Syntax-check MCP Server Sources
+        run: |
+          node --check apps/mcp-server/bin/cavdax.js
+          node --check apps/mcp-server/src/stdioServer.js
+          node --check apps/mcp-server/src/ingestCommand.js
+          node --check apps/mcp-server/src/checkCommand.js
+          node --check apps/mcp-server/src/doctorCommand.js
+
+      - name: Run MCP Server Package Tests
+        run: node --test apps/mcp-server/test/*.test.mjs
+
+      - name: Run Server & ADR Security Tests
+        run: node --test apps/server/test/*.test.mjs
+
+      - name: Run Mechanical Anti-Slop README Invariant Gate
+        run: python scripts/audit_readme.py --strict
+
+      - name: Verify Package Version Matches Release Tag
+        run: |
+          PKG_VERSION=$(node -p "require('./apps/mcp-server/package.json').version")
+          echo "Package version: $PKG_VERSION"
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+            echo "Release tag: $TAG_VERSION"
+            if [[ "$PKG_VERSION" != "$TAG_VERSION" ]]; then
+              echo "FATAL: package.json version ($PKG_VERSION) does not match release tag ($TAG_VERSION)!"
+              exit 1
+            fi
+          fi
+
+      - name: Publish to npm with Sigstore Provenance
+        run: npm publish --access public --provenance
         working-directory: apps/mcp-server
