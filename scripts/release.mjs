@@ -54,13 +54,24 @@ if (localSha !== remoteSha) {
 }
 console.log(`✅ Branch 'main' verified at ${localSha.slice(0, 7)}.`);
 
-// 3. Read package version
+// 3. Read package version & verify server.json alignment
 console.log('\n[3/6] Reading @cavdax/mcp-server version...');
 const pkgPath = path.join(rootDir, 'apps', 'mcp-server', 'package.json');
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 const version = pkg.version;
 const tag = `v${version}`;
 console.log(`Target release version: ${version} (Tag: ${tag})`);
+
+const serverJsonPath = path.join(rootDir, 'server.json');
+if (fs.existsSync(serverJsonPath)) {
+  const serverJson = JSON.parse(fs.readFileSync(serverJsonPath, 'utf8'));
+  const serverPkgVersion = serverJson?.packages?.[0]?.version;
+  if (serverJson.version !== version || serverPkgVersion !== version) {
+    console.error(`❌ Error: server.json version (${serverJson.version} / ${serverPkgVersion}) does not match package.json (${version}).`);
+    process.exit(1);
+  }
+  console.log(`✅ server.json aligned at ${version}.`);
+}
 
 // Check if tag already exists
 const existingTags = run('git', ['tag', '-l', tag]);
