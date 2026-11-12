@@ -26,7 +26,7 @@
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-GraphBLAS-FF2D55?style=for-the-badge&logo=redis&logoColor=white)](https://falkordb.com/)
-[![MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20(MCP)-06B6D4?style=for-the-badge)](https://modelcontextprotocol.io/)
+[![MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20%28MCP%29-06B6D4?style=for-the-badge)](https://modelcontextprotocol.io/)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./docker-compose.yml)
 [![License: Apache 2.0 / BSL 1.1](https://img.shields.io/badge/License-Apache_2.0_%2F_BSL_1.1-blue.svg?style=for-the-badge)](./LICENSE)
 [![Latency](https://img.shields.io/badge/Gate%20Latency-%3C%202.5ms-8B5CF6?style=for-the-badge)](#empirical-benchmarks)
@@ -188,7 +188,7 @@ CAVDAX provides production engineering organizations with an architectural defen
 
 ## System Architecture & Execution Flow
 
-### 1. End-to-End System Architecture Flowchart
+### 1. Full System Architecture Flowchart
 
 ![CAVDAX System Architecture Flowchart](./assets/System-Architecture.svg)
 
@@ -617,7 +617,7 @@ RETURN newDecision.id AS active_decision_id, oldDecision.id AS archived_decision
 
 ### FalkorDB GraphBLAS vs. Whole-Graph Batch Algorithms (Engineering Rationale)
 
-A fundamental design question for graph-grounded agent architectures is: *Why leverage targeted variable-length path traversals (`*1..4`) rather than global graph algorithms like PageRank or Louvain Community Detection?*
+A fundamental design question for graph-grounded agent architectures is: *Why use targeted variable-length path traversals (`*1..4`) rather than global graph algorithms like PageRank or Louvain Community Detection?*
 
 1. **The Synchronous Agent Latency Budget (< 2.5ms):**
    When an autonomous coding agent invokes an MCP tool call prior to a code edit, the tool execution time directly blocks the LLM token generation stream. Running whole-graph iterative eigenvector algorithms (e.g. PageRank across thousands of nodes) introduces 200ms–1500ms of latency, causing disruptive UI stutter in the developer's IDE. In contrast, FalkorDB's **GraphBLAS linear-algebraic sparse-matrix core** executes targeted BFS/DFS path traversals in **1.2ms to 2.4ms**, delivering instant verification without stalling agent velocity.
@@ -705,7 +705,7 @@ CAVDAX is deployed and running live in production:
 
 ## Web HUD Multi-Route Topology (9 Operational Views)
 
-The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain operational interface spanning 9 specialized views:
+The CAVDAX Web HUD provides an industrial-brutalist / porcelain operational interface spanning 9 specialized views:
 
 1. **Architectural Overview (`/overview` or `/`)**: Value proposition, Causal Invalidation Radar, interactive Cytoscape.js Directed Acyclic Graph canvas with Linear-grade command search ribbon (`Cmd+K` / `Ctrl+K`), and 1-click kinetic sidebar collapse for 100% full-viewport exploration.
 2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, universal plan quota metering (enforcing strict repository limits across public and private codebases), bi-directional ADR-to-Graph selection synchronization (clicking an ADR card isolates its corresponding `:Decision` diamond on the live canvas), multi-panel dynamic flex height absorption, and universal spring-loaded dialog physics.
