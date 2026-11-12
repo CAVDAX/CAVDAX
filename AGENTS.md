@@ -1580,3 +1580,13 @@ To ensure that floating navigation docks, sidebars, modal dialogs, and viewport 
   Tooltips rendering telemetry or URLs MUST use `normalCase={true}` to prevent CSS `uppercase` from corrupting lowercase metrics (`/mo`, `/wk`).
 - **Total Eradication of Generic AI Shield SVGs**:
   Zero shield icons in toasts, banners, or action pills. Replace with contextual monochromatic indicators (`CheckCircle2` for success, `AlertCircle` for errors, `ArrowDownToLine` for downloads).
+
+## 21. Simulated CI Verification Invariant (Anti-CI Drift Rule)
+- **The Local vs. Remote CI Divergence Trap**:
+  Code or tests that branch on `process.env.CI` or `process.env.GITHUB_ACTIONS` (e.g. headless bailouts, unreachable external services like FalkorDB, strict git check commands) create dangerous latent bugs when run only in a local developer environment where `CI` is undefined. The local test run reports 100% pass, but the remote CI pipeline fails closed.
+- **The Internal Dual-Branch Test Invariant**:
+  Any test asserting code that behaves conditionally based on `process.env.CI` or `process.env.GITHUB_ACTIONS` MUST execute and assert BOTH conditions (`CI=undefined` AND `CI='true'`) within the same test block using `try...finally` environment variable restoration. Never rely on the host machine's ambient environment for coverage.
+- **Mandatory Simulated CI Pre-Commit Gate (`scripts/test-ci.mjs`)**:
+  Before any commit or merge into `main`, the developer or AI agent MUST execute `node scripts/test-ci.mjs` (or `npm test`). This runner explicitly sets `CI=true` and `GITHUB_ACTIONS=true` in a subprocess, executing all server tests, MCP tests, and strict README audits.
+- **Fail-Closed Pre-Commit Hook**:
+  The `.githooks/pre-commit` script automatically executes `node scripts/test-ci.mjs`. If any test, security check, or architectural invariant fails under simulated CI conditions, the commit is aborted immediately.
