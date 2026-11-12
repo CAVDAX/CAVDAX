@@ -1,6 +1,7 @@
 {
   "name": "@cavdax/mcp-server",
-  "version": "1.3.2",
+  "mcpName": "io.github.CAVDAX/cavdax",
+  "version": "1.3.3",
   "description": "CAVDAX Enclosed Model Context Protocol (MCP) Server backed by FalkorDB GraphBLAS",
   "main": "src/stdioServer.js",
   "type": "module",
