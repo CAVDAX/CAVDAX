@@ -10,6 +10,12 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Cloudflare Security Audit, Contributor Attribution Invariant & Full-Stack Hardening (November 12, 2026)
+- **NPM Package Version Bump to v1.3.2 (`@cavdax/mcp-server`)**:
+  - **Adversarial Audit Discovery (/devils-advocate)**:
+    - `@cavdax/mcp-server` bundles `core/` via its `prepack` script (`bundle-core.mjs`). While git branches contained all parser, query, and CI gate fixes, the public npm registry still served unpatched `v1.3.1`.
+    - Bumped `apps/mcp-server/package.json` and fallback identifiers to `v1.3.2`.
+    - Updated `README.md` release badges and npx CLI invocations (`npx -y @cavdax/mcp-server@1.3.2 gate ...`).
+    - Verified `8/8` MCP server unit tests and clean `npm run prepack` tarball copying.
 - **Mandatory `Co-authored-by:` Git Trailer Invariant (`AGENTS.md` & `Suneet-Wrap-Up-Finish`)**:
   - **Adversarial Ethical & Technical Discovery (/devils-advocate)**:
     - AI coding agents and single-lead workflows frequently commit code changes, vulnerability fixes, or architectural rewrites without crediting the peer reviewer or teammate whose audit surfaced the flaws. This deprives contributors of genuine GitHub attribution graph activity and violates open-source ethics.
