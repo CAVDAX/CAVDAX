@@ -162,7 +162,10 @@ export default function ConnectedRepoWorkspace({
   const [phase, setPhase] = useState('scanning'); // scanning | ready | error
   const [scan, setScan] = useState(null);
   const [error, setError] = useState(null);
-  const [isOpeningPr, setIsOpeningPr] = useState(false);
+  const [repoOp, setRepoOp] = useState(null); // null | 'opening-pr' | 'opening-ci-pr' | 'proposing-adr'
+  const isOpeningPr = repoOp === 'opening-pr';
+  const isOpeningCiGatePr = repoOp === 'opening-ci-pr';
+  const isProposingAdr = repoOp === 'proposing-adr';
   const [showInitConfirmModal, setShowInitConfirmModal] = useState(false);
   const [isDisconnectConfirmOpen, setIsDisconnectConfirmOpen] = useState(false);
   const [syncingTarget, setSyncingTarget] = useState(null);
@@ -189,9 +192,7 @@ export default function ConnectedRepoWorkspace({
     }
   }, [anyModalOpen]);
 
-  const [isOpeningCiGatePr, setIsOpeningCiGatePr] = useState(false);
   const [ciGatePrResult, setCiGatePrResult] = useState(null);
-  const [isProposingAdr, setIsProposingAdr] = useState(false);
   const [proposeAdrResult, setProposeAdrResult] = useState(null);
   const [proposeForm, setProposeForm] = useState({
     title: '',
@@ -492,8 +493,9 @@ export default function ConnectedRepoWorkspace({
   }, [repo.full_name, repo.default_branch]);
 
   const openPullRequest = async () => {
+    if (repoOp !== null) return;
     playClick();
-    setIsOpeningPr(true);
+    setRepoOp('opening-pr');
     setError(null);
     addLog('PULL_REQUEST', 'Creating a branch and opening a pull request with a starter ADR.');
     try {
@@ -514,7 +516,7 @@ export default function ConnectedRepoWorkspace({
     } catch {
       failWith(null, 'Could not reach the CAVDAX server. Check your connection and try again.');
     } finally {
-      setIsOpeningPr(false);
+      setRepoOp(null);
     }
   };
 
@@ -558,8 +560,9 @@ export default function ConnectedRepoWorkspace({
   };
 
   const handleCreateCiGatePr = async () => {
+    if (repoOp !== null) return;
     playClick();
-    setIsOpeningCiGatePr(true);
+    setRepoOp('opening-ci-pr');
     setError(null);
     addLog('CI_GATE', 'Drafting .github/workflows/cavdax-gate.yml and opening pull request.');
     try {
@@ -579,15 +582,16 @@ export default function ConnectedRepoWorkspace({
     } catch {
       failWith(null, 'Could not reach the CAVDAX server.');
     } finally {
-      setIsOpeningCiGatePr(false);
+      setRepoOp(null);
     }
   };
 
   const handleProposeAdrSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (repoOp !== null) return;
     playClick();
     if (!proposeForm.title.trim()) return;
-    setIsProposingAdr(true);
+    setRepoOp('proposing-adr');
     setError(null);
     addLog('PROPOSE_ADR', `Drafting new ADR: "${proposeForm.title.trim()}"`);
     try {
@@ -615,7 +619,7 @@ export default function ConnectedRepoWorkspace({
     } catch {
       failWith(null, 'Could not reach the CAVDAX server.');
     } finally {
-      setIsProposingAdr(false);
+      setRepoOp(null);
     }
   };
 
@@ -1155,7 +1159,7 @@ export default function ConnectedRepoWorkspace({
           title="No Architecture Decision Records found"
           body={<>No ADRs found in <strong className="font-mono text-slate-950 dark:text-white">{repo.full_name}</strong>. Initialize will inspect your stack and open a starter ADR-001 pull request without committing directly to <strong className="font-mono">{scan.branch}</strong>.</>}
           actions={
-            <button onClick={() => { playClick(); setShowInitConfirmModal(true); }} disabled={isOpeningPr} className={`${btnPrimary} w-full cursor-pointer`}>
+            <button onClick={() => { playClick(); setShowInitConfirmModal(true); }} disabled={repoOp !== null} className={`${btnPrimary} w-full cursor-pointer`}>
               {isOpeningPr ? <Loader2 className="w-4 h-4 animate-spin shrink-0" strokeWidth={2} /> : <GitPullRequest className="w-4 h-4 shrink-0" strokeWidth={2} />}
               <span>{isOpeningPr ? 'Opening pull request' : 'Open pull request with ADR-001'}</span>
             </button>
@@ -1705,7 +1709,7 @@ export default function ConnectedRepoWorkspace({
                       setShowInitConfirmModal(false);
                       openPullRequest();
                     }}
-                    disabled={isOpeningPr}
+                    disabled={repoOp !== null}
                     className={btnPrimary}
                   >
                     <GitPullRequest className="w-4 h-4 shrink-0" />
@@ -2037,7 +2041,7 @@ jobs:
                     <button
                       type="button"
                       onClick={handleCreateCiGatePr}
-                      disabled={isOpeningCiGatePr}
+                      disabled={repoOp !== null}
                       className={btnPrimary}
                     >
                       {isOpeningCiGatePr ? (
@@ -2219,7 +2223,7 @@ jobs:
                   </button>
                   <button
                     type="submit"
-                    disabled={isProposingAdr}
+                    disabled={repoOp !== null}
                     className={btnPrimary}
                   >
                     {isProposingAdr ? (
