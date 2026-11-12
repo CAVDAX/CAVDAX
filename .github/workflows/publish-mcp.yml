@@ -67,11 +67,24 @@ jobs:
         working-directory: apps/mcp-server
         run: |
           PKG_VERSION=$(node -p "require('./package.json').version")
-          if npm view "@cavdax/mcp-server@$PKG_VERSION" version >/dev/null 2>&1; then
+          if curl -sf "https://registry.npmjs.org/@cavdax%2fmcp-server/$PKG_VERSION" >/dev/null; then
             echo "@cavdax/mcp-server@$PKG_VERSION is already published on npm — skipping duplicate npm publish."
           else
             npm publish --access public --provenance
           fi
+
+      - name: Wait for npm CDN propagation
+        run: |
+          PKG_VERSION=$(node -p "require('./apps/mcp-server/package.json').version")
+          for i in $(seq 1 18); do
+            if curl -sf "https://registry.npmjs.org/@cavdax%2fmcp-server/$PKG_VERSION" >/dev/null; then
+              echo "npm registry propagated @cavdax/mcp-server@$PKG_VERSION (attempt $i)."
+              exit 0
+            fi
+            echo "Waiting for npm propagation ($i/18)..."
+            sleep 5
+          done
+          echo "Proceeding after propagation wait."
 
       - name: Publish to Official MCP Registry
         run: |
