@@ -193,19 +193,19 @@ export class CavdaxMcpServer {
         }
       },
       {
-        name: 'explain_blast_radius',
-        description: 'Computes downstream architectural blast radius and invalidated dependencies before modifying an ADR, Decision, or Fact.',
+        name: 'get_decision_details',
+        description: 'Read-only full inspection of a single architectural decision (decision_id), including its metadata, grounded facts/sources, upstream/downstream causal dependencies, and lock state.',
         parameters: {
           type: 'object',
           properties: {
-            node_id: { type: 'string', description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.' }
+            decision_id: { type: 'string', description: 'The ID of the Architecture Decision (e.g. DEC-102 or ADR-001) to inspect in full.' }
           },
-          required: ['node_id']
+          required: ['decision_id']
         }
       },
       {
-        name: 'explain_architectural_impact',
-        description: 'Analyzes downstream architectural impact, invalidated decisions, and affected source files before modifying an ADR, Decision, or Fact. (Alias for explain_blast_radius).',
+        name: 'explain_blast_radius',
+        description: 'Read-only downstream reachability analysis: computes which decisions and governed files will be invalidated before modifying an upstream ADR, Decision, or Fact.',
         parameters: {
           type: 'object',
           properties: {
@@ -237,6 +237,8 @@ export class CavdaxMcpServer {
       return await this.executeExportGraphImage(args);
     } else if (toolName === 'list_active_decisions') {
       return await this.executeListActiveDecisions(args);
+    } else if (toolName === 'get_decision_details') {
+      return await this.executeGetDecisionDetails(args);
     } else if (toolName === 'explain_blast_radius' || toolName === 'explain_architectural_impact') {
       return await this.executeExplainBlastRadius(args);
     } else {
@@ -576,6 +578,61 @@ export class CavdaxMcpServer {
       total_decisions: decisions.length,
       active_count: decisions.filter((d) => d.status === 'APPROVED' || d.status === 'VALID' || d.status === 'ACTIVE').length,
       decisions
+    };
+  }
+
+  /**
+   * Read-only full inspection of a single architectural decision
+   */
+  async executeGetDecisionDetails({ decision_id } = {}) {
+    if (!decision_id || typeof decision_id !== 'string' || !decision_id.trim()) {
+      return { isError: true, status: 'ERROR', found: false, message: 'decision_id is required to inspect decision details.' };
+    }
+    const cleanId = decision_id.trim().slice(0, 128);
+    let graphState = { nodes: [], edges: [] };
+    if (this.graph) {
+      try {
+        graphState = await fetchGraphState(this.graph);
+      } catch (err) {
+        console.warn('[MCP Gate] Could not fetch graph state from FalkorDB:', err.message);
+      }
+    }
+
+    const nodeMap = new Map(graphState.nodes.map((n) => [n.id, n]));
+    const targetNode = nodeMap.get(cleanId);
+    if (!targetNode) {
+      return {
+        isError: true,
+        status: 'ERROR',
+        found: false,
+        decision_id: cleanId,
+        message: `Decision '${cleanId}' not found in active architecture graph.`
+      };
+    }
+
+    const upstreamEdges = graphState.edges.filter((e) => e.source === cleanId);
+    const downstreamEdges = graphState.edges.filter((e) => e.target === cleanId);
+    const lock = globalLockManager.checkLock(cleanId);
+
+    return {
+      status: 'SUCCESS',
+      found: true,
+      decision: {
+        ...targetNode,
+        governs: targetNode.target_file || 'src/**',
+        grounded_in: upstreamEdges.filter((e) => e.type === 'DEPENDS_ON').map((e) => e.target),
+        lock_status: lock.locked ? { locked: true, locked_by: lock.locked_by } : { locked: false },
+        upstream_dependencies: upstreamEdges.map((e) => ({
+          id: e.target,
+          relation: e.type || 'DEPENDS_ON',
+          ...(nodeMap.get(e.target) ? { label: nodeMap.get(e.target).label, status: nodeMap.get(e.target).status, title: nodeMap.get(e.target).title } : {})
+        })),
+        downstream_dependents: downstreamEdges.map((e) => ({
+          id: e.source,
+          relation: e.type || 'DEPENDS_ON',
+          ...(nodeMap.get(e.source) ? { label: nodeMap.get(e.source).label, status: nodeMap.get(e.source).status, title: nodeMap.get(e.source).title } : {})
+        }))
+      }
     };
   }
 

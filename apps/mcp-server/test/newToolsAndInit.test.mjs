@@ -80,6 +80,38 @@ test('explain_blast_radius returns downstream impact and severity', async () => 
     assert.ok(Array.isArray(blast.governed_files_at_risk));
     assert.ok(Array.isArray(blast.direct_dependent_decisions));
     assert.ok(typeof blast.blast_radius_score === 'number');
+
+    // Backward-compatible unadvertised alias still dispatches
+    assert.equal(tool('explain_architectural_impact'), undefined, 'duplicate alias must not be advertised in TOOLS');
+    const aliasBlast = await call('explain_architectural_impact', { node_id: 'DEC-102' });
+    assert.equal(aliasBlast.status, 'SUCCESS');
+    assert.equal(aliasBlast.node_id, 'DEC-102');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('get_decision_details returns full decision context and every tool has annotations + outputSchema', async () => {
+  for (const t of TOOLS) {
+    assert.ok(t.annotations && typeof t.annotations.readOnlyHint === 'boolean', `${t.name} must declare MCP annotations`);
+    assert.ok(t.outputSchema && t.outputSchema.type === 'object', `${t.name} must declare outputSchema`);
+  }
+
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cavdax-detail-'));
+  try {
+    const gateway = new CavdaxStdioGateway({ repoRoot: root, mode: 'simulation' });
+    const call = async (name, args) => JSON.parse((await gateway.callTool(name, args)).content[0].text);
+
+    const missing = await call('get_decision_details', { decision_id: 'NON_EXISTENT' });
+    assert.equal(missing.status, 'ERROR');
+    assert.equal(missing.found, false);
+
+    const detail = await call('get_decision_details', { decision_id: 'DEC-102' });
+    assert.equal(detail.status, 'SUCCESS');
+    assert.equal(detail.found, true);
+    assert.equal(detail.decision.id, 'DEC-102');
+    assert.ok(Array.isArray(detail.decision.upstream_dependencies));
+    assert.ok(Array.isArray(detail.decision.downstream_dependents));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
