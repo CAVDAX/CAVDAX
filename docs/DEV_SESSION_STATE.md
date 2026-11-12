@@ -10,16 +10,17 @@
 ## 🏆 Completed Milestones & Architectural Landings
 
 ### 0. Truth-in-Engineering & Forensic Tier Hardening (November 11, 2026)
-- **Optical Comma Kerning in Monospace Hero Typography (`TierBenefitsPage.jsx`)**:
+- **Precision Optical Comma Kerning in Monospace Hero Typography (`TierBenefitsPage.jsx`)**:
   - **Adversarial Forensic Discovery (/devils-advocate)**:
-    - In monospace fonts (`"Fira Code"`, `"JetBrains Mono"`), every glyph has a fixed advance width (36px at 60px font size). The comma character `,` occupies only the bottom-left 6px of its cell, leaving 30px of empty space inside its bounding box.
-    - When followed by a standard monospace space ` ` (another 36px cell) and `tracking-wide`, the total blank gap between `Plans,` and `Capabilities` blew out to ~70px (over 1.5x wider than the 45px word space between `Tier` and `Plans`), creating a glaring visual chasm.
+    - In monospace fonts (`"Fira Code"`, `"JetBrains Mono"`), every glyph has a fixed advance width (36px at 60px font size). The comma character `,` occupies only the bottom-left of its cell, leaving blank space on both sides.
+    - Initial one-sided negative margin (`-mr-3.5`) pulled the trailing word closer, but left the leading fixed-cell gap intact between `'s'` in `Plans` and `,`, making the comma appear to float with an awkward space before it (`Plans , Capabilities`).
   - **The High-Craft Architectural Resolution**:
-    - Replaced bloated `tracking-wide` with pure `tracking-normal`.
-    - Applied negative right-margin kerning to the comma glyph: `Tier Plans<span className="-mr-2 sm:-mr-3.5">,</span> Capabilities`.
-    - Result: Absorbed the empty fixed-cell void, equalizing the visual gap after the comma with the rest of the heading for pristine typographic optical equilibrium.
+    - Replaced one-sided pixel kerning with mathematically invariant font-relative character units (`ch`) on an inline-block container:
+      `Tier Plans<span className="inline-block -ml-[0.42ch] -mr-[0.35ch]">,</span> Capabilities`.
+    - `-ml-[0.42ch]` pulls the comma snug against the tail of `'s'`, while `-mr-[0.35ch]` equalizes the remaining advance width with the following space, ensuring the visual gap after the comma exactly equals the standard word spacing.
+    - Because `ch` is relative to the exact font size, this optical balance remains invariant across all responsive breakpoints (`text-4xl`, `text-5xl`, `text-6xl`).
   - **Empirical Visual Audit**:
-    - Captured `proof-kerned-comma-live-dark.png` and `proof-kerned-comma-live-light.png`.
+    - Captured `proof-tier-heading-final-dark.png` and `proof-tier-heading-final-light.png`.
 - **Eradication of Hero Background Mask & Spacious Typographic Breathing Room (`TierBenefitsPage.jsx`)**:
   - **Adversarial Forensic Discovery (/devils-advocate)**:
     - Any background mask div (whether wide or tight) introduced an artificial geometric boundary into the fluid Lightfall atmospheric tunnel.
