@@ -219,6 +219,13 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
 0r. **Authentic Contributor Attribution & Production Terminology Standard**:
    - **Commit-Derived Attribution**:
      - Derive team contributions directly from authentic git commit logs, verified artifacts (video walkthroughs, npm packages with Sigstore provenance, AST scanners, webhook integrations), and actual code commits rather than generic placeholder roles.
+   - **Mandatory `Co-authored-by:` Git Commit Trailer Invariant**:
+     - Whenever a teammate, peer reviewer, or contributor assists with ideation, vulnerability discovery, adversarial review, bugfix design, testing, or code authoring, ALWAYS append standard GitHub `Co-authored-by:` trailers at the bottom of the commit message preceded by a blank line:
+       ```git
+       Co-authored-by: Full Name <email@example.com>
+       ```
+     - If the contributor has multiple active GitHub emails or profiles (e.g. personal and corporate/academic), include trailers for both (e.g. `geetika7chugh@gmail.com` and `geetika@ibm.com`) so GitHub's UI automatically associates the commit with their profile, renders their avatar, and credits authentic contributions.
+     - Never omit co-authorship when committing fixes that were surfaced, audited, or shaped by a teammate.
    - **Professional Systems Terminology**:
      - Ban gaming or aviation slang like "Web HUD" in enterprise developer platforms; use authoritative, industry-standard terms such as "Visual Operational Console" or "Interactive Telemetry Console".
 
