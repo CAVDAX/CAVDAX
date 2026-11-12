@@ -235,10 +235,15 @@ class PersistentFileStore extends session.Store {
   }
 }
 
-// Cryptographic signing & verification helpers (Defense-in-depth)
+// Cryptographic signing & verification helpers (Defense-in-depth, OWASP A02/A07 Hardening)
 function signAuthToken(payload) {
   try {
-    const json = JSON.stringify(payload);
+    const enriched = {
+      ...payload,
+      exp: payload.exp || (Date.now() + 30 * 24 * 60 * 60 * 1000), // Enforce 30-day token lifetime
+      jti: payload.jti || randomBytes(16).toString('hex')
+    };
+    const json = JSON.stringify(enriched);
     const data = Buffer.from(json, 'utf8').toString('base64url');
     const sig = createHmac('sha256', SESSION_SECRET).update(data).digest('base64url');
     return `${data}.${sig}`;
@@ -265,7 +270,8 @@ function verifyAuthToken(token) {
     const json = Buffer.from(data, 'base64url').toString('utf8');
     const parsed = JSON.parse(json);
     if (!parsed || typeof parsed !== 'object') return null;
-    if (parsed.exp && (typeof parsed.exp !== 'number' || parsed.exp < Date.now())) return null;
+    // Mandatory expiration check (Fix H9: prevent non-expiring stolen cookies)
+    if (!parsed.exp || typeof parsed.exp !== 'number' || parsed.exp < Date.now()) return null;
     if (typeof parsed.login !== 'string' || parsed.login.length > 64) return null;
     if (parsed.name && typeof parsed.name === 'string' && parsed.name.length > 128) {
       parsed.name = parsed.name.slice(0, 128);
@@ -748,10 +754,12 @@ function requireAuthOrDemo(req, res, next) {
 
   const isDemoIngest = req.path === '/api/ingest' && (!req.body?.filePath || req.body.filePath.includes('demo-repo'));
   const isDemoAct4 = req.path === '/api/act-iv-revalidate';
+  // Fix C4: Whitelist canonical demo IDs strictly for anonymous revalidation
   const isDemoMcp = req.path === '/api/mcp/call' && (
     !req.body?.args?.file_path || req.body.args.file_path.includes('demo-repo') || req.body.args.file_path === 'src/services/payment.js'
   ) && (
-    ['DEC-102', 'DEC-103'].includes(req.body?.args?.decision_id) || req.body?.toolName === 'revalidate_decision'
+    ['DEC-102', 'DEC-103'].includes(req.body?.args?.decision_id) ||
+    (req.body?.toolName === 'revalidate_decision' && ['DEC-102', 'DEC-103'].includes(req.body?.args?.old_decision_id || req.body?.args?.decision_id))
   );
 
   if (isDemoIngest || isDemoAct4 || isDemoMcp) {
@@ -770,23 +778,25 @@ function requireAuthOrDemo(req, res, next) {
 const sseClients = new Set();
 
 // In-memory registry of active remote MCP SSE agent sessions (MCP 2024-11-05)
-// Each entry: { id, res, createdAt }
+// Each entry: { id, res, createdAt, lastActiveAt }
 const mcpSessions = new Map();
 
-// TTL for idle MCP SSE sessions — clean up sessions whose HTTP connection was
-// dropped without a 'close' event (e.g. network failures, proxy crashes).
-const MCP_SESSION_TTL_MS = 5 * 60 * 1000; // 5 minutes
+// TTL for idle MCP SSE sessions (Fix H13: evict on idleness, not creation; send keepalives)
+const MCP_SESSION_TTL_MS = 15 * 60 * 1000; // 15 minutes of inactivity
 
 setInterval(() => {
   const now = Date.now();
   for (const [sessionId, session] of mcpSessions) {
-    if (now - session.createdAt > MCP_SESSION_TTL_MS) {
+    if (now - (session.lastActiveAt || session.createdAt) > MCP_SESSION_TTL_MS) {
       try { session.res.end(); } catch { /* already closed */ }
       mcpSessions.delete(sessionId);
-      console.log(`[CAVDAX SSE] Evicted stale MCP session ${sessionId} (TTL exceeded)`);
+      console.log(`[CAVDAX SSE] Evicted idle MCP session ${sessionId} (idle timeout exceeded)`);
+    } else {
+      // 30s keepalive to prevent Cloudflare/Caddy edge reverse proxies from dropping quiet TCP sockets
+      try { session.res.write(': keepalive\n\n'); } catch { /* socket already dead */ }
     }
   }
-}, 60 * 1000).unref();
+}, 30 * 1000).unref();
 
 // Stores for authentic 7-Day Pro Trials & Enterprise Corporate Domain verification
 const activeTrialsStore = new Map();
@@ -3225,12 +3235,15 @@ app.post('/api/user/tier', (req, res) => {
     req.session.user.tier = normalizedTier;
   }
 
-  if (userLogin && typeof savedSystemState !== 'undefined' && savedSystemState) {
+  // Fix C3: In Hackathon Mode, assign the tier dynamically to the active session for the evaluation,
+  // but NEVER write ephemeral hackathon evaluation overrides to savedSystemState.paidUsers on disk!
+  const shouldPersistToDisk = isDevMaintainer || (!globalHackathonMode && (isProduction ? false : isDirectLoopback));
+  if (userLogin && shouldPersistToDisk && typeof savedSystemState !== 'undefined' && savedSystemState) {
     if (!savedSystemState.paidUsers) savedSystemState.paidUsers = {};
     savedSystemState.paidUsers[userLogin] = {
       tier: normalizedTier,
       updated_at: new Date().toISOString(),
-      source: isDevMaintainer ? 'dev_roster' : (globalHackathonMode ? 'hackathon_eval' : 'dev_override')
+      source: isDevMaintainer ? 'dev_roster' : 'dev_override'
     };
     syncSystemStateToDisk();
   }
@@ -4024,6 +4037,32 @@ setInterval(() => {
   }
 }, 15 * 60 * 1000).unref();
 
+// Persistent Processed Payments Ledger to defeat Replay Attacks (Fix C2, OWASP A02/A04 Hardening)
+const PROCESSED_PAYMENTS_FILE = path.resolve(__dirname, 'data/processed_payments.json');
+function loadProcessedPaymentIds() {
+  try {
+    if (fs.existsSync(PROCESSED_PAYMENTS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(PROCESSED_PAYMENTS_FILE, 'utf8'));
+      if (Array.isArray(data)) return new Set(data);
+    }
+  } catch (e) {
+    console.warn('[CAVDAX Razorpay] Notice loading processed_payments.json:', e.message);
+  }
+  return new Set();
+}
+const processedPaymentIds = loadProcessedPaymentIds();
+function saveProcessedPaymentId(paymentId) {
+  if (!paymentId || typeof paymentId !== 'string') return;
+  processedPaymentIds.add(paymentId);
+  try {
+    const dataDir = path.dirname(PROCESSED_PAYMENTS_FILE);
+    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+    fs.writeFileSync(PROCESSED_PAYMENTS_FILE, JSON.stringify([...processedPaymentIds]), 'utf8');
+  } catch (e) {
+    console.warn('[CAVDAX Razorpay] Notice persisting processed_payments.json:', e.message);
+  }
+}
+
 app.get('/api/billing/config', (req, res) => {
   res.json({
     configured: Boolean(razorpayClient),
@@ -4269,7 +4308,7 @@ app.post('/api/billing/create-order', async (req, res) => {
  * Returns { success: true } only if signatures match.
  * Returns 400 if signature is missing or invalid — NEVER mark as paid in this case.
  */
-app.post('/api/billing/verify-payment', (req, res) => {
+app.post('/api/billing/verify-payment', async (req, res) => {
   // Hard Localhost Confinement: Block live payment verification on loopback hosts
   const originHost = (req.headers.origin || req.headers.host || '').toLowerCase();
   if (originHost.includes('localhost') || originHost.includes('127.0.0.1')) {
@@ -4315,15 +4354,51 @@ app.post('/api/billing/verify-payment', (req, res) => {
 
   console.log(`[CAVDAX Razorpay] Payment verified: ${razorpay_payment_id} for order ${razorpay_order_id}`);
 
-  // Signature is valid — payment is genuine.
-  // Secure Tier Assignment: use server-recorded order tier; if expired/purged, default to 'pro' and never trust client input
-  const recordedOrder = pendingBillingOrders.get(razorpay_order_id);
-  const authorizedTier = recordedOrder?.tier || 'pro';
-  const isSupporter = Boolean(recordedOrder?.isSupporter);
-  const orderAmount = recordedOrder?.amount || 16900;
-  if (recordedOrder) {
-    pendingBillingOrders.delete(razorpay_order_id);
+  // Replay Attack Defense (Fix C2: defeat replayed payment payloads)
+  if (processedPaymentIds.has(razorpay_payment_id)) {
+    console.warn(`[CAVDAX Razorpay] Replay attempt detected for payment ${razorpay_payment_id}`);
+    return res.status(400).json({
+      success: false,
+      error: { code: 'PAYMENT_ALREADY_PROCESSED', message: 'Payment has already been processed and verified.' }
+    });
   }
+
+  // Signature is valid — payment is genuine.
+  // Secure Tier Assignment: use server-recorded order tier; fallback to Razorpay API if pruned; fail-closed if missing
+  let recordedOrder = pendingBillingOrders.get(razorpay_order_id);
+
+  if (!recordedOrder && razorpayClient) {
+    try {
+      const fetchedOrder = await razorpayClient.orders.fetch(razorpay_order_id);
+      if (fetchedOrder) {
+        const fetchedTier = fetchedOrder.notes?.tier;
+        const isSupporterOrder = Boolean(fetchedOrder.notes?.isSupporter || fetchedTier === 'supporter');
+        recordedOrder = {
+          amount: fetchedOrder.amount,
+          tier: isSupporterOrder ? 'free' : (fetchedTier || 'pro'),
+          isSupporter: isSupporterOrder,
+          user: req.session?.user || null,
+          createdAt: fetchedOrder.created_at ? fetchedOrder.created_at * 1000 : Date.now()
+        };
+      }
+    } catch (fetchErr) {
+      console.warn(`[CAVDAX Razorpay] Fallback fetch failed for order ${razorpay_order_id}:`, fetchErr.message);
+    }
+  }
+
+  // Fail-closed: Never default to 'pro' if order record cannot be verified!
+  if (!recordedOrder) {
+    return res.status(400).json({
+      success: false,
+      error: { code: 'ORDER_NOT_FOUND', message: 'Order record expired or invalid. Please initiate payment again.' }
+    });
+  }
+
+  const authorizedTier = recordedOrder.tier || 'free';
+  const isSupporter = Boolean(recordedOrder.isSupporter);
+  const orderAmount = recordedOrder.amount || 0;
+  pendingBillingOrders.delete(razorpay_order_id);
+  saveProcessedPaymentId(razorpay_payment_id);
 
   // Derive sponsor tier details if supporter payment
   let sponsorTierId = 1;
@@ -4395,13 +4470,14 @@ app.post('/api/billing/verify-payment', (req, res) => {
     }
   }
 
-  // Record persistent paid tier entitlement for this GitHub identity
+  // Record persistent paid tier entitlement for this GitHub identity (Fix C2: 30-day billing expiration)
   const userIdentifier = req.session?.user?.githubId ? String(req.session.user.githubId) : (req.session?.user?.login?.toLowerCase() || null);
   if (userIdentifier && !isSupporter) {
     if (!savedSystemState.paidUsers) savedSystemState.paidUsers = {};
     savedSystemState.paidUsers[userIdentifier] = {
       tier: authorizedTier,
       purchasedAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       paymentId: razorpay_payment_id,
       login: req.session.user.login || null
     };
@@ -4876,10 +4952,27 @@ app.post('/api/billing/webhook', (req, res) => {
   console.log(`[CAVDAX Razorpay Webhook] Event: ${eventType} | payment: ${paymentId} | order: ${orderId}`);
 
   switch (eventType) {
-    case 'payment.captured':
-      // TODO (feature/payment-gateway): activate Pro tier for the user linked to orderId
+    case 'payment.captured': {
       console.log(`[CAVDAX Razorpay Webhook] Payment captured ₹${(amountPaise / 100).toFixed(2)} — order ${orderId}`);
+      if (paymentId) saveProcessedPaymentId(paymentId);
+      const notes = event?.payload?.payment?.entity?.notes || {};
+      const targetUser = notes.userId || notes.login || notes.github_handle;
+      const targetTier = notes.tier || 'pro';
+      const isSupporter = Boolean(notes.isSupporter || targetTier === 'supporter');
+      if (targetUser && !isSupporter && typeof savedSystemState !== 'undefined' && savedSystemState) {
+        if (!savedSystemState.paidUsers) savedSystemState.paidUsers = {};
+        savedSystemState.paidUsers[targetUser.toLowerCase()] = {
+          tier: targetTier,
+          purchasedAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentId: paymentId || null,
+          login: targetUser
+        };
+        syncSystemStateToDisk();
+        console.log(`[CAVDAX Razorpay Webhook] Authoritative activation: ${targetTier} for user ${targetUser}`);
+      }
       break;
+    }
     case 'payment.failed':
       console.warn(`[CAVDAX Razorpay Webhook] Payment failed for order ${orderId}`);
       break;

@@ -227,7 +227,7 @@ const toolResult = (payload, isError = false) => ({
 });
 
 export class CavdaxStdioGateway {
-  constructor({ repoRoot = process.env.CAVDAX_REPO_ROOT || process.cwd(), mode = process.env.CAVDAX_MODE || 'auto' } = {}) {
+  constructor({ repoRoot = process.env.CAVDAX_REPO_ROOT || process.cwd(), mode = process.env.CAVDAX_MODE || ((process.env.CI || process.env.NODE_ENV === 'production') ? 'live' : 'auto') } = {}) {
     if (!['auto', 'live', 'simulation'].includes(mode)) {
       throw new Error(`Invalid CAVDAX_MODE '${mode}'. Use auto, live or simulation.`);
     }

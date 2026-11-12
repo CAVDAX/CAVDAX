@@ -28,14 +28,17 @@ import { cascadeInvalidation } from '../graph/queries.js';
 /**
  * MERGE a Source node into FalkorDB and return the source ID.
  * Uses ON CREATE / ON MATCH to be fully idempotent.
+ * Supports optional repo namespacing for multi-tenant isolation.
  */
-async function mergeSource(graph, { id, type, ref, title }) {
+async function mergeSource(graph, { id, type, ref, title, repo = null }) {
   await graph.query(
     `MERGE (s:Source {id: $id})
      ON CREATE SET s.type = $type, s.ref = $ref, s.title = $title,
+                   s.repo = $repo,
                    s.status = 'ACTIVE', s.created_at = timestamp()
-     ON MATCH  SET s.ref = $ref, s.title = $title`,
-    { params: { id, type, ref, title } }
+     ON MATCH  SET s.ref = $ref, s.title = $title,
+                   s.repo = coalesce(s.repo, $repo)`,
+    { params: { id, type, ref, title, repo } }
   );
 }
 
@@ -84,11 +87,12 @@ async function cascadeAll(graph, newSourceId, supersedesIds) {
  * @param {string} [opts.repoRoot] - Repo root path for git operations
  * @returns {Promise<object>}
  */
-export async function ingestGitCommit(graph, { sha, message, author = 'unknown', repoRoot = process.cwd() }) {
+export async function ingestGitCommit(graph, { sha, message, author = 'unknown', repoRoot = process.cwd(), repo = null }) {
   if (!sha || !message) throw new Error('ingestGitCommit requires sha and message');
 
+  const repoPrefix = repo ? `${repo.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
   const shortSha = sha.slice(0, 7);
-  const sourceId = `commit-${shortSha}`;
+  const sourceId = `${repoPrefix}commit-${shortSha}`;
   const title = message.split('\n')[0].trim().slice(0, 120);
 
   console.log(`[Sources] Ingesting Git commit: ${sourceId} — "${title}"`);
@@ -113,7 +117,7 @@ export async function ingestGitCommit(graph, { sha, message, author = 'unknown',
   }
   // Detect conventional commit breaking change (feat!: / fix!: / refactor!:)
   const isBreaking = /^[a-z]+!:/i.test(title);
-  const factId = `F-commit-${shortSha}`;
+  const factId = `${repoPrefix}F-commit-${shortSha}`;
   const factClaim = isBreaking
     ? `Breaking change introduced in commit ${shortSha}: ${title}`
     : `Commit ${shortSha} merged: ${title}`;
@@ -123,6 +127,7 @@ export async function ingestGitCommit(graph, { sha, message, author = 'unknown',
     type: 'COMMIT',
     ref: sha,
     title: `[${shortSha}] ${title}`,
+    repo,
   });
 
   await mergeFact(graph, { sourceId, factId, claim: factClaim });
@@ -182,13 +187,14 @@ export function parseMajorVersion(v) {
   return match ? parseInt(match[1], 10) : null;
 }
 
-export async function ingestPackageJsonChange(graph, { packageName, oldVersion, newVersion, filePath = 'package.json' }) {
+export async function ingestPackageJsonChange(graph, { packageName, oldVersion, newVersion, filePath = 'package.json', repo = null }) {
   if (!packageName || !newVersion) throw new Error('ingestPackageJsonChange requires packageName and newVersion');
 
-  // Derive a stable, deterministic source ID from package + version
+  // Derive a stable, deterministic source ID from package + version (repo namespaced if provided)
+  const repoPrefix = repo ? `${repo.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
   const sanitize = v => v.replace(/[\^~>=<\s]/g, '').replace(/\./g, '_');
-  const newSourceId = `pkg-${packageName}-${sanitize(newVersion)}`;
-  const oldSourceId = oldVersion ? `pkg-${packageName}-${sanitize(oldVersion)}` : null;
+  const newSourceId = `${repoPrefix}pkg-${packageName}-${sanitize(newVersion)}`;
+  const oldSourceId = oldVersion ? `${repoPrefix}pkg-${packageName}-${sanitize(oldVersion)}` : null;
 
   const oldMajor = parseMajorVersion(oldVersion);
   const newMajor = parseMajorVersion(newVersion);
@@ -205,9 +211,10 @@ export async function ingestPackageJsonChange(graph, { packageName, oldVersion, 
     type: 'PACKAGE_JSON',
     ref: filePath,
     title,
+    repo,
   });
 
-  const factId = `F-pkg-${packageName}-${sanitize(newVersion)}`;
+  const factId = `${repoPrefix}F-pkg-${packageName}-${sanitize(newVersion)}`;
   const factClaim = `${packageName}@${newVersion} is the active dependency version; prior API surface ${oldVersion || 'unknown'} is prohibited`;
 
   await mergeFact(graph, { sourceId: newSourceId, factId, claim: factClaim });
@@ -284,15 +291,16 @@ export async function scanAndIngestPackageJson(graph, filePath) {
  * @param {string} opts.newOwner   - New owner handle (e.g. "@bob")
  * @returns {Promise<object>}
  */
-export async function ingestCodeownersChange(graph, { filePath, ownedPath, oldOwner, newOwner }) {
+export async function ingestCodeownersChange(graph, { filePath, ownedPath, oldOwner, newOwner, repo = null }) {
   if (!ownedPath || !newOwner) throw new Error('ingestCodeownersChange requires ownedPath and newOwner');
 
+  const repoPrefix = repo ? `${repo.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
   const sanitizePath = p => p.replace(/[^a-zA-Z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
   const sanitizeOwner = o => o.replace('@', '').replace(/[^a-zA-Z0-9-_]/g, '-');
 
-  const newSourceId = `codeowners-${sanitizePath(ownedPath)}-${sanitizeOwner(newOwner)}`;
+  const newSourceId = `${repoPrefix}codeowners-${sanitizePath(ownedPath)}-${sanitizeOwner(newOwner)}`;
   const oldSourceId = oldOwner
-    ? `codeowners-${sanitizePath(ownedPath)}-${sanitizeOwner(oldOwner)}`
+    ? `${repoPrefix}codeowners-${sanitizePath(ownedPath)}-${sanitizeOwner(oldOwner)}`
     : null;
 
   const title = oldOwner
@@ -306,9 +314,10 @@ export async function ingestCodeownersChange(graph, { filePath, ownedPath, oldOw
     type: 'CODEOWNERS',
     ref: filePath || '.github/CODEOWNERS',
     title,
+    repo,
   });
 
-  const factId = `F-owner-${sanitizePath(ownedPath)}`;
+  const factId = `${repoPrefix}F-owner-${sanitizePath(ownedPath)}`;
   const factClaim = `${ownedPath} is owned by ${newOwner}; review assignments to ${oldOwner || 'previous owner'} are invalid`;
 
   await mergeFact(graph, { sourceId: newSourceId, factId, claim: factClaim });
@@ -399,7 +408,7 @@ export async function scanAndIngestCodeowners(graph, filePath) {
  * @param {string}        [opts.state]      - "closed" | "open" (only closed issues are ingested)
  * @returns {Promise<object>}
  */
-export async function ingestGitHubIssue(graph, { issueNumber, title, htmlUrl, body = '', supersedesIds = [], state = 'closed' }) {
+export async function ingestGitHubIssue(graph, { issueNumber, title, htmlUrl, body = '', supersedesIds = [], state = 'closed', repo = null }) {
   if (!issueNumber || !title) throw new Error('ingestGitHubIssue requires issueNumber and title');
 
   if (state !== 'closed') {
@@ -407,7 +416,8 @@ export async function ingestGitHubIssue(graph, { issueNumber, title, htmlUrl, bo
     return { skipped: true, reason: 'issue_not_closed', issue_number: issueNumber };
   }
 
-  const sourceId = `issue-${issueNumber}`;
+  const repoPrefix = repo ? `${repo.replace(/[^a-zA-Z0-9_-]/g, '_')}-` : '';
+  const sourceId = `${repoPrefix}issue-${issueNumber}`;
 
   // Scan body for additional supersedes references
   const bodyRefs = [];
@@ -425,9 +435,10 @@ export async function ingestGitHubIssue(graph, { issueNumber, title, htmlUrl, bo
     type: 'GITHUB_ISSUE',
     ref: htmlUrl,
     title: `Issue #${issueNumber} closed: ${titleTruncated}`,
+    repo,
   });
 
-  const factId = `F-issue-${issueNumber}`;
+  const factId = `${repoPrefix}F-issue-${issueNumber}`;
   const factClaim = `GitHub Issue #${issueNumber} closed: requirements from this issue are no longer active`;
 
   await mergeFact(graph, { sourceId, factId, claim: factClaim });

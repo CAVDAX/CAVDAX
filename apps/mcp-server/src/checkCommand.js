@@ -172,13 +172,14 @@ async function verifyFiles(files, options = {}) {
 
   const remoteDecisions = options.remoteDecisions || null;
 
+  let allPassed = true;
+
   // --strict / CI: an unverifiable gate must not silently pass (a remote decision map counts as verifiable).
   if (!graph && isCi && !remoteDecisions) {
     console.error(`   ⛔ ${unreachableReason}`);
-    console.error('      CI / Strict mode active: unverifiable decisions are treated as failures.');
+    console.error('      CI / Strict mode active: unverifiable decisions are treated as failures (fail-closed).');
+    allPassed = false;
   }
-
-  let allPassed = true;
 
   for (const filePath of files) {
     if (!isScannableFile(filePath)) {
@@ -268,8 +269,15 @@ export async function runCheck(options = {}) {
       const output = execFileSync('git', ['diff', '--name-only', 'origin/main...HEAD'], { encoding: 'utf-8' });
       filesToCheck = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
     } catch {
-      console.warn('   ⚠️  Could not determine changed files via git diff — checking staged files.');
-      filesToCheck = getStagedFiles();
+      // Handle shallow clone: fetch origin/main so the base reference exists
+      try {
+        execFileSync('git', ['fetch', 'origin', 'main', '--depth=1'], { encoding: 'utf-8', stdio: 'ignore' });
+        const output = execFileSync('git', ['diff', '--name-only', 'origin/main...HEAD'], { encoding: 'utf-8' });
+        filesToCheck = output.trim().split('\n').map(s => s.trim()).filter(Boolean);
+      } catch {
+        console.warn('   ⚠️  Could not determine changed files via git diff — falling back to staged files.');
+        filesToCheck = getStagedFiles();
+      }
     }
     if (filesToCheck.length === 0) {
       console.log('   No changed files found in PR. Nothing to check.');
