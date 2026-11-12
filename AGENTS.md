@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 
 
@@ -466,6 +466,23 @@ pm install --omit=dev). Never hardcode a partial subset of packages that causes 
            gh release list # Must list vX.Y.Z as Latest
            ```
       - If any single vertex is missing, the release pipeline is incomplete and cannot be marked finished.
+     - **The `Disconnected Release Boundary'' Anti-Pattern**:
+       - Bumping `apps/mcp-server/package.json` to `vX.Y.Z` and merging to `main` does **NOT** publish to npm.
+       - `.github/workflows/publish-mcp.yml` only fires on `on: release: types: [published]` or `workflow_dispatch`.
+       - Pushing commits — even to `main` — is a **silent no-op** for the registry. The npm dist-tags remain unchanged.
+       - **Invariant**: After any `package.json` version bump, the agent MUST verify `npm view @cavdax/mcp-server dist-tags.latest` matches the new version OR explicitly create a GitHub Release. If it does not match, the release has NOT been executed.
+       - **Standard Release Command**: `npm run release` (runs `scripts/release.mjs`) enforces a clean working tree, `main` branch sync, full test gate, tag collision check, then GitHub Release creation atomically.
+       - **CDN Propagation Lag**: `npm view @cavdax/mcp-server version` may show stale data for 2-5 minutes after publish. Use `npm view @cavdax/mcp-server dist-tags.latest` or the direct registry URL for immediate confirmation.
+     - **The `Blind Publish'' Anti-Pattern (Zero-Test Workflow Ban)**:
+       - Publishing via a GitHub Actions workflow that runs zero tests before `npm publish` ships regressions globally to all npm consumers immediately.
+       - **Mandatory gate order inside any publish workflow** (all gates must pass or publish step must not execute):
+         1. Syntax-check all package source files: `node --check apps/mcp-server/src/*.js`
+         2. MCP server unit tests: `node --test apps/mcp-server/test/*.test.mjs`
+         3. Server and security test suites: `node --test apps/server/test/*.test.mjs`
+         4. CI simulation gate: `node scripts/test-ci.mjs`
+         5. Assert release tag == `apps/mcp-server/package.json` version (tag-version alignment)
+         6. `npm publish --access public --provenance`
+       - If any gate fails, the publish step must never execute. This is enforced in `.github/workflows/publish-mcp.yml`.
 
 0aj. **Universal Strict Ban on In-Visual Text, Floating Tags & Badges in 3D Visual Instruments (Anti-AI-Infographic Slop Law)**:
     - **The Generic AI Infographic Slop Anti-Pattern**:
