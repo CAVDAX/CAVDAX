@@ -1,13 +1,24 @@
 # CAVDAX: Active Development Session State (`DEV_SESSION_STATE.md`)
 
 > **Repository**: `GraphHacks-Hackathon/Codebase`  
-> **Session Timestamp**: `2026-11-12T14:32:00+05:30`  
+> **Session Timestamp**: `2026-11-12T17:08:00+05:30`  
 > **Active Branch**: `main` (Integration branch: `main`)  
-> **Status**: @cavdax/mcp-server v1.3.2 Published to npm with Sigstore Provenance & Automated Pre-Publish Test Gate Landed
+> **Status**: `@cavdax/mcp-server@1.3.3` Published to npm + Official MCP Registry (`io.github.CAVDAX/cavdax`), `glama.json` Added, ISM Concurrency Hardened
 
 ---
 
 ## 🏆 Completed Milestones & Architectural Landings
+
+### 00a. Official MCP Registry, Glama Support, v1.3.3 & ISM Hardening (November 12, 2026)
+- **Official MCP Registry & Glama Integration**:
+  - Added `server.json` (`io.github.CAVDAX/cavdax@1.3.3`, `2025-12-11` schema) and `glama.json` (`maintainers: ["suneetchugh-dev"]`) at repo root.
+  - Added `"mcpName": "io.github.CAVDAX/cavdax"` to `apps/mcp-server/package.json` and bumped `@cavdax/mcp-server` to `1.3.3` across `package.json`, `stdioServer.js`, `server.json`, and `README.md`.
+  - Updated `.github/workflows/publish-mcp.yml` with npm CDN propagation polling and automated `mcp-publisher login github-oidc` + `mcp-publisher publish`; verified green in GitHub Actions run `43209434159`.
+  - Updated `scripts/release.mjs` to enforce `server.json` version parity before release.
+- **Implicit State Machine (ISM) Elimination**:
+  - Replaced unguarded parallel PR booleans in `ConnectedRepoWorkspace.jsx` with a `repoOp` discriminated union mutex; added cross-operation trial/upgrade mutex in `ProfilePage.jsx`.
+  - Codified **Section 22: Implicit State Machine (ISM) Elimination Invariant** in `AGENTS.md` and expanded `0ai` with Disconnected Release Boundary & Blind Publish anti-patterns.
+- **Infrastructure Note**: Production runs on **AWS EC2** (`ec2-user`, `/home/ec2-user/CAVDAX` in `.github/workflows/deploy.yml`). Planned next operational milestone: purchase `cavdax.com` on Cloudflare Registrar and execute zero-downtime cutover from `cavdax.sahnirmaan.live` (keeping `301` redirect).
 
 ### 00. @cavdax/mcp-server v1.3.2 Release & Infallible Pre-Publish Test Gate (November 12, 2026)
 - **Forensic Failure Diagnosis (Why Release Was Missing)**:
