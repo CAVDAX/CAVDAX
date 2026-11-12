@@ -9,7 +9,13 @@
 
 ## 🏆 Completed Milestones & Architectural Landings
 
-### 0. Cloudflare Security Audit, NPM Metrics Forensic & Full-Stack Hardening (November 12, 2026)
+### 0. Cloudflare Security Audit, Contributor Attribution Invariant & Full-Stack Hardening (November 12, 2026)
+- **Mandatory `Co-authored-by:` Git Trailer Invariant (`AGENTS.md` & `Suneet-Wrap-Up-Finish`)**:
+  - **Adversarial Ethical & Technical Discovery (/devils-advocate)**:
+    - AI coding agents and single-lead workflows frequently commit code changes, vulnerability fixes, or architectural rewrites without crediting the peer reviewer or teammate whose audit surfaced the flaws. This deprives contributors of genuine GitHub attribution graph activity and violates open-source ethics.
+  - **The Architectural & Workflow Standard**:
+    - Codified Rule `0r` in `AGENTS.md` and updated Stage 4 in `Suneet-Wrap-Up-Finish` (`SKILL.md`) requiring standard GitHub `Co-authored-by:` commit trailers whenever a teammate contributes code, review, debugging, or adversarial audit findings.
+    - Specified multi-profile attribution redundancy (e.g. `Geetika Chugh <geetika7chugh@gmail.com>` and `Geetika Chugh <geetika@ibm.com>`) so GitHub seamlessly links all verified contributor profiles.
 - **NPM Download Metrics Forensic Proof ($1,469 \to 1,112$)**:
   - **The User Concern**: Observation of an apparent drop from 1,469 downloads to 1,112 downloads on npmjs.com, raising fears of user uninstalls.
   - **Empirical Mathematical Proof**:
