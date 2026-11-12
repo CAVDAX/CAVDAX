@@ -1,0 +1,20 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.CAVDAX/cavdax",
+  "description": "CAVDAX Enclosed Model Context Protocol (MCP) Server backed by FalkorDB GraphBLAS for causal invalidation gating and ADR provenance.",
+  "repository": {
+    "url": "https://github.com/CAVDAX/CAVDAX",
+    "source": "github"
+  },
+  "version": "1.3.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "@cavdax/mcp-server",
+      "version": "1.3.2",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

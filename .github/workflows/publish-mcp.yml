@@ -44,10 +44,16 @@ jobs:
       - name: Run Mechanical Anti-Slop README Invariant Gate
         run: python scripts/audit_readme.py --strict
 
-      - name: Verify Package Version Matches Release Tag
+      - name: Verify Package Version Matches Release Tag & server.json
         run: |
           PKG_VERSION=$(node -p "require('./apps/mcp-server/package.json').version")
-          echo "Package version: $PKG_VERSION"
+          SERVER_VERSION=$(node -p "require('./server.json').version")
+          SERVER_PKG_VERSION=$(node -p "require('./server.json').packages[0].version")
+          echo "Package version: $PKG_VERSION | server.json: $SERVER_VERSION | server.json package: $SERVER_PKG_VERSION"
+          if [[ "$PKG_VERSION" != "$SERVER_VERSION" || "$PKG_VERSION" != "$SERVER_PKG_VERSION" ]]; then
+            echo "FATAL: apps/mcp-server/package.json ($PKG_VERSION) does not match server.json ($SERVER_VERSION / $SERVER_PKG_VERSION)!"
+            exit 1
+          fi
           if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
             TAG_VERSION="${GITHUB_REF#refs/tags/v}"
             echo "Release tag: $TAG_VERSION"
@@ -58,5 +64,17 @@ jobs:
           fi
 
       - name: Publish to npm with Sigstore Provenance
-        run: npm publish --access public --provenance
         working-directory: apps/mcp-server
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          if npm view "@cavdax/mcp-server@$PKG_VERSION" version >/dev/null 2>&1; then
+            echo "@cavdax/mcp-server@$PKG_VERSION is already published on npm — skipping duplicate npm publish."
+          else
+            npm publish --access public --provenance
+          fi
+
+      - name: Publish to Official MCP Registry
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar -xz mcp-publisher
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
