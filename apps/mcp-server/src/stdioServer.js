@@ -29,7 +29,7 @@ import { connectGraph, loadCore, falkorConfig, describeConnectError } from './ru
 import { SimulationEngine } from './simulation.js';
 
 const pkgJson = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const PACKAGE_VERSION = pkgJson.version || '1.3.1';
+const PACKAGE_VERSION = pkgJson.version || '1.3.2';
 const log = (msg) => process.stderr.write(`[cavdax] ${msg}\n`);
 
 // Needed so the holder of a decision lock is not blocked by its own lock.

@@ -21,7 +21,7 @@
 <div align="center">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/CAVDAX/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/CAVDAX/CAVDAX/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.3.1)
+[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.3.2)
 [![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
@@ -924,7 +924,7 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Autho
 6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
 7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
-### Universal CLI Daemon (`@cavdax/mcp-server` v1.3.1)
+### Universal CLI Daemon (`@cavdax/mcp-server` v1.3.2)
 
 > **Zero-Dependency Supply Chain Hardening**: `@cavdax/mcp-server` uses Node.js native `node:util.parseArgs` with zero external CLI runtime dependencies (no `commander`, no `child_process` shell hooks). Scored **100/100 Vulnerability**, **100/100 Quality**, **100/100 License**, and verified with **Sigstore SLSA-3 Build Provenance**.
 
@@ -952,7 +952,7 @@ npx cavdax check --staged
 npx cavdax check --pr <number>
 
 # CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
-npx -y @cavdax/mcp-server@1.3.1 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
+npx -y @cavdax/mcp-server@1.3.2 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---
