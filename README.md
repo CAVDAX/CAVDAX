@@ -27,6 +27,7 @@
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![FalkorDB](https://img.shields.io/badge/FalkorDB-GraphBLAS-FF2D55?style=for-the-badge&logo=redis&logoColor=white)](https://falkordb.com/)
 [![MCP](https://img.shields.io/badge/Protocol-Model%20Context%20Protocol%20%28MCP%29-06B6D4?style=for-the-badge)](https://modelcontextprotocol.io/)
+[![CAVDAX MCP server – quality and maintenance score on Glama](https://glama.ai/mcp/servers/CAVDAX/CAVDAX/badges/score.svg)](https://glama.ai/mcp/servers/CAVDAX/CAVDAX)
 [![Docker](https://img.shields.io/badge/Docker-Compose%20Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white)](./docker-compose.yml)
 [![License: Apache 2.0 / BSL 1.1](https://img.shields.io/badge/License-Apache_2.0_%2F_BSL_1.1-blue.svg?style=for-the-badge)](./LICENSE)
 [![Latency](https://img.shields.io/badge/Gate%20Latency-%3C%202.5ms-8B5CF6?style=for-the-badge)](#empirical-benchmarks)
