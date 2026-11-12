@@ -1,13 +1,33 @@
 # CAVDAX: Active Development Session State (`DEV_SESSION_STATE.md`)
 
 > **Repository**: `GraphHacks-Hackathon/Codebase`  
-> **Session Timestamp**: `2026-11-12T14:18:00+05:30`  
-> **Active Branch**: `backend` (Integration branch: `main`)  
-> **Status**: Permanent Multi-Layer Anti-CI Drift Defense System Deployed & Verified (Local CI Simulation Harness, Fail-Closed Pre-Commit Gate, Dual-Branch Test Invariant)
+> **Session Timestamp**: `2026-11-12T14:32:00+05:30`  
+> **Active Branch**: `main` (Integration branch: `main`)  
+> **Status**: @cavdax/mcp-server v1.3.2 Published to npm with Sigstore Provenance & Automated Pre-Publish Test Gate Landed
 
 ---
 
 ## 🏆 Completed Milestones & Architectural Landings
+
+### 00. @cavdax/mcp-server v1.3.2 Release & Infallible Pre-Publish Test Gate (November 12, 2026)
+- **Forensic Failure Diagnosis (Why Release Was Missing)**:
+  - While code changes and `package.json` had been bumped to `1.3.2` on `main`, no GitHub Release tagged `v1.3.2` had been created, and `.github/workflows/publish-mcp.yml` was configured to trigger ONLY on `on: release: types: [published]` or manual `workflow_dispatch`. Pushing to `main` does not publish to npm automatically.
+  - **Critical Flaw Discovered in `.github/workflows/publish-mcp.yml`**: The workflow previously had ZERO test verification steps before calling `npm publish`—it merely installed dependencies and immediately published. This introduced an acute risk of publishing untested or broken packages to npm.
+- **Architectural Remedy Applied (`.github/workflows/publish-mcp.yml`)**:
+  - Hardened the workflow with mandatory pre-publish quality gates:
+    1. Full syntax checks across all MCP server source files (`node --check apps/mcp-server/...`).
+    2. Execution of MCP server package unit tests (`node --test apps/mcp-server/test/*.test.mjs`).
+    3. Execution of Server & ADR security test suites (`node --test apps/server/test/*.test.mjs`).
+    4. Execution of mechanical anti-slop README invariant audit (`python scripts/audit_readme.py --strict`).
+    5. Package version and release tag alignment assertion (`pkgJson.version === tag.version`).
+    6. Fail-closed guarantee: any failure aborts publishing immediately with zero artifacts pushed.
+- **Automated Release Pipeline Script (`scripts/release.mjs`)**:
+  - Added dedicated release automation runner bound to `npm run release` enforcing clean working trees, `main` branch sync, pre-flight simulated CI test passes, tag collision detection, and automated GitHub release creation.
+- **Empirical Release & Verification**:
+  - Created official GitHub Release `v1.3.2`: https://github.com/CAVDAX/CAVDAX/releases/tag/v1.3.2
+  - GitHub Actions Workflow Run `43187212805` executed with **100% SUCCESS** across all test gates.
+  - Signed SLSA-3 provenance recorded on Sigstore transparency log (log index `3829055116`).
+  - Successfully published and verified `@cavdax/mcp-server@1.3.2` as `latest` on registry.npmjs.org.
 
 ### 0. CI Gate Invariant Resolution & Permanent Anti-CI Drift Defense (November 12, 2026)
 - **Forensic Failure Diagnosis**:
