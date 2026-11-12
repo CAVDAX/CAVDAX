@@ -1607,3 +1607,14 @@ To ensure that floating navigation docks, sidebars, modal dialogs, and viewport 
   Before any commit or merge into `main`, the developer or AI agent MUST execute `node scripts/test-ci.mjs` (or `npm test`). This runner explicitly sets `CI=true` and `GITHUB_ACTIONS=true` in a subprocess, executing all server tests, MCP tests, and strict README audits.
 - **Fail-Closed Pre-Commit Hook**:
   The `.githooks/pre-commit` script automatically executes `node scripts/test-ci.mjs`. If any test, security check, or architectural invariant fails under simulated CI conditions, the commit is aborted immediately.
+
+## 22. Implicit State Machine (ISM) Elimination Invariant
+- **What an Implicit State Machine Is**:
+  Managing related lifecycle, UI, or server workflow states via scattered boolean `useState` flags (`isLoading`, `isOpeningPr`, `isStartingTrial`, `isVerifying`, `isRotating`) or uncoordinated `req.session.*` mutations instead of an explicit discriminated union or finite state enum.
+- **Why It Fails in Production**:
+  `N` independent booleans create `2^N` representable states where mutually exclusive operations can become `true` simultaneously (e.g., concurrent GitHub PR creation or simultaneous trial + paid checkout), or an async flag gets stranded at `true` on network error, permanently disabling UI controls.
+- **Mandatory Hardening Rules**:
+  1. **Discriminated Union / Mutex Guard for Mutually Exclusive Operations**: Replace independent boolean flags governing competing async operations with a single state enum/union (`null | 'opening-pr' | 'opening-ci-pr' | 'proposing-adr'`) and an early-return mutex (`if (repoOp !== null) return;`).
+  2. **Guaranteed `finally` Reset**: Every `setIs*(true)` guarding an async operation MUST reset inside a `finally` block so transient network failures never strand the UI in a locked state.
+  3. **Atomic Server Session Transitions**: Centralize interdependent `req.session` mutations (e.g. `tier`, `user`, `authorizedReposCache`) rather than mutating fields independently across concurrent handlers.
+  4. **Pre-Completion Audit**: When auditing a codebase or concluding a feature, scan for components with `>= 3` correlated `is*` boolean flags and verify mutexes and `finally` resets empirically.
