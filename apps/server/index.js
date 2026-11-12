@@ -51,6 +51,11 @@ dotenv.config({ path: path.resolve(__dirname, '.env') });
 const REPO_ROOT = path.resolve(__dirname, '../../');
 dotenv.config({ path: path.resolve(REPO_ROOT, '.env') });
 
+// Ensure NODE_ENV is explicitly initialized (Fail-safe default: 'development')
+if (!process.env.NODE_ENV) {
+  process.env.NODE_ENV = 'development';
+}
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
