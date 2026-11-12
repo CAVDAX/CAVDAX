@@ -21,7 +21,7 @@
 <div align="center">
 
 [![CI](https://img.shields.io/github/actions/workflow/status/CAVDAX/CAVDAX/ci.yml?style=for-the-badge&logo=github&label=CI)](https://github.com/CAVDAX/CAVDAX/actions)
-[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.3.1)
+[![GitHub Release](https://img.shields.io/github/v/release/CAVDAX/CAVDAX?style=for-the-badge&logo=github&color=blue)](https://github.com/CAVDAX/CAVDAX/releases/tag/v1.3.2)
 [![X (Twitter)](https://img.shields.io/badge/X-@cavdax__dev-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/cavdax_dev)
 [![npm version](https://img.shields.io/npm/v/@cavdax/mcp-server?style=for-the-badge&logo=npm&logoColor=white&color=CB3837)](https://www.npmjs.com/package/@cavdax/mcp-server)
 [![npm provenance](https://img.shields.io/badge/provenance-sigstore-informational?style=for-the-badge&logo=npm&logoColor=white)](https://www.npmjs.com/package/@cavdax/mcp-server)
@@ -39,13 +39,13 @@
 
 CAVDAX synthesizes real-time pre-flight gating with multi-agent architectural memory:
 
-- 🛡️ **Execution Plane — Real-Time Causal Gating (MCP Core):**
-  - **Multi-Hop Reasoning**: Evaluates complex, variable-length architectural dependency paths (`[:DEPENDS_ON*1..4]`) across decisions, facts, and source documents.
+- **Execution Plane — Real-Time Causal Gating (MCP Core):**
+  - **Multi-Hop Reasoning**: Evaluates complex, variable-length architectural dependency paths (`[:DEPENDS_ON*1..8]`) across decisions, facts, and source documents.
   - **Graph Queries as Agent Tools**: Exposes real-time Cypher verification directly to agents through the Model Context Protocol (MCP) (`verifyActionGate`, `get_architectural_blast_radius`).
   - **Actions Based on Graph Topology**: Coding agents cannot execute file writes without graph clearance; actions are approved or blocked based on live topological invariant clearance.
   - **Explainable Results & Provenance**: Returns complete mathematical proof paths (`violation_paths`) with line-level ADR citations, eliminating opaque agent hallucinations.
 
-- 🤖 **State Plane — Multi-Agent Coordination & Memory Layer:**
+- **State Plane — Multi-Agent Coordination & Memory Layer:**
   - **Procedural & Episodic Memory**: Stores persistent architectural rules, invariant constraints, and historical decision supersessions across sessions.
   - **Multi-Agent Coordination & Shared State**: Disparate agent runtimes (Cursor, Claude Code, Cline, Windsurf, and GitHub Actions CI) share the exact same FalkorDB graph state in real time.
   - **Multi-Tenant Graph Isolation**: Leverages FalkorDB's native multigraph topology to create completely isolated graphs per repository and branch (`cavdax_{repo}_{branch}`).
@@ -339,12 +339,12 @@ graph TB
     WebPushBroker -->|"Instant Desktop/Mobile Push"| Notifications
 ```
 
-#### 🔔 Notification Plane (Out-of-Band Divergence Radar)
+#### Notification Plane (Out-of-Band Divergence Radar)
 CAVDAX treats notifications as an essential, enterprise-grade feedback loop that prevents AI agents from executing against stale context even when developers are offline:
 1. **Resend Transactional Email (`apps/server/email.js`)**: Invalids dispatch clean HTML emails via `sahnirmaan.live` with Decision ID, ASCII causal tree, and blast-radius deep links.
 2. **RFC 8292 VAPID Web Push (`apps/server/webPush.js` & `public/sw.js`)**: Hardware OS and browser-level notification badges delivering instant disruption alerts.
 3. **Procedural In-HUD Audio Chimes (`apps/client/src/App.jsx`)**: Synthesizes 880Hz / 440Hz dual-tone Web Audio chimes on invalidation events.
-4. **Live Invalidation Pitch Trigger (`⚡ Simulate Alert`)**: Accessible via top HUD toolbar and Preferences Modal for live demonstrations.
+4. **Live Invalidation Pitch Trigger (`Simulate Alert`)**: Accessible via top HUD toolbar and Preferences Modal for live demonstrations.
 
 ### 2. Multi-Layer Architecture & FalkorDB GraphBLAS Engine Flowchart
 ![CAVDAX Layer Architecture Flowchart](./assets/System-Architecture2.svg)
@@ -486,7 +486,7 @@ Captured directly from our live production deployment at [https://cavdax.sahnirm
   <img src="./assets/screenshots/03_mcp_action_playground.png" alt="CAVDAX MCP Action Playground" width="950" />
 </div>
 
-### 4. Immutable Compliance Audit Ledger (`/audit`)
+### 4. Compliance Audit Ledger (`/audit`)
 > Tamper-evident operational ledger recording every tool execution, verdict, target file path, and grounding decision ID.
 
 <div align="center">
@@ -642,38 +642,39 @@ To provide complete architectural transparency and technical rigor, CAVDAX separ
    - Executes real bounded variable-length Cypher traversals (`OPTIONAL MATCH path=(d)-[:DEPENDS_ON*1..4]->...`) over live Redis/FalkorDB socket connections with matrix-multiplication GraphBLAS speed, writing audit trail nodes (`:AgentAction {id, status, grounded_in}`) to disk before any filesystem write.
 
 ### 1. Algorithmic Invalidation Complexity: Vector RAG vs. CAVDAX (10 Scenarios)
-Evaluated via `node benchmark/evaluate.js` (measuring topological gate resolution in high-resolution microseconds):
+Evaluated via `node benchmark/evaluate.js` comparing un-grounded lexical/vector retrieval against causal DAG gate resolution:
 
-| Scenario ID | Category | Vector RAG Baseline | CAVDAX FalkorDB Gate | Latency |
+| Scenario ID | Category | Vector RAG Baseline | CAVDAX Causal DAG Gate | Traversal Latency |
 |---|---|---|---|---|
-| **SCEN-01** | Authentication Migration | ❌ Stale TokenAuth v1 written | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `1.84ms` |
-| **SCEN-02** | API Routing Breaking Change | ❌ Deprecated /v1 route built | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `1.42ms` |
-| **SCEN-03** | Crypto CVE Deprecation | ❌ Vulnerable crypto-js imported | 🛡️ **BLOCKED_STALE_FACT** | `1.95ms` |
-| **SCEN-04** | CODEOWNERS Governance Shift | ❌ Stale reviewer assigned | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `1.15ms` |
-| **SCEN-05** | Docker Base Image Bump | ❌ Outdated node:18 base written | 🛡️ **BLOCKED_STALE_FACT** | `1.72ms` |
-| **SCEN-06** | NoSQL to SQL Migration | ❌ Mongoose schema created | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `2.31ms` |
-| **SCEN-07** | Secret Vault Transition | ❌ Plaintext env var leaked | 🛡️ **BLOCKED_DECISION_INVALIDATED** | `1.68ms` |
-| **SCEN-08** | Feature Flag Deprecation | ❌ Dead flag conditional reintroduced | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `1.34ms` |
-| **SCEN-09** | Rate-Limit Threshold Lowering | ❌ Flood test tripped alarms | 🛡️ **BLOCKED_STALE_FACT** | `1.55ms` |
-| **SCEN-10** | OSS License Compliance | ❌ Incompatible license header added | 🛡️ **BLOCKED_SUPERSEDED_SOURCE** | `1.49ms` |
+| **SCEN-01** | Authentication Migration | [STALE] Stale TokenAuth v1 written | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.20ms` |
+| **SCEN-02** | API Routing Breaking Change | [STALE] Deprecated /v1 route built | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.05ms` |
+| **SCEN-03** | Crypto CVE Deprecation | [STALE] Vulnerable crypto-js imported | [BLOCKED] `BLOCKED_STALE_FACT` | `< 0.05ms` |
+| **SCEN-04** | CODEOWNERS Governance Shift | [STALE] Stale reviewer assigned | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.05ms` |
+| **SCEN-05** | Docker Base Image Bump | [STALE] Outdated node:18 base written | [BLOCKED] `BLOCKED_STALE_FACT` | `< 0.05ms` |
+| **SCEN-06** | NoSQL to SQL Migration | [STALE] Mongoose schema created | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.05ms` |
+| **SCEN-07** | Secret Vault Transition | [STALE] Plaintext env var leaked | [BLOCKED] `BLOCKED_DECISION_INVALIDATED` | `< 0.05ms` |
+| **SCEN-08** | Feature Flag Deprecation | [STALE] Dead flag conditional reintroduced | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.05ms` |
+| **SCEN-09** | Rate-Limit Threshold Lowering | [STALE] Flood test tripped alarms | [BLOCKED] `BLOCKED_STALE_FACT` | `< 0.05ms` |
+| **SCEN-10** | OSS License Compliance | [STALE] Incompatible license header added | [BLOCKED] `BLOCKED_SUPERSEDED_SOURCE` | `< 0.05ms` |
 
-* **Vector RAG Failure Rate:** **100% (10/10 silent hallucinations)**
-* **CAVDAX Gate Protection Rate:** **100% (10/10 deterministic blocks)**
-* **Average Gate Latency:** **1.65ms**
+* **Vector RAG Failure Rate:** **90-100% (stale document hallucinations due to lexical/semantic keyword overlap)**
+* **CAVDAX Gate Protection Rate:** **100% (deterministic topological block on stale facts or superseded sources)**
+* **Average Gate Resolution:** **~0.03ms (In-Memory DAG Traversal) / ~1.65ms (Live FalkorDB Network Round-Trip)**
 
-### 2. Large-Scale Enterprise DAG Performance
-Evaluated via `node benchmark/scale_generator.js`:
+### 2. Large-Scale Enterprise DAG Performance (FalkorDB GraphBLAS Engine)
+Evaluated via `node benchmark/scale_generator.js` (Live FalkorDB measurement with local container online via `docker-compose up -d falkordb`; offline mode reports algorithmic GraphBLAS $O(nnz)$ projections):
 
-| Total Nodes | Total Edges | Graph Depth | Gate Query 1 Latency | Cascade Query 2 Latency | GraphBLAS Memory |
-|---|---|---|---|---|---|
-| **3,300** | 3,270 | 4 hops | **2.16 ms** | **3.32 ms** | 6.9 MB |
-| **9,900** | 9,810 | 4 hops | **2.04 ms** | **3.42 ms** | 12.3 MB |
-| **25,150** | 24,940 | 4 hops | **2.53 ms** | **3.47 ms** | 24.8 MB |
-| **50,550** | 50,100 | 4 hops | **2.30 ms** | **3.81 ms** | 45.7 MB |
+| Total Nodes | Total Edges | Graph Depth | Mode | Gate Query 1 Latency | Cascade Query 2 Latency | GraphBLAS Memory |
+|---|---|---|---|---|---|---|
+| **Active DB** | Live Edges | 4-8 hops | **LIVE-DB** | **~1.85 ms** | **~2.40 ms** | Live Process |
+| **3,300** | 3,270 | 4 hops | PROJECTION | ~1.90 ms | ~2.84 ms | ~6.9 MB |
+| **9,900** | 9,810 | 4 hops | PROJECTION | ~2.04 ms | ~3.08 ms | ~12.3 MB |
+| **25,150** | 24,940 | 4 hops | PROJECTION | ~2.16 ms | ~3.28 ms | ~24.8 MB |
+| **50,550** | 50,100 | 4 hops | PROJECTION | ~2.25 ms | ~3.43 ms | ~45.7 MB |
 
 ### 3. Section 37 Truth-in-Data Governance
-* **Zero Hardcoded Benchmarks**: All scenario evaluations execute live algorithmic traversals and real vector similarity calculations without hardcoded string literals or synthetic failure states.
-* **Nanosecond-Precision Timers**: Invalidation gate latencies are measured dynamically at runtime using high-resolution hardware timers (`process.hrtime.bigint()`). Synthetic fallback constants (e.g. `|| 0.42`) are strictly prohibited across both production code and benchmark suites.
+* **Transparent Execution Delineation**: In-memory DAG evaluations and live Redis/FalkorDB Cypher queries are explicitly distinguished. Projections are labeled `PROJECTION` and live database traversals are labeled `LIVE-DB`.
+* **Zero Synthetic Hardcoding**: Invalidation gate latencies are measured dynamically at runtime using high-resolution hardware timers (`performance.now()` / `process.hrtime.bigint()`). Hardcoded synthetic success states are strictly prohibited across both production code and benchmark suites.
 
 
 ---
@@ -684,15 +685,15 @@ The Web HUD features an interactive 4-Act stepper designed for video demonstrati
 
 * **Act I: Baseline (ADR-001 Active):** `DEC-102` is valid and authorized to scaffold checkout using `TokenAuth v1`.
 * **Act II: Commit Mutation (ADR-002 Ingested):** Security board commits `ADR-002` superseding `ADR-001`. Query 2 executes in 2.1ms, turning `ADR-001` red (`SUPERSEDED`), `F-Auth-v1` red (`STALE`), and `DEC-102` red (`INVALIDATED_NEEDS_REVALIDATION`).
-* **Act III: Enclosed MCP Gate Rejection:** The coding agent attempts to write `TokenAuth.v1` into `demo-repo/src/services/payment.js`. The enclosed MCP tool executes Query 1, detects the broken causal link, and emits `[ ⛔ 403 MCP GATE BLOCKED: BLOCKED_SUPERSEDED_SOURCE ]`. The file remains 100% untouched on disk!
-* **Act IV: Revalidation & Safe Execution:** The agent synthesizes `DEC-103` (OAuth2 JWT/RS256) grounded in `ADR-002`. The gate verifies the fresh causal path in 1.62ms and emits `[ ✅ 200 MCP GATE APPROVED ]`. The verified OAuth2 code is safely written to disk.
+* **Act III: Enclosed MCP Gate Rejection:** The coding agent attempts to write `TokenAuth.v1` into `demo-repo/src/services/payment.js`. The enclosed MCP tool executes Query 1, detects the broken causal link, and emits `[ 403 MCP GATE BLOCKED: BLOCKED_SUPERSEDED_SOURCE ]`. The file remains 100% untouched on disk.
+* **Act IV: Revalidation & Safe Execution:** The agent synthesizes `DEC-103` (OAuth2 JWT/RS256) grounded in `ADR-002`. The gate verifies the fresh causal path in 1.62ms and emits `[ 200 MCP GATE APPROVED ]`. The verified OAuth2 code is safely written to disk.
 
 ---
 
 ## Live Production Deployment
 
 CAVDAX is deployed and running live in production:
-👉 **[https://cavdax.sahnirmaan.live/](https://cavdax.sahnirmaan.live/)**
+**Live Console**: [https://cavdax.sahnirmaan.live/](https://cavdax.sahnirmaan.live/)
 
 ### Production Architecture & Cloud Infrastructure:
 * **Edge Reverse Proxy & Automated SSL:** Caddy 2 reverse proxy with dynamic TLS/SSL certificates terminates production traffic over port 443 with HSTS and security headers.
@@ -710,7 +711,7 @@ The CAVDAX Web HUD provides a world-class, industrial-brutalist / porcelain oper
 2. **Connected Repository Developer Workspace (`/console`)**: Multi-tenant workspace for linking GitHub repositories with context-preserving OAuth reconnection, universal plan quota metering (enforcing strict repository limits across public and private codebases), bi-directional ADR-to-Graph selection synchronization (clicking an ADR card isolates its corresponding `:Decision` diamond on the live canvas), multi-panel dynamic flex height absorption, and universal spring-loaded dialog physics.
 3. **MCP Action Playground (`/mcp`)**: Interactive pre-flight verification console with dynamic traversal depth sliders (`1..4` hops), live Cypher inspection, and sub-millisecond execution timing metrics.
 4. **4-Act Storyline Stepper (`/walkthrough`)**: Interactive demonstration stepper guiding evaluators through baseline validity, upstream commit mutation, enclosed MCP gate rejection, and Act IV revalidation.
-5. **Immutable Compliance Audit Ledger (`/audit`)**: Tamper-evident ledger providing full provenance and execution verification history across all agent actions.
+5. **Compliance Audit Ledger (`/audit`)**: Signed audit trail providing full provenance and execution verification history across all agent actions.
 6. **Core Maintainers & Attribution (`/team`)**: Project research attribution, engineering background, and architecture credits.
 7. **Developer Profile & Multi-Display Viewport Engine (`/profile`)**: Live plan quota consumption monitoring, capability tiers, secure MCP key generation, and an adaptive multi-display responsive engine calibrated for both **laptop single-screen viewports (HP Victus 15.6" at 1536×750 and MacBook at 1440×800, zero vertical scrolling)** and **27-inch desktop monitors (1080p/1440p windowed and fullscreen)** via the calibrated `pro-27` breakpoint with downstream section isolation buffers to prevent fold-peeking.
 8. **Community Stewardship & Operational Backing (`/support`)**: Transparent operational resource breakdown and community sponsorship integration.
@@ -805,7 +806,7 @@ npm run client
 
 CAVDAX implements the Anthropic Model Context Protocol (MCP) specification `2024-11-05` to enclose autonomous coding agents (Claude Code, Cursor IDE, Claude Desktop, Windsurf/Roo Code) behind a FalkorDB GraphBLAS causal barrier.
 
-📖 **Comprehensive Technical Guide**: [docs/MCP_SPECIFICATION.md](docs/MCP_SPECIFICATION.md)
+**Technical Reference Specification**: [docs/MCP_SPECIFICATION.md](docs/MCP_SPECIFICATION.md)
 
 ### Supported Transports & Connectors
 - **Local Stdio (`stdio`):** `npx -y @cavdax/mcp-server` (zero-latency, runs the MCP gate locally against your own FalkorDB instance).
@@ -923,7 +924,7 @@ claude mcp add cavdax https://cavdax.sahnirmaan.live/api/mcp/sse --header "Autho
 6. `export_graph_image`: **Visual PR Artifact Generator.** Produces standalone SVG/PNG vector maps with Vision OCR tags for automated PR descriptions and multimodal model grounding.
 7. `query_causal_graph` *(Local CLI/stdio)*: Sub-millisecond GraphBLAS BFS Cypher query for active ADRs, dependencies, and invalidation trails.
 
-### Universal CLI Daemon (`@cavdax/mcp-server` v1.3.1)
+### Universal CLI Daemon (`@cavdax/mcp-server` v1.3.2)
 
 > **Zero-Dependency Supply Chain Hardening**: `@cavdax/mcp-server` uses Node.js native `node:util.parseArgs` with zero external CLI runtime dependencies (no `commander`, no `child_process` shell hooks). Scored **100/100 Vulnerability**, **100/100 Quality**, **100/100 License**, and verified with **Sigstore SLSA-3 Build Provenance**.
 
@@ -951,7 +952,7 @@ npx cavdax check --staged
 npx cavdax check --pr <number>
 
 # CI/CD Pull Request Invariant Gate (verify commits in GitHub Actions with remote fallback)
-npx -y @cavdax/mcp-server@1.3.1 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
+npx -y @cavdax/mcp-server@1.3.2 gate --repo <owner/repo> --sha $GITHUB_SHA --strict
 ```
 
 ---

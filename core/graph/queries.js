@@ -41,7 +41,7 @@ export async function verifyActionGate(graph, decisionId) {
   const cypher = `
     MATCH (d:Decision {id: $decisionId})
     WITH d, d.status AS decision_status
-    OPTIONAL MATCH p = (d)-[:DEPENDS_ON*1..4]->(f:Fact)
+    OPTIONAL MATCH p = (d)-[:DEPENDS_ON*1..8]->(f:Fact)
     OPTIONAL MATCH (f)-[:EXTRACTED_FROM]->(s:Source)
     WITH d, decision_status,
          [dep IN collect(CASE WHEN p IS NULL THEN null ELSE {
@@ -98,8 +98,8 @@ export async function cascadeInvalidation(graph, newSourceId, oldSourceId) {
   const hrtStart = process.hrtime.bigint();
 
   const cypher = `
+    MATCH (oldSource:Source {id: $oldSourceId})
     MERGE (newSource:Source {id: $newSourceId})
-    MERGE (oldSource:Source {id: $oldSourceId})
     MERGE (newSource)-[:SUPERSEDES]->(oldSource)
     SET oldSource.status = 'SUPERSEDED',
         oldSource.superseded_at = timestamp()
@@ -108,7 +108,8 @@ export async function cascadeInvalidation(graph, newSourceId, oldSourceId) {
     SET staleFact.is_stale = true,
         staleFact.invalidated_at = timestamp()
     WITH staleFact
-    OPTIONAL MATCH (d:Decision)-[:DEPENDS_ON*1..4]->(staleFact)
+    OPTIONAL MATCH (d:Decision)-[:DEPENDS_ON*1..8]->(staleFact)
+    WHERE d.status = 'VALID'
     SET d.status = 'INVALIDATED_NEEDS_REVALIDATION',
         d.invalidated_at = timestamp()
     RETURN count(DISTINCT d) AS affected_decisions, 
@@ -130,16 +131,19 @@ export async function cascadeInvalidation(graph, newSourceId, oldSourceId) {
  * Query 3: Act IV Revalidation (Closing the Loop)
  * Archives the old decision, creates the fresh decision, and links it to the active fact.
  */
-export async function revalidateDecision(graph, { newSourceId, oldDecisionId, newDecisionId, newFactId, title, isDemo: isDemoOption }) {
+export async function revalidateDecision(graph, { newSourceId, oldDecisionId, newDecisionId, newFactId, title, targetFile = null, isDemo: isDemoOption }) {
   const hrtStart = process.hrtime.bigint();
 
   const cypher = `
     MATCH (newSource:Source {id: $newSourceId})<-[:EXTRACTED_FROM]-(newFact:Fact {id: $newFactId})
+    WHERE coalesce(newFact.is_stale, false) = false
     MATCH (oldDecision:Decision {id: $oldDecisionId})
     MERGE (newDecision:Decision {id: $newDecisionId})
     SET newDecision.title = $title,
         newDecision.status = 'VALID',
         newDecision.is_demo = $isDemo,
+        newDecision.target_file = coalesce($targetFile, oldDecision.target_file),
+        newDecision.governs = coalesce($targetFile, oldDecision.governs, oldDecision.target_file),
         newDecision.created_at = coalesce(newDecision.created_at, timestamp())
     MERGE (newDecision)-[:DEPENDS_ON]->(newFact)
     MERGE (newDecision)-[:REPLACES]->(oldDecision)
@@ -150,7 +154,7 @@ export async function revalidateDecision(graph, { newSourceId, oldDecisionId, ne
   // Hosted server: the canonical 4-Act demo ids are tagged as demo data. The npm package passes isDemo=false.
   const isDemo = isDemoOption ?? Boolean(oldDecisionId?.startsWith('DEC-10') || newDecisionId?.startsWith('DEC-10') || newSourceId === 'ADR-002');
   const result = await graph.query(cypher, {
-    params: { newSourceId, oldDecisionId, newDecisionId, newFactId, title, isDemo }
+    params: { newSourceId, oldDecisionId, newDecisionId, newFactId, title, targetFile, isDemo }
   });
   const latencyMs = extractLatencyMs(result, hrtStart);
 
@@ -223,7 +227,12 @@ export async function fetchGraphState(graph, { repo = null } = {}) {
  */
 export async function seedDemoGraph(graph) {
   console.log('[FalkorDB] Clearing and seeding demo graph...');
-  await graph.query(`MATCH (n) DETACH DELETE n`);
+  // Scoped deletion: only delete demo nodes to prevent tenant data wiping (Fix H11)
+  await graph.query(`
+    MATCH (n)
+    WHERE n.is_demo = true OR n.id IN ['ADR-001', 'ADR-002', 'DEC-101', 'DEC-102', 'DEC-103', 'F-Auth-v1', 'F-OAuth2']
+    DETACH DELETE n
+  `);
 
   const cypher = `
     // 1. Initial Source (ADR-001)

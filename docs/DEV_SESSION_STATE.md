@@ -1,27 +1,79 @@
 # CAVDAX: Active Development Session State (`DEV_SESSION_STATE.md`)
 
 > **Repository**: `GraphHacks-Hackathon/Codebase`  
-> **Session Timestamp**: `2026-11-12T11:00:00+05:30`  
-> **Active Branch**: `frontend` (Integration branch: `main`)  
-> **Status**: v1.3.1 Production Integration Milestone (3D Fibonacci Supporter Galaxy, Cloudflare Zero-Trust Security Hardening, Fail-Safe NODE_ENV, Precision Optical Kerning & Automated Pen-Testing Protocols)
+> **Session Timestamp**: `2026-11-12T12:15:00+05:30`  
+> **Active Branch**: `backend` (Integration branch: `main`)  
+> **Status**: v1.3.2 Comprehensive Devil's Advocate Security & Integrity Overhaul (Resolved Critical C1–C6, High H1–H13, Payment Replay Guard, Ingestion Parser Hardening, Scoped Multi-Tenant DB Seeding & CI Gate Fail-Closed Defenses)
 
 ---
 
 ## 🏆 Completed Milestones & Architectural Landings
 
-### 0. Cloudflare Security Audit, Contributor Attribution Invariant & Full-Stack Hardening (November 12, 2026)
+### 0. Comprehensive Devil's Advocate Security & Integrity Overhaul (November 12, 2026)
+- **Teammate Audit Forensic Verification**:
+  - Conducted line-by-line empirical and code-read audit across `apps/server/`, `core/`, `benchmark/`, `infra/`, and `apps/mcp-server/`.
+  - Every single finding in the peer review was verified as **100% TRUE** in the prior codebase and addressed systematically with zero sycophancy or hand-waving.
+- **C1: Benchmark Transparency & Truth in Measurement (`benchmark/evaluate.js`, `benchmark/scale_generator.js`)**:
+  - Re-labeled "Vector RAG" to "Lexical Retrieval Baseline (Un-grounded)" to honestly represent the term-frequency counter baseline.
+  - Re-labeled JavaScript array filter evaluations to "In-Memory DAG Traversal" rather than claiming raw GraphBLAS hardware acceleration.
+  - Updated `scale_generator.js` live query to execute actual multi-hop dependency Cypher traversals (`DEPENDS_ON*1..8`) instead of `count(d)`.
+  - Explicitly labeled all offline formulas as algorithmic projections (`PROJECTION`) with zero synthetic measurement claims.
+- **C2: Payment Replay & Order Verification Hardening (`apps/server/index.js`)**:
+  - Implemented persistent `processedPaymentIds` ledger backed by atomic JSON storage (`apps/server/data/processed_payments.json`).
+  - Added replay attack block returning `400 PAYMENT_ALREADY_PROCESSED` on duplicate payment signatures.
+  - Added authoritative fallback querying `razorpayClient.orders.fetch(orderId)` to reconstruct order metadata after server restarts or memory evictions.
+  - Enforced fail-closed behavior on missing orders (`400 ORDER_NOT_FOUND`). Completely eliminated dangerous default fallback to `'pro'`.
+  - Enforced 30-day `expiresAt` timestamps on paid tier records.
+  - Implemented authoritative `payment.captured` handling in `POST /api/billing/webhook`.
+- **C3: Hackathon Mode Privilege Escalation Defense (`apps/server/index.js`)**:
+  - Patched `POST /api/user/tier` so `globalHackathonMode` evaluations assign tier to the active in-memory session only.
+  - Strictly prevented writing permanent enterprise entitlements to `savedSystemState.paidUsers` on disk during evaluations.
+- **C4: Anonymous Graph Mutation Boundary Confinement (`apps/server/index.js`)**:
+  - Restricted unauthenticated `revalidate_decision` on `/api/mcp/call` strictly to canonical demo decision IDs (`['DEC-102', 'DEC-103']`).
+  - Anonymous callers can no longer create arbitrary valid decisions or tamper with production tenant graphs.
+- **C5: Decision Action Gate Scope & Target File Confinement (`core/ingestion/parser.js`, `core/graph/queries.js`)**:
+  - In `core/ingestion/parser.js`, extracted `target_file`/`governs` from ADR directives and persisted `d.target_file = $targetFile, d.governs = $targetFile` in `mergeDecisionCypher`.
+  - In `core/graph/queries.js`, updated `revalidateDecision` to inherit `oldDecision.target_file` onto `newDecision` and verify `newFact.is_stale = false`.
+- **C6: CI Gate Hardening & Shallow Clone Recovery (`apps/mcp-server/src/checkCommand.js`, `action.yml`)**:
+  - In `checkCommand.js`, added shallow clone recovery (`git fetch origin main --depth=1`).
+  - Enforced fail-closed exit in CI when FalkorDB is unreachable (`allPassed = false`).
+  - In `action.yml`, removed the static fake 100% pass markdown table and added dynamic exit-code trapping.
+- **H1, H3 & Parser Supersedes Filtering (`core/ingestion/parser.js`)**:
+  - Restricted `supersedes`/`replaces` extraction to directive lines (`(?:^|\n)\s*(?:supersedes|replaces)\s*:\s*([^\r\n]+)`).
+  - Eliminated false-positive supersessions from English prose sentences (e.g. "The cache replaces 1000 requests...").
+  - Added support for comma-separated superseding IDs.
+- **H2: Draft/Proposed ADR Invalidation Prevention (`core/ingestion/parser.js`)**:
+  - Added `isDraftOrProposed` check (`['PROPOSED', 'DRAFT', 'PENDING', 'REJECTED']`).
+  - Draft ADRs are ingested with declared status and never trigger cascading invalidation against active decisions.
+- **H4: Heading ID Parsing & YAML Comment Stripping (`core/ingestion/parser.js`)**:
+  - Fixed heading regex in `extractHeuristicMetadata` so `# ADR-002: ...` correctly parses ID as `ADR-002`.
+  - Added inline YAML comment stripping (`value.indexOf(' #')`).
+- **H5: Phantom Node Creation Elimination (`core/graph/queries.js`)**:
+  - Changed `cascadeInvalidation` so it matches existing `MATCH (oldSource:Source {id: $oldSourceId})` rather than creating phantom Source nodes on typo'd IDs.
+- **H6: Graph Traversal Depth Expansion (`core/graph/queries.js`)**:
+  - Expanded traversal depth from 4 hops to 8 hops (`DEPENDS_ON*1..8`).
+- **H9: Auth Token Expiration & Cryptographic Salt (`apps/server/index.js`)**:
+  - Enriched `signAuthToken` with mandatory `exp` (30 days) and unique `jti`. Enforced strict expiration check in `verifyAuthToken`.
+- **H10: Docker Production Security Defaults (`docker-compose.yml`)**:
+  - Set `NODE_ENV=production` and bound FalkorDB port to local loopback `127.0.0.1:6379:6379` in `docker-compose.yml`.
+- **H11: Multi-Tenant Safe Scoped Database Reset (`core/graph/queries.js`)**:
+  - Replaced global `MATCH (n) DETACH DELETE n` in `seedDemoGraph` with scoped deletion: `WHERE n.is_demo = true OR n.id IN ['ADR-001', 'ADR-002', 'DEC-101', 'DEC-102', 'DEC-103', 'F-Auth-v1', 'F-OAuth2']`.
+- **H12: Multi-Tenant Source Isolation (`core/ingestion/sources.js`)**:
+  - Updated `ingestGitCommit`, `ingestPackageJsonChange`, `ingestCodeownersChange`, and `ingestGitHubIssue` to accept `repo` and prefix source IDs to prevent cross-tenant collisions.
+- **H13: MCP SSE Session Reaper Fix (`apps/server/index.js`)**:
+  - Changed reaper to check idleness (`now - (session.lastActiveAt || session.createdAt) > MCP_SESSION_TTL_MS`) instead of killing active sessions at 5 minutes. Added 30s `: keepalive\n\n` comments.
 - **NPM Package Version Bump to v1.3.2 (`@cavdax/mcp-server`)**:
-  - **Adversarial Audit Discovery (/devils-advocate)**:
-    - `@cavdax/mcp-server` bundles `core/` via its `prepack` script (`bundle-core.mjs`). While git branches contained all parser, query, and CI gate fixes, the public npm registry still served unpatched `v1.3.1`.
-    - Bumped `apps/mcp-server/package.json` and fallback identifiers to `v1.3.2`.
-    - Updated `README.md` release badges and npx CLI invocations (`npx -y @cavdax/mcp-server@1.3.2 gate ...`).
-    - Verified `8/8` MCP server unit tests and clean `npm run prepack` tarball copying.
+  - Bumped `apps/mcp-server/package.json` and fallback identifiers to `v1.3.2`.
+  - Updated `README.md` release badges and npx CLI invocations (`npx -y @cavdax/mcp-server@1.3.2 gate ...`).
+  - Verified `8/8` MCP server unit tests and clean `npm run prepack` tarball copying.
 - **Mandatory `Co-authored-by:` Git Trailer Invariant (`AGENTS.md` & `Suneet-Wrap-Up-Finish`)**:
-  - **Adversarial Ethical & Technical Discovery (/devils-advocate)**:
-    - AI coding agents and single-lead workflows frequently commit code changes, vulnerability fixes, or architectural rewrites without crediting the peer reviewer or teammate whose audit surfaced the flaws. This deprives contributors of genuine GitHub attribution graph activity and violates open-source ethics.
-  - **The Architectural & Workflow Standard**:
-    - Codified Rule `0r` in `AGENTS.md` and updated Stage 4 in `Suneet-Wrap-Up-Finish` (`SKILL.md`) requiring standard GitHub `Co-authored-by:` commit trailers whenever a teammate contributes code, review, debugging, or adversarial audit findings.
-    - Specified multi-profile attribution redundancy (e.g. `Geetika Chugh <geetika7chugh@gmail.com>` and `Geetika Chugh <geetika@ibm.com>`) so GitHub seamlessly links all verified contributor profiles.
+  - Codified Rule `0r` in `AGENTS.md` and updated Stage 4 in `Suneet-Wrap-Up-Finish` (`SKILL.md`) requiring standard GitHub `Co-authored-by:` commit trailers whenever a teammate contributes code, review, debugging, or adversarial audit findings.
+  - Specified multi-profile attribution redundancy (`Geetika Chugh <geetika7chugh@gmail.com>` and `Geetika Chugh <geetika@ibm.com>`) so GitHub seamlessly links all verified contributor profiles.
+- **Test Suite Verification**:
+  - Server test suite: `151/151` passing tests (`node --test apps/server/test/*.test.mjs`).
+  - MCP test suite: `8/8` passing tests (`npm test` in `apps/mcp-server`).
+  - Syntax check: `node --check` passed across all server, core, and cli modules.
+  - Benchmarks: `evaluate.js` and `scale_generator.js` executed cleanly with transparent labels.
 - **NPM Download Metrics Forensic Proof ($1,469 \to 1,112$)**:
   - **The User Concern**: Observation of an apparent drop from 1,469 downloads to 1,112 downloads on npmjs.com, raising fears of user uninstalls.
   - **Empirical Mathematical Proof**:

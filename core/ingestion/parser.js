@@ -33,10 +33,14 @@ export function extractHeuristicMetadata(content, filePath = '') {
   const metadata = {};
 
   // 1. Title & ID detection: e.g. "# ADR-002: OAuth2 Token Migration" or "# 1. Record Architecture Decision"
-  const titleMatch = content.match(/^#\s+(?:ADR-)?([A-Za-z0-9-_]+)?[:.]?\s*(.+)$/m);
+  const titleMatch = content.match(/^#\s+(?:ADR[-_]?)?([A-Za-z0-9-_]+)?[:.]?\s*(.+)$/m);
   if (titleMatch) {
-    if (titleMatch[1] && /^ADR-\d+$/i.test(titleMatch[1])) {
-      metadata.id = titleMatch[1].toUpperCase();
+    if (titleMatch[1]) {
+      const rawNum = titleMatch[1];
+      const parsedId = /^\d+$/.test(rawNum) ? `ADR-${rawNum.padStart(3, '0')}` : rawNum.toUpperCase().replace('_', '-');
+      if (/^ADR-\d+$/i.test(parsedId)) {
+        metadata.id = parsedId;
+      }
     }
     metadata.title = titleMatch[2].trim();
   }
@@ -63,16 +67,16 @@ export function extractHeuristicMetadata(content, filePath = '') {
     metadata.superseded_by = passiveMatches[1].toUpperCase().replace('_', '-');
   }
 
-  // 2b. Active supersedes extraction: e.g. "Supersedes: ADR-001", "replaces: ADR-001"
-  // Negative lookbehind ensures we never extract "superseded by ADR-001" as active supersession.
-  const activeMatches = content.match(/(?<!(?:superseded|deprecated|replaced)\s+)(?:supersedes|replaces)\s*:?\s*(?:\[)?([A-Za-z0-9-_]+)(?:\])?/gi);
-  if (activeMatches) {
+  // 2b. Active supersedes extraction: e.g. "Supersedes: ADR-001, ADR-002", "Replaces: [ADR-001]"
+  // Requires directive syntax (supersedes: or replaces: at line start or after newline) to avoid matching prose sentences like "The cache replaces 1000 requests..."
+  const activeLineMatches = content.match(/(?:^|\r?\n)\s*(?<!(?:superseded|deprecated|replaced)\s+)(?:supersedes|replaces)\s*:\s*([^\r\n]+)/gi);
+  if (activeLineMatches) {
     const ids = [];
-    for (const match of activeMatches) {
-      const id = match.match(/(?:ADR[-_]?\d+|\d{3,4})/i);
-      if (id) {
-        let cleanId = id[0].toUpperCase().replace('_', '-');
-        if (/^\d{3,4}$/.test(cleanId)) cleanId = `ADR-${cleanId}`;
+    for (const line of activeLineMatches) {
+      const idMatches = line.matchAll(/(?:ADR[-_]?(\d+)|(?<![\w-])(\d{3,4})(?![\w-]))/gi);
+      for (const m of idMatches) {
+        const num = m[1] || m[2];
+        const cleanId = `ADR-${num.padStart(3, '0')}`;
         if (cleanId !== metadata.id && !ids.includes(cleanId)) {
           ids.push(cleanId);
         }
@@ -88,6 +92,7 @@ export function extractHeuristicMetadata(content, filePath = '') {
     const s = statusMatch[1].toUpperCase();
     if (['ACTIVE', 'ACCEPTED', 'APPROVED', 'VALID'].includes(s)) metadata.status = 'ACTIVE';
     else if (['SUPERSEDED', 'DEPRECATED', 'REPLACED', 'ARCHIVED'].includes(s)) metadata.status = 'SUPERSEDED';
+    else if (['PROPOSED', 'DRAFT', 'PENDING', 'REJECTED'].includes(s)) metadata.status = s;
   }
 
   // 4. Decision extraction: e.g. "## Decision\nWe will use OAuth2 tokens..."
@@ -96,6 +101,14 @@ export function extractHeuristicMetadata(content, filePath = '') {
     const cleanDecision = decisionMatch[1].trim().split(/\r?\n/)[0].replace(/^[-*]\s*/, '').slice(0, 120);
     metadata.decision_title = cleanDecision;
     metadata.decision_id = `DEC-${metadata.id ? metadata.id.replace('ADR-', '') : 'AUTO'}`;
+  }
+
+  // 4b. Target file / governs extraction: e.g. "Governs: src/services/payment.js" or "Target: src/auth.js"
+  const targetMatch = content.match(/(?:Governs|Target[_\s]?file|Applies[_\s]?to)\s*:\s*([^\r\n]+)/i);
+  if (targetMatch) {
+    const cleanTarget = targetMatch[1].trim().replace(/^['"`]|['"`]$/g, '');
+    metadata.target_file = cleanTarget;
+    metadata.governs = cleanTarget;
   }
 
   // 5. Fact / Context extraction: e.g. "## Context\nLegacy token auth is vulnerable..."
@@ -159,6 +172,12 @@ export function parseFrontmatter(fileContent, filePath = '') {
         value = value.slice(1, -1);
       }
 
+      // Clean inline comments: e.g. Status: Accepted # inline comment
+      const commentIdx = value.indexOf(' #');
+      if (commentIdx !== -1) {
+        value = value.slice(0, commentIdx).trim();
+      }
+
       // Empty value after colon means a block-sequence follows on next lines
       frontmatter[currentKey] = value || null;
     } else {
@@ -218,10 +237,11 @@ export async function ingestAdrFile(graph, filePath, { allowedRoot: allowedRootO
     ? (Array.isArray(rawSupersedes) ? rawSupersedes : [rawSupersedes]).filter(Boolean)
     : [];
 
+  const sourceStatus = (frontmatter.status || 'ACTIVE').toUpperCase();
   const title = frontmatter.title || adrId;
   const relativePath = path.relative(allowedRootOption ? allowedRoot : process.cwd(), absolutePath).replace(/\\/g, '/');
 
-  console.log(`[Ingestion] ADR ID: '${adrId}', Supersedes: ${supersedesIds.length ? supersedesIds.join(', ') : 'None'}`);
+  console.log(`[Ingestion] ADR ID: '${adrId}', Status: '${sourceStatus}', Supersedes: ${supersedesIds.length ? supersedesIds.join(', ') : 'None'}`);
 
   // 1. ATOMIC GRAPH INGESTION: MERGE Source node so any ADR (not just pre-seeded
   //    ones) exists in the graph before cascadeInvalidation tries to MATCH it.
@@ -232,14 +252,15 @@ export async function ingestAdrFile(graph, filePath, { allowedRoot: allowedRootO
     ON CREATE SET
       s.ref = $ref,
       s.type = 'ADR',
-      s.status = 'ACTIVE',
+      s.status = $sourceStatus,
       s.title = $title,
       s.created_at = timestamp()
     ON MATCH SET
       s.ref = $ref,
+      s.status = $sourceStatus,
       s.title = $title
   `;
-  await graph.query(mergeSourceCypher, { params: { adrId, ref: relativePath, title } });
+  await graph.query(mergeSourceCypher, { params: { adrId, ref: relativePath, title, sourceStatus } });
 
   // 2. OPTIONAL: If frontmatter declares a fact, MERGE Fact + EXTRACTED_FROM edge.
   if (frontmatter.fact_id && frontmatter.fact_claim) {
@@ -259,12 +280,20 @@ export async function ingestAdrFile(graph, filePath, { allowedRoot: allowedRootO
   //     decision that depends on this ADR's fact. Without this, a real repo has
   //     no way to create Decision nodes (only the demo seed did).
   if (frontmatter.decision_id && frontmatter.fact_id) {
+    const targetFile = frontmatter.target_file || frontmatter.governs || frontmatter.file || null;
     const mergeDecisionCypher = `
       MATCH (f:Fact {id: $factId})
       MERGE (d:Decision {id: $decisionId})
-      ON CREATE SET d.title = $decisionTitle, d.status = CASE WHEN f.is_stale = true THEN 'INVALIDATED_NEEDS_REVALIDATION' ELSE 'VALID' END, d.is_demo = $isDemo, d.created_at = timestamp()
-      ON MATCH SET d.status = CASE WHEN f.is_stale = true THEN 'INVALIDATED_NEEDS_REVALIDATION' ELSE d.status END, d.is_demo = CASE WHEN $isDemo THEN true ELSE d.is_demo END
-      ON MATCH SET d.is_demo = CASE WHEN $isDemo THEN true ELSE d.is_demo END
+      ON CREATE SET d.title = $decisionTitle,
+                    d.status = CASE WHEN f.is_stale = true THEN 'INVALIDATED_NEEDS_REVALIDATION' ELSE 'VALID' END,
+                    d.target_file = $targetFile,
+                    d.governs = $targetFile,
+                    d.is_demo = $isDemo,
+                    d.created_at = timestamp()
+      ON MATCH SET d.status = CASE WHEN f.is_stale = true THEN 'INVALIDATED_NEEDS_REVALIDATION' ELSE d.status END,
+                   d.target_file = coalesce(d.target_file, $targetFile),
+                   d.governs = coalesce(d.governs, $targetFile),
+                   d.is_demo = CASE WHEN $isDemo THEN true ELSE d.is_demo END
       MERGE (d)-[:DEPENDS_ON]->(f)
     `;
     await graph.query(mergeDecisionCypher, {
@@ -272,21 +301,26 @@ export async function ingestAdrFile(graph, filePath, { allowedRoot: allowedRootO
         factId: frontmatter.fact_id,
         decisionId: frontmatter.decision_id,
         decisionTitle: frontmatter.decision_title || frontmatter.decision_id,
+        targetFile,
         isDemo
       }
     });
   }
 
   // 3. TRIGGER CASCADING INVALIDATION for every superseded ADR
-  //    Previously only a single supersedesId was handled — now supports
-  //    multi-supersedes (e.g. one ADR replacing two legacy ADRs at once).
+  //    Fix H2: Proposed, Draft, or Rejected ADRs must NEVER invalidate live decisions!
+  const isDraftOrProposed = ['PROPOSED', 'DRAFT', 'PENDING', 'REJECTED'].includes(sourceStatus);
   const invalidationResults = [];
 
-  for (const oldSourceId of supersedesIds) {
-    console.log(`[Ingestion] ⚡ Mutation: '${adrId}' supersedes '${oldSourceId}'. Triggering cascade...`);
-    const result = await cascadeInvalidation(graph, adrId, oldSourceId);
-    console.log(`[Ingestion] Cascade on '${oldSourceId}' complete in ${result.latency_ms}ms. Affected: ${result.affected_decisions} decision(s)`);
-    invalidationResults.push({ supersedes: oldSourceId, ...result });
+  if (!isDraftOrProposed) {
+    for (const oldSourceId of supersedesIds) {
+      console.log(`[Ingestion] ⚡ Mutation: '${adrId}' supersedes '${oldSourceId}'. Triggering cascade...`);
+      const result = await cascadeInvalidation(graph, adrId, oldSourceId);
+      console.log(`[Ingestion] Cascade on '${oldSourceId}' complete in ${result.latency_ms}ms. Affected: ${result.affected_decisions} decision(s)`);
+      invalidationResults.push({ supersedes: oldSourceId, ...result });
+    }
+  } else {
+    console.log(`[Ingestion] ADR '${adrId}' is in '${sourceStatus}' status — skipping cascading invalidation.`);
   }
 
   return {

@@ -56,20 +56,33 @@ runs:
         node ${{ github.action_path }}/apps/mcp-server/bin/cavdax.js ingest --repo ${{ github.workspace }}
 
         echo "🛡️ Verifying commit causal provenance..."
+        CHECK_EXIT=0
         if [ -n "${{ github.event.pull_request.number }}" ]; then
-          node ${{ github.action_path }}/apps/mcp-server/bin/cavdax.js check --pr ${{ github.event.pull_request.number }}
+          node ${{ github.action_path }}/apps/mcp-server/bin/cavdax.js check --pr ${{ github.event.pull_request.number }} || CHECK_EXIT=$?
         else
-          node ${{ github.action_path }}/apps/mcp-server/bin/cavdax.js check --staged
+          node ${{ github.action_path }}/apps/mcp-server/bin/cavdax.js check --staged || CHECK_EXIT=$?
         fi
 
         if [ -n "$GITHUB_STEP_SUMMARY" ]; then
-          echo "### 🛡️ CAVDAX Causal Execution Gate: PASS" >> $GITHUB_STEP_SUMMARY
-          echo "All touched files were verified against the FalkorDB causal dependency graph." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| FalkorDB Traversal | GraphBLAS Sparse BFS | Active |" >> $GITHUB_STEP_SUMMARY
-          echo "| Causal Provenance | Zero Stale Sources | 100% Pass |" >> $GITHUB_STEP_SUMMARY
+          if [ $CHECK_EXIT -eq 0 ]; then
+            echo "### 🛡️ CAVDAX Causal Execution Gate: PASS" >> $GITHUB_STEP_SUMMARY
+            echo "All touched files were verified against active architecture decisions." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Gate Verdict | Verified Causal Provenance | PASS |" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ⛔ CAVDAX Causal Execution Gate: BLOCKED" >> $GITHUB_STEP_SUMMARY
+            echo "PR contains code grounded in stale or superseded architecture decisions." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Metric | Value | Status |" >> $GITHUB_STEP_SUMMARY
+            echo "|---|---|---|" >> $GITHUB_STEP_SUMMARY
+            echo "| Gate Verdict | Stale Architecture Detected | BLOCKED |" >> $GITHUB_STEP_SUMMARY
+          fi
+        fi
+
+        if [ $CHECK_EXIT -ne 0 ]; then
+          exit $CHECK_EXIT
         fi
       env:
         FALKORDB_HOST: ${{ inputs.falkordb_host }}

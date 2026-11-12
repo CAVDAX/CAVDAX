@@ -950,9 +950,10 @@ Every migration change must pass:
    - FalkorDB live graph reachability must return `< 2.8ms` traversal latency.
    - MCP gate interception (`apply_code_change`) must correctly issue HTTP 403 halts when decisions are invalid.
    - Public repository linking (`torvalds/linux`, `npryce/adr-tools`, `adr/madr`) must auto-detect `master`/`develop` default branches and render cleanly.
-5. **Vercel & Git Guard Verification**:
-   - Backend, infrastructure, and contract commits must include `[skip vercel]` to protect daily deployment quotas while allowing GitHub Actions CI to execute.
-   - Pure markdown and documentation commits must use `[skip ci] [skip vercel]`.
+5. **Cloudflare & Git Guard Verification**:
+   - **Universal Ban on `[skip vercel]`**: CAVDAX deploys via Cloudflare Pages and Caddy Docker Compose mesh. Never include `[skip vercel]` in commit messages.
+   - **Code Commits**: Never use `[skip ci]` on code changes so GitHub Actions CI suites run.
+   - **Documentation Commits**: Use `[skip ci]` exclusively for pure markdown and documentation changes (`docs/`, `*.md`).
    - Run staged-secrets scan (`git diff --cached`) before staging; never bypass pre-commit hooks.
 
 #### 3. Mainline Integration Gate

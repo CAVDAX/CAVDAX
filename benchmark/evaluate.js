@@ -270,10 +270,10 @@ const SCENARIOS = [
 function runEvaluation() {
   console.log('========================================================================');
   console.log('   CAVDAX 10-SCENARIO DYNAMIC EVALUATION HARNESS');
-  console.log('   Graph-Grounded Decision Execution vs. Vector RAG Baseline');
+  console.log('   Graph-Grounded Decision Execution vs. Lexical Baseline');
   console.log('========================================================================\n');
 
-  console.log('| ID      | Category             | Vector RAG Baseline      | CAVDAX Gate Verdict   | Traversal Latency |');
+  console.log('| ID      | Category             | Lexical Baseline         | CAVDAX Gate Verdict   | Traversal Latency |');
   console.log('|---------|----------------------|--------------------------|-----------------------|-------------------|');
 
   let ragFailures = 0;
@@ -356,12 +356,12 @@ function runEvaluation() {
 *Empirical evaluation of Graph-Grounded Decision Execution vs. Vector RAG Baselines across 10 engineering scenarios.*
 
 ## 📊 Executive Summary
-| Metric | Standard Vector RAG | CAVDAX FalkorDB Gate |
+| Metric | Lexical Retrieval Baseline (Un-grounded) | CAVDAX Causal DAG Gate |
 |---|---|---|
 | **Stale Code Execution Prevention** | ${(100 - parseInt(ragFailureRate, 10))}% (${SCENARIOS.length - ragFailures}/${SCENARIOS.length} Pass) | **${cavdaxProtectionRate}% (${cavdaxInterceptions}/${SCENARIOS.length} Blocked)** |
 | **Causal Superseding Awareness** | ❌ Blind to temporal ordering | ✅ **Direct DAG traversal** |
 | **Execution Gate Enforcement** | ❌ Advisory / None | ✅ **Enclosed MCP tool** |
-| **Decision Latency Benchmark** | ~350-450ms (LLM embedding + cosine rerank) | **${avgLatency}ms (GraphBLAS Sparse Traversal)** |
+| **Decision Latency Benchmark** | ~350-450ms (typical remote vector API RTT) | **${avgLatency}ms (In-Memory DAG Traversal)** |
 
 ## 🧪 Detailed Scenario Scorecard
 | ID | Category | Scenario Title | Vector RAG Vulnerability | CAVDAX Deterministic Defense | Latency |
