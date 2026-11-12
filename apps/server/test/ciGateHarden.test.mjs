@@ -30,11 +30,28 @@ test('checkCommand: isScannableFile includes monorepo app source files', () => {
   assert.equal(isScannableFile('README.md'), false, 'docs must be excluded');
 });
 
-test('checkCommand: runCheck processes explicit files list without usage bailout', async () => {
+test('checkCommand: runCheck processes explicit files list without usage bailout (verified under both CI and local envs)', async () => {
   const files = ['apps/server/dummy_non_existent.js'];
-  // When files array is provided with non-existent / empty files, it should not bail with usage
-  const result = await runCheck({ files });
-  assert.equal(result, true, 'Files with no decision violations should pass clearance');
+  const prevCi = process.env.CI;
+  const prevGh = process.env.GITHUB_ACTIONS;
+
+  try {
+    // 1. Local workstation mode (CI undefined): files with no decision violations must pass
+    delete process.env.CI;
+    delete process.env.GITHUB_ACTIONS;
+    const localResult = await runCheck({ files });
+    assert.equal(localResult, true, 'Files with no decision violations must pass clearance locally');
+
+    // 2. Headless CI runner mode (CI=true, GITHUB_ACTIONS=true) where FalkorDB is offline:
+    // Files with no decision references MUST still pass clearance
+    process.env.CI = 'true';
+    process.env.GITHUB_ACTIONS = 'true';
+    const ciResult = await runCheck({ files });
+    assert.equal(ciResult, true, 'Files with no decision violations must pass clearance in CI');
+  } finally {
+    if (prevCi !== undefined) process.env.CI = prevCi; else delete process.env.CI;
+    if (prevGh !== undefined) process.env.GITHUB_ACTIONS = prevGh; else delete process.env.GITHUB_ACTIONS;
+  }
 });
 
 test('detectUnsyncedSupersessions: PROPOSED ADR does NOT mark target ADR as superseded', () => {

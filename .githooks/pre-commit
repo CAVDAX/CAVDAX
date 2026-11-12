@@ -23,6 +23,16 @@ if [ -f "scripts/lint-clean-svgs.mjs" ]; then
   fi
 fi
 
+if [ -f "scripts/test-ci.mjs" ]; then
+  echo "[CAVDAX] Running Headless CI Simulation Test Suite (CI=true)..."
+  node scripts/test-ci.mjs
+  TEST_EXIT=$?
+  if [ $TEST_EXIT -ne 0 ]; then
+    echo "[CAVDAX] Commit aborted: One or more unit tests or architectural invariants failed in simulated CI."
+    exit 1
+  fi
+fi
+
 if command -v npx >/dev/null 2>&1; then
   node apps/mcp-server/bin/cavdax.js check --staged
   EXIT_CODE=$?

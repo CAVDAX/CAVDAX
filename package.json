@@ -16,6 +16,8 @@
     "browser:debug": "powershell -ExecutionPolicy Bypass -File scripts/launch-signedin-browser.ps1",
     "test:e2e": "node scripts/browser-runner.js",
     "test:browser": "node scripts/test-signedin-browser.js",
+    "test": "node scripts/test-ci.mjs",
+    "test:ci": "node scripts/test-ci.mjs",
     "lint:md": "node scripts/lint-markdown.mjs"
   },
   "keywords": [
