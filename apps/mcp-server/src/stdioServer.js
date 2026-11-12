@@ -42,7 +42,8 @@ export const TOOLS = [
   {
     name: 'apply_code_change',
     description:
-      'Applies a verified code modification to a target file. Enclosed within the CAVDAX Causal Graph Gate. If the decision_id depends on a superseded or stale architecture decision, the write is hard-rejected and nothing is written to disk.',
+      'Write code to disk behind the CAVDAX Causal Graph Gate. Hard-rejects with zero disk mutation if decision_id depends on an invalidated or stale architecture decision.',
+    annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -56,12 +57,24 @@ export const TOOLS = [
         agent_id: AGENT_ID_PROPERTY
       },
       required: ['decision_id', 'file_path', 'code_payload']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        gate_verdict: { type: 'string' },
+        status: { type: 'string' },
+        decision_id: { type: 'string' },
+        file_path: { type: 'string' },
+        reason: { type: 'string' }
+      }
     }
   },
   {
     name: 'revalidate_decision',
     description:
-      'Act IV Revalidation: ground a new Decision in a fresh superseding Source/ADR, archiving the invalidated decision.',
+      'Mutating supersession write (Act IV): replace an invalidated Decision with a new Decision grounded in a human-reviewed Source/ADR. Do NOT use for read-only checks (use check_intent_clearance) or creating brand-new ADRs from scratch (ADRs are authored via human-reviewed PRs).',
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -72,12 +85,23 @@ export const TOOLS = [
         title: { type: 'string', description: 'Directive title for new decision' }
       },
       required: ['new_source_id', 'old_decision_id', 'new_decision_id', 'new_fact_id', 'title']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        status: { type: 'string' },
+        old_decision_id: { type: 'string' },
+        new_decision_id: { type: 'string' },
+        message: { type: 'string' }
+      }
     }
   },
   {
     name: 'check_intent_clearance',
     description:
-      'Pre-flight architectural clearance. Call BEFORE generating or applying code to verify if your proposed decision is grounded in active architecture records without wasting tokens.',
+      'Fast, read-only pre-flight gate check for a specific decision_id and target_file before generating or editing code. Use this before apply_code_change.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -96,11 +120,22 @@ export const TOOLS = [
         agent_id: AGENT_ID_PROPERTY
       },
       required: ['decision_id']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        clearance: { type: 'string' },
+        allowed: { type: 'boolean' },
+        decision_id: { type: 'string' },
+        reason: { type: 'string' }
+      }
     }
   },
   {
     name: 'acquire_decision_lock',
-    description: 'Multi-Agent Concurrency Control: Leases an exclusive lock on an Architecture Decision branch.',
+    description: 'Multi-Agent Concurrency Control: Leases an exclusive write lock on an Architecture Decision branch for agent_id.',
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -110,11 +145,22 @@ export const TOOLS = [
         reason: { type: 'string', description: 'Operational rationale for the exclusive lease.' }
       },
       required: ['decision_id', 'agent_id']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        locked: { type: 'boolean' },
+        decision_id: { type: 'string' },
+        agent_id: { type: 'string' },
+        expires_at: { type: 'string' }
+      }
     }
   },
   {
     name: 'release_decision_lock',
-    description: 'Multi-Agent Concurrency Control: Releases a held decision lock for other autonomous agents.',
+    description: 'Multi-Agent Concurrency Control: Releases an exclusive write lock previously acquired by agent_id.',
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -122,12 +168,22 @@ export const TOOLS = [
         agent_id: { type: 'string', description: 'Unique identifier of the agent releasing the lock.' }
       },
       required: ['decision_id', 'agent_id']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        released: { type: 'boolean' },
+        decision_id: { type: 'string' },
+        agent_id: { type: 'string' }
+      }
     }
   },
   {
     name: 'query_causal_graph',
     description:
-      'Inspect the causal dependency graph to verify node statuses and dependency paths before proposing code changes.',
+      'Open-ended read-only exploration of raw causal graph nodes and edges (ADR, Fact, Decision, Action). Do NOT use for pre-write gate clearance (use check_intent_clearance) or single-decision detail lookup (use get_decision_details).',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -136,12 +192,21 @@ export const TOOLS = [
           description: 'Optional node ID (e.g. ADR-001, DEC-102). When set, only that node and its direct edges are returned.'
         }
       }
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        nodes: { type: 'array', items: { type: 'object' } },
+        edges: { type: 'array', items: { type: 'object' } }
+      }
     }
   },
   {
     name: 'export_graph_image',
     description:
-      'Generates a standalone SVG/visual image of the CAVDAX causal architecture graph for PR descriptions, documentation, or visual inspection.',
+      'Generates a standalone SVG/Markdown visual diagram of the CAVDAX causal architecture graph for PR descriptions or documentation.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -159,12 +224,23 @@ export const TOOLS = [
           description: 'Output format (default: "svg").'
         }
       }
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        format: { type: 'string' },
+        svg: { type: 'string' },
+        node_count: { type: 'number' },
+        edge_count: { type: 'number' }
+      }
     }
   },
   {
     name: 'list_active_decisions',
     description:
-      'Returns a lightweight manifest of all architectural decisions governing this repository, their approval status, grounded facts, and target files.',
+      'Returns a lightweight manifest (IDs, titles, statuses, governed paths) of all architectural decisions governing this repository. Use get_decision_details to inspect a single decision in full; new ADRs are authored via human-reviewed PRs.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -174,12 +250,49 @@ export const TOOLS = [
           description: 'Filter decisions by status (default: "ALL").'
         }
       }
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        status: { type: 'string' },
+        count: { type: 'number' },
+        total_decisions: { type: 'number' },
+        active_count: { type: 'number' },
+        decisions: { type: 'array', items: { type: 'object' } }
+      }
+    }
+  },
+  {
+    name: 'get_decision_details',
+    description:
+      'Read-only full inspection of a single architectural decision (decision_id), including its metadata, grounded facts/sources, upstream/downstream causal dependencies, and lock state.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    inputSchema: {
+      type: 'object',
+      properties: {
+        decision_id: {
+          type: 'string',
+          description: 'The ID of the Architecture Decision (e.g. DEC-102 or ADR-001) to inspect in full.'
+        }
+      },
+      required: ['decision_id']
+    },
+    outputSchema: {
+      type: 'object',
+      properties: {
+        mode: { type: 'string' },
+        status: { type: 'string' },
+        found: { type: 'boolean' },
+        decision: { type: 'object' }
+      }
     }
   },
   {
     name: 'explain_blast_radius',
     description:
-      'Computes downstream architectural blast radius and invalidated dependencies before modifying an ADR, Decision, or Fact.',
+      'Read-only downstream reachability analysis: computes which decisions and governed files will be invalidated before modifying an upstream ADR, Decision, or Fact.',
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     inputSchema: {
       type: 'object',
       properties: {
@@ -189,21 +302,18 @@ export const TOOLS = [
         }
       },
       required: ['node_id']
-    }
-  },
-  {
-    name: 'explain_architectural_impact',
-    description:
-      'Analyzes downstream architectural impact, invalidated decisions, and affected source files before modifying an ADR, Decision, or Fact. (Alias for explain_blast_radius).',
-    inputSchema: {
+    },
+    outputSchema: {
       type: 'object',
       properties: {
-        node_id: {
-          type: 'string',
-          description: 'Target node ID (e.g. DEC-101 or ADR-001) to trace downstream impact for.'
-        }
-      },
-      required: ['node_id']
+        mode: { type: 'string' },
+        status: { type: 'string' },
+        node_found: { type: 'boolean' },
+        node_id: { type: 'string' },
+        severity: { type: 'string' },
+        downstream_invalidated_decisions: { type: 'array', items: { type: 'object' } },
+        governed_files_at_risk: { type: 'array', items: { type: 'string' } }
+      }
     }
   }
 ];
@@ -217,7 +327,9 @@ const REQUIRED_ARGS = {
   query_causal_graph: [],
   export_graph_image: [],
   list_active_decisions: [],
+  get_decision_details: ['decision_id'],
   explain_blast_radius: ['node_id'],
+  // Unadvertised backward-compatible dispatch alias for legacy callers
   explain_architectural_impact: ['node_id']
 };
 
@@ -304,6 +416,7 @@ export class CavdaxStdioGateway {
       else if (name === 'acquire_decision_lock') result = sim.acquireLock(args);
       else if (name === 'release_decision_lock') result = sim.releaseLock(args);
       else if (name === 'list_active_decisions') result = sim.listActiveDecisions(args);
+      else if (name === 'get_decision_details') result = sim.getDecisionDetails(args);
       else if (name === 'explain_blast_radius' || name === 'explain_architectural_impact') result = sim.explainBlastRadius(args);
       else if (name === 'export_graph_image') {
         const [{ renderGraphToSvg, computeBlastRadius }] = await Promise.all([loadCore('graph/renderSvg.js')]);

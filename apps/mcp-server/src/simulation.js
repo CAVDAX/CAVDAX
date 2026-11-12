@@ -280,6 +280,49 @@ export class SimulationEngine {
     };
   }
 
+  getDecisionDetails({ decision_id } = {}) {
+    const base = { simulated: true, simulated_warning: SIM_NOTE };
+    if (!decision_id || typeof decision_id !== 'string' || !decision_id.trim()) {
+      return { ...base, isError: true, status: 'ERROR', found: false, message: 'decision_id is required to inspect decision details.' };
+    }
+    const cleanId = decision_id.trim().slice(0, 128);
+    const dec = this.decisions.get(cleanId);
+    const node = this.nodes.find((n) => n.id === cleanId);
+    if (!dec && !node) {
+      return { ...base, isError: true, status: 'ERROR', found: false, decision_id: cleanId, message: `Decision '${cleanId}' not found in simulated architecture graph.` };
+    }
+
+    const upstreamEdges = this.edges.filter((e) => e.source === cleanId);
+    const downstreamEdges = this.edges.filter((e) => e.target === cleanId);
+    const nodeMap = new Map(this.nodes.map((n) => [n.id, n]));
+
+    const status = dec?.status || node?.status || 'VALID';
+    return {
+      ...base,
+      status: 'SUCCESS',
+      found: true,
+      decision: {
+        id: cleanId,
+        title: dec?.title || node?.title || 'Architectural Decision',
+        status: status === 'VALID' ? 'ACTIVE' : status,
+        governs: dec?.governs || node?.target_file || 'src/**',
+        grounded_in: dec?.fact || null,
+        node_type: node?.label || 'Decision',
+        ...(node || {}),
+        upstream_dependencies: upstreamEdges.map((e) => ({
+          id: e.target,
+          relation: e.type || 'DEPENDS_ON',
+          ...(nodeMap.get(e.target) ? { label: nodeMap.get(e.target).label, status: nodeMap.get(e.target).status, title: nodeMap.get(e.target).title } : {})
+        })),
+        downstream_dependents: downstreamEdges.map((e) => ({
+          id: e.source,
+          relation: e.type || 'DEPENDS_ON',
+          ...(nodeMap.get(e.source) ? { label: nodeMap.get(e.source).label, status: nodeMap.get(e.source).status, title: nodeMap.get(e.source).title } : {})
+        }))
+      }
+    };
+  }
+
   explainBlastRadius({ node_id } = {}) {
     const base = { simulated: true, simulated_warning: SIM_NOTE, target_node: node_id };
     if (!node_id || typeof node_id !== 'string') {
