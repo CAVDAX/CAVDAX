@@ -653,7 +653,7 @@ Phase 3.6 — Done (Distribution, CI & Concurrency Hardening — Nov 12, 2026)
 Phase 4 — Enterprise, Domain Cutover & Remaining Todos
   [ ] Domain cutover: Purchase cavdax.com on Cloudflare Registrar, 301 redirect cavdax.sahnirmaan.live -> cavdax.com, update AWS EC2 Caddyfile/env, GitHub OAuth, Razorpay webhook, & 33-file domain sweep
   [ ] Brand email setup: Cloudflare Email Routing (@cavdax.com) + SPF/DKIM/DMARC (keeping cavdax.dev@gmail.com as out-of-band recovery anchor)
-  [ ] Claim Glama listing at glama.ai/mcp/servers/CAVDAX/CAVDAX/admin (configure npx -y @cavdax/mcp-server stdio invocation)
+  ✅ Glama listing claimed & release published (glama.ai/mcp/servers/CAVDAX/CAVDAX)
   [ ] Redis session store migration (docs/SESSION_STORE_REDIS_MIGRATION.md) + atomic req.session transition helper in apps/server/index.js
   [ ] SIEM export from /api/audit (Splunk/Datadog JSON format)
   [ ] GitHub App setup for real-time webhook ingestion
