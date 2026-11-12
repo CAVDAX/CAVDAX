@@ -174,10 +174,10 @@ async function verifyFiles(files, options = {}) {
 
   let allPassed = true;
 
-  // --strict / CI: an unverifiable gate must not silently pass (a remote decision map counts as verifiable).
-  if (!graph && isCi && !remoteDecisions) {
+  // Strict mode: an unverifiable gate must not silently pass (a remote decision map counts as verifiable).
+  if (!graph && options.strict && !remoteDecisions) {
     console.error(`   ⛔ ${unreachableReason}`);
-    console.error('      CI / Strict mode active: unverifiable decisions are treated as failures (fail-closed).');
+    console.error('      Strict mode active: unverifiable decisions are treated as failures (fail-closed).');
     allPassed = false;
   }
 
