@@ -8,7 +8,16 @@ Operational constitution, architecture standards, and safety governance for AI c
 
 ---
 
+## 0. Company & Startup Identity Invariant (Read First)
 
+**CAVDAX IS A COMMERCIAL STARTUP & ENTERPRISE INFRASTRUCTURE PLATFORM — NOT A HACKATHON PROJECT.**
+
+- **Historical Reality**: CAVDAX originated as an experimental prototype during the GraphHacks Hackathon (Phase 1 / Proof of Concept). **The hackathon is 100% concluded.**
+- **Current & Future State**: CAVDAX is operating as an independent, commercial software startup and production causal architecture platform. All engineering, API design, security boundaries, and user interfaces must be built to the uncompromising standards of an institutional dev-tool company.
+- **Internal Evaluation Mode**: The internal Developer Panel (Ctrl+Shift+D / DevTeamPanel) and backend endpoints like /api/system/hackathon-mode function as the **Internal Evaluation / Demo Sandbox Master Switch** (unlocking Enterprise Tier features for demo walkthroughs without paywalls). This internal evaluation toggle is permanent developer infrastructure and must **never** be broken, degraded, or removed.
+- **Tone & Code Quality**: AI coding agents must reject any 'hackathon-grade' shortcuts, temporary throwaway hacks, mocked security gates, or placeholder stubs. Every change must be engineered for long-term production resilience, multi-tenant safety, and enterprise reliability.
+
+---
 
 ## 1. Absolute Inviolable Guardrails (Read First)
 
