@@ -21,6 +21,7 @@
 9. [NPM Package Distribution & Metadata Strategy](#9-npm-package-distribution--metadata-strategy-pending-team-review-with-geetika)
 10. [Multi-Branch Causal Invalidation & GraphRAG Architectural Drift Investigator](#10-multi-branch-causal-invalidation--graphrag-architectural-drift-investigator)
 11. [Technology Stack Evolution, Systems Architecture & Phased Language Migration Plan](#11-technology-stack-evolution-systems-architecture--phased-language-migration-plan)
+12. [CI/CD Supply Chain Hardening & GitHub Actions Lockfile Architecture](#12-cicd-supply-chain-hardening--github-actions-lockfile-architecture)
 
 ---
 
@@ -969,3 +970,24 @@ Every migration change must pass:
 #### 3. Mainline Integration Gate
 * **Developer Approval is Mandatory**: Once the feature branch is fully pushed and verified, the agent must present the complete verification attestation and stop.
 * **No automatic merges into `main`**: Merging into `main` requires explicit human developer confirmation and verification.
+
+---
+
+## 12. CI/CD Supply Chain Hardening & GitHub Actions Lockfile Architecture
+
+### 12.1 Strategic Context & Threat Model
+In automated CI/CD pipelines, workflows pull third-party GitHub Actions via git tags (e.g., `actions/checkout@v4`, `peaceiris/actions-gh-pages@v4`, `appleboy/ssh-action@v1.0.3`). Because git tags are mutable references, a compromised maintainer account or compromised tag can allow malicious upstream code execution inside runners holding deployment secrets (`AWS_PRIVATE_KEY`, `NPM_TOKEN`, `SLACK_WEBHOOK`).
+
+### 12.2 Evaluated Approaches
+1. **Full 40-Character SHA Pinning (Manual / Dependabot)**:
+   - Pinned inline: `uses: appleboy/ssh-action@7eaf76671a0eb50015d6c8b9356cb885b33877 # v1.0.3`.
+   - Native to GitHub Actions, zero external tooling required, natively parsed by Dependabot.
+2. **GitHub Actions Lockfile (`github/gh-actions-lock`)**:
+   - Maintains clean semver tags in workflow YAML while generating an immutable dependency lockfile (`actions.lock.json`).
+   - Requires the `gh` CLI extension and local synchronization steps on action upgrades.
+
+### 12.3 Phase-Gated Adoption Trigger
+- **Launch & Hackathon Gate**: Deferred. The current workflow relies 95% on first-party official GitHub actions (`actions/*`), where tag mutation risk is negligible compared to the operational churn of non-native lockfile tooling.
+- **Enterprise / Post-Launch Gate**: Adopt once CAVDAX onboards enterprise multi-tenant cloud deployments or when GitHub finalizes native action lockfile support. Migration will prioritize:
+  1. Automated Dependabot SHA pinning for third-party actions (`appleboy/ssh-action`, `peaceiris/actions-gh-pages`).
+  2. Evaluation of `github/gh-actions-lock` once the CLI extension stabilizes into mainstream GitHub Actions runtime syntax.
