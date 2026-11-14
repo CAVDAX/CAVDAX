@@ -604,7 +604,7 @@ export default function ProjectVideoPage({ onLaunchConsole, onOpenMcpPage }) {
                       {isHovered && (
                         <div className="absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-md bg-slate-950 text-white dark:bg-white dark:text-slate-950 text-[10px] font-mono font-medium shadow-xl border border-white/15 whitespace-nowrap z-50 pointer-events-none flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-100">
                           <span className="font-bold opacity-70">{km.time}</span>
-                          <span>•</span>
+                          <span className="h-2.5 w-px bg-white/20 dark:bg-slate-950/20 shrink-0 self-center" aria-hidden="true" />
                           <span>{km.label}</span>
                           {/* Micro Caret */}
                           <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-1 border-4 border-transparent border-t-slate-950 dark:border-t-white" />

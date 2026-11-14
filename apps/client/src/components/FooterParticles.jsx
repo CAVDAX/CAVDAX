@@ -725,14 +725,14 @@ export default function FooterParticles({ text = 'CAVDAX', onSelectTab, onLaunch
 
       {/* BOTTOM LEGAL BAR: Single-Line Monospace Metadata */}
       <div className="max-w-7xl mx-auto px-6 pt-5 border-t border-slate-200/80 dark:border-white/20 flex flex-col md:flex-row items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono gap-3 text-center md:text-left">
-        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+        <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5">
           <span className="font-mono font-bold text-slate-950 dark:text-white tracking-wider">CAVDAX</span>
-          <span className="text-slate-400 dark:text-zinc-600">•</span>
+          <span className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
           <span>Contextual Action &amp; Verified Decision Autonomous eXecution</span>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2.5 shrink-0">
           <span>Powered by FalkorDB GraphBLAS</span>
-          <span className="text-slate-400 dark:text-zinc-600">•</span>
+          <span className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
           <span>Apache 2.0 / BSL 1.1</span>
         </div>
       </div>

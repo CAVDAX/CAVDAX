@@ -1221,18 +1221,16 @@ EXECUTION WORKFLOW:
                 </span>
 
                 <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-
                   v{mcpVersion}
-
                 </span>
 
-                <span className="text-slate-300 dark:text-white/20 select-none">•</span>
+                <span className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
 
                 <Tooltip
                   content={
                     <span className="inline-flex items-center gap-1.5 font-mono text-[10px]">
                       <span className="text-white font-bold">{Number(npmDownloads).toLocaleString()}/mo</span>
-                      <span className="opacity-40 text-slate-400">•</span>
+                      <span className="h-2.5 w-px bg-white/20 shrink-0 self-center" aria-hidden="true" />
                       <span className="text-slate-300 font-semibold">{Number(npmWeeklyDownloads).toLocaleString()} this week</span>
                       <span className="text-slate-400 font-normal">on npmjs ↗</span>
                     </span>

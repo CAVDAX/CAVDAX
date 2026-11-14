@@ -1421,7 +1421,7 @@ export default function ProfilePage({
             <span>{activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}</span>
             {(isSponsor || hasCorePatron || isFoundingDevCore) && (
               <>
-                <span className="text-slate-300 dark:text-slate-700 hidden sm:inline" aria-hidden="true">•</span>
+                <span className="hidden sm:inline-block h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
                 <button
                   type="button"
                   onClick={() => {
@@ -2525,7 +2525,7 @@ export default function ProfilePage({
           <span>{activeUser ? `@${activeUser.login} • GitHub Verified` : 'Unauthenticated Sandbox Session'}</span>
           {isSponsor && (
             <>
-              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline" aria-hidden="true">•</span>
+              <span className="hidden sm:inline-block h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
               <button
                 type="button"
                 onClick={() => {

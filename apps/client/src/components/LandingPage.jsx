@@ -996,25 +996,19 @@ export default function LandingPage({
         <div className="flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-[11px] font-mono text-slate-500 dark:text-slate-400 border-y border-slate-300 dark:border-white/10 py-3.5 max-w-3xl w-full">
 
           <div>
-
             <span>GATE LATENCY: <strong className="text-slate-900 dark:text-white font-bold">&lt; 15MS</strong></span>
-
           </div>
 
-          <span className="text-slate-300 dark:text-white/20 hidden sm:inline">•</span>
+          <span className="hidden sm:inline-block h-3.5 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
 
           <div>
-
             <span>INVALIDATION: <strong className="text-slate-900 dark:text-white font-bold">100% DETERMINISTIC</strong></span>
-
           </div>
 
-          <span className="text-slate-300 dark:text-white/20 hidden sm:inline">•</span>
+          <span className="hidden sm:inline-block h-3.5 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
 
           <div>
-
             <span>TRANSPORT: <strong className="text-slate-900 dark:text-white font-bold">MCP STDIO / HTTP</strong></span>
-
           </div>
 
         </div>

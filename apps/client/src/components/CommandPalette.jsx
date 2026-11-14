@@ -217,7 +217,7 @@ export default function CommandPalette({
         <div className="flex items-center justify-between px-3.5 py-2 border-t border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.02] text-[10px] text-slate-400 dark:text-slate-500 font-sans">
           <div className="flex items-center gap-2">
             <span>Use <kbd className="font-mono px-1 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30">↑</kbd> <kbd className="font-mono px-1 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30">↓</kbd> to navigate</span>
-            <span>•</span>
+            <span className="h-2.5 w-px bg-slate-300 dark:bg-white/15 shrink-0 self-center select-none" aria-hidden="true" />
             <span><kbd className="font-mono px-1 py-0.5 rounded border border-slate-200 dark:border-white/10 bg-white dark:bg-black/30">ENTER</kbd> to select & center</span>
           </div>
           <span className="font-mono text-[9px]">{filteredNodes.length} nodes indexed</span>
