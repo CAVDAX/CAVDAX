@@ -102,7 +102,14 @@ Operational constitution, architecture standards, and safety governance for AI c
      - Never show simultaneous dual currencies (`$4 / ₹320`) in primary pricing card headings. Detect geo-location (INR for India, USD globally) and provide a subtle, non-displacing currency switcher in the section header.
      - Free tiers must be perpetual community tiers with clear resource ceilings; time-limited trials belong as explicit trial windows on paid tiers (e.g. "Includes 7-Day Free Pro Trial").
 
-0i. **Hackathon Evaluation Mode & Real-Time Tier Unlocking Architecture**:
+0i. **Universal Strict Ban on Floating Dot/Blob Separators & Metadata Hairline Standard (AI Slop Purge)**:
+   - **Absolute Ban on Floating Bullet Separators in Metadata**: Never use unicode bullet points or circular dot elements (`•`, `\u2022`, `<div className="rounded-full" />`, or `<span>•</span>`) as inline separators between version numbers, download counters, timestamps, latency metrics, or badges (e.g. `v1.3.3 • 2,820/mo`).
+   - **Why It Fails**: Floating bullet dots sit off-center on font baselines, rendering as uncalibrated, messy 'dot blobs' that scream amateur AI template generation.
+   - **The Suneet Standard (1px Subtle Vertical Hairline)**: All inline metadata, badge delimiters, and header telemetry stats MUST use a subtle, theme-matching vertical hairline divider:
+     `<span className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />`
+   - Real sentence bullet lists inside long-form documentation remain valid standard typography; this ban strictly enforces precision across headers, badges, telemetry bars, and stat strips.
+
+0j. **Hackathon Evaluation Mode & Real-Time Tier Unlocking Architecture**:
    - **Developer Enclave Master Control**: The secure Developer Enclave must provide an executive `Hackathon Evaluation Mode [ OFF / ON ]` toggle that sets global server state and broadcasts updates via Server-Sent Events (`/api/events`).
    - **Evaluation Pass Capabilities**: When ON, all visitors receive an Evaluation Pass granting full Team & Scale capabilities (unlimited repositories, causal graph inspection, unthrottled quotas). Tier locks are lifted, displaying `EVALUATION PASS` badges and allowing frictionless switching.
    - **Commercial Display Integrity**: Tier cards remain visible with real pricing to prove commercial viability to judges.
