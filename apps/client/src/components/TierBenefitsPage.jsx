@@ -502,12 +502,12 @@ export default function TierBenefitsPage({
             >
               <nav
                 ref={dockNavRef}
-                className="relative bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.08)] rounded-2xl p-2 sm:p-2.5 flex flex-col items-center gap-2.5 sm:gap-3 transition-colors duration-300"
+                className="relative bg-white/70 dark:bg-slate-950/70 backdrop-blur-3xl shadow-[0_20px_50px_-10px_rgba(0,0,0,0.15),0_0_1px_rgba(0,0,0,0.06)] dark:shadow-[0_25px_60px_-10px_rgba(0,0,0,0.7),0_0_1px_rgba(255,255,255,0.08)] rounded-xl p-1.5 flex flex-col items-center gap-1.5 transition-colors duration-300"
               >
                 {/* ── Kinetic Scroll-Linked Perimeter Circuit (Suneet Option A Standard) ── */}
                 {dockBounds.width > 0 && dockBounds.height > 0 && (
                   <svg
-                    className="absolute inset-0 pointer-events-none overflow-visible rounded-2xl"
+                    className="absolute inset-0 pointer-events-none overflow-visible rounded-xl"
                     width={dockBounds.width}
                     height={dockBounds.height}
                     aria-hidden="true"
@@ -519,7 +519,7 @@ export default function TierBenefitsPage({
                       y="0.75"
                       width={dockBounds.width - 1.5}
                       height={dockBounds.height - 1.5}
-                      rx="16"
+                      rx="12"
                       fill="none"
                       className="stroke-slate-300/40 dark:stroke-white/10"
                       strokeWidth="1"
@@ -531,7 +531,7 @@ export default function TierBenefitsPage({
                       y="0.75"
                       width={dockBounds.width - 1.5}
                       height={dockBounds.height - 1.5}
-                      rx="16"
+                      rx="12"
                       fill="none"
                       stroke="#d9a353"
                       strokeWidth="3.5"
@@ -546,7 +546,7 @@ export default function TierBenefitsPage({
                       y="0.75"
                       width={dockBounds.width - 1.5}
                       height={dockBounds.height - 1.5}
-                      rx="16"
+                      rx="12"
                       fill="none"
                       stroke="#d9a353"
                       strokeWidth="1.5"
@@ -563,19 +563,19 @@ export default function TierBenefitsPage({
                       playClick();
                       if (onOpenProfilePage) onOpenProfilePage();
                     }}
-                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Back to Account & Quotas"
                   >
-                    <ArrowLeft className="w-4 h-4 shrink-0" />
+                    <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </Tooltip>
 
                 {/* Minimalist Divider */}
-                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-3.5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
 
                 {/* Vertical Track for Tier SVGs with Pure Declarative Spring-Animated Sliding Pill */}
                 <LayoutGroup id="tier-sidebar-nav">
-                  <div className="relative z-10 flex flex-col items-center gap-2 p-1 rounded-xl bg-slate-100/50 dark:bg-white/[0.03]">
+                  <div className="relative z-10 flex flex-col items-center gap-1 p-0.5 rounded-lg bg-slate-100/50 dark:bg-white/[0.03]">
                     {TIERS.map(t => {
                       const Icon = t.icon;
                       const isActive = selectedTier === t.id;
@@ -590,7 +590,7 @@ export default function TierBenefitsPage({
                               playClick();
                               setSelectedTier(t.id);
                             }}
-                            className={`relative w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center rounded-xl transition-colors duration-200 cursor-pointer select-none ${
+                            className={`relative w-8 h-8 sm:w-8.5 sm:h-8.5 flex items-center justify-center rounded-lg transition-colors duration-200 cursor-pointer select-none ${
                               isActive
                                 ? 'text-white dark:text-slate-950 font-bold'
                                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-950 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-white/5'
@@ -600,7 +600,7 @@ export default function TierBenefitsPage({
                             {isActive && (
                               <motion.div
                                 layoutId="sidebar-active-tier-pill"
-                                className="absolute inset-0 rounded-xl bg-slate-950 dark:bg-white shadow-xs"
+                                className="absolute inset-0 rounded-lg bg-slate-950 dark:bg-white shadow-xs"
                                 transition={{
                                   type: 'spring',
                                   stiffness: 500,
@@ -608,7 +608,7 @@ export default function TierBenefitsPage({
                                 }}
                               />
                             )}
-                            <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5 shrink-0 relative z-10" />
+                            <Icon className="w-4 h-4 shrink-0 relative z-10" />
                           </button>
                         </Tooltip>
                       );
@@ -617,13 +617,13 @@ export default function TierBenefitsPage({
                 </LayoutGroup>
 
                 {/* Minimalist Divider */}
-                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-3.5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
                 {/* Theme Toggle Button — Sidebar Dock */}
                 <Tooltip content={isDarkTheme ? 'Switch to Light' : 'Switch to Dark'} position="left">
                   <button
                     type="button"
                     onClick={handleToggleTheme}
-                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Toggle theme"
                   >
                     <motion.div
@@ -632,14 +632,14 @@ export default function TierBenefitsPage({
                       className="flex items-center justify-center pointer-events-none"
                     >
                       {isDarkTheme
-                        ? <Sun className="w-4 h-4 text-current theme-toggle-icon" />
-                        : <Moon className="w-4 h-4 text-current theme-toggle-icon" />}
+                        ? <Sun className="w-3.5 h-3.5 text-current theme-toggle-icon" />
+                        : <Moon className="w-3.5 h-3.5 text-current theme-toggle-icon" />}
                     </motion.div>
                   </button>
                 </Tooltip>
 
                 {/* Minimalist Divider */}
-                <div className="relative z-10 w-5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
+                <div className="relative z-10 w-3.5 h-[1px] bg-slate-400/80 dark:bg-white/40 my-0.5 shrink-0" />
 
 
                 {/* Smooth Return to Top Cue */}
@@ -657,10 +657,10 @@ export default function TierBenefitsPage({
                         window.scrollTo({ top: 0, behavior: 'smooth' });
                       }
                     }}
-                    className="relative z-10 w-10 h-10 flex items-center justify-center rounded-xl text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                    className="relative z-10 w-7.5 h-7.5 sm:w-8 sm:h-8 flex items-center justify-center rounded-lg text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
                     aria-label="Return to Top"
                   >
-                    <ChevronUp className="w-4 h-4 shrink-0" />
+                    <ChevronUp className="w-3.5 h-3.5 shrink-0" />
                   </button>
                 </Tooltip>
               </nav>

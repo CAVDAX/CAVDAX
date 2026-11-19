@@ -46,10 +46,33 @@ const SEO_MAP = {
     description: 'Support the development of open-source causal DAG governance for AI software engineering agents.',
     path: '/support'
   },
+  sponsors: {
+    title: 'CAVDAX | 3D Community Backer Galaxy & Contributor Sphere',
+    description: 'Explore verified community patrons, backer tiers, and the interactive 3D Fibonacci contributor galaxy powering CAVDAX development.',
+    path: '/sponsors'
+  },
+  video: {
+    title: 'CAVDAX | Interactive Video Showcase & Architectural Walkthrough',
+    description: 'Watch the end-to-end architectural walkthrough of CAVDAX causal graph gates, agent interception, and FalkorDB GraphBLAS invalidations.',
+    path: '/video'
+  },
+  devteam: {
+    title: 'Dev Core Security Intercept | CAVDAX',
+    description: 'Restricted administrative gateway. Unauthorized access is strictly logged.',
+    path: '/devteam',
+    noindex: true
+  },
+  dev: {
+    title: 'Dev Console & Telemetry Hub | CAVDAX',
+    description: 'Internal developer diagnostics and telemetry.',
+    path: '/dev',
+    noindex: true
+  },
   '404': {
     title: '404 Causal Node Not Found | CAVDAX',
     description: 'The requested causal decision node or route does not exist in the CAVDAX DAG.',
-    path: '/404'
+    path: '/404',
+    noindex: true
   }
 };
 
@@ -74,19 +97,26 @@ export default function SEOHead({ activeTab }) {
       el.setAttribute(attr, value);
     };
 
-    // 3. Update Standard Meta
+    // 3. Strict Robots Indexing & Cloaking Gate
+    if (meta.noindex) {
+      setMeta('meta[name="robots"]', 'content', 'noindex, nofollow, noarchive, nosnippet');
+    } else {
+      setMeta('meta[name="robots"]', 'content', 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1');
+    }
+
+    // 4. Update Standard Meta
     setMeta('meta[name="description"]', 'content', meta.description);
 
-    // 4. Update OpenGraph Tags
+    // 5. Update OpenGraph Tags
     setMeta('meta[property="og:title"]', 'content', meta.title);
     setMeta('meta[property="og:description"]', 'content', meta.description);
     setMeta('meta[property="og:url"]', 'content', canonicalUrl);
 
-    // 5. Update Twitter Tags
+    // 6. Update Twitter Tags
     setMeta('meta[name="twitter:title"]', 'content', meta.title);
     setMeta('meta[name="twitter:description"]', 'content', meta.description);
 
-    // 6. Update Canonical Link
+    // 7. Update Canonical Link
     let canonical = document.querySelector('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement('link');
@@ -95,7 +125,7 @@ export default function SEOHead({ activeTab }) {
     }
     canonical.setAttribute('href', canonicalUrl);
 
-    // 7. Dynamic Breadcrumb Schema
+    // 8. Dynamic Breadcrumb Schema (Skip on internal/cloaked routes)
     let breadcrumbScript = document.getElementById('cavdax-dynamic-breadcrumb');
     if (!breadcrumbScript) {
       breadcrumbScript = document.createElement('script');
@@ -104,29 +134,33 @@ export default function SEOHead({ activeTab }) {
       document.head.appendChild(breadcrumbScript);
     }
 
-    const breadcrumbs = [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Home',
-        item: `${origin}/`
-      }
-    ];
+    if (meta.noindex) {
+      breadcrumbScript.textContent = '';
+    } else {
+      const breadcrumbs = [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Home',
+          item: `${origin}/`
+        }
+      ];
 
-    if (activeTab !== 'landing') {
-      breadcrumbs.push({
-        '@type': 'ListItem',
-        position: 2,
-        name: meta.title.replace('CAVDAX | ', '').split('&')[0].trim(),
-        item: canonicalUrl
+      if (activeTab !== 'landing') {
+        breadcrumbs.push({
+          '@type': 'ListItem',
+          position: 2,
+          name: meta.title.replace('CAVDAX | ', '').split('&')[0].trim(),
+          item: canonicalUrl
+        });
+      }
+
+      breadcrumbScript.textContent = JSON.stringify({
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: breadcrumbs
       });
     }
-
-    breadcrumbScript.textContent = JSON.stringify({
-      '@context': 'https://schema.org',
-      '@type': 'BreadcrumbList',
-      itemListElement: breadcrumbs
-    });
 
   }, [activeTab]);
 

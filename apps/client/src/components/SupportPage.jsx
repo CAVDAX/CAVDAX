@@ -1136,7 +1136,7 @@ export default function SupportPage({ onLaunchConsole, onNavigateHome, onNavigat
                 title="Open dedicated community backer sphere with 3D supporter galaxy"
               >
                 <span>{sponsors.length} verified backers</span>
-                <span className="opacity-30">•</span>
+                <span className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none" aria-hidden="true" />
                 <span className="font-semibold text-slate-900 dark:text-white group-hover:text-black dark:group-hover:text-white group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)] transition-all">
                   Explore Sphere
                 </span>

@@ -6,13 +6,16 @@ Allow: /
 Allow: /overview
 Allow: /console
 Allow: /mcp
+Allow: /tier-benefits
 Allow: /walkthrough
-Allow: /team
 Allow: /audit
+Allow: /team
 Allow: /profile
 Allow: /support
+Allow: /sponsors
+Allow: /video
 
-# Internal administrative routes & API sockets
+# Internal administrative routes & API sockets (Cloaked)
 Disallow: /api/
 Disallow: /devteam
 Disallow: /dev
