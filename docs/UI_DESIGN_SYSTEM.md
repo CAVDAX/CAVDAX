@@ -9235,3 +9235,60 @@ Pricing and patronage tier cards frequently suffer from footer clutter and basel
    - **Layering Isolation**: Text and `ArrowDownLeft` icon are preserved at `z-10` above the rising wave so legibility remains crisp.
 5. **Anti-Truncation Perk Copy Standard**:
    - All card perk strings are constrained to fit cleanly on narrow mobile and desktop cards without triggering ellipsis clipping (e.g. "Personal Acknowledgment").
+
+
+---
+
+## 107. Solitary Hairline Vertical Separator Architecture (Anti-Blob Bullet Elimination)
+
+### 107.1 Context & Problem Analysis
+In modern technical HUDs, metadata headers and status badges frequently combine version strings, counts, and external links (e.g., `v1.3.3 • 2,820/mo`). Historically, developers frequently insert floating Unicode bullet characters (`•`, `&bull;`, `\u2022`) or circular dot spans (`<span className="w-1.5 h-1.5 rounded-full ...">`) as inline dividers.
+
+Under rigorous adversarial and UI slop analysis, floating dot blobs introduce three severe visual flaws:
+1. **Vertical Alignment Drift & Baseline Mismatch**: Unicode bullets vary wildly across OS fonts (San Francisco, Segoe UI, Roboto, JetBrains Mono). Some fonts render bullets high above the cap-height; others render them bloated, off-center, or with unequal left/right typographic margins.
+2. **AI-Scaffolding Pattern (Pattern 23)**: Overuse of circular separator blobs is a recognized amateur AI template artifact that clutters metadata chips.
+3. **Contrast & Blur Clutter**: Circular dots create optical visual focal points that compete with semantic numbers and badges instead of quietly dividing them.
+
+### 107.2 The Solitary Hairline Separator Standard
+1. **Precision 1px Vertical Monoline**:
+   - Every inline metadata tag, package header, and backer counter requiring separation must use a dedicated, hardware-accelerated 1px vertical hairline:
+     ```jsx
+     <span
+       className="h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none"
+       aria-hidden="true"
+     />
+     ```
+2. **Standardized Spatial Tokens**:
+   - Height: Strictly `h-3` (12px) for standard body copy, `h-2.5` (10px) for micro-tooltips (`text-[10px]`).
+   - Width: Strictly `w-px` (1px physical width).
+   - Alignment: `self-center shrink-0 select-none`.
+   - Palette Contrast: `bg-slate-300 dark:bg-white/10` (porcelain neutral in light mode, subtle 10% translucent white in dark obsidian mode).
+3. **Accessibility**:
+   - Must carry `aria-hidden="true"` so screen readers do not announce punctuation noise ("bullet", "middle dot", "pipe").
+4. **Verified Remediations in Codebase**:
+   - `ConnectMcpPage.jsx`: Package version header separating `v{mcpVersion}` and the npm downloads badge.
+   - `SupportPage.jsx`: Backer counter ribbon separating `{sponsors.length} verified backers` and the `Explore Sphere` CTA.
+
+
+---
+
+## 108. Minimalist Precision Dock Architecture (Tier Navigation Sidebar Footprint)
+
+### 108.1 Context & Problem Analysis
+Floating side navigation docks on technical showcase pages (e.g., the Below-Hero dock in `TierBenefitsPage.jsx`) frequently suffer from visual overgrowth:
+1. **Excessive Vertical Footprint**: Oversized buttons (`w-11 h-11 sm:w-12 sm:h-12`) with thick padding create an elongated vertical column exceeding 420px height that collides with content on smaller laptops (e.g. 1366x768 or 1440x900).
+2. **Heavy Icon Scales**: Large 22px SVG icons overpower adjacent text and make the dock feel like a full primary navigation bar rather than a lightweight secondary HUD control.
+3. **Sluggish Visual Weight**: Heavy outer padding (`p-2.5 gap-3`) creates excessive whitespace around action triggers.
+
+### 108.2 The Minimalist Floating Dock Standard
+1. **Calibrated Dimensional Tokens**:
+   - **Outer Navigation Shell**: `rounded-xl p-1.5 flex flex-col items-center gap-1.5`.
+   - **Action Buttons (Back, Theme Toggle, Top)**: Scaled to `w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-lg` with `w-3.5 h-3.5` (14px) SVG glyphs.
+   - **Tier Button Container**: `gap-1 p-0.5 rounded-lg bg-slate-100/50 dark:bg-white/[0.03]`.
+   - **Tier Selection Buttons**: Scaled to `w-8 h-8 sm:w-8.5 sm:h-8.5 rounded-lg` with `w-4 h-4` (16px) SVG icons.
+   - **Active Sliding Pill (`layoutId="sidebar-active-tier-pill"`)**: `rounded-lg bg-slate-950 dark:bg-white`.
+   - **Separators**: Reduced to `w-3.5 h-[1px] my-0.5 bg-slate-400/80 dark:bg-white/40`.
+2. **Perimeter SVG Calibration**:
+   - The kinetic scroll-linked amber perimeter track (`stroke="#d9a353"`) adapts to `rx="12"` matching the sleeker `rounded-xl` outer container radius.
+3. **Touch & Ergonomics**:
+   - Preserves 32px–34px interactive targets with high-density spacing, ensuring zero viewport overlap while remaining effortless to click.

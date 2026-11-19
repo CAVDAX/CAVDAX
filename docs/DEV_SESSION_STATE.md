@@ -9,6 +9,25 @@
 
 ## 🏆 Completed Milestones & Architectural Landings
 
+### 000. UI Precision Refinements, Sitemap Overhaul & Dynamic Indexing Immunity (November 20, 2026)
+- **Solitary Hairline Vertical Separator Architecture (UI_DESIGN_SYSTEM.md §107)**:
+  - Eradicated floating Unicode bullet dots (`•`, `&bull;`) and circular dot spans across inline metadata chips.
+  - Standardized on 1px hardware-accelerated vertical hairlines (`h-3 w-px bg-slate-300 dark:bg-white/10 shrink-0 self-center select-none` with `aria-hidden="true"`).
+  - Applied to `@cavdax/mcp-server` npm package header and backer community ribbon.
+- **Minimalist Precision Dock Architecture (UI_DESIGN_SYSTEM.md §108)**:
+  - Rescaled below-hero floating dock on `TierBenefitsPage.jsx` from a 420px vertical footprint to an elegant, compact silhouette.
+  - Scaled tier icon buttons from 48px to 32px with 16px SVG glyphs; tightened container padding to `p-1.5 gap-1.5`.
+- **Sitemap.xml Overhaul & 404 Prevention**:
+  - Discovered and purged 3 phantom URLs (`/docs`, `/integrations/cursor`, `/integrations/claude-code`) that returned 404 errors to search crawlers.
+  - Enrolled missing high-value production routes: `/tier-benefits` (Priority 0.9), `/sponsors` (Priority 0.65), and `/video` (Priority 0.65).
+  - Updated all `<lastmod>` timestamps to `2026-11-20`.
+- **Dynamic Client-Side Indexing Cloaking**:
+  - Upgraded `SEOHead.jsx` to dynamically inject `<meta name="robots" content="noindex, nofollow, noarchive, nosnippet" />` and strip breadcrumb JSON-LD on internal/cloaked routes and error states, while preserving `index, follow` on public routes.
+- **Infrastructure Architecture Alignment**:
+  - Codified that production runs on a self-hosted VM with **Caddy reverse proxy behind Cloudflare CDN/WAF**, eliminating obsolete `vercel.json` configurations.
+- **Master Documentation State Machine Initialized**:
+  - Authored `docs/DOCS_PROGRESS_TRACKER.md` as the living telemetry state machine enforcing the 11 Inviolable Laws of Master Documentation Management.
+
 ### 00a. Official MCP Registry, Glama Support, v1.3.3 & ISM Hardening (November 12, 2026)
 - **Official MCP Registry & Glama Integration**:
   - Added `server.json` (`io.github.CAVDAX/cavdax@1.3.3`, `2025-12-11` schema) and `glama.json` (`maintainers: ["suneetchugh-dev"]`) at repo root.
