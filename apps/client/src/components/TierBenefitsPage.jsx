@@ -490,7 +490,7 @@ export default function TierBenefitsPage({
           </div>
         ) : (
           /* 2. Below-Hero Mode: Elevated Floating Right Sidebar Dock */
-          <div className="fixed right-3 sm:right-6 xl:right-6 2xl:right-8 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
+          <div className="hidden md:block fixed right-3 sm:right-6 xl:right-6 2xl:right-8 top-1/2 -translate-y-1/2 z-50 pointer-events-none">
             <motion.aside
               key="tier-sidebar-dock"
               initial={{ opacity: 0, x: 24 }}

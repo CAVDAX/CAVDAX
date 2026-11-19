@@ -56,6 +56,11 @@ const SEO_MAP = {
     description: 'Watch the end-to-end architectural walkthrough of CAVDAX causal graph gates, agent interception, and FalkorDB GraphBLAS invalidations.',
     path: '/video'
   },
+  repo: {
+    title: 'CAVDAX | Connected Repository Workspace & ADR Governance',
+    description: 'Inspect repository architecture decision records, transitive blast radius DAGs, and enclosed MCP clearance in real time.',
+    path: '/repo'
+  },
   devteam: {
     title: 'Dev Core Security Intercept | CAVDAX',
     description: 'Restricted administrative gateway. Unauthorized access is strictly logged.',
@@ -125,18 +130,20 @@ export default function SEOHead({ activeTab }) {
     }
     canonical.setAttribute('href', canonicalUrl);
 
-    // 8. Dynamic Breadcrumb Schema (Skip on internal/cloaked routes)
+    // 8. Dynamic Breadcrumb Schema (Omitted completely on internal/cloaked routes)
     let breadcrumbScript = document.getElementById('cavdax-dynamic-breadcrumb');
-    if (!breadcrumbScript) {
-      breadcrumbScript = document.createElement('script');
-      breadcrumbScript.id = 'cavdax-dynamic-breadcrumb';
-      breadcrumbScript.type = 'application/ld+json';
-      document.head.appendChild(breadcrumbScript);
-    }
-
     if (meta.noindex) {
-      breadcrumbScript.textContent = '';
+      if (breadcrumbScript && breadcrumbScript.parentNode) {
+        breadcrumbScript.parentNode.removeChild(breadcrumbScript);
+      }
     } else {
+      if (!breadcrumbScript) {
+        breadcrumbScript = document.createElement('script');
+        breadcrumbScript.id = 'cavdax-dynamic-breadcrumb';
+        breadcrumbScript.type = 'application/ld+json';
+        document.head.appendChild(breadcrumbScript);
+      }
+
       const breadcrumbs = [
         {
           '@type': 'ListItem',
